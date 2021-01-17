@@ -27,8 +27,9 @@ func main() {
 
 	fmt.Println("数据库连接成功!")
 
-	userMapper := new(mapper.UserMapper)
-	err = instance.BindMapper(userMapper)
+	//userMapper := new(mapper.UserMapper)
+	userMapper := mapper.UserMapper{}
+	err = instance.BindMapper(&userMapper)
 	if err != nil {
 		fmt.Println("mapper 绑定错误:", err)
 		return

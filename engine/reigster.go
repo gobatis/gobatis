@@ -14,14 +14,14 @@ func (p *Engine) registerMapper(filePath string) (err error) {
 		return
 	}
 
-	mapperSchema, err := schema.UnmarshalMapper(data)
+	_schema, err := schema.UnmarshalMapper(data)
 	if err != nil {
 		return
 	}
 
-	mapper := NewMapper(filePath)
-
-	err = p.registerMapperMethod(mapper, mapperSchema)
+	mapper := NewMapper(_schema.Namespace, filePath)
+	fmt.Println("注册Mapper：", mapper.SqlFile, mapper.Namespace)
+	err = p.registerMapperMethod(mapper, _schema)
 	if err != nil {
 		return
 	}
@@ -41,7 +41,7 @@ func (p *Engine) registerMapperMethod(mapper *Mapper, _schema *schema.Mapper) (e
 			method.ResultType = v.ResultType
 			method.SQL = v.SQL
 			mapper.Methods().Add(method)
-			fmt.Println(method)
+			fmt.Println("注册方法：", method)
 		}
 	}
 

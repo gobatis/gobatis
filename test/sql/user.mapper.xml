@@ -4,11 +4,18 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
 <mapper namespace="test/mapper@UserMapper">
-    <select id="GetUser" parameterType="int64" resultType="User">
+
+    <select id="GetUser" parameterType="int64" resultType="test/entity@User">
         select * from users where id = #{id}
     </select>
 
-    <select id="selectBlogs" resultMap="Blog[]">
-        select * from blog
-    </select>
+<!--    <select id="selectUsers" parameterType="id:int64,name:string" resultMap="Blog[]">-->
+<!--        select * from blog-->
+<!--    </select>-->
+
+<!--    <select id="countUsers" parameterType="id:int64,name:string" resultType="int,int,string">-->
+<!--        select * from users where id=#{id} and name=#{name}-->
+<!--    </select>-->
+
+
 </mapper>

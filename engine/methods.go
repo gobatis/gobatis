@@ -51,3 +51,7 @@ func (p *Methods) Has(name string) bool {
 	}
 	return false
 }
+
+func (p *Methods) All() []*Method {
+	return p.list
+}
