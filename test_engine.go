@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/koyeo/mybatis.go/engine"
+	"github.com/koyeo/mybatis.go/test/mapper"
 )
 
 func main() {
@@ -16,11 +17,21 @@ func main() {
 		return
 	}
 
+	defer func() {
+		err = instance.DB.Close()
+		if err != nil {
+			fmt.Println("数据库关闭失败:", err)
+			return
+		}
+	}()
+
 	fmt.Println("数据库连接成功!")
 
-	err = instance.DB.Close()
+	userMapper := new(mapper.UserMapper)
+	err = instance.BindMapper(userMapper)
 	if err != nil {
-		fmt.Println("数据库关闭失败:", err)
+		fmt.Println("mapper 绑定错误:", err)
 		return
 	}
+
 }
