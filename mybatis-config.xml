@@ -6,7 +6,7 @@
 <configuration>
 
     <properties>
-        <property name="module" value="github.com/koyeo/mybatis.go"/>
+        <property name="module" value="github.com/koyeo/gobatis"/>
     </properties>
 
     <typeAliases>

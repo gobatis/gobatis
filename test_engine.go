@@ -25,6 +25,7 @@ func main() {
 		}
 	}()
 
+	//instance.DB.Conn()
 	fmt.Println("数据库连接成功!")
 
 	//userMapper := new(mapper.UserMapper)
