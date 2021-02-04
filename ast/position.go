@@ -2,33 +2,31 @@ package ast
 
 // 记录代码位置
 type Position struct {
-	index   int    // 索引
-	row     int    // 行号
-	col     int    // 列号
-	file    string // 所属文件
-	content string // 文件内容
+	Index  int    `json:"index,omitempty"`  // 索引
+	Line   int    `json:"line,omitempty"`   // 行号
+	Column int    `json:"column,omitempty"` // 列号
+	// File   string `json:"file,omitempty"`   // 所属文件
 }
 
-func (p *Position) fork() Position {
-	return Position{
-		index:   p.index,
-		row:     p.row,
-		col:     p.col,
-		file:    p.file,
-		content: p.content,
+func (p *Position) fork() *Position {
+	return &Position{
+		//Index:  p.Index,
+		Line:   p.Line,
+		Column: p.Column,
+		//File:   p.File,
 	}
 }
 
 func (p *Position) next(char string) {
-	p.index++
+	p.Index++
 	if char == "\n" {
-		p.col = 0
-		p.row++
+		p.Column = 0
+		p.Line++
 	} else {
-		p.col++
+		p.Column++
 	}
 }
 
 func (p *Position) peek(length int) int {
-	return p.index + length
+	return p.Index + length
 }

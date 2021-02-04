@@ -7,24 +7,18 @@ import (
 
 const EOF = "EOF"
 const (
-	TT_ROOT          = "ROOT"
-	TT_TAG           = "TAG"
-	TT_NODE_START    = "NODE_START"
-	TT_NODE_END      = "NODE_END"
-	TT_SELF_END_NODE = "SELF_NODE"
-	TT_TEXT          = "TEXT"
-	TT_ID            = "ID"
+	TT_ROOT = "ROOT"
+	TT_TAG  = "TAG"
+	TT_TEXT = "TEXT"
 )
 
-func NewLexer(file, content string) *Lexer {
+func NewLexer(content string) *Lexer {
 	lexer := &Lexer{
 		pos: Position{
-			index:   -1,
-			row:     0,
-			col:     0,
-			file:    file,
-			content: content,
-		}, // 读取字符串位置从-1开始计数
+			Index:  -1,
+			Line:   1,
+			Column: 1,
+		}, // index start with -1
 		chars: []rune(content),
 	}
 	lexer.length = len(lexer.chars)
@@ -36,16 +30,16 @@ type Lexer struct {
 	pos    Position
 	chars  []rune
 	length int
-	char   string // 当前处理字符
+	char   string // current handle character
 	root   *Token
 	depth  int
 }
 
-// 预读: 读取下一个字符
+// read next character
 func (p *Lexer) next() {
 	p.pos.next(p.char)
-	if p.pos.index < p.length {
-		p.char = string(p.chars[p.pos.index])
+	if p.pos.Index < p.length {
+		p.char = string(p.chars[p.pos.Index])
 	} else {
 		p.char = EOF
 	}
@@ -76,19 +70,22 @@ func (p *Lexer) parse(root *Token) {
 	for p.char != EOF {
 
 		if isBlank(p.char) {
-			// 过滤空白字符
+			// ignore blank character
 			p.ignoreBlank()
 			continue
 		} else if p.char == "<" {
+			// parse tag node
 			p.parseNode(root)
 		} else {
-			// 解析文本节点
+			// parse text node
 			token := new(Token)
 			token.Type = TT_TEXT
+			token.Start = p.pos.fork()
 			for not(p.char, EOF, "<") {
 				token.Value += p.char
 				p.next()
 			}
+			token.End = p.pos.fork()
 			root.addToken(token)
 			continue
 		}
@@ -108,32 +105,33 @@ func (p *Lexer) parseNode(root *Token) () {
 	//statParseTagName := true
 	p.next()
 
-	// 闭合标签
+	// closed tag
 	if p.char == "/" {
-		// 不处理
+		// just pass
 		for not(p.char, EOF, ">") {
 			p.next()
 		}
 		return
 	}
 
-	// 解析标签名称
+	// parse tag name
 	token := NewToken()
 	token.Type = TT_TAG
+	token.Start = p.pos.fork()
 	root.addToken(token)
 	for not(p.char, " ", ">") {
 		token.Value += p.char
 		p.next()
 	}
 
-	// 标签未结束
+	// if tag not closed, parse attributes
 	if p.char != ">" {
 		for p.char != ">" {
 			p.parseAttribute(token)
 		}
 	}
 
-	// 此时最后一个字符 >
+	// now, p.char == ">"
 	p.next()
 	p.parse(token)
 
@@ -142,16 +140,15 @@ func (p *Lexer) parseNode(root *Token) () {
 
 func (p *Lexer) parseAttribute(token *Token) {
 
-	// 过滤空白字符
 	p.ignoreBlank()
 
-	// 自闭和标签
+	// just ignore self closed tag
 	if p.char == "/" && p.peek(1) == ">" {
 		p.next()
 		return
 	}
 
-	// 解析属性名称
+	// parse attribute name
 	attribute := NewAttribute()
 	token.addAttribute(attribute)
 	for not(p.char, "=", ">") {
@@ -159,24 +156,23 @@ func (p *Lexer) parseAttribute(token *Token) {
 		p.next()
 	}
 
-	// 标签已闭合
+	// if tag closed
 	if p.char == ">" {
 		return
 	}
 
-	// 跳过等号
+	// pass character "="
 	p.next()
 
-	// 过滤空白字符
 	p.ignoreBlank()
 
 	if p.char != "\"" {
-		err := fmt.Errorf("非法字符 %s 行：%d,列: %d", p.char, p.pos.row, p.pos.col)
+		err := fmt.Errorf("非法字符 %s 行：%d,列: %d", p.char, p.pos.Line, p.pos.Column)
 		fmt.Println(err)
 		return
 	}
 
-	// 跳过第一个双引号
+	// pass the first "
 	p.next()
 
 	// 解析属性值
@@ -189,13 +185,12 @@ func (p *Lexer) parseAttribute(token *Token) {
 		return
 	}
 
-	// 跳过最后一个双引号
+	// pass the last "
 	p.next()
 
 	return
 }
 
-// 过滤空白字符
 func (p *Lexer) ignoreBlank() {
 	for isBlank(p.char) {
 		p.next()

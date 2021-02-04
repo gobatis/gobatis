@@ -9,6 +9,8 @@ func NewToken() *Token {
 type Token struct {
 	Value      string       `json:"value,omitempty"`
 	Type       string       `json:"type,omitempty"`
+	Start      *Position    `json:"start,omitempty"`
+	End        *Position    `json:"end,omitempty"`
 	Attributes []*Attribute `json:"attributes,omitempty"`
 	Tokens     []*Token     `json:"tokens,omitempty"`
 }
