@@ -1,9 +1,14 @@
 package ast
 
-import "fmt"
+import (
+	"encoding/json"
+	"fmt"
+)
 
 const EOF = "EOF"
 const (
+	TT_ROOT          = "ROOT"
+	TT_TAG           = "TAG"
 	TT_NODE_START    = "NODE_START"
 	TT_NODE_END      = "NODE_END"
 	TT_SELF_END_NODE = "SELF_NODE"
@@ -32,6 +37,8 @@ type Lexer struct {
 	chars  []rune
 	length int
 	char   string // 当前处理字符
+	root   *Token
+	depth  int
 }
 
 // 预读: 读取下一个字符
@@ -52,8 +59,19 @@ func (p *Lexer) peek(length int) (char string) {
 	return EOF
 }
 
+func (p *Lexer) PrintTokens() {
+	d, _ := json.MarshalIndent(p.root, "", "\t")
+	fmt.Println(string(d))
+}
+
 func (p *Lexer) Parse() {
-	//tokens := make([]Token, 0)
+	root := NewToken()
+	root.Type = TT_ROOT
+	p.root = root
+	p.parse(root)
+}
+
+func (p *Lexer) parse(root *Token) {
 
 	for p.char != EOF {
 
@@ -62,21 +80,24 @@ func (p *Lexer) Parse() {
 			p.ignoreBlank()
 			continue
 		} else if p.char == "<" {
-			p.next()
-			p.parseNode()
+			p.parseNode(root)
 		} else {
 			// 解析文本节点
-			//fmt.Println(p.char)
-			//fmt.Println(p.pos.row, p.pos.col)
-			//panic("非法字符")
+			token := new(Token)
+			token.Type = TT_TEXT
+			for not(p.char, EOF, "<") {
+				token.Value += p.char
+				p.next()
+			}
+			root.addToken(token)
+			continue
 		}
 
 		p.next()
 	}
-
 }
 
-func (p *Lexer) parseNode() (token Token) {
+func (p *Lexer) parseNode(root *Token) () {
 
 	// <select>
 	// <select ok>
@@ -85,42 +106,56 @@ func (p *Lexer) parseNode() (token Token) {
 	// <select id="2"/>
 	//statParseTag := true
 	//statParseTagName := true
+	p.next()
 
-	// 解析标签名称
-	nodeName := ""
-
-	for not(p.char, " ", ">") {
-		nodeName += p.char
-		p.next()
-	}
-
-	fmt.Println(nodeName)
-
-	// 标签已闭合
-	if p.char == ">" {
+	// 闭合标签
+	if p.char == "/" {
+		// 不处理
+		for not(p.char, EOF, ">") {
+			p.next()
+		}
 		return
 	}
 
-	for p.char != ">" {
-		p.parseAttribute()
+	// 解析标签名称
+	token := NewToken()
+	token.Type = TT_TAG
+	root.addToken(token)
+	for not(p.char, " ", ">") {
+		token.Value += p.char
+		p.next()
 	}
 
-	// 最后一个字符 >
+	// 标签未结束
+	if p.char != ">" {
+		for p.char != ">" {
+			p.parseAttribute(token)
+		}
+	}
+
+	// 此时最后一个字符 >
+	p.next()
+	p.parse(token)
 
 	return
 }
 
-func (p *Lexer) parseAttribute() (attr Attribute) {
+func (p *Lexer) parseAttribute(token *Token) {
 
 	// 过滤空白字符
 	p.ignoreBlank()
 
-	// 解析属性名称
-	attrName := ""
-	defer fmt.Printf("attrName: '%s'\n", attrName)
+	// 自闭和标签
+	if p.char == "/" && p.peek(1) == ">" {
+		p.next()
+		return
+	}
 
+	// 解析属性名称
+	attribute := NewAttribute()
+	token.addAttribute(attribute)
 	for not(p.char, "=", ">") {
-		attrName += p.char
+		attribute.Name += p.char
 		p.next()
 	}
 
@@ -145,12 +180,8 @@ func (p *Lexer) parseAttribute() (attr Attribute) {
 	p.next()
 
 	// 解析属性值
-	attrValue := ""
-	defer func() {
-		fmt.Printf("attrValue: '%s'\n", attrValue)
-	}()
 	for not(p.char, "\"", ">") {
-		attrValue += p.char
+		attribute.Value += p.char
 		p.next()
 	}
 
