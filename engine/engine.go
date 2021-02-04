@@ -3,8 +3,8 @@ package engine
 import (
 	"database/sql"
 	"fmt"
-	"github.com/koyeo/mybatis.go/dirver/mysql"
-	"github.com/koyeo/mybatis.go/schema"
+	"github.com/koyeo/gobatis/dirver/mysql"
+	"github.com/koyeo/gobatis/schema"
 	"io/ioutil"
 )
 

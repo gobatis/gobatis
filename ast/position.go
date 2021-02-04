@@ -9,7 +9,7 @@ type Position struct {
 	content string // 文件内容
 }
 
-func (p *Position) Fork() Position {
+func (p *Position) fork() Position {
 	return Position{
 		index:   p.index,
 		row:     p.row,
@@ -19,8 +19,7 @@ func (p *Position) Fork() Position {
 	}
 }
 
-
-func (p *Position) Next(char string) {
+func (p *Position) next(char string) {
 	p.index++
 	if char == "\n" {
 		p.col = 0
@@ -28,4 +27,8 @@ func (p *Position) Next(char string) {
 	} else {
 		p.col++
 	}
+}
+
+func (p *Position) peek(length int) int {
+	return p.index + length
 }

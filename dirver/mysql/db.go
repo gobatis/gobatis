@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/koyeo/mybatis.go/schema"
+	"github.com/koyeo/gobatis/schema"
 )
 
 func InitDB(dataSource *schema.DataSource) (db *sql.DB, err error) {

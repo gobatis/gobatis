@@ -61,7 +61,7 @@ func main() {
 	// as just an example
 	for i := 0; i < len(users.Users); i++ {
 		fmt.Println("User Type: " + users.Users[i].Type)
-		fmt.Println("User Name: " + users.Users[i].Name)
+		fmt.Println("User Value: " + users.Users[i].Name)
 		fmt.Println("Facebook Url: " + users.Users[i].Social.Facebook)
 	}
 

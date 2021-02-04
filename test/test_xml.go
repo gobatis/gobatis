@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/xml"
 	"fmt"
-	"github.com/koyeo/mybatis.go/schema"
+	"github.com/koyeo/gobatis/schema"
 	"io/ioutil"
 )
 

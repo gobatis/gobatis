@@ -2,7 +2,7 @@ package engine
 
 import (
 	"fmt"
-	"github.com/koyeo/mybatis.go/schema"
+	"github.com/koyeo/gobatis/schema"
 	"io/ioutil"
 )
 

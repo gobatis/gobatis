@@ -5,17 +5,21 @@
 
 <mapper namespace="test/mapper@UserMapper">
 
+
     <select id="GetUser" parameterType="int64" resultType="test/entity@User">
         select * from users where id = #{id}
+        <where>
+            <if test="a != nil">a</if>
+        </where>
     </select>
 
-<!--    <select id="selectUsers" parameterType="id:int64,name:string" resultMap="Blog[]">-->
-<!--        select * from blog-->
-<!--    </select>-->
+    <!--    <select id="selectUsers" parameterType="id:int64,name:string" resultMap="Blog[]">-->
+    <!--        select * from blog-->
+    <!--    </select>-->
 
-<!--    <select id="countUsers" parameterType="id:int64,name:string" resultType="int,int,string">-->
-<!--        select * from users where id=#{id} and name=#{name}-->
-<!--    </select>-->
+    <!--    <select id="countUsers" parameterType="id:int64,name:string" resultType="int,int,string">-->
+    <!--        select * from users where id=#{id} and name=#{name}-->
+    <!--    </select>-->
 
 
 </mapper>

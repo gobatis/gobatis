@@ -1,9 +1,10 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
-	"github.com/koyeo/mybatis.go/engine"
-	"github.com/koyeo/mybatis.go/test/mapper"
+	"github.com/koyeo/gobatis/engine"
+	"github.com/koyeo/gobatis/test/mapper"
 )
 
 func main() {
@@ -29,11 +30,22 @@ func main() {
 	fmt.Println("数据库连接成功!")
 
 	//userMapper := new(mapper.UserMapper)
-	userMapper := mapper.UserMapper{}
-	err = instance.BindMapper(&userMapper)
+	userMapper := new(mapper.UserMapper)
+	err = instance.BindMapper(userMapper)
 	if err != nil {
 		fmt.Println("mapper 绑定错误:", err)
 		return
 	}
 
+	user, err := userMapper.GetUser(1)
+	if err != nil {
+		fmt.Println("查询错误:", err)
+		return
+	}
+	res, err := json.Marshal(user)
+	if err != nil {
+		fmt.Println("解析错误:", err)
+		return
+	}
+	fmt.Println(string(res))
 }
