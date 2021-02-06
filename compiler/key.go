@@ -1,4 +1,4 @@
-package ast
+package compiler
 
 var tags = []string{
 	"configuration",

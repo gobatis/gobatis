@@ -1,4 +1,4 @@
-package ast
+package compiler
 
 type Parser struct {
 	tokens []Token
@@ -14,8 +14,8 @@ func (p *Parser) next() Token {
 	return p.token
 }
 
-func (p *Parser) parse() {
-
+func (p *Parser) Parse(root *Token) {
+	
 }
 
 func (p *Parser) expr() {

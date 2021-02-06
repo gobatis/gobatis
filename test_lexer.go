@@ -1,18 +1,16 @@
 package main
 
-import "github.com/koyeo/gobatis/ast"
+import "github.com/koyeo/gobatis/compiler"
 
 func main() {
 
-	lexer := ast.NewLexer("./test/sql/user.mapper.xml", `<select id="GetUser" parameterType="int64" resultType="test/entity@User">
-        	select * from users #{id}
-			<mapper src="ok" />
-			<where>
-				<if test="a != nil">a</if>
-			</where>
-    	</select>
+	lexer := compiler.NewLexer(`<insert id="insertAuthor" useGeneratedKeys="true"
+    keyProperty="id">
+  insert into Author (username,password,email,bio)
+  values (#{username},#{password},#{email},#{bio})
+</insert>
 `)
 
-	lexer.Parse()
+	lexer.Tokenlize()
 	lexer.PrintTokens()
 }

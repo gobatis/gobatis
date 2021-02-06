@@ -1,4 +1,4 @@
-package ast
+package compiler
 
 type Error struct {
 	Position
