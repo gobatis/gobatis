@@ -1,51 +1,14 @@
 package compiler
 
-const (
-	SPACE = 32  // ' '
-	BSN   = 10  // \n
-	BST   = 9   // \t
-	BSR   = 13  // \r
-	BSF   = 12  // \f
-	LT    = 60  // <
-	EP    = 33  // !
-	CL    = 45  // -
-	SL    = 47  // /
-	GT    = 62  // >
-	QM    = 63  // ?
-	LA    = 97  // a
-	LZ    = 122 // z
-	UA    = 65  // A
-	UZ    = 90  // Z
-	EQ    = 61  // =
-	SQ    = 39  // '
-	DQ    = 34  // "
-	LD    = 100 // d
-	UD    = 68  //D
-)
+import "fmt"
 
 const (
-	TT_LITERAL        = iota
-	TT_OPEN_TAG_START // <div>
-	TT_OPEN_TAG_END   // </div>
-	TT_CLOSE_Tag      // <img />
-	TT_ATTR_VALUE
-	TT_ATTR_NAME
-)
-
-const (
-	STAT_LITERAL      = iota // 解析文本
-	STAT_PRE_OPEN_TAG        // 预备解析开始标签类型
-	STAT_OPEN_TAG            // 解析开标准
-	STAT_POS_OPEN_TAG        // 解析结束标签
-	STAT_IN_VALUE_NQ         // 无引号的值
-	STAT_IN_VALUE_SQ         // 单引号值
-	STAT_IN_VALUE_DQ         // 双引号值
-	STAT_CLOSING_OPEN_TAG
-	STAT_OPENING_NORMAL_COMMENT
-	STAT_IM_NORMAL_COMMENT
-	STAT_IN_SHORT_COMMENT
-	STAT_CLOSING_NORMAL_COMMENT
-	STAT_CLOSING_TAG
+	TT_TEXT         = "text"
+	TT_START_TAG    = "startTag"
+	TT_END_TAG      = "endTag"
+	TT_SELF_END_TAG = "selfEndTag"
+	TT_ATTR_VALUE   = "attrValue"
+	TT_ATTR_NAME    = "attrName"
 )
 
 func NewTokenizer(content []byte) Tokenizer {
@@ -55,8 +18,8 @@ func NewTokenizer(content []byte) Tokenizer {
 			line:   1,
 			column: 0,
 		},
-		chars:  []rune(string(content)),
-		status: STAT_LITERAL,
+		chars: []rune(string(content)),
+		state: STAT_LITERAL,
 	}
 }
 
@@ -66,7 +29,7 @@ type Tokenizer struct {
 	start  Position
 	chars  []rune
 	peek   rune
-	status int
+	state  int
 	tokens []Token
 }
 
@@ -83,30 +46,48 @@ func (p *Tokenizer) Parse() []Token {
 	p.next()
 	p.start = p.pos.fork()
 	for p.peek != EOF {
-		switch p.status {
+		switch p.state {
 		case STAT_LITERAL:
 			p.parseLiteral()
-		case STAT_PRE_OPEN_TAG:
-			p.parsePreOpenTag()
-		case STAT_OPEN_TAG:
-			p.parseOpenTag()
+		case STAT_START_TAG:
+			p.parseTagStart()
+		case STAT_START_TAG_NAME:
+			p.parseStartTagName()
+		case STAT_END_TAG_NAME:
+			p.parseEndTagName()
+		case STAT_ATTRIBUTE:
+			p.parseAttribute()
+		case STAT_ATTRIBUTE_NAME:
+			p.parseAttributeName()
+		case STAT_ATTRIBUTE_EQUAL:
+			p.parseAttributeEqual()
+		case STAT_ATTRIBUTE_VALUE_START:
+			p.parseAttributeValueStart()
+		case STAT_ATTRIBUTE_VALUE_END:
+			p.parseAttributeValueEnd()
+		case STAT_SELF_END_TAG:
+			p.parseSelfEndTag()
 		}
 		p.next()
 	}
-
+	switch p.state {
+	case STAT_LITERAL:
+		p.addToken(TT_TEXT)
+	}
 	return p.tokens
 }
 
-func (p *Tokenizer) addToken(tokenType, nextStat int, end Position) {
-	value := p.fetchValue(p.start.index, end.index)
+func (p *Tokenizer) addToken(tokenType string) {
+	value := p.fetchValue(p.start.index, p.pos.index)
+	if tokenType == TT_TEXT && value == "" {
+		return
+	}
 	p.tokens = append(p.tokens, Token{
 		Value: value,
 		Type:  tokenType,
 		Start: TokenLoc{Line: p.start.line, Column: p.start.column},
-		End:   TokenLoc{Line: end.line, Column: end.column},
+		End:   TokenLoc{Line: p.pos.line, Column: p.pos.column},
 	})
-	p.start = end
-	p.status = nextStat
 }
 
 func (p *Tokenizer) fetchValue(start, end int) string {
@@ -118,29 +99,112 @@ func (p *Tokenizer) fetchValue(start, end int) string {
 }
 
 func (p *Tokenizer) parseLiteral() {
-	if p.peek == LT {
-		p.addToken(TT_LITERAL, STAT_PRE_OPEN_TAG, p.pos)
+	if p.peek == LESS_THAN {
+		p.addToken(TT_TEXT)
+		p.expectStatus(STAT_START_TAG)
 	}
 }
 
-func (p *Tokenizer) parsePreOpenTag() {
-	if (p.peek >= LA && p.peek <= LZ) ||
-		(p.peek >= UA && p.peek <= UZ) {
-		p.status = STAT_OPEN_TAG
-		p.start = p.pos.fork()
+func (p *Tokenizer) parseTagStart() {
+	if IsLetter(p.peek) {
+		p.expectStatus(STAT_START_TAG_NAME)
+	} else if p.peek == FORWARD_SLASH {
+		p.next()
+		p.expectStatus(STAT_END_TAG_NAME)
 	}
 }
 
-func (p *Tokenizer) parseOpenTag() {
-	if p.isBlack() {
-		p.addToken(TT_OPEN_TAG_START, STAT_POS_OPEN_TAG, p.pos)
+func (p *Tokenizer) parseStartTagName() {
+
+	if IsBlank(p.peek) {
+		// <m
+		p.addToken(TT_START_TAG)
+		p.expectStatus(STAT_ATTRIBUTE)
+	} else if p.peek == GREATER_THAN {
+		// <m>
+		p.addToken(TT_START_TAG)
+		p.next()
+		p.expectStatus(STAT_LITERAL)
+	} else if p.peek == FORWARD_SLASH {
+		// <m/
+		p.addToken(TT_START_TAG)
+		p.next()
+		p.expectStatus(STAT_SELF_END_TAG)
 	}
 }
 
-func (p *Tokenizer) isBlack() bool {
-	return p.peek == SPACE ||
-		p.peek == BSN ||
-		p.peek == BSR ||
-		p.peek == BST ||
-		p.peek == BSF
+func (p *Tokenizer) parseEndTagName() {
+	if p.peek == GREATER_THAN {
+		p.addToken(TT_END_TAG)
+		p.next()
+		p.expectStatus(STAT_LITERAL)
+	}
+}
+
+func (p *Tokenizer) parseSelfEndTag() {
+	if p.peek == GREATER_THAN {
+		p.addToken(TT_SELF_END_TAG)
+		p.expectStatus(STAT_LITERAL)
+	}
+}
+
+func (p *Tokenizer) parseAttribute() {
+	if IsLetter(p.peek) {
+		p.expectStatus(STAT_ATTRIBUTE_NAME)
+	} else if p.peek == FORWARD_SLASH {
+		// <m ... /
+		p.next()
+		p.expectStatus(STAT_SELF_END_TAG)
+	} else if p.peek == GREATER_THAN {
+		// <m ... >
+		p.next()
+		p.expectStatus(STAT_LITERAL)
+	} else {
+		// TODO 非法字符
+	}
+}
+
+func (p *Tokenizer) parseAttributeName() {
+	if IsBlank(p.peek) {
+		p.addToken(TT_ATTR_NAME)
+		p.expectStatus(STAT_ATTRIBUTE_EQUAL)
+	} else if p.peek == EQUAL_SIGN {
+		// <m a=
+		p.addToken(TT_ATTR_NAME)
+		p.expectStatus(STAT_ATTRIBUTE_VALUE_START)
+	}
+}
+
+func (p *Tokenizer) parseAttributeEqual() {
+	if p.peek == EQUAL_SIGN {
+		p.expectStatus(STAT_ATTRIBUTE_VALUE_START)
+	} else if !IsBlank(p.peek) {
+		// TODO 报错，非法字符，期待 =，属性未赋值
+	}
+}
+
+func (p *Tokenizer) parseAttributeValueStart() {
+	if p.peek == DOUBLE_QUOTE {
+		// <m a="
+		p.next()
+		p.expectStatus(STAT_ATTRIBUTE_VALUE_END)
+	} else {
+		// TODO 非法字符，期待 "
+	}
+}
+
+func (p *Tokenizer) parseAttributeValueEnd() {
+	if p.peek == DOUBLE_QUOTE {
+		p.addToken(TT_ATTR_VALUE)
+		p.expectStatus(STAT_ATTRIBUTE)
+	}
+}
+
+func (p *Tokenizer) char() string {
+	return fmt.Sprintf("%c", p.peek)
+}
+
+func (p *Tokenizer) expectStatus(status int) {
+	p.state = status
+	p.start = p.pos.fork()
 }

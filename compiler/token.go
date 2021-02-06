@@ -5,7 +5,7 @@ import (
 )
 
 type Token struct {
-	Type  int      `json:"type"`
+	Type  string      `json:"type"`
 	Value string   `json:"value"`
 	Start TokenLoc `json:"start"`
 	End   TokenLoc `json:"end"`

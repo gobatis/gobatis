@@ -9,7 +9,7 @@ type Position struct {
 
 func (p *Position) next(char rune) {
 	p.index++
-	if char == BSN {
+	if char == LINE_FEED {
 		p.column = 1
 		p.line++
 	} else {

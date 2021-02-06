@@ -4,9 +4,7 @@ const EOF = 0xFF
 
 // token type
 const (
-	TT_ROOT = "ROOT"
-	TT_TAG  = "TAG"
-	TT_TEXT = "TEXT"
+
 )
 
 // config element type

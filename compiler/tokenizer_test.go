@@ -6,7 +6,7 @@ import (
 )
 
 func TestNewTokenizer(t *testing.T) {
-	tokenizer := NewTokenizer([]byte(`abc<div id="123">你好呀</div>`))
+	tokenizer := NewTokenizer([]byte(`abc`))
 	tokens := tokenizer.Parse()
 	for _, v := range tokens {
 		fmt.Println(v.String())
