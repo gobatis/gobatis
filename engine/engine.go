@@ -113,3 +113,15 @@ func (p *Engine) initDB() (err error) {
 
 	return
 }
+
+func (p *Engine) parseMapper(){
+
+}
+
+func (p *Engine) parseIf(){
+
+}
+
+func (p *Engine) parseWhere(){
+
+}

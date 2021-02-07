@@ -4,3 +4,4 @@ const (
 	MYSQL = "mysql"
 	PTR   = "ptr"
 )
+
