@@ -5,6 +5,8 @@
 
 <configuration>
 
+
+
     <properties>
         <property name="module" value="github.com/koyeo/gobatis"/>
     </properties>

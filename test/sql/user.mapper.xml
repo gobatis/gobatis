@@ -9,10 +9,15 @@
     <select id="GetUser" parameterType="int64" resultType="test/entity@User">
         select * from users where id = #{id}
         <where>
-            <if test="a != nil">a</if>
+            <if test="a != nil">
+                a
+                <if test="a!=nil">ok</if>
+                <where>
+
+                </where>
+            </if>
         </where>
     </select>
-
 
 
     <!--    <select id="selectUsers" parameterType="id:int64,name:string" resultMap="Blog[]">-->

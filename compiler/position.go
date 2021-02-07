@@ -17,8 +17,8 @@ func (p *Position) next(char rune) {
 	}
 }
 
-func (p *Position) fork() Position {
-	return Position{
+func (p *Position) fork() *Position {
+	return &Position{
 		index:  p.index,
 		line:   p.line,
 		column: p.column,
