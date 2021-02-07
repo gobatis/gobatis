@@ -5,6 +5,12 @@
 
 <mapper namespace="test/mapper@UserMapper">
 
+    <cache blocking="123">
+
+    </cache>
+    <cache blocking="123">
+
+    </cache>
 
     <select id="GetUser" parameterType="int64" resultType="test/entity@User">
         select * from users where id = #{id}

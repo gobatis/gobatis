@@ -11,7 +11,7 @@ func TestXMLParser_Parse(t *testing.T) {
 <mapper>
 	<update id="updateAuthor">
 	  update Author set
-		username = #{username},
+		username = #{ User.Name },
 		password = #{password},
 		email = #{email},
 		bio = #{bio}

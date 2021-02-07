@@ -6,6 +6,7 @@ type XMLNode struct {
 	Type         string          `json:"type"`
 	Name         string          `json:"name,omitempty"`
 	Value        string          `json:"value,omitempty"`
+	RAW          string          `json:"value,omitempty"`
 	Attributes   []*XMLAttribute `json:"attributes,omitempty"`
 	Body         []*XMLNode      `json:"body,omitempty"`   // tree body
 	Tokens       []*Token        `json:"tokens,omitempty"` // SQL tokens

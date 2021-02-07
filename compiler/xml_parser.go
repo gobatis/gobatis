@@ -45,8 +45,9 @@ func (p *XMLParser) parse() {
 	switch p.peek.Type {
 	case TT_TEXT:
 		p.addNode(&XMLNode{
-			Type:  ST_TEXT,
-			Value: p.peek.Value,
+			Type:   ST_TEXT,
+			RAW:    p.peek.Value,
+			Tokens: NewSQLTokenizer(p.peek.Start.Line, p.peek.Start.Column, p.peek.Value).Parse(),
 		})
 	case TT_START_TAG:
 		p.addNode(&XMLNode{

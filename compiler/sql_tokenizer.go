@@ -65,23 +65,34 @@ func (p *SQLTokenizer) parseBlack() {
 	} else if p.peek == NUMBER_SIGN {
 		p.expectStatus(TS_SQL_VAR_START)
 	} else if p.peek == COMMA {
-		p.expectStatus(TS_BLANK)
-		p.next()
-		p.addToken(TT_COMMA)
+		p.parseComma()
 	} else if p.peek == EQUAL_SIGN {
-		p.expectStatus(TS_BLANK)
-		p.next()
-		p.addToken(TT_EQUAL)
+		p.parseEqual()
 	} else if !IsBlank(p.peek) {
 		// TODO 报错，异常字符，出现了非字母字符
 	}
 
 }
 
+func (p *SQLTokenizer) parseComma() {
+	p.expectStatus(TS_BLANK)
+	p.next()
+	p.addToken(TT_COMMA)
+}
+
+func (p *SQLTokenizer) parseEqual() {
+	p.expectStatus(TS_SQL_VAR_START)
+	p.next()
+	p.addToken(TT_EQUAL)
+}
+
 func (p *SQLTokenizer) parseId() {
 	if IsBlank(p.peek) {
 		p.addToken(TT_ID)
 		p.expectStatus(TS_BLANK)
+	} else if p.peek == EQUAL_SIGN {
+		p.addToken(TT_ID)
+		p.parseEqual()
 	} else if p.peek == NUMBER_SIGN {
 		// select#
 		// TODO 与 ID 相连的 # 号，可能不需要
@@ -91,7 +102,6 @@ func (p *SQLTokenizer) parseId() {
 
 func (p *SQLTokenizer) parseSQLVarStart() {
 	if p.peek == LEFT_BRACE {
-		p.next()
 		p.expectStatus(TS_SQL_VAR_VALUE_START)
 	}
 }
