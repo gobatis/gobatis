@@ -19,6 +19,8 @@ func (p *XMLNode) AppendBody(node ...*XMLNode) {
 }
 
 type XMLAttribute struct {
+	Start *Point `json:"-"`
+	End   *Point `json:"-"`
 	Name  string `json:"name"`
 	Value string `json:"value"`
 }

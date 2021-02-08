@@ -56,7 +56,9 @@ func (p *XMLParser) parse() {
 		})
 	case TT_ATTR_NAME:
 		attr := &XMLAttribute{
-			Name: strings.ToLower(p.peek.Value),
+			Name:  strings.ToLower(p.peek.Value),
+			Start: p.peek.Start,
+			End:   p.peek.End,
 		}
 		p.next()
 		if p.peek.Type != TT_ATTR_VALUE {

@@ -1,6 +1,6 @@
 package dtd
 
-var Mapper = Element{
+var Mapper = &Element{
 	Name: MAPPER,
 	Nodes: map[string]int{
 		CACHE_REF:     AT_MOST_ONCE, // TODO 和协议有区别
@@ -17,14 +17,14 @@ var Mapper = Element{
 	},
 }
 
-var CacheRef = Element{
+var CacheRef = &Element{
 	Name: CACHE_REF,
 	Attributes: map[string]int{
 		NAMESPACE: REQUIRED,
 	},
 }
 
-var Cache = Element{
+var Cache = &Element{
 	Name: CACHE,
 	Nodes: map[string]int{
 		PROPERTY: ANY_TIMES,
@@ -40,7 +40,7 @@ var Cache = Element{
 }
 
 // 废弃
-//var ParameterMap = Element{
+//var ParameterMap = &Element{
 //	Name:       PARAMETER_MAP,
 //	Nodes: map[string]int{
 //		PARAMETER:A
@@ -48,7 +48,7 @@ var Cache = Element{
 //	Attributes: nil,
 //}
 
-var ResultMap = Element{
+var ResultMap = &Element{
 	Name: RESULT_MAP,
 	Nodes: map[string]int{
 		CONSTRUCTOR:   AT_MOST_ONCE,
@@ -66,7 +66,7 @@ var ResultMap = Element{
 	},
 }
 
-var Constructor = Element{
+var Constructor = &Element{
 	Name: CONSTRUCTOR,
 	Nodes: map[string]int{
 		ID_ARG: ANY_TIMES,
@@ -74,7 +74,7 @@ var Constructor = Element{
 	},
 }
 
-var Id = Element{
+var Id = &Element{
 	Name: ID,
 	Attributes: map[string]int{
 		PROPERTY:     IMPLIED,
@@ -84,7 +84,7 @@ var Id = Element{
 	},
 }
 
-var Result = Element{
+var Result = &Element{
 	Name: RESULT,
 	Attributes: map[string]int{
 		PROPERTY:     IMPLIED,
@@ -94,7 +94,7 @@ var Result = Element{
 	},
 }
 
-var IdArg = Element{
+var IdArg = &Element{
 	Name: ID_ARG,
 	Attributes: map[string]int{
 		GO_TYPE:       IMPLIED,
@@ -107,7 +107,7 @@ var IdArg = Element{
 	},
 }
 
-var Arg = Element{
+var Arg = &Element{
 	Name: ARG,
 	Attributes: map[string]int{
 		GO_TYPE:       IMPLIED,
@@ -120,7 +120,7 @@ var Arg = Element{
 	},
 }
 
-var Collection = Element{
+var Collection = &Element{
 	Name: COLLECTION,
 	Nodes: map[string]int{
 		CONSTRUCTOR:   AT_MOST_ONCE,
@@ -147,7 +147,7 @@ var Collection = Element{
 	},
 }
 
-var Association = Element{
+var Association = &Element{
 	Name: ASSOCIATION,
 	Nodes: map[string]int{
 		CONSTRUCTOR:   AT_MOST_ONCE,
@@ -173,7 +173,7 @@ var Association = Element{
 	},
 }
 
-var Discriminator = Element{
+var Discriminator = &Element{
 	Name: DISCRIMINATOR,
 	Nodes: map[string]int{
 		CASE: AT_LEAST_ONCE,
@@ -185,7 +185,7 @@ var Discriminator = Element{
 	},
 }
 
-var Case = Element{
+var Case = &Element{
 	Name: CASE,
 	Nodes: map[string]int{
 		CONSTRUCTOR:   AT_MOST_ONCE,
@@ -202,7 +202,7 @@ var Case = Element{
 	},
 }
 
-var TypeAlias = Element{
+var TypeAlias = &Element{
 	Name: TYPE_ALIAS,
 	Attributes: map[string]int{
 		ALIAS: REQUIRED,
@@ -210,7 +210,7 @@ var TypeAlias = Element{
 	},
 }
 
-var Select = Element{
+var Select = &Element{
 	Name: SELECT,
 	Nodes: map[string]int{
 		PCDATA:  ANY_TIMES,
@@ -242,7 +242,7 @@ var Select = Element{
 	},
 }
 
-var Insert = Element{
+var Insert = &Element{
 	Name: INSERT,
 	Nodes: map[string]int{
 		PCDATA:     ANY_TIMES,
@@ -271,7 +271,7 @@ var Insert = Element{
 	},
 }
 
-var SelectKey = Element{
+var SelectKey = &Element{
 	Name: SELECT_KEY,
 	Nodes: map[string]int{
 		PCDATA:  ANY_TIMES,
@@ -294,7 +294,7 @@ var SelectKey = Element{
 	},
 }
 
-var Update = Element{
+var Update = &Element{
 	Name: UPDATE,
 	Nodes: map[string]int{
 		PCDATA:     ANY_TIMES,
@@ -323,7 +323,7 @@ var Update = Element{
 	},
 }
 
-var Delete = Element{
+var Delete = &Element{
 	Name: DELETE,
 	Nodes: map[string]int{
 		PCDATA:  ANY_TIMES,
@@ -348,7 +348,7 @@ var Delete = Element{
 	},
 }
 
-var Include = Element{
+var Include = &Element{
 	Name: INCLUDE,
 	Nodes: map[string]int{
 		PROPERTY: ANY_TIMES, // TODO 和协议有区别
@@ -358,7 +358,7 @@ var Include = Element{
 	},
 }
 
-var Bind = Element{
+var Bind = &Element{
 	Name: BIND,
 	Attributes: map[string]int{
 		NAME:  REQUIRED,
@@ -366,7 +366,7 @@ var Bind = Element{
 	},
 }
 
-var Sql = Element{
+var Sql = &Element{
 	Name: SQL,
 	Nodes: map[string]int{
 		PCDATA:  ANY_TIMES,
@@ -386,7 +386,7 @@ var Sql = Element{
 	},
 }
 
-var Trim = Element{
+var Trim = &Element{
 	Name: TRIM,
 	Nodes: map[string]int{
 		PCDATA:  ANY_TIMES,
@@ -407,7 +407,7 @@ var Trim = Element{
 	},
 }
 
-var Where = Element{
+var Where = &Element{
 	Name: WHERE,
 	Nodes: map[string]int{
 		PCDATA:  ANY_TIMES,
@@ -422,7 +422,7 @@ var Where = Element{
 	},
 }
 
-var Set = Element{
+var Set = &Element{
 	Name: SET,
 	Nodes: map[string]int{
 		PCDATA:  ANY_TIMES,
@@ -437,7 +437,7 @@ var Set = Element{
 	},
 }
 
-var Foreach = Element{
+var Foreach = &Element{
 	Name: FOREACH,
 	Nodes: map[string]int{
 		PCDATA:  ANY_TIMES,
@@ -459,7 +459,7 @@ var Foreach = Element{
 		SEPARATOR:  IMPLIED,
 	},
 }
-var Choose = Element{
+var Choose = &Element{
 	Name: CHOOSE,
 	Nodes: map[string]int{
 		WHEN:      ANY_TIMES,
@@ -467,7 +467,7 @@ var Choose = Element{
 	},
 }
 
-var When = Element{
+var When = &Element{
 	Name: WHEN,
 	Nodes: map[string]int{
 		PCDATA:  ANY_TIMES,
@@ -485,7 +485,7 @@ var When = Element{
 	},
 }
 
-var Otherwise = Element{
+var Otherwise = &Element{
 	Name: OTHERWISE,
 	Nodes: map[string]int{
 		PCDATA:  ANY_TIMES,
@@ -500,7 +500,7 @@ var Otherwise = Element{
 	},
 }
 
-var If = Element{
+var If = &Element{
 	Name: IF,
 	Nodes: map[string]int{
 		PCDATA:  ANY_TIMES,

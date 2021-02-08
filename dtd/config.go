@@ -1,23 +1,7 @@
 package dtd
+	
 
-//var Configuration = func() (elem Element) {
-//	elem = NewElement(CONFIGURATION)
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//	return
-//}
-
-var Configuration = Element{
+var Configuration = &Element{
 	Name: CONFIGURATION,
 	Nodes: map[string]int{
 		PROPERTIES:             AT_MOST_ONCE,
@@ -35,14 +19,14 @@ var Configuration = Element{
 	},
 }
 
-var Module = Element{
+var Module = &Element{
 	Name: MODULE,
 	Attributes: map[string]int{
 		BASE: REQUIRED,
 	},
 }
 
-var DatabaseIdProvider = Element{
+var DatabaseIdProvider = &Element{
 	Name: DATABASE_ID_PROVIDER,
 	Nodes: map[string]int{
 		PROPERTY: ANY_TIMES,
@@ -52,7 +36,7 @@ var DatabaseIdProvider = Element{
 	},
 }
 
-var Properties = Element{
+var Properties = &Element{
 	Name: PROPERTIES,
 	Nodes: map[string]int{
 		PROPERTY: ANY_TIMES,
@@ -63,7 +47,7 @@ var Properties = Element{
 	},
 }
 
-var Property = Element{
+var Property = &Element{
 	Name: PROPERTY,
 	Attributes: map[string]int{
 		NAME:  REQUIRED,
@@ -71,14 +55,14 @@ var Property = Element{
 	},
 }
 
-var Settings = Element{
+var Settings = &Element{
 	Name: SETTINGS,
 	Nodes: map[string]int{
 		SETTING: ANY_TIMES,
 	},
 }
 
-var Setting = Element{
+var Setting = &Element{
 	Name: SETTING,
 	Attributes: map[string]int{
 		NAME:  REQUIRED,
@@ -86,7 +70,7 @@ var Setting = Element{
 	},
 }
 
-var TypeAliases = Element{
+var TypeAliases = &Element{
 	Name: TYPE_ALIASES,
 	Nodes: map[string]int{
 		TYPE_ALIAS: ANY_TIMES,
@@ -94,7 +78,7 @@ var TypeAliases = Element{
 	},
 }
 
-var ConfigTypeAlias = Element{
+var ConfigTypeAlias = &Element{
 	Name: TYPE_ALIAS,
 	Attributes: map[string]int{
 		TYPE:  REQUIRED,
@@ -102,7 +86,7 @@ var ConfigTypeAlias = Element{
 	},
 }
 
-var TypeHandlers = Element{
+var TypeHandlers = &Element{
 	Name: TYPE_HANDLERS,
 	Nodes: map[string]int{
 		TYPE_HANDLER: ANY_TIMES,
@@ -110,7 +94,7 @@ var TypeHandlers = Element{
 	},
 }
 
-var TypeHandle = Element{
+var TypeHandle = &Element{
 	Name: TYPE_HANDLER,
 	Attributes: map[string]int{
 		GO_TYPE: IMPLIED,
@@ -118,7 +102,7 @@ var TypeHandle = Element{
 	},
 }
 
-var ObjectFactory = Element{
+var ObjectFactory = &Element{
 	Name: OBJECT_FACTORY,
 	Nodes: map[string]int{
 		PROPERTY: ANY_TIMES,
@@ -128,28 +112,28 @@ var ObjectFactory = Element{
 	},
 }
 
-var ObjectWrapperFactory = Element{
+var ObjectWrapperFactory = &Element{
 	Name: OBJECT_WRAPPER_FACTORY,
 	Attributes: map[string]int{
 		TYPE: REQUIRED,
 	},
 }
 
-var ReflectorFactory = Element{
+var ReflectFactory = &Element{
 	Name: REFLECT_FACTORY,
 	Attributes: map[string]int{
 		TYPE: REQUIRED,
 	},
 }
 
-var Plugins = Element{
+var Plugins = &Element{
 	Name: PLUGINS,
 	Nodes: map[string]int{
 		PLUGIN: AT_LEAST_ONCE,
 	},
 }
 
-var Plugin = Element{
+var Plugin = &Element{
 	Name: PLUGIN,
 	Nodes: map[string]int{
 		PROPERTY: ANY_TIMES,
@@ -159,7 +143,7 @@ var Plugin = Element{
 	},
 }
 
-var Environments = Element{
+var Environments = &Element{
 	Name: ENVIRONMENTS,
 	Nodes: map[string]int{
 		ENVIRONMENT: AT_LEAST_ONCE,
@@ -169,7 +153,7 @@ var Environments = Element{
 	},
 }
 
-var Environment = Element{
+var Environment = &Element{
 	Name: ENVIRONMENT,
 	Nodes: map[string]int{
 		TRANSACTION_MANAGER: ONCE,
@@ -180,7 +164,7 @@ var Environment = Element{
 	},
 }
 
-var TransactionManager = Element{
+var TransactionManager = &Element{
 	Name: TRANSACTION_MANAGER,
 	Nodes: map[string]int{
 		PROPERTY: ANY_TIMES,
@@ -190,7 +174,7 @@ var TransactionManager = Element{
 	},
 }
 
-var DataSource = Element{
+var DataSource = &Element{
 	Name: DATA_SOURCE,
 	Nodes: map[string]int{
 		PROPERTY: ANY_TIMES,
@@ -200,7 +184,7 @@ var DataSource = Element{
 	},
 }
 
-var Mappers = Element{
+var Mappers = &Element{
 	Name: MAPPERS,
 	Nodes: map[string]int{
 		MAPPER:  ANY_TIMES,
@@ -208,7 +192,7 @@ var Mappers = Element{
 	},
 }
 
-var ConfigMapper = Element{
+var ConfigMapper = &Element{
 	Name: MAPPER,
 	Attributes: map[string]int{
 		RESOURCE: IMPLIED,
@@ -217,7 +201,7 @@ var ConfigMapper = Element{
 	},
 }
 
-var Package = Element{
+var Package = &Element{
 	Name: PACKAGE,
 	Attributes: map[string]int{
 		NAME: REQUIRED,

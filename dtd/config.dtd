@@ -16,7 +16,12 @@
                limitations under the License.
 
         -->
-        <!ELEMENT configuration (properties?, settings?, typeAliases?, typeHandlers?, objectFactory?, objectWrapperFactory?, reflectorFactory?, plugins?, environments?, databaseIdProvider?, mappers?)>
+        <!ELEMENT configuration (module?, properties?, settings?, typeAliases?, typeHandlers?, objectFactory?, objectWrapperFactory?, reflectorFactory?, plugins?, environments?, databaseIdProvider?, mappers?)>
+
+        <!ELEMENT module EMPTY>
+        <!ATTLIST module
+                base CDATA #REQUIRED
+                >
 
         <!ELEMENT databaseIdProvider (property*)>
         <!ATTLIST databaseIdProvider
