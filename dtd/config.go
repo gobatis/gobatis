@@ -94,7 +94,7 @@ var TypeAliases = Element{
 	},
 }
 
-var TypeAlias = Element{
+var ConfigTypeAlias = Element{
 	Name: TYPE_ALIAS,
 	Attributes: map[string]int{
 		TYPE:  REQUIRED,
@@ -208,7 +208,7 @@ var Mappers = Element{
 	},
 }
 
-var MapperConfig = Element{
+var ConfigMapper = Element{
 	Name: MAPPER,
 	Attributes: map[string]int{
 		RESOURCE: IMPLIED,

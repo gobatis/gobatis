@@ -1,10 +1,10 @@
 package dtd
 
 const (
-	ANY_TIMES     = iota // *
-	AT_MOST_ONCE         // ?
-	AT_LEAST_ONCE        // +
-	ONCE                 // +
+	ANY_TIMES     = iota // * 任意次
+	AT_MOST_ONCE         // ? 最多一次
+	AT_LEAST_ONCE        // + 至少一次
+	ONCE                 // 必须出现一次
 )
 
 const (
@@ -60,6 +60,8 @@ const (
 	CACHE             = "cache"
 	RESULT_MAP        = "resultMap"
 	PARAMETER_MAP     = "parameterMap"
+	PARAMETER         = "parameter"
+	PARAMETER_TYPE    = "parameterType"
 	SQL               = "sql"
 	INSERT            = "insert"
 	UPDATE            = "update"
@@ -92,6 +94,7 @@ const (
 	FETCH_TYPE        = "fetchType"
 	CASE              = "case"
 	INCLUDE           = "include"
+	REFID             = "refid"
 	TRIM              = "trim"
 	WHERE             = "where"
 	SET               = "set"
