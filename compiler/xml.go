@@ -5,11 +5,6 @@ import (
 	"strings"
 )
 
-const (
-	ST_TEXT = "text"
-	ST_NODE = "node"
-)
-
 type XMLNode struct {
 	Start        *Point          `json:"-"`
 	End          *Point          `json:"-"`
@@ -35,14 +30,12 @@ type XMLAttribute struct {
 	Value string `json:"value"`
 }
 
-
 func NewXMLTokenizer(content []byte) *XMLTokenizer {
 	return &XMLTokenizer{
 		pos: &Position{
-			index:  -1,
-			line:   1,
-			column: 0,
+			line: 1,
 		},
+		index: -1,
 		chars: []rune(string(content)),
 		state: TS_LITERAL,
 	}
@@ -52,170 +45,267 @@ type XMLTokenizer struct {
 	file   string
 	pos    *Position
 	start  *Position
+	index  int
+	begin  int // 词素开始位置
 	chars  []rune
-	peek   rune
+	look   rune
 	state  int
 	tokens []*Token
 }
 
 func (p *XMLTokenizer) next() {
-	p.pos.next(p.peek)
-	if p.pos.index < len(p.chars) {
-		p.peek = p.chars[p.pos.index]
+	//if p.index == -1 && len(p.chars) > 0 {
+	//	p.look = p.chars[0]
+	//}
+	p.pos.next(p.look)
+	p.index++
+	if p.index < len(p.chars) {
+		p.look = p.chars[p.index]
 	} else {
-		p.peek = EOF
+		p.look = EOF
 	}
 }
 
-func (p *XMLTokenizer) Parse() []*Token {
+func (p *XMLTokenizer) peek(length int) rune {
+	index := p.index + length
+	if index < len(p.chars) {
+		return p.chars[index]
+	}
+	return EOF
+}
+
+func (p *XMLTokenizer) skip(length int) {
+	for i := 0; i < length; i++ {
+		p.next()
+	}
+}
+
+func (p *XMLTokenizer) Parse() (tokens []*Token, err error) {
 	p.next()
 	p.start = p.pos.fork()
-	for p.peek != EOF {
+	for p.look != EOF {
 		switch p.state {
 		case TS_LITERAL:
 			p.parseLiteral()
 		case TS_START_TAG:
-			p.parseTagStart()
+			err = p.parseTagStart()
+			if err != nil {
+				return
+			}
 		case TS_START_TAG_NAME:
 			p.parseStartTagName()
 		case TS_END_TAG_NAME:
 			p.parseEndTagName()
 		case TS_ATTRIBUTE:
-			p.parseAttribute()
+			err = p.parseAttribute()
+			if err != nil {
+				return
+			}
 		case TS_ATTRIBUTE_NAME:
 			p.parseAttributeName()
 		case TS_ATTRIBUTE_EQUAL:
-			p.parseAttributeEqual()
+			err = p.parseAttributeEqual()
+			if err != nil {
+				return
+			}
 		case TS_ATTRIBUTE_VALUE_START:
-			p.parseAttributeValueStart()
+			err = p.parseAttributeValueStart()
+			if err != nil {
+				return
+			}
 		case TS_ATTRIBUTE_VALUE_END:
 			p.parseAttributeValueEnd()
 		case TS_SELF_END_TAG:
 			p.parseSelfEndTag()
+		case TS_DOCTYPPE:
+			p.parseDoctype()
+		case TS_STATEMENT:
+			err = p.parseStatement()
+			if err != nil {
+				return
+			}
+		case TS_COMMENT_START:
+			err = p.parseCommentStart()
+			if err != nil {
+				return
+			}
+		case TS_COMMENT_END:
+			p.parseCommentEnd()
 		}
 		p.next()
 	}
 	switch p.state {
 	case TS_LITERAL:
-		p.addToken(TT_TEXT)
+		p.add(TT_TEXT)
 	}
-	return p.tokens
+	tokens = p.tokens
+	return
 }
 
 func (p *XMLTokenizer) parseLiteral() {
 
-	if p.peek == LESS_THAN {
-		p.addToken(TT_TEXT)
-		p.expectStatus(TS_START_TAG)
+	if p.look == LESS_THAN {
+		p.add(TT_TEXT)
+		p.forward(p.index+1, TS_START_TAG)
 	}
 }
 
-func (p *XMLTokenizer) parseTagStart() {
-	if IsLetter(p.peek) {
-		p.expectStatus(TS_START_TAG_NAME)
-	} else if p.peek == FORWARD_SLASH {
+func (p *XMLTokenizer) parseTagStart() (err error) {
+	if IsLetter(p.look) {
+		p.forward(p.index, TS_START_TAG_NAME)
+	} else if p.look == QUESTION_MARK {
+		// <?
+		if IsLetter(p.peek(1)) {
+			p.forward(p.index+1, TS_STATEMENT)
+		} else {
+			return p.newInvalidCharErr("letter")
+		}
+	} else if p.look == EXCLAMATION_MARK {
+		// <!
+		p.forward(p.index+1, TS_COMMENT_START)
+	} else if p.look == FORWARD_SLASH {
+		// </
+		p.forward(p.index+1, TS_END_TAG_NAME)
+	}
+	return
+}
+
+func (p *XMLTokenizer) parseDoctype() {
+	if p.look == GREATER_THAN {
+		p.forward(p.index+1, TS_LITERAL)
+	}
+}
+
+func (p *XMLTokenizer) parseStatement() (err error) {
+	if p.look == QUESTION_MARK {
 		p.next()
-		p.expectStatus(TS_END_TAG_NAME)
+		if p.look != GREATER_THAN {
+			return p.newInvalidCharErr(">")
+		}
+		p.forward(p.index+1, TS_LITERAL)
+	}
+	return
+}
+
+func (p *XMLTokenizer) parseCommentStart() (err error) {
+	// 解析注释
+	if p.look == MINUS {
+		if p.peek(1) == MINUS {
+			p.skip(1)
+			p.forward(p.index+1, TS_COMMENT_END)
+		} else {
+			return p.newInvalidCharErr("-")
+		}
+	} else if strings.ToLower(p.peekString(7)) == DOCTYPE {
+		p.skip(7)
+		p.forward(p.index+7, TS_DOCTYPPE)
+	} else {
+		return p.newInvalidCharErr("-")
+	}
+	return
+}
+
+func (p *XMLTokenizer) parseCommentEnd() {
+	if p.look == MINUS && p.peek(1) == MINUS && p.peek(2) == GREATER_THAN {
+		p.skip(2) // look = >
+		p.forward(p.index+1, TS_LITERAL)
 	}
 }
 
 func (p *XMLTokenizer) parseStartTagName() {
 
-	if IsBlank(p.peek) {
+	if IsBlank(p.look) {
 		// <m
-		p.addToken(TT_START_TAG)
-		p.expectStatus(TS_ATTRIBUTE)
-	} else if p.peek == GREATER_THAN {
+		p.add(TT_START_TAG)
+		p.forward(p.index+1, TS_ATTRIBUTE)
+	} else if p.look == GREATER_THAN {
 		// <m>
-		p.addToken(TT_START_TAG)
-		p.next()
-		p.expectStatus(TS_LITERAL)
-	} else if p.peek == FORWARD_SLASH {
+		p.add(TT_START_TAG)
+		p.forward(p.index+1, TS_LITERAL)
+	} else if p.look == FORWARD_SLASH {
 		// <m/
-		p.addToken(TT_START_TAG)
-		p.next()
-		p.expectStatus(TS_SELF_END_TAG)
+		p.add(TT_START_TAG)
+		p.forward(p.index+1, TS_SELF_END_TAG)
 	}
 }
 
 func (p *XMLTokenizer) parseEndTagName() {
-	if p.peek == GREATER_THAN {
-		p.addToken(TT_END_TAG)
-		p.next()
-		p.expectStatus(TS_LITERAL)
+	if p.look == GREATER_THAN {
+		p.add(TT_END_TAG)
+		p.forward(p.index+1, TS_LITERAL)
 	}
 }
 
 func (p *XMLTokenizer) parseSelfEndTag() {
-	if p.peek == GREATER_THAN {
-		p.addToken(TT_SELF_END_TAG)
-		p.next()
-		p.expectStatus(TS_LITERAL)
+	if p.look == GREATER_THAN {
+		p.add(TT_SELF_END_TAG)
+		p.forward(p.index+1, TS_LITERAL)
 	}
 }
 
-func (p *XMLTokenizer) parseAttribute() {
-	if IsLetter(p.peek) {
-		p.expectStatus(TS_ATTRIBUTE_NAME)
-	} else if p.peek == FORWARD_SLASH {
+func (p *XMLTokenizer) parseAttribute() (err error) {
+	if IsLetter(p.look) {
+		p.forward(p.index, TS_ATTRIBUTE_NAME)
+	} else if p.look == FORWARD_SLASH {
 		// <m ... /
-		//p.next()
-		p.expectStatus(TS_SELF_END_TAG)
-	} else if p.peek == GREATER_THAN {
+		p.forward(p.index+1, TS_SELF_END_TAG)
+	} else if p.look == GREATER_THAN {
 		// <m ... >
-		p.next()
-		p.expectStatus(TS_LITERAL)
+		p.forward(p.index+1, TS_LITERAL)
 	} else {
-		// TODO 非法字符
+		return p.newInvalidCharErr("letter / >")
 	}
+	return
 }
 
 func (p *XMLTokenizer) parseAttributeName() {
-	if IsBlank(p.peek) {
-		p.addToken(TT_ATTR_NAME)
-		p.expectStatus(TS_ATTRIBUTE_EQUAL)
-	} else if p.peek == EQUAL_SIGN {
+	if IsBlank(p.look) {
+		p.add(TT_ATTR_NAME)
+		p.forward(p.index+1, TS_ATTRIBUTE_EQUAL)
+	} else if p.look == EQUAL_SIGN {
 		// <m a=
-		p.addToken(TT_ATTR_NAME)
-		p.expectStatus(TS_ATTRIBUTE_VALUE_START)
+		p.add(TT_ATTR_NAME)
+		p.forward(p.index+1, TS_ATTRIBUTE_VALUE_START)
 	}
 }
 
-func (p *XMLTokenizer) parseAttributeEqual() {
-	if p.peek == EQUAL_SIGN {
-		p.expectStatus(TS_ATTRIBUTE_VALUE_START)
-	} else if !IsBlank(p.peek) {
-		// TODO 报错，非法字符，期待 =，属性未赋值
+func (p *XMLTokenizer) parseAttributeEqual() (err error) {
+	if p.look == EQUAL_SIGN {
+		p.forward(p.index+1, TS_ATTRIBUTE_VALUE_START)
+	} else if !IsBlank(p.look) {
+		return p.newInvalidCharErr("=")
 	}
+	return
 }
 
-func (p *XMLTokenizer) parseAttributeValueStart() {
-	if p.peek == DOUBLE_QUOTE {
+func (p *XMLTokenizer) parseAttributeValueStart() (err error) {
+	if p.look == DOUBLE_QUOTE {
 		// <m a="
-		p.next()
-		p.expectStatus(TS_ATTRIBUTE_VALUE_END)
+		p.forward(p.index+1, TS_ATTRIBUTE_VALUE_END)
 	} else {
-		// TODO 非法字符，期待 "
+		return p.newInvalidCharErr("\"")
 	}
+	return
 }
 
 func (p *XMLTokenizer) parseAttributeValueEnd() {
-	if p.peek == DOUBLE_QUOTE {
-		p.addToken(TT_ATTR_VALUE)
-		p.expectStatus(TS_ATTRIBUTE)
+	if p.look == DOUBLE_QUOTE {
+		p.add(TT_ATTR_VALUE)
+		p.forward(p.index+1, TS_ATTRIBUTE)
 	}
 }
 
 func (p *XMLTokenizer) char() string {
-	return fmt.Sprintf("%c", p.peek)
+	return fmt.Sprintf("%c", p.look)
 }
 
-func (p *XMLTokenizer) expectStatus(status int) {
+func (p *XMLTokenizer) forward(index, status int) {
 	p.state = status
 	p.start = p.pos.fork()
+	p.begin = index
 }
 
-func (p *XMLTokenizer) fetchValue(start, end int) string {
+func (p *XMLTokenizer) subString(start, end int) string {
 	v := ""
 	for i := start; i < end; i++ {
 		v += string(p.chars[i])
@@ -223,8 +313,19 @@ func (p *XMLTokenizer) fetchValue(start, end int) string {
 	return v
 }
 
-func (p *XMLTokenizer) addToken(tokenType string) {
-	value := p.fetchValue(p.start.index, p.pos.index)
+func (p *XMLTokenizer) peekString(length int) string {
+	r := make([]rune, 0)
+	for i := 0; i < length; i++ {
+		index := p.index + i
+		if index < len(p.chars) {
+			r = append(r, p.chars[index])
+		}
+	}
+	return string(r)
+}
+
+func (p *XMLTokenizer) add(tokenType string) {
+	value := p.subString(p.begin, p.index)
 	if tokenType == TT_TEXT && strings.TrimSpace(value) == "" {
 		return
 	}
@@ -236,95 +337,125 @@ func (p *XMLTokenizer) addToken(tokenType string) {
 	})
 }
 
+func (p *XMLTokenizer) newInvalidCharErr(expect string) error {
+	return fmt.Errorf(
+		"invalid char %c at line %d column %d, ecpect %s",
+		p.look, p.start.line, p.start.column, expect,
+	)
+}
+
 type XMLParser struct {
 	tokens []*Token
-	peek   *Token
+	look   *Token
 	body   []*XMLNode
 	nodes  []*XMLNode
 	state  int
 	index  int
 }
 
-func NewXMLParser(tokens []*Token) *XMLParser {
-	return &XMLParser{tokens: tokens, index: -1}
+func NewXMLParser() *XMLParser {
+	return &XMLParser{index: -1}
 }
 
 func (p *XMLParser) next() {
 	p.index += 1
 	if p.index < len(p.tokens) {
-		p.peek = p.tokens[p.index]
+		p.look = p.tokens[p.index]
 	} else {
-		p.peek = nil
+		p.look = nil
 	}
 }
 
-func (p *XMLParser) Parse() []*XMLNode {
+func (p *XMLParser) Parse(content []byte) (xmlNodes []*XMLNode, err error) {
+	tokenizer := NewXMLTokenizer(content)
+	tokens, err := tokenizer.Parse()
+	if err != nil {
+		return
+	}
+	return p.ParseTokens(tokens)
+}
+
+func (p *XMLParser) ParseTokens(tokens []*Token) (xmlNodes []*XMLNode, err error) {
+	p.tokens = tokens
 	p.next()
-	for p.peek != nil {
-		p.parse()
+	for p.look != nil {
+		err = p.parse()
+		if err != nil {
+			return
+		}
 		p.next()
 	}
-	return p.body
+	xmlNodes = p.body
+	return
 }
 
-func (p *XMLParser) parse() {
+func (p *XMLParser) parse() (err error) {
 
-	switch p.peek.Type {
+	switch p.look.Type {
 	case TT_TEXT:
 		p.addNode(&XMLNode{
 			Type:   ST_TEXT,
-			RAW:    p.peek.Value,
-			Tokens: NewSQLTokenizer(p.peek.Start.Line, p.peek.Start.Column, p.peek.Value).Parse(),
+			RAW:    p.look.Value,
+			Tokens: NewSQLTokenizer(p.look.Start.Line, p.look.Start.Column, p.look.Value).Parse(),
 		})
 	case TT_START_TAG:
 		p.addNode(&XMLNode{
 			Type: ST_NODE,
-			Name: p.peek.Value,
+			Name: p.look.Value,
 		})
 	case TT_ATTR_NAME:
 		attr := &XMLAttribute{
-			Name:  strings.ToLower(p.peek.Value),
-			Start: p.peek.Start,
-			End:   p.peek.End,
+			Name:  p.look.Value,
+			Start: p.look.Start,
+			End:   p.look.End,
 		}
 		p.next()
-		if p.peek.Type != TT_ATTR_VALUE {
-			// TODO 报错，属性未赋值
+		if p.look.Type != TT_ATTR_VALUE {
+			err = p.newEmptyAttributeErr(attr.Name)
+			return
 		}
-		attr.Value = p.peek.Value
-		p.setAttribute(p.lastUnclosedNode(), attr)
+		attr.Name = strings.ToLower(attr.Name)
+		attr.Value = p.look.Value
+		err = p.setAttribute(p.lastUnclosedNode(), attr)
+		if err != nil {
+			return
+		}
 	case TT_SELF_END_TAG:
 		p.lastUnclosedNode().closed = true
 		p.nodes = p.nodes[:len(p.nodes)-1]
 	case TT_END_TAG:
-		if p.lastUnclosedNode().Name != strings.ToLower(p.peek.Value) {
-			// TODO 标签不匹配
+		if p.lastUnclosedNode() == nil ||
+			p.lastUnclosedNode().Name != strings.ToLower(p.look.Value) {
+			err = p.newTagNotClosedErr(p.look.Value)
+			return
 		}
 		p.lastUnclosedNode().closed = true
 		p.nodes = p.nodes[:len(p.nodes)-1]
 	default:
-		// TODO 报错，未期待 Token
+		err = p.newUnexpectedTokenErr(p.look.Value)
 	}
-
+	return
 }
 
-func (p *XMLParser) setAttribute(node *XMLNode, attr *XMLAttribute) {
+func (p *XMLParser) setAttribute(node *XMLNode, attr *XMLAttribute) (err error) {
 	if node.attributeMap == nil {
 		node.attributeMap = map[string]string{}
 
 	}
 	_, ok := node.attributeMap[attr.Name]
 	if ok {
-		// TODO 报错，属性重复
+		err = p.newAttributeDuplicateErr(attr.Name)
+		return
 	}
 
 	node.attributeMap[attr.Name] = attr.Value
 	node.Attributes = append(node.Attributes, attr)
+	return
 }
 
 func (p *XMLParser) addNode(node *XMLNode) {
-	node.Start = p.peek.Start
-	node.End = p.peek.End
+	node.Start = p.look.Start
+	node.End = p.look.End
 	lastNode := p.lastUnclosedNode()
 	if lastNode != nil && !lastNode.closed {
 		lastNode.AppendBody(node)
@@ -343,4 +474,20 @@ func (p *XMLParser) lastUnclosedNode() *XMLNode {
 		return p.nodes[l-1]
 	}
 	return nil
+}
+
+func (p *XMLParser) newTagNotClosedErr(name string) (err error) {
+	return fmt.Errorf("tag '%s' not closed at line %d column %d", name, p.look.Start.Line, p.look.Start.Column)
+}
+
+func (p *XMLParser) newUnexpectedTokenErr(name string) (err error) {
+	return fmt.Errorf("upexected token '%s' at line %d column %d", name, p.look.Start.Line, p.look.Start.Column)
+}
+
+func (p *XMLParser) newEmptyAttributeErr(name string) error {
+	return fmt.Errorf("empty attribute '%s' at line %d column %d", name, p.look.Start.Line, p.look.Start.Column)
+}
+
+func (p *XMLParser) newAttributeDuplicateErr(name string) error {
+	return fmt.Errorf("duplicate attribute '%s' at line %d column %d", name, p.look.Start.Line, p.look.Start.Column)
 }

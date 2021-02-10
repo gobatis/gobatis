@@ -13,6 +13,10 @@ const (
 	TS_ATTRIBUTE_EQUAL              // 期待解析属性等号
 	TS_ATTRIBUTE_VALUE_START        // 期待解析属性值
 	TS_ATTRIBUTE_VALUE_END          // 期待解析属性值
+	TS_COMMENT_START                // 解析注释开始
+	TS_COMMENT_END                  // 解析注释结束
+	TS_DOCTYPPE                     // 解析文档声明
+	TS_STATEMENT                    // 解析声明类型
 )
 
 const (
@@ -43,4 +47,13 @@ const (
 	TT_PROPERTY_VAR = "property:var"
 	TT_PROPERTY_DS  = "property:ds"
 	TT_PROPERTY_VAL = "property:val"
+)
+
+const (
+	ST_TEXT = "text"
+	ST_NODE = "node"
+)
+
+const (
+	DOCTYPE = "doctype"
 )

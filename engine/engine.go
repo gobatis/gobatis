@@ -3,7 +3,7 @@ package engine
 import (
 	"database/sql"
 	"fmt"
-	"github.com/koyeo/gobatis/mysql"
+	"github.com/koyeo/gobatis/driver/mysql"
 	"github.com/koyeo/gobatis/schema"
 	"io/ioutil"
 )

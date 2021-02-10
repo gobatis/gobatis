@@ -6,7 +6,6 @@
 <mapper namespace="test/mapper@UserMapper">
 
     <cache blocking="123">
-
     </cache>
     <cache blocking="123">
 
@@ -25,8 +24,6 @@
         </where>
 
     </select>
-
-
     <!--    <select id="selectUsers" parameterType="id:int64,name:string" resultMap="Blog[]">-->
     <!--        select * from blog-->
     <!--    </select>-->
@@ -34,6 +31,4 @@
     <!--    <select id="countUsers" parameterType="id:int64,name:string" resultType="int,int,string">-->
     <!--        select * from users where id=#{id} and name=#{name}-->
     <!--    </select>-->
-
-
 </mapper>

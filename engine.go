@@ -58,7 +58,7 @@ func (p *Engine) parseConfigXML() (err error) {
 
 	parser := compiler.NewXMLParser(tokenizer.Parse())
 
-	return p.registerConfiguration(parser.Parse())
+	return p.registerConfiguration(parser.ParseTokens())
 }
 
 func (p *Engine) registerConfiguration(nodes []*compiler.XMLNode) (err error) {

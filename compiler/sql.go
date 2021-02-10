@@ -7,7 +7,6 @@ import (
 func NewSQLTokenizer(line, column int, content string) *SQLTokenizer {
 	return &SQLTokenizer{
 		pos: &Position{
-			index:  -1,
 			line:   line,
 			column: column,
 		},
@@ -21,24 +20,26 @@ type SQLTokenizer struct {
 	pos    *Position
 	start  *Position
 	chars  []rune
-	peek   rune
+	look   rune
 	state  int
 	tokens []*Token
+	index  int
+	begin  int
 }
 
 func (p *SQLTokenizer) next() {
-	p.pos.next(p.peek)
-	if p.pos.index < len(p.chars) {
-		p.peek = p.chars[p.pos.index]
+	p.pos.next(p.look)
+	if p.index < len(p.chars) {
+		p.look = p.chars[p.index]
 	} else {
-		p.peek = EOF
+		p.look = EOF
 	}
 }
 
 func (p *SQLTokenizer) Parse() []*Token {
 	p.next()
 	p.start = p.pos.fork()
-	for p.peek != EOF {
+	for p.look != EOF {
 		switch p.state {
 		case TS_BLANK:
 			p.parseBlack()
@@ -60,15 +61,15 @@ func (p *SQLTokenizer) Parse() []*Token {
 }
 
 func (p *SQLTokenizer) parseBlack() {
-	if IsLetter(p.peek) {
+	if IsLetter(p.look) {
 		p.expectStatus(TS_ID)
-	} else if p.peek == NUMBER_SIGN {
+	} else if p.look == NUMBER_SIGN {
 		p.expectStatus(TS_SQL_VAR_START)
-	} else if p.peek == COMMA {
+	} else if p.look == COMMA {
 		p.parseComma()
-	} else if p.peek == EQUAL_SIGN {
+	} else if p.look == EQUAL_SIGN {
 		p.parseEqual()
-	} else if !IsBlank(p.peek) {
+	} else if !IsBlank(p.look) {
 		// TODO 报错，异常字符，出现了非字母字符
 	}
 
@@ -87,13 +88,13 @@ func (p *SQLTokenizer) parseEqual() {
 }
 
 func (p *SQLTokenizer) parseId() {
-	if IsBlank(p.peek) {
+	if IsBlank(p.look) {
 		p.addToken(TT_ID)
 		p.expectStatus(TS_BLANK)
-	} else if p.peek == EQUAL_SIGN {
+	} else if p.look == EQUAL_SIGN {
 		p.addToken(TT_ID)
 		p.parseEqual()
-	} else if p.peek == NUMBER_SIGN {
+	} else if p.look == NUMBER_SIGN {
 		// select#
 		// TODO 与 ID 相连的 # 号，可能不需要
 		p.expectStatus(TS_SQL_VAR_START)
@@ -101,39 +102,39 @@ func (p *SQLTokenizer) parseId() {
 }
 
 func (p *SQLTokenizer) parseSQLVarStart() {
-	if p.peek == LEFT_BRACE {
+	if p.look == LEFT_BRACE {
 		p.expectStatus(TS_SQL_VAR_VALUE_START)
 	}
 }
 
 func (p *SQLTokenizer) parseSQLVarValueStart() {
-	if IsLetter(p.peek) {
+	if IsLetter(p.look) {
 		p.expectStatus(TS_SQL_VAR_VALUE_END)
 	}
 }
 
 func (p *SQLTokenizer) parseSQLVarValueEnd() {
-	if p.peek == DOT {
+	if p.look == DOT {
 		p.addToken(TT_SQL_STRUCT)
 		p.start = p.pos.fork()
 		p.next()
 		p.addToken(TT_SQL_DOT)
 		p.expectStatus(TS_SQL_VAR_VALUE_END)
-	} else if p.peek == RIGHT_BRACE {
+	} else if p.look == RIGHT_BRACE {
 		p.addToken(TT_SQL_VAR)
 		p.expectStatus(TS_BLANK)
-	} else if IsBlank(p.peek) {
+	} else if IsBlank(p.look) {
 		p.addToken(TT_SQL_VAR)
 		p.expectStatus(TS_SQL_VAR_END)
-	} else if !IsLetter(p.peek) {
+	} else if !IsLetter(p.look) {
 		// TODO 非法字符
 	}
 }
 
 func (p *SQLTokenizer) parseSQLVarEnd() {
-	if p.peek == RIGHT_BRACE {
+	if p.look == RIGHT_BRACE {
 		p.expectStatus(TS_BLANK)
-	} else if !IsBlank(p.peek) {
+	} else if !IsBlank(p.look) {
 		// TODO 非法字符
 	}
 }
@@ -147,7 +148,7 @@ func (p *SQLTokenizer) fetchValue(start, end int) string {
 }
 
 func (p *SQLTokenizer) char() string {
-	return fmt.Sprintf("%c", p.peek)
+	return fmt.Sprintf("%c", p.look)
 }
 
 func (p *SQLTokenizer) expectStatus(status int) {
@@ -156,7 +157,7 @@ func (p *SQLTokenizer) expectStatus(status int) {
 }
 
 func (p *SQLTokenizer) addToken(tokenType string) {
-	value := p.fetchValue(p.start.index, p.pos.index)
+	value := p.fetchValue(p.begin, p.index)
 	//value = strings.TrimSpace(value)
 	//if value == "" {
 	//	return

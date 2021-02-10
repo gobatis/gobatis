@@ -13,9 +13,10 @@ func NewNode(name string) *Node {
 
 type Node struct {
 	Name       string
+	Tokens     []*Token
 	attributes map[string]string
 	nodes      []*Node
-	countMap   map[string]int
+	count      map[string]int
 }
 
 func (p *Node) addAttribute(name, value string) {
@@ -34,26 +35,34 @@ func (p *Node) hasAttribute(name string) bool {
 }
 
 func (p *Node) addNode(node *Node) {
-	if p.countMap == nil {
-		p.countMap = map[string]int{}
+	if p.count == nil {
+		p.count = map[string]int{}
 	}
-	p.countMap[node.Name]++
+	p.count[node.Name]++
 	p.nodes = append(p.nodes, node)
 }
 
-func (p *Node) count(name string) int {
-	if p.countMap == nil {
+func (p *Node) countNode(name string) int {
+	if p.count == nil {
 		return 0
 	}
-	return p.countMap[name]
+	return p.count[name]
+}
+
+func NewNodeParser(file string) *NodeParser {
+	return &NodeParser{file: file}
 }
 
 type NodeParser struct {
 	file string
 }
 
-func (p *NodeParser) ParseConfigurationFile(nodes []*XMLNode) (configuration *Node, err error) {
+func (p *NodeParser) ParseConfiguration(content []byte) (configuration *Node, err error) {
 
+	nodes, err := NewXMLParser().Parse(content)
+	if err != nil {
+		return
+	}
 	configuration = NewNode(dtd.CONFIGURATION)
 	for _, node := range nodes {
 		if node.Name == dtd.CONFIGURATION {
@@ -67,7 +76,8 @@ func (p *NodeParser) ParseConfigurationFile(nodes []*XMLNode) (configuration *No
 	return
 }
 
-func (p *NodeParser) ParseMapperFile() (err error) {
+func (p *NodeParser) ParseMapper(content []byte) (err error) {
+	//nodes := p.parseXmlNodes(content)
 	return
 }
 
@@ -87,10 +97,26 @@ func (p *NodeParser) parseXMLAttribute(node *Node, xmlNode *XMLNode, elem *dtd.E
 }
 
 func (p *NodeParser) parseConfigurationNode(node *Node, xmlNode *XMLNode, elem *dtd.Element) (err error) {
+
 	err = p.parseXMLAttribute(node, xmlNode, elem)
 	if err != nil {
 		return
 	}
+
+	// 判断是否包换必填属性
+	if elem.Attributes != nil {
+		for k, v := range elem.Attributes {
+			if v == dtd.REQUIRED && node.hasAttribute(k) {
+				return p.newNodeMissRequiredAttributeErr(xmlNode, k)
+			}
+		}
+	}
+
+	// 判断是否解析 SQL Tokens
+	if elem.HasNode(dtd.PCDATA) {
+		node.Tokens = xmlNode.Tokens
+	}
+
 	for _, childXmlNode := range xmlNode.Body {
 		// 子节点不支持
 		if !elem.HasNode(childXmlNode.Name) {
@@ -98,17 +124,21 @@ func (p *NodeParser) parseConfigurationNode(node *Node, xmlNode *XMLNode, elem *
 		}
 		// 子节点重复错误
 		if elem.GetNodeCount(childXmlNode.Name) == dtd.AT_MOST_ONCE &&
-			node.count(childXmlNode.Name) > 0 {
+			node.countNode(childXmlNode.Name) > 0 {
 			return p.newNodeDuplicateErr(childXmlNode)
 		}
-		// 判断是否解析 SQL
 		childNode := NewNode(childXmlNode.Name)
 		node.addNode(childNode)
-
 	}
 
-	// 判断是否包换必填属性
 	// 判断是否包含必填节点
+	if elem.Nodes != nil {
+		for k, v := range elem.Nodes {
+			if v == dtd.AT_LEAST_ONCE && node.countNode(k) == 0 {
+				return p.newNodeMissRequiredChildNodeErr(xmlNode, k)
+			}
+		}
+	}
 
 	return nil
 }
@@ -144,6 +174,26 @@ func (p *NodeParser) newNodeDuplicateErr(xmlNode *XMLNode) error {
 	return fmt.Errorf(
 		"duplicate node: %s not suport at line:%d column: %d",
 		xmlNode.Name,
+		xmlNode.Start.Line,
+		xmlNode.Start.Column,
+	)
+}
+
+func (p *NodeParser) newNodeMissRequiredChildNodeErr(xmlNode *XMLNode, attrName string) error {
+	return fmt.Errorf(
+		"node: %s miss required child node %s :%d column: %d",
+		xmlNode.Name,
+		attrName,
+		xmlNode.Start.Line,
+		xmlNode.Start.Column,
+	)
+}
+
+func (p *NodeParser) newNodeMissRequiredAttributeErr(xmlNode *XMLNode, attrName string) error {
+	return fmt.Errorf(
+		"node: %s miss required attribute %s :%d column: %d",
+		xmlNode.Name,
+		attrName,
 		xmlNode.Start.Line,
 		xmlNode.Start.Column,
 	)
