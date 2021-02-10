@@ -143,7 +143,6 @@ func (p *XMLTokenizer) Parse() (tokens []*Token, err error) {
 }
 
 func (p *XMLTokenizer) parseLiteral() {
-
 	if p.look == LESS_THAN {
 		p.add(TT_TEXT)
 		p.forward(p.index+1, TS_START_TAG)
@@ -305,9 +304,9 @@ func (p *XMLTokenizer) forward(index, status int) {
 	p.begin = index
 }
 
-func (p *XMLTokenizer) subString(start, end int) string {
+func (p *XMLTokenizer) subString(end int) string {
 	v := ""
-	for i := start; i < end; i++ {
+	for i := p.begin; i < end; i++ {
 		v += string(p.chars[i])
 	}
 	return v
@@ -325,7 +324,7 @@ func (p *XMLTokenizer) peekString(length int) string {
 }
 
 func (p *XMLTokenizer) add(tokenType string) {
-	value := p.subString(p.begin, p.index)
+	value := p.subString(p.index)
 	if tokenType == TT_TEXT && strings.TrimSpace(value) == "" {
 		return
 	}
