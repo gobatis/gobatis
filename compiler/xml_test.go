@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-const normalConfig = `
+const testCompletedConfig = `
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE configuration
         PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
@@ -35,7 +35,7 @@ const normalConfig = `
 </configuration>
 `
 
-const normalMapper = `
+const testCompletedMapper = `
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
@@ -65,7 +65,7 @@ const normalMapper = `
 </mapper>
 `
 
-const ignoreStatement = `
+const testIgnoreStatement = `
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
@@ -76,8 +76,23 @@ const ignoreStatement = `
 </mapper>
 `
 
+const testIf = `
+<mapper>
+	<select id="selectUser"">
+		select * from users
+		<where> 
+			<if test="Sex != nil"> sex = #{Sex} </if>
+			<if test="Country != nil"> country = #{ Country }  </if>
+		</where>
+	</select>
+</mapper>
+`
+
+const testChoose = `
+`
+
 func TestNewXMLTokenizer2(t *testing.T) {
-	_, err := NewXMLTokenizer([]byte(normalConfig)).Parse()
+	_, err := NewXMLTokenizer([]byte(testCompletedConfig)).Parse()
 	if err != nil {
 		t.Error(err)
 		return
@@ -85,7 +100,7 @@ func TestNewXMLTokenizer2(t *testing.T) {
 }
 
 func TestNewXMLTokenizer(t *testing.T) {
-	_, err := NewXMLTokenizer([]byte(normalMapper)).Parse()
+	_, err := NewXMLTokenizer([]byte(testCompletedMapper)).Parse()
 	if err != nil {
 		t.Error(err)
 		return
@@ -93,7 +108,7 @@ func TestNewXMLTokenizer(t *testing.T) {
 }
 
 func TestIgnoreStatement(t *testing.T) {
-	tokens, err := NewXMLTokenizer([]byte(ignoreStatement)).Parse()
+	tokens, err := NewXMLTokenizer([]byte(testIgnoreStatement)).Parse()
 	if err != nil {
 		t.Error(err)
 		return
@@ -113,7 +128,7 @@ func TestIgnoreStatement(t *testing.T) {
 }
 
 func TestNewXMLParser(t *testing.T) {
-	_, err := NewXMLParser().Parse([]byte(normalMapper))
+	_, err := NewXMLParser().Parse([]byte(testIf))
 	if err != nil {
 		t.Error(err)
 		return

@@ -136,7 +136,7 @@ func (p *XMLTokenizer) Parse() (tokens []*Token, err error) {
 	}
 	switch p.state {
 	case TS_LITERAL:
-		p.add(TT_TEXT)
+		p.emitBuffer(TT_TEXT)
 	}
 	tokens = p.tokens
 	return
@@ -144,7 +144,7 @@ func (p *XMLTokenizer) Parse() (tokens []*Token, err error) {
 
 func (p *XMLTokenizer) parseLiteral() {
 	if p.look == LESS_THAN {
-		p.add(TT_TEXT)
+		p.emitBuffer(TT_TEXT)
 		p.forward(p.index+1, TS_START_TAG)
 	}
 }
@@ -215,29 +215,29 @@ func (p *XMLTokenizer) parseStartTagName() {
 
 	if IsBlank(p.look) {
 		// <m
-		p.add(TT_START_TAG)
+		p.emitBuffer(TT_START_TAG)
 		p.forward(p.index+1, TS_ATTRIBUTE)
 	} else if p.look == GREATER_THAN {
 		// <m>
-		p.add(TT_START_TAG)
+		p.emitBuffer(TT_START_TAG)
 		p.forward(p.index+1, TS_LITERAL)
 	} else if p.look == FORWARD_SLASH {
 		// <m/
-		p.add(TT_START_TAG)
+		p.emitBuffer(TT_START_TAG)
 		p.forward(p.index+1, TS_SELF_END_TAG)
 	}
 }
 
 func (p *XMLTokenizer) parseEndTagName() {
 	if p.look == GREATER_THAN {
-		p.add(TT_END_TAG)
+		p.emitBuffer(TT_END_TAG)
 		p.forward(p.index+1, TS_LITERAL)
 	}
 }
 
 func (p *XMLTokenizer) parseSelfEndTag() {
 	if p.look == GREATER_THAN {
-		p.add(TT_SELF_END_TAG)
+		p.emitBuffer(TT_SELF_END_TAG)
 		p.forward(p.index+1, TS_LITERAL)
 	}
 }
@@ -259,11 +259,11 @@ func (p *XMLTokenizer) parseAttribute() (err error) {
 
 func (p *XMLTokenizer) parseAttributeName() {
 	if IsBlank(p.look) {
-		p.add(TT_ATTR_NAME)
+		p.emitBuffer(TT_ATTR_NAME)
 		p.forward(p.index+1, TS_ATTRIBUTE_EQUAL)
 	} else if p.look == EQUAL_SIGN {
 		// <m a=
-		p.add(TT_ATTR_NAME)
+		p.emitBuffer(TT_ATTR_NAME)
 		p.forward(p.index+1, TS_ATTRIBUTE_VALUE_START)
 	}
 }
@@ -289,7 +289,7 @@ func (p *XMLTokenizer) parseAttributeValueStart() (err error) {
 
 func (p *XMLTokenizer) parseAttributeValueEnd() {
 	if p.look == DOUBLE_QUOTE {
-		p.add(TT_ATTR_VALUE)
+		p.emitBuffer(TT_ATTR_VALUE)
 		p.forward(p.index+1, TS_ATTRIBUTE)
 	}
 }
@@ -323,7 +323,7 @@ func (p *XMLTokenizer) peekString(length int) string {
 	return string(r)
 }
 
-func (p *XMLTokenizer) add(tokenType string) {
+func (p *XMLTokenizer) emitBuffer(tokenType string) {
 	value := p.subString(p.index)
 	if tokenType == TT_TEXT && strings.TrimSpace(value) == "" {
 		return
@@ -333,6 +333,16 @@ func (p *XMLTokenizer) add(tokenType string) {
 		Type:  tokenType,
 		Start: &Point{Line: p.start.line, Column: p.start.column},
 		End:   &Point{Line: p.pos.line, Column: p.pos.column - 1},
+	})
+}
+
+func (p *XMLTokenizer) emitChar(tokenType string) {
+	value := string(p.chars[p.index])
+	p.tokens = append(p.tokens, &Token{
+		Value: value,
+		Type:  tokenType,
+		Start: &Point{Line: p.pos.line, Column: p.pos.column},
+		End:   &Point{Line: p.pos.line, Column: p.pos.column},
 	})
 }
 
