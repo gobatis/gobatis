@@ -20,13 +20,16 @@ const (
 )
 
 const (
-	TS_BLANK         = iota // 过滤空白
-	TS_ID                   // 期待ID
-	TS_SQL_VAR_START        // 期待解析模板变量开始
-	TS_SQL_VAR_VALUE_START // 期待解析模板变量内容开始
-	TS_SQL_VAR_VALUE_END   // 期待解析模板变量内容结束
-	TS_SQL_VAR_END         // 期待解析模板变量结束
-	TS_EQUAL_SIGN
+	TS_BLANK               = iota // 过滤空白
+	TS_ID                         // 期待ID
+	TS_SQL_VAR_START              // 期待解析模板变量开始
+	TS_SQL_VAR_VALUE_START        // 期待解析模板变量内容开始
+	TS_SQL_VAR_VALUE_END          // 期待解析模板变量内容结束
+	TS_SQL_VAR_END                // 期待解析模板变量结束
+	TS_SQL_ASTERISK               // mysql *
+	TS_SQL_OPEN_APOSTROPHE
+	TS_SQL_DOUBLE_QUOTE
+	TS_SQL_SINGLE_QUOTE
 )
 
 const (
@@ -45,6 +48,7 @@ const (
 	TT_SQL_STRUCT   = "sql:struct"
 	TT_SQL_DOT      = "sql:."
 	TT_SQL_VAR      = "sql:var"
+	TT_SQL_ASTERISK = "sql:*"
 	TT_SQL_STRING   = "sql:string"
 	TT_SQL_INT      = "sql:int"
 	TT_SQL_FLOAT    = "sql:float"

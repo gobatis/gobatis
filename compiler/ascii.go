@@ -46,7 +46,7 @@ func IsLetter(char rune) bool {
 }
 
 func IsLowerLetter(char rune) bool {
-	return char >= 91 && char <= 122
+	return char >= 97 && char <= 122
 }
 
 func IsUpperLetter(char rune) bool {

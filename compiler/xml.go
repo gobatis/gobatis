@@ -402,10 +402,15 @@ func (p *XMLParser) parse() (err error) {
 
 	switch p.look.Type {
 	case TT_TEXT:
+		var tokens []*Token
+		tokens, err = NewSQLTokenizer(p.look.Start.Line, p.look.Start.Column, p.look.Value).Parse()
+		if err != nil {
+			return
+		}
 		p.addNode(&XMLNode{
 			Type:   ST_TEXT,
 			RAW:    p.look.Value,
-			Tokens: NewSQLTokenizer(p.look.Start.Line, p.look.Start.Column, p.look.Value).Parse(),
+			Tokens: tokens,
 		})
 	case TT_START_TAG:
 		p.addNode(&XMLNode{
@@ -477,7 +482,6 @@ func (p *XMLParser) addNode(node *XMLNode) {
 }
 
 func (p *XMLParser) lastUnclosedNode() *XMLNode {
-	// TODO 跑跑看，是否需要强制获取
 	l := len(p.nodes)
 	if l > 0 {
 		return p.nodes[l-1]

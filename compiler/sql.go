@@ -1,6 +1,7 @@
 package compiler
 
 import (
+	"errors"
 	"fmt"
 )
 
@@ -51,7 +52,15 @@ func (p *SQLTokenizer) peekString(length int) string {
 
 func (p *SQLTokenizer) peek(length int) rune {
 	index := p.index + length
-	if index < len(p.chars) {
+	if index >= 0 && index < len(p.chars) {
+		return p.chars[index]
+	}
+	return EOF
+}
+
+func (p *SQLTokenizer) last() rune {
+	index := p.index - 1
+	if index >= 0 && index < len(p.chars) {
 		return p.chars[index]
 	}
 	return EOF
@@ -63,49 +72,80 @@ func (p *SQLTokenizer) skip(length int) {
 	}
 }
 
-func (p *SQLTokenizer) Parse() []*Token {
+func (p *SQLTokenizer) Parse() (tokens []*Token, err error) {
 	p.next()
 	p.start = p.pos.fork()
 	for p.look != EOF {
 		switch p.state {
 		case TS_BLANK:
-			p.parseBlank()
+			err = p.parseBlank()
+			if err != nil {
+				return
+			}
 		case TS_ID:
-			p.parseId()
+			err = p.parseId()
+			if err != nil {
+				return
+			}
 		case TS_SQL_VAR_START:
 			p.parseSQLVarStart()
 		case TS_SQL_VAR_VALUE_START:
 			p.parseSQLVarValueStart()
 		case TS_SQL_VAR_VALUE_END:
-			p.parseSQLVarValueEnd()
+			err = p.parseSQLVarValueEnd()
+			if err != nil {
+				return
+			}
 		case TS_SQL_VAR_END:
-			p.parseSQLVarEnd()
+			err = p.parseSQLVarEnd()
+			if err != nil {
+				return
+			}
+		case TS_SQL_ASTERISK:
+			err = p.parseSQLAsterisk()
+			if err != nil {
+				return
+			}
+		case TS_SQL_OPEN_APOSTROPHE:
+			p.parseOpenApostrophe()
+		case TS_SQL_SINGLE_QUOTE:
+			p.parseSingleQuote()
+		case TS_SQL_DOUBLE_QUOTE:
+			p.parseDoubleQuote()
 		}
 		p.next()
 	}
-
-	return p.tokens
+	tokens = p.tokens
+	return
 }
 
-func (p *SQLTokenizer) parseBlank() {
+func (p *SQLTokenizer) parseBlank() (err error) {
 	if IsLetter(p.look) {
 		p.forward(p.index, TS_ID)
+	} else if p.look == OPEN_APOSTROPHE {
+		p.forward(p.index+1, TS_SQL_OPEN_APOSTROPHE)
+	} else if p.look == SINGLE_QUOTE {
+		p.forward(p.index+1, TS_SQL_SINGLE_QUOTE)
+	} else if p.look == DOUBLE_QUOTE {
+		p.forward(p.index+1, TS_SQL_DOUBLE_QUOTE)
 	} else if p.look == NUMBER_SIGN {
 		p.forward(p.index+1, TS_SQL_VAR_START)
 	} else if p.look == COMMA {
-		p.emitBuffer(TT_COMMA)
+		p.emitChar(TT_COMMA)
 		p.forward(p.index+1, TS_BLANK)
 	} else if p.look == EQUAL_SIGN {
-		p.emitBuffer(TT_EQUAL)
+		p.emitChar(TT_EQUAL)
 		p.forward(p.index+1, TS_SQL_VAR_START)
+	} else if p.look == ASTERISK {
+		p.forward(p.index, TS_SQL_ASTERISK)
 	} else if !IsBlank(p.look) {
-		// TODO 报错，异常字符，出现了非字母字符开头的字符
 
+		return p.newInvalidCharErr()
 	}
-
+	return
 }
 
-func (p *SQLTokenizer) parseId() {
+func (p *SQLTokenizer) parseId() (err error) {
 	if IsBlank(p.look) {
 		p.emitBuffer(TT_ID)
 		p.forward(p.index, TS_BLANK)
@@ -118,8 +158,38 @@ func (p *SQLTokenizer) parseId() {
 		// select#
 		// TODO 与 ID 相连的 # 号，可能不需要
 		p.forward(p.index+1, TS_SQL_VAR_START)
+	} else if !IsLetter(p.look) {
+		return p.newInvalidCharErr()
+	}
+	return
+}
+
+func (p *SQLTokenizer) parseSQLAsterisk() (err error) {
+	if IsBlank(p.look) {
+		p.emitBuffer(TT_SQL_ASTERISK)
+		p.forward(p.index, TS_BLANK)
 	} else {
-		// TODO 非法变量，ID 只能是字母开头，数字+下划线
+		return p.newInvalidCharErr()
+	}
+	return
+}
+
+func (p *SQLTokenizer) parseOpenApostrophe() {
+	if p.look == OPEN_APOSTROPHE {
+		p.emitBuffer(TT_ID)
+		p.forward(p.index+1, TS_BLANK)
+	}
+}
+func (p *SQLTokenizer) parseSingleQuote() {
+	if p.look == SINGLE_QUOTE && p.last() != BACK_SLASH {
+		p.emitBuffer(TT_ID)
+		p.forward(p.index+1, TS_BLANK)
+	}
+}
+func (p *SQLTokenizer) parseDoubleQuote() {
+	if p.look == DOUBLE_QUOTE && p.last() != BACK_SLASH {
+		p.emitBuffer(TT_ID)
+		p.forward(p.index+1, TS_BLANK)
 	}
 }
 
@@ -135,7 +205,7 @@ func (p *SQLTokenizer) parseSQLVarValueStart() {
 	}
 }
 
-func (p *SQLTokenizer) parseSQLVarValueEnd() {
+func (p *SQLTokenizer) parseSQLVarValueEnd() (err error) {
 	if p.look == DOT {
 		p.emitBuffer(TT_SQL_STRUCT)
 		p.emitChar(TT_SQL_DOT)
@@ -147,16 +217,30 @@ func (p *SQLTokenizer) parseSQLVarValueEnd() {
 		p.emitBuffer(TT_SQL_VAR)
 		p.forward(p.index+1, TS_SQL_VAR_END)
 	} else if !IsLetter(p.look) {
-		// TODO 非法字符
+		return p.newInvalidCharErr("letter")
 	}
+	return
 }
 
-func (p *SQLTokenizer) parseSQLVarEnd() {
+func (p *SQLTokenizer) parseSQLVarEnd() (err error) {
 	if p.look == RIGHT_BRACE {
 		p.forward(p.index+1, TS_BLANK)
 	} else if !IsBlank(p.look) {
-		// TODO 非法字符
+		return p.newInvalidCharErr()
 	}
+	return
+}
+
+func (p *SQLTokenizer) newInvalidCharErr(expects ...string) error {
+	msg := fmt.Sprintf("invalid char %c at line %d column %d",
+		p.look, p.pos.line, p.pos.column)
+	if len(expects) > 0 {
+		msg += " expect"
+		for _, v := range expects {
+			msg += " " + v
+		}
+	}
+	return errors.New(msg)
 }
 
 func (p *SQLTokenizer) subString(end int) string {
