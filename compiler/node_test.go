@@ -1,6 +1,10 @@
 package compiler
 
-import "testing"
+import (
+	"encoding/json"
+	"fmt"
+	"testing"
+)
 
 func TestNodeParser_ParseConfiguration(t *testing.T) {
 	parser := NewNodeParser("./config.xml")
@@ -45,4 +49,15 @@ func TestNodeParser_ParseConfiguration(t *testing.T) {
 		t.Error(err)
 	}
 
+}
+
+func TestNewNodeParser(t *testing.T) {
+	parser := NewNodeParser("./config.xml")
+	nodes, err := parser.ParseMapper([]byte(testIf))
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	d, _ := json.MarshalIndent(nodes, "", "\t")
+	fmt.Println(string(d))
 }

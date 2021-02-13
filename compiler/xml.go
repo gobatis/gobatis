@@ -12,7 +12,7 @@ type XMLNode struct {
 	Name         string          `json:"name,omitempty"`
 	Value        string          `json:"value,omitempty"`
 	RAW          string          `json:"value,omitempty"`
-	Attributes   []*XMLAttribute `json:"attributes,omitempty"`
+	Attributes   []*XMLAttribute `json:"Attributes,omitempty"`
 	Body         []*XMLNode      `json:"body,omitempty"`   // tree body
 	Tokens       []*Token        `json:"tokens,omitempty"` // SQL tokens
 	attributeMap map[string]string
@@ -157,7 +157,7 @@ func (p *XMLTokenizer) parseTagStart() (err error) {
 		if IsLetter(p.peek(1)) {
 			p.forward(p.index+1, TS_STATEMENT)
 		} else {
-			return p.newInvalidCharErr("letter")
+			return p.newInvalidCharErr()
 		}
 	} else if p.look == EXCLAMATION_MARK {
 		// <!
@@ -179,7 +179,7 @@ func (p *XMLTokenizer) parseStatement() (err error) {
 	if p.look == QUESTION_MARK {
 		p.next()
 		if p.look != GREATER_THAN {
-			return p.newInvalidCharErr(">")
+			return p.newInvalidCharErr()
 		}
 		p.forward(p.index+1, TS_LITERAL)
 	}
@@ -193,13 +193,13 @@ func (p *XMLTokenizer) parseCommentStart() (err error) {
 			p.skip(1)
 			p.forward(p.index+1, TS_COMMENT_END)
 		} else {
-			return p.newInvalidCharErr("-")
+			return p.newInvalidCharErr()
 		}
 	} else if strings.ToLower(p.peekString(7)) == DOCTYPE {
 		p.skip(7)
 		p.forward(p.index+7, TS_DOCTYPPE)
 	} else {
-		return p.newInvalidCharErr("-")
+		return p.newInvalidCharErr()
 	}
 	return
 }
@@ -252,7 +252,7 @@ func (p *XMLTokenizer) parseAttribute() (err error) {
 		// <m ... >
 		p.forward(p.index+1, TS_LITERAL)
 	} else {
-		return p.newInvalidCharErr("letter / >")
+		return p.newInvalidCharErr()
 	}
 	return
 }
@@ -272,7 +272,7 @@ func (p *XMLTokenizer) parseAttributeEqual() (err error) {
 	if p.look == EQUAL_SIGN {
 		p.forward(p.index+1, TS_ATTRIBUTE_VALUE_START)
 	} else if !IsBlank(p.look) {
-		return p.newInvalidCharErr("=")
+		return p.newInvalidCharErr()
 	}
 	return
 }
@@ -282,7 +282,7 @@ func (p *XMLTokenizer) parseAttributeValueStart() (err error) {
 		// <m a="
 		p.forward(p.index+1, TS_ATTRIBUTE_VALUE_END)
 	} else {
-		return p.newInvalidCharErr("\"")
+		return p.newInvalidCharErr()
 	}
 	return
 }
@@ -346,10 +346,10 @@ func (p *XMLTokenizer) emitChar(tokenType string) {
 	})
 }
 
-func (p *XMLTokenizer) newInvalidCharErr(expect string) error {
+func (p *XMLTokenizer) newInvalidCharErr() error {
 	return fmt.Errorf(
-		"invalid char %c at line %d column %d, ecpect %s",
-		p.look, p.start.line, p.start.column, expect,
+		"invalid char %c at line %d column %d",
+		p.look, p.start.line, p.start.column,
 	)
 }
 

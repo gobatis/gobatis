@@ -129,5 +129,5 @@ const (
 	SEPARATOR         = "separator"
 	WHEN              = "when"
 	OTHERWISE         = "otherwise"
-	TEST              = "TEST"
+	TEST              = "test"
 )

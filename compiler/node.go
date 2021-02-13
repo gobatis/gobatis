@@ -12,25 +12,25 @@ func NewNode(name string) *Node {
 }
 
 type Node struct {
-	Name       string
-	Tokens     []*Token
-	attributes map[string]string
-	nodes      []*Node
+	Name       string            `json:"name,omitempty"`
+	Tokens     []*Token          `json:"tokens,omitempty"`
+	Attributes map[string]string `json:"attributes,omitempty"`
+	Nodes      []*Node           `json:"nodes,omitempty"`
 	count      map[string]int
 }
 
 func (p *Node) addAttribute(name, value string) {
-	if p.attributes == nil {
-		p.attributes = map[string]string{}
+	if p.Attributes == nil {
+		p.Attributes = map[string]string{}
 	}
-	p.attributes[name] = value
+	p.Attributes[name] = value
 }
 
 func (p *Node) hasAttribute(name string) bool {
-	if p.attributes == nil {
+	if p.Attributes == nil {
 		return false
 	}
-	_, ok := p.attributes[name]
+	_, ok := p.Attributes[name]
 	return ok
 }
 
@@ -39,7 +39,7 @@ func (p *Node) addNode(node *Node) {
 		p.count = map[string]int{}
 	}
 	p.count[node.Name]++
-	p.nodes = append(p.nodes, node)
+	p.Nodes = append(p.Nodes, node)
 }
 
 func (p *Node) countNode(name string) int {
@@ -59,14 +59,14 @@ type NodeParser struct {
 
 func (p *NodeParser) ParseConfiguration(content []byte) (configuration *Node, err error) {
 
-	nodes, err := NewXMLParser().Parse(content)
+	xmlNodes, err := NewXMLParser().Parse(content)
 	if err != nil {
 		return
 	}
 	configuration = NewNode(dtd.CONFIGURATION)
-	for _, node := range nodes {
-		if node.Name == dtd.CONFIGURATION {
-			err = p.parseConfigurationNode(configuration, node, dtd.Configuration)
+	for _, xmlNode := range xmlNodes {
+		if xmlNode.Name == dtd.CONFIGURATION {
+			err = p.parseNode(configuration, xmlNode, dtd.Configuration)
 			if err != nil {
 				return
 			}
@@ -76,8 +76,21 @@ func (p *NodeParser) ParseConfiguration(content []byte) (configuration *Node, er
 	return
 }
 
-func (p *NodeParser) ParseMapper(content []byte) (err error) {
-	//nodes := p.parseXmlNodes(content)
+func (p *NodeParser) ParseMapper(content []byte) (mapper *Node, err error) {
+	xmlNodes, err := NewXMLParser().Parse(content)
+	if err != nil {
+		return
+	}
+	mapper = NewNode(dtd.MAPPER)
+	for _, xmlNode := range xmlNodes {
+		if xmlNode.Name == dtd.MAPPER {
+			err = p.parseNode(mapper, xmlNode, dtd.Mapper)
+			if err != nil {
+				return
+			}
+			break
+		}
+	}
 	return
 }
 
@@ -96,7 +109,7 @@ func (p *NodeParser) parseXMLAttribute(node *Node, xmlNode *XMLNode, elem *dtd.E
 	return
 }
 
-func (p *NodeParser) parseConfigurationNode(node *Node, xmlNode *XMLNode, elem *dtd.Element) (err error) {
+func (p *NodeParser) parseNode(node *Node, xmlNode *XMLNode, elem *dtd.Element) (err error) {
 
 	err = p.parseXMLAttribute(node, xmlNode, elem)
 	if err != nil {
@@ -106,7 +119,7 @@ func (p *NodeParser) parseConfigurationNode(node *Node, xmlNode *XMLNode, elem *
 	// 判断是否包换必填属性
 	if elem.Attributes != nil {
 		for k, v := range elem.Attributes {
-			if v == dtd.REQUIRED && node.hasAttribute(k) {
+			if v == dtd.REQUIRED && !node.hasAttribute(k) {
 				return p.newNodeMissRequiredAttributeErr(xmlNode, k)
 			}
 		}
@@ -118,6 +131,16 @@ func (p *NodeParser) parseConfigurationNode(node *Node, xmlNode *XMLNode, elem *
 	}
 
 	for _, childXmlNode := range xmlNode.Body {
+
+		childNode := NewNode(childXmlNode.Name)
+		node.addNode(childNode)
+
+		if childXmlNode.Type == ST_TEXT {
+
+			childNode.Tokens = childXmlNode.Tokens
+			continue
+		}
+
 		// 子节点不支持
 		if !elem.HasNode(childXmlNode.Name) {
 			return p.newNodeNotSupportErr(childXmlNode)
@@ -127,8 +150,16 @@ func (p *NodeParser) parseConfigurationNode(node *Node, xmlNode *XMLNode, elem *
 			node.countNode(childXmlNode.Name) > 0 {
 			return p.newNodeDuplicateErr(childXmlNode)
 		}
-		childNode := NewNode(childXmlNode.Name)
-		node.addNode(childNode)
+
+		childElem, err := dtd.MapperElement(childXmlNode.Name)
+		if err != nil {
+			return err
+		}
+
+		err = p.parseNode(childNode, childXmlNode, childElem)
+		if err != nil {
+			return err
+		}
 	}
 
 	// 判断是否包含必填节点
@@ -145,7 +176,7 @@ func (p *NodeParser) parseConfigurationNode(node *Node, xmlNode *XMLNode, elem *
 
 func (p *NodeParser) newAttributeDuplicateErr(attr *XMLAttribute) error {
 	return fmt.Errorf(
-		"duplicate attribute: %s at line:%d column: %d",
+		"duplicate attribute '%s' at line %d column %d",
 		attr.Name,
 		attr.Start.Line,
 		attr.Start.Column,
@@ -154,7 +185,7 @@ func (p *NodeParser) newAttributeDuplicateErr(attr *XMLAttribute) error {
 
 func (p *NodeParser) newAttributeNotSupportErr(attr *XMLAttribute) error {
 	return fmt.Errorf(
-		" attribute: %s not support at line:%d column: %d",
+		" attribute '%s' not support at line %d column %d",
 		attr.Name,
 		attr.Start.Line,
 		attr.Start.Column,
@@ -163,7 +194,7 @@ func (p *NodeParser) newAttributeNotSupportErr(attr *XMLAttribute) error {
 
 func (p *NodeParser) newNodeNotSupportErr(xmlNode *XMLNode) error {
 	return fmt.Errorf(
-		"node: %s not suport at line:%d column: %d",
+		"node '%s' not suport at line %d column %d",
 		xmlNode.Name,
 		xmlNode.Start.Line,
 		xmlNode.Start.Column,
@@ -172,7 +203,7 @@ func (p *NodeParser) newNodeNotSupportErr(xmlNode *XMLNode) error {
 
 func (p *NodeParser) newNodeDuplicateErr(xmlNode *XMLNode) error {
 	return fmt.Errorf(
-		"duplicate node: %s not suport at line:%d column: %d",
+		"duplicate node '%s' at line %d column %d",
 		xmlNode.Name,
 		xmlNode.Start.Line,
 		xmlNode.Start.Column,
@@ -181,7 +212,7 @@ func (p *NodeParser) newNodeDuplicateErr(xmlNode *XMLNode) error {
 
 func (p *NodeParser) newNodeMissRequiredChildNodeErr(xmlNode *XMLNode, attrName string) error {
 	return fmt.Errorf(
-		"node: %s miss required child node %s :%d column: %d",
+		"node '%s' miss required child node '%s' at %d column %d",
 		xmlNode.Name,
 		attrName,
 		xmlNode.Start.Line,
@@ -191,7 +222,7 @@ func (p *NodeParser) newNodeMissRequiredChildNodeErr(xmlNode *XMLNode, attrName 
 
 func (p *NodeParser) newNodeMissRequiredAttributeErr(xmlNode *XMLNode, attrName string) error {
 	return fmt.Errorf(
-		"node: %s miss required attribute %s :%d column: %d",
+		"node '%s' miss required attribute '%s' at %d column %d",
 		xmlNode.Name,
 		attrName,
 		xmlNode.Start.Line,

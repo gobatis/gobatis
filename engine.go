@@ -65,3 +65,9 @@ func (p *Engine) registerConfiguration(nodes []*compiler.XMLNode) (err error) {
 
 	return
 }
+
+func (p *Engine) BindMappers(mappers ...interface{}) (err error) {
+	return
+}
+
+

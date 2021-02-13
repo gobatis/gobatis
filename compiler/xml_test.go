@@ -1,6 +1,7 @@
 package compiler
 
 import (
+	"encoding/json"
 	"fmt"
 	"testing"
 )
@@ -78,7 +79,7 @@ const testIgnoreStatement = `
 
 const testIf = `
 <mapper>
-	<select id="selectUser"">
+	<select id="selectUser">
 		select * from users
 		<where> 
 			<if test="Sex != nil"> sex = #{Sex} </if>
@@ -128,9 +129,11 @@ func TestIgnoreStatement(t *testing.T) {
 }
 
 func TestNewXMLParser(t *testing.T) {
-	_, err := NewXMLParser().Parse([]byte(testIf))
+	nodes, err := NewXMLParser().Parse([]byte(testIf))
 	if err != nil {
 		t.Error(err)
 		return
 	}
+	d, _ := json.MarshalIndent(nodes, "", "\t")
+	fmt.Println(string(d))
 }
