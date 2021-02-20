@@ -54,9 +54,6 @@ type XMLTokenizer struct {
 }
 
 func (p *XMLTokenizer) next() {
-	//if p.index == -1 && len(p.chars) > 0 {
-	//	p.look = p.chars[0]
-	//}
 	p.pos.next(p.look)
 	p.index++
 	if p.index < len(p.chars) {
@@ -349,7 +346,7 @@ func (p *XMLTokenizer) emitChar(tokenType string) {
 func (p *XMLTokenizer) newInvalidCharErr() error {
 	return fmt.Errorf(
 		"invalid char %c at line %d column %d",
-		p.look, p.start.line, p.start.column,
+		p.look, p.pos.line, p.pos.column,
 	)
 }
 
