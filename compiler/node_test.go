@@ -15,17 +15,12 @@ func TestNodeParser_ParseConfiguration(t *testing.T) {
         "http://mybatis.org/dtd/mybatis-3-config.dtd">
 
 <configuration>
-
-
-
     <properties>
         <property name="module" value="github.com/koyeo/gobatis"/>
     </properties>
-
     <typeAliases>
         <typeAlias alias="User" type="test/entity@User"/>
     </typeAliases>
-
     <environments default="development">
         <environment id="development">
             <transactionManager type="JDBC"/>
@@ -38,8 +33,6 @@ func TestNodeParser_ParseConfiguration(t *testing.T) {
             </dataSource>
         </environment>
     </environments>
-
-
     <mappers>
         <mapper resource="test/sql/user.mapper.xml"/>
     </mappers>

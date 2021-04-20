@@ -14,18 +14,18 @@ func (p *Element) AddNode(node string, times int) {
 	if p.Nodes == nil {
 		p.Nodes = map[string]int{}
 	}
-
+	
 	p.Nodes[node] = times
-
+	
 }
 
 func (p *Element) AddAttribute(attribute string, check int) {
 	if p.Attributes == nil {
 		p.Attributes = map[string]int{}
 	}
-
+	
 	p.Attributes[attribute] = check
-
+	
 }
 
 func (p Element) HasNode(name string) bool {

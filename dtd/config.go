@@ -1,8 +1,7 @@
 package dtd
-	
 
 var Configuration = &Element{
-	Name: CONFIGURATION,
+	Name:  CONFIGURATION,
 	Nodes: map[string]int{
 		PROPERTIES:             AT_MOST_ONCE,
 		MODULE:                 AT_MOST_ONCE,

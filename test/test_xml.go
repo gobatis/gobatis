@@ -9,7 +9,7 @@ import (
 
 func main() {
 	//doc := etree.NewDocument()
-	//if err := doc.ReadFromFile("xml/mybatis-config.xml"); err != nil {
+	//if err := doc.ReadFromFile("xml/gobatis.xml"); err != nil {
 	//	panic(err)
 	//}
 	////doc.ReadFromString(``)
@@ -19,7 +19,7 @@ func main() {
 	////fmt.Println(doc.Root().Tag)
 	////fmt.Println(doc.Root().Attr)
 
-	data, err := ioutil.ReadFile("./mybatis-config.xml")
+	data, err := ioutil.ReadFile("./gobatis.xml")
 	if err != nil {
 		panic(err)
 		return

@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	instance, err := engine.NewEngine("./mybatis-config.xml")
+	instance, err := engine.NewEngine("./gobatis.xml")
 	if err != nil {
 		panic(err)
 	}

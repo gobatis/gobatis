@@ -1,48 +1,42 @@
 package gobatis
 
 import (
+	"database/sql"
 	"fmt"
-	"github.com/koyeo/gobatis/compiler"
 	"io/ioutil"
-	"net/http"
 )
 
-const CONFIG_FILE = "gobatis.xml"
+const config_file = "gobatis.xml"
 
-func NewEngine(resource http.FileSystem) *Engine {
-	engine := &Engine{
-		configFile: CONFIG_FILE,
-		resource:   resource,
+func NewEngine(bundle Bundle) (engine *Engine, err error) {
+	engine = &Engine{
+		bundle: bundle,
 	}
-	return engine
-}
-
-type Engine struct {
-	configFile string
-	resource   http.FileSystem
-}
-
-func (p *Engine) ConfigFile() string {
-	return p.configFile
-}
-
-func (p *Engine) SetConfigFile(configFile string) {
-	p.configFile = configFile
-}
-
-func (p *Engine) Init() (err error) {
-
+	err = engine.init()
 	return
 }
 
-func (p *Engine) parseConfigXML() (err error) {
-	if p.resource == nil {
+type Engine struct {
+	bundle Bundle
+	db     sql.DB
+}
+
+func (p *Engine) init() (err error) {
+	err = p.parseConfig()
+	if err != nil {
+		return
+	}
+	return
+}
+
+func (p *Engine) parseConfig() (err error) {
+	if p.bundle == nil {
 		err = fmt.Errorf("no resource bundle")
 		return
 	}
-	c, err := p.resource.Open(p.configFile)
+	c, err := p.bundle.Open(config_file)
 	if err != nil {
-		err = fmt.Errorf("open config.xml error: %s", err)
+		err = fmt.Errorf("open %s error: %s", config_file, err)
 		return
 	}
 	defer func() {
@@ -50,24 +44,28 @@ func (p *Engine) parseConfigXML() (err error) {
 	}()
 	d, err := ioutil.ReadAll(c)
 	if err != nil {
-		err = fmt.Errorf("read config.xml content error: %s", err)
+		err = fmt.Errorf("read %s content error: %s", config_file, err)
 		return
 	}
-
-	tokenizer := compiler.NewXMLTokenizer(d)
-
-	parser := compiler.NewXMLParser(tokenizer.Parse())
-
-	return p.registerConfiguration(parser.ParseTokens())
+	return parseConfig(p, config_file, d)
 }
 
-func (p *Engine) registerConfiguration(nodes []*compiler.XMLNode) (err error) {
+func (p *Engine) initDB() {
 
+}
+
+func (p *Engine) parseSql() (err error) {
 	return
 }
 
-func (p *Engine) BindMappers(mappers ...interface{}) (err error) {
-	return
+func (p *Engine) BindMapper(mapper ...interface{}) {
+	//tx := p.db.Begin()
+	//tx.Exec()
+	//tx.Query()
+	//tx.QueryRow()
+	//p.db.QueryRow()
 }
 
-
+func (p *Engine) GetSQL(name string) string {
+	return "hello world!"
+}
