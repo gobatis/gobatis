@@ -11,14 +11,28 @@ import (
 	"sync"
 )
 
-func parseConfig(engine *Engine, fileName string, content []byte) (err error) {
+func parseConfig(db *DB, file string, content []byte) (err error) {
 	listener := &xmlParser{
-		engine:        engine,
-		fileName:      fileName,
+		file:          file,
 		stack:         newXMLStack(),
 		rootElement:   dtd.Configuration,
 		elementGetter: dtd.ConfigElement,
 	}
+	err = parseNode(listener, content)
+	if err != nil {
+		return
+	}
+	
+	d, _ := json.MarshalIndent(listener.rootNode, "", "\t")
+	fmt.Println(string(d))
+	return
+}
+
+func parseMapper(db *DB, fileName string, content []byte) {
+
+}
+
+func parseNode(listener *xmlParser, content []byte) (err error) {
 	lexer := xml.NewXMLLexer(antlr.NewInputStream(string(content)))
 	stream := antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel)
 	parser := xml.NewXMLParser(stream)
@@ -27,23 +41,22 @@ func parseConfig(engine *Engine, fileName string, content []byte) (err error) {
 	//parser.SetErrorHandler()
 	antlr.ParseTreeWalkerDefault.Walk(listener, parser.Document())
 	if listener.error != nil {
-		return listener.error
+		err = listener.error
+		return
 	}
-	
-	d, _ := json.MarshalIndent(listener.rootNode, "", "\t")
-	fmt.Println(string(d))
-	
 	return
 }
 
-func newXMLNode(name string, token antlr.Token) *xmlNode {
+func newXMLNode(file, name string, token antlr.Token) *xmlNode {
 	return &xmlNode{
+		File:  file,
 		Name:  name,
 		start: token,
 	}
 }
 
 type xmlNode struct {
+	File       string `json:"-"`
 	Name       string
 	Text       string
 	Attributes map[string]*xmlNodeAttribute
@@ -53,8 +66,9 @@ type xmlNode struct {
 }
 
 type xmlNodeAttribute struct {
-	start antlr.Token
-	value string
+	File  string      `json:"-"`
+	Start antlr.Token `json:"-"`
+	Value string
 }
 
 func (p *xmlNode) AddAttribute(name string, value *xmlNodeAttribute) {
@@ -132,8 +146,7 @@ func (stack *xmlNodeStack) Empty() bool {
 }
 
 type xmlParser struct {
-	engine        *Engine
-	fileName      string
+	file          string
 	content       []byte
 	depth         int
 	error         error
@@ -211,7 +224,7 @@ func (p *xmlParser) validateNode(node *xmlNode, elem *dtd.Element) {
 }
 
 func (p *xmlParser) setError(msg string, token antlr.Token) {
-	p.error = fmt.Errorf("%s line %d:%d, parse error: %s", p.fileName, token.GetLine(), token.GetColumn(), msg)
+	p.error = fmt.Errorf("%s line %d:%d, parse error: %s", p.file, token.GetLine(), token.GetColumn(), msg)
 }
 
 func (p *xmlParser) EnterElement(c *xml.ElementContext) {
@@ -225,7 +238,7 @@ func (p *xmlParser) EnterElement(c *xml.ElementContext) {
 			return
 		}
 	}
-	p.stack.Push(newXMLNode(name.GetText(), name.GetSymbol()))
+	p.stack.Push(newXMLNode(p.file, name.GetText(), name.GetSymbol()))
 	p.depth++
 }
 
@@ -250,8 +263,9 @@ func (p *xmlParser) EnterAttribute(c *xml.AttributeContext) {
 		return
 	}
 	p.stack.Peak().AddAttribute(c.Name().GetText(), &xmlNodeAttribute{
-		start: c.STRING().GetSymbol(),
-		value: p.trimAttributeValueQuote(c.STRING().GetText()),
+		File:  p.file,
+		Start: c.STRING().GetSymbol(),
+		Value: p.trimAttributeValueQuote(c.STRING().GetText()),
 	})
 }
 
@@ -261,7 +275,7 @@ func (p *xmlParser) EnterChardata(c *xml.ChardataContext) {
 	}
 	text := strings.TrimSpace(c.GetText())
 	if text != "" {
-		p.stack.Peak().AddNode(&xmlNode{Text: text, start: c.GetStart()})
+		p.stack.Peak().AddNode(&xmlNode{File: p.file, Text: text, start: c.GetStart()})
 	}
 }
 

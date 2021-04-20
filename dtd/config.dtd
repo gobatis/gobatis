@@ -16,7 +16,8 @@
                limitations under the License.
 
         -->
-        <!ELEMENT configuration (module?, properties?, settings?, typeAliases?, typeHandlers?, objectFactory?, objectWrapperFactory?, reflectorFactory?, plugins?, environments?, databaseIdProvider?, mappers?)>
+        <!-- <!ELEMENT configuration (module?, properties?, settings?, typeAliases?, typeHandlers?, objectFactory?, objectWrapperFactory?, reflectorFactory?, plugins?, environments?, databaseIdProvider?, mappers?)> -->
+        <!ELEMENT configuration (module?, typeAliases?)>
 
         <!ELEMENT module EMPTY>
         <!ATTLIST module
@@ -92,7 +93,8 @@
                 default CDATA #REQUIRED
                 >
 
-        <!ELEMENT environment (transactionManager,dataSource)>
+        <!-- <!ELEMENT environment (transactionManager,dataSource)> -->
+        <!ELEMENT environment (dataSource)>
         <!ATTLIST environment
                 id CDATA #REQUIRED
                 >

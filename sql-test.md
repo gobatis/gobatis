@@ -16,7 +16,9 @@
 **正确用例：**
 
 ```sql
-select * from users where `role`='admin' age >=18 and sex= 1 and `status` = 'abc' limit 2,1; 
+select *
+from users
+where `role` = 'admin' age >=18 and sex= 1 and `status` = 'abc' limit 2,1; 
 ```
 
 **异常用例：**
@@ -24,6 +26,12 @@ select * from users where `role`='admin' age >=18 and sex= 1 and `status` = 'abc
 ```sql
 
 ```
+
+## 区别
+
+* 扩展 module 标签，用于设置包的 go mod module
+* 不支持 transactionManager
+
 
 
 
