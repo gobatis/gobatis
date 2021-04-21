@@ -11,7 +11,7 @@ import (
 	"sync"
 )
 
-func parseConfig(db *DB, file string, content []byte) (err error) {
+func parseConfig(engine *Engine, file string, content []byte) (err error) {
 	listener := &xmlParser{
 		file:          file,
 		stack:         newXMLStack(),
@@ -23,13 +23,51 @@ func parseConfig(db *DB, file string, content []byte) (err error) {
 		return
 	}
 	
-	d, _ := json.MarshalIndent(listener.rootNode, "", "\t")
-	fmt.Println(string(d))
+	//d, _ := json.MarshalIndent(listener.rootNode, "", "\t")
+	//fmt.Println(string(d))
 	return
 }
 
-func parseMapper(db *DB, fileName string, content []byte) {
-
+func parseMapper(engine *Engine, file string, content []byte) (err error) {
+	
+	listener := &xmlParser{
+		file:          file,
+		stack:         newXMLStack(),
+		rootElement:   dtd.Mapper,
+		elementGetter: dtd.MapperElement,
+	}
+	err = parseNode(listener, content)
+	if err != nil {
+		return
+	}
+	
+	if listener.rootNode == nil {
+		engine.logger.Warnf("empty mapperCache file: %s", file)
+		return
+	}
+	
+	for _, v := range listener.rootNode.Nodes {
+		if v.Name == dtd.SELECT ||
+			v.Name == dtd.INSERT ||
+			v.Name == dtd.DELETE ||
+			v.Name == dtd.UPDATE ||
+			v.Name == dtd.SQL {
+			id := v.GetAttribute(dtd.ID)
+			if id == "" {
+				err = parseError(file, v.start, fmt.Sprintf("element: %s miss id", v.Name))
+				return
+			}
+			err = engine.addStatement(file, v.start, id, v)
+			if err != nil {
+				return
+			}
+		}
+	}
+	
+	d, _ := json.MarshalIndent(engine.statements, "", "\t")
+	fmt.Println(string(d))
+	
+	return
 }
 
 func parseNode(listener *xmlParser, content []byte) (err error) {
@@ -45,6 +83,10 @@ func parseNode(listener *xmlParser, content []byte) (err error) {
 		return
 	}
 	return
+}
+
+func parseError(file string, token antlr.Token, msg string) error {
+	return fmt.Errorf("%s line %d:%d, parse error: %s", file, token.GetLine(), token.GetColumn(), msg)
 }
 
 func newXMLNode(file, name string, token antlr.Token) *xmlNode {
@@ -63,12 +105,24 @@ type xmlNode struct {
 	Nodes      []*xmlNode
 	nodesCount map[string]int
 	start      antlr.Token
+	textOnly   bool
 }
 
 type xmlNodeAttribute struct {
 	File  string      `json:"-"`
 	Start antlr.Token `json:"-"`
 	Value string
+}
+
+func (p *xmlNode) GetAttribute(name string) string {
+	if p.Attributes == nil {
+		return ""
+	}
+	v, ok := p.Attributes[name]
+	if ok {
+		return v.Value
+	}
+	return ""
 }
 
 func (p *xmlNode) AddAttribute(name string, value *xmlNodeAttribute) {
@@ -182,6 +236,10 @@ func (p *xmlParser) validateNode(node *xmlNode, elem *dtd.Element) {
 	
 	for _, childNode := range node.Nodes {
 		
+		if childNode.textOnly {
+			continue
+		}
+		
 		// check not supported node
 		if !elem.HasNode(childNode.Name) {
 			p.setError(
@@ -224,7 +282,7 @@ func (p *xmlParser) validateNode(node *xmlNode, elem *dtd.Element) {
 }
 
 func (p *xmlParser) setError(msg string, token antlr.Token) {
-	p.error = fmt.Errorf("%s line %d:%d, parse error: %s", p.file, token.GetLine(), token.GetColumn(), msg)
+	p.error = parseError(p.file, token, msg)
 }
 
 func (p *xmlParser) EnterElement(c *xml.ElementContext) {
@@ -262,10 +320,12 @@ func (p *xmlParser) EnterAttribute(c *xml.AttributeContext) {
 	if p.error != nil || p.stack.Peak() == nil {
 		return
 	}
-	p.stack.Peak().AddAttribute(c.Name().GetText(), &xmlNodeAttribute{
+	name := strings.TrimSpace(c.Name().GetText())
+	value := strings.TrimSpace(p.trimAttributeValueQuote(c.STRING().GetText()))
+	p.stack.Peak().AddAttribute(name, &xmlNodeAttribute{
 		File:  p.file,
 		Start: c.STRING().GetSymbol(),
-		Value: p.trimAttributeValueQuote(c.STRING().GetText()),
+		Value: value,
 	})
 }
 
@@ -275,7 +335,7 @@ func (p *xmlParser) EnterChardata(c *xml.ChardataContext) {
 	}
 	text := strings.TrimSpace(c.GetText())
 	if text != "" {
-		p.stack.Peak().AddNode(&xmlNode{File: p.file, Text: text, start: c.GetStart()})
+		p.stack.Peak().AddNode(&xmlNode{File: p.file, Text: text, start: c.GetStart(), textOnly: true})
 	}
 }
 

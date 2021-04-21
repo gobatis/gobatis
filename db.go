@@ -7,8 +7,6 @@ import (
 	"fmt"
 	"github.com/koyeo/gobatis/driver/mysql"
 	"github.com/koyeo/gobatis/driver/postgresql"
-	"io/ioutil"
-	"net/http"
 	"time"
 )
 
@@ -19,35 +17,10 @@ func NewDB(driver, dsn string) *DB {
 	}
 }
 
-func NewPostgresql(dsn string) *DB {
-	return NewDB(postgresql.PGX, dsn)
-}
-
-func NewMySQL(dsn string) *DB {
-	return NewDB(mysql.MySQL, dsn)
-}
-
 type DB struct {
 	driver string
 	dsn    string
-	bundle http.FileSystem
 	db     *sql.DB
-}
-
-func (p *DB) SetBundle(bundle http.FileSystem) {
-	p.bundle = bundle
-}
-
-func (p *DB) Init() (err error) {
-	err = p.parseConfig()
-	if err != nil {
-		return
-	}
-	err = p.initDB()
-	if err != nil {
-		return
-	}
-	return
 }
 
 func (p *DB) initDB() (err error) {
@@ -65,40 +38,6 @@ func (p *DB) initDB() (err error) {
 	}
 	p.dsn = ""
 	return
-}
-
-func (p *DB) parseConfig() (err error) {
-	if p.bundle == nil {
-		err = fmt.Errorf("no set bundle")
-		return
-	}
-	c, err := p.bundle.Open(CONFIG_XML)
-	if err != nil {
-		err = fmt.Errorf("open %s error: %s", CONFIG_XML, err)
-		return
-	}
-	defer func() {
-		_ = c.Close()
-	}()
-	d, err := ioutil.ReadAll(c)
-	if err != nil {
-		err = fmt.Errorf("read %s content error: %s", CONFIG_XML, err)
-		return
-	}
-	err = parseConfig(p, CONFIG_XML, d)
-	return
-}
-
-func (p *DB) parseSql() (err error) {
-	return
-}
-
-func (p *DB) registerAlias() {
-
-}
-
-func (p *DB) registerMapper() {
-
 }
 
 func (p *DB) PingContext(ctx context.Context) error {

@@ -32,7 +32,18 @@ where `role` = 'admin' age >=18 and sex= 1 and `status` = 'abc' limit 2,1;
 * 扩展 module 标签，用于设置包的 go mod module
 * 不支持 transactionManager
 
+## 参数语法
 
+```
+paramterType="id:int64,name:string,user:struct"
+#{id},#{name},#{user.Name}
+
+paramterType="user:struct"
+#{user.Name}
+
+paramterType="struct"
+#{Name}
+```
 
 
 

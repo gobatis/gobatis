@@ -1,29 +1,28 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
-        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+        "../../../dtd/mapper.dtd">
 
 <mapper namespace="test/mapper@UserMapper">
 
     <cache blocking="123">
     </cache>
-    <cache blocking="123">
 
-    </cache>
-
-    <select id="GetUser" parameterType="int64" resultType="test/entity@User">
-        select * from users where id = #{id}
-        <where>
-            <if test="a != nil">
-                a
-                <if test="a!=nil">ok</if>
-                <where>
-
-                </where>
-            </if>
-        </where>
-
+    <select id="SelectTestById" parameterType="id:int64,name:string,user:struct" resultType="int64">
+        select * from test where id = #{1}
     </select>
+
+    <!--    <select id="GetUser" parameterType="auto" resultType="test/entity@User">-->
+    <!--        select * from users-->
+    <!--        <where>-->
+    <!--            <if test="Id != nil">-->
+    <!--                id = #{Id}-->
+    <!--            </if>-->
+    <!--            <if test="Name != nil">-->
+    <!--                name = #{Name}-->
+    <!--            </if>-->
+    <!--        </where>-->
+    <!--    </select>-->
     <!--    <select id="selectUsers" parameterType="id:int64,name:string" resultMap="Blog[]">-->
     <!--        select * from blog-->
     <!--    </select>-->

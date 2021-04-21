@@ -78,12 +78,13 @@ func (p File) Readdir(count int) ([]os.FileInfo, error) {
 	}
 	var res []os.FileInfo
 	for _, v := range infos {
-		if strings.HasSuffix(v.Name(), suffix) {
+		if v.IsDir() || strings.HasSuffix(v.Name(), suffix) {
 			res = append(res, v)
 		}
 	}
 	return res, nil
 }
+
 func (p File) Stat() (os.FileInfo, error) {
 	return p.f.Stat()
 }

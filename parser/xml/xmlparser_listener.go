@@ -3,7 +3,7 @@
 package xml // XMLParser
 import "github.com/antlr/antlr4/runtime/Go/antlr"
 
-// XMLParserListener is a complete Listener for a parse tree produced by XMLParser.
+// XMLParserListener is a complete listener for a parse tree produced by XMLParser.
 type XMLParserListener interface {
 	antlr.ParseTreeListener
 
