@@ -1,0 +1,7 @@
+IDENTIFIER=1
+TYPE=2
+COMMA=3
+COLON=4
+WS=5
+','=3
+':'=4

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/antlr/antlr4/runtime/Go/antlr"
 	"github.com/koyeo/gobatis/dtd"
+	"github.com/koyeo/gobatis/parser/expr"
 	"github.com/koyeo/gobatis/parser/xml"
 	"strings"
 	"sync"
@@ -162,40 +163,47 @@ func newXMLStack() *xmlNodeStack {
 	return &xmlNodeStack{l, lock}
 }
 
-func (stack *xmlNodeStack) Push(value *xmlNode) {
-	stack.lock.Lock()
-	defer stack.lock.Unlock()
-	stack.list.PushBack(value)
+func (p *xmlNodeStack) Push(value *xmlNode) {
+	p.lock.Lock()
+	defer p.lock.Unlock()
+	p.list.PushBack(value)
 }
 
-func (stack *xmlNodeStack) Pop() *xmlNode {
-	stack.lock.Lock()
-	defer stack.lock.Unlock()
-	e := stack.list.Back()
+func (p *xmlNodeStack) Pop() *xmlNode {
+	p.lock.Lock()
+	defer p.lock.Unlock()
+	e := p.list.Back()
 	if e != nil {
-		stack.list.Remove(e)
+		p.list.Remove(e)
 		return e.Value.(*xmlNode)
 	}
 	return nil
 }
 
-func (stack *xmlNodeStack) Peak() *xmlNode {
-	e := stack.list.Back()
+func (p *xmlNodeStack) Peak() *xmlNode {
+	p.lock.RLock()
+	defer p.lock.Unlock()
+	e := p.list.Back()
 	if e != nil {
 		return e.Value.(*xmlNode)
 	}
 	return nil
 }
 
-func (stack *xmlNodeStack) Len() int {
-	return stack.list.Len()
+func (p *xmlNodeStack) Len() int {
+	p.lock.RLock()
+	defer p.lock.Unlock()
+	return p.list.Len()
 }
 
-func (stack *xmlNodeStack) Empty() bool {
-	return stack.list.Len() == 0
+func (p *xmlNodeStack) Empty() bool {
+	p.lock.RLock()
+	defer p.lock.Unlock()
+	return p.list.Len() == 0
 }
 
 type xmlParser struct {
+	*antlr.BaseParseTreeListener
 	file          string
 	content       []byte
 	depth         int
@@ -354,10 +362,118 @@ func (p *xmlParser) ExitEveryRule(ctx antlr.ParserRuleContext) {
 	}
 }
 
-func (p *xmlParser) VisitTerminal(_ antlr.TerminalNode) {
-	// pass
+type exprValue struct {
+	Value interface{}
+	Elem  string
+	Type  string
 }
 
-func (p *xmlParser) VisitErrorNode(_ antlr.ErrorNode) {
-	// pass
+type exprStack struct {
+	list *list.List
+	lock *sync.RWMutex
+}
+
+func newExprStack() *exprStack {
+	l := list.New()
+	lock := &sync.RWMutex{}
+	return &exprStack{l, lock}
+}
+
+func (p *exprStack) Push(value *exprValue) {
+	p.lock.Lock()
+	defer p.lock.Unlock()
+	p.list.PushBack(value)
+}
+
+func (p *exprStack) Pop() *exprValue {
+	p.lock.Lock()
+	defer p.lock.Unlock()
+	e := p.list.Back()
+	if e != nil {
+		p.list.Remove(e)
+		return e.Value.(*exprValue)
+	}
+	return nil
+}
+
+func (p *exprStack) Peak() *exprValue {
+	p.lock.RLock()
+	defer p.lock.Unlock()
+	e := p.list.Back()
+	if e != nil {
+		return e.Value.(*exprValue)
+	}
+	return nil
+}
+
+func (p *exprStack) Len() int {
+	p.lock.RLock()
+	defer p.lock.Unlock()
+	return p.list.Len()
+}
+
+func (p *exprStack) Empty() bool {
+	p.lock.RLock()
+	defer p.lock.Unlock()
+	return p.list.Len() == 0
+}
+
+func newExprParams(params ...interface{}) *exprParams {
+	r := &exprParams{}
+	for _, v := range params {
+		r.values = append(r.values, exprValue{
+			Value: v,
+		})
+	}
+	return r
+}
+
+type exprParams struct {
+	values  []exprValue
+	aliases map[string]int
+}
+
+func (p *exprParams) get(name string) (val exprValue, ok bool) {
+	if p.aliases == nil {
+		return
+	}
+	index, ok := p.aliases[name]
+	if !ok {
+		return
+	}
+	if index > len(p.values)-1 {
+		return
+	}
+	ok = true
+	val = p.values[index]
+	return
+}
+
+func (p *exprParams) alias(name string, index int) error {
+	if p.aliases == nil {
+		p.aliases = map[string]int{}
+	} else {
+		_, ok := p.aliases[name]
+		if ok {
+			return fmt.Errorf("duplicated alias: %s", name)
+		}
+	}
+	p.aliases[name] = index
+	return nil
+}
+
+func (p *exprParams) index(index int) (val exprValue, ok bool) {
+	if p.aliases == nil {
+		return
+	}
+	if index > len(p.values)-1 {
+		return
+	}
+	ok = true
+	val = p.values[index]
+	return
+}
+
+type exprParser struct {
+	*expr.BaseExprParserListener
 }

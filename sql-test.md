@@ -45,5 +45,11 @@ paramterType="struct"
 #{Name}
 ```
 
+## 表达式语法
 
+```
+if A > 3
+if a != nil || b != nil
+#{ X/3600*3600 }
+```
 

@@ -1,4 +1,4 @@
-package xml
+package expr
 
 import (
 	"fmt"
@@ -8,7 +8,7 @@ import (
 
 func TestNewParamLexer(t *testing.T) {
 	input := antlr.NewInputStream("id:int,name:string")
-	lexer := NewParameterLexer(input)
+	lexer := NewExprLexer(input)
 	for {
 		tok := lexer.NextToken()
 		fmt.Println(tok.GetText(), tok.GetTokenType())

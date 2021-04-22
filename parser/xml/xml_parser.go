@@ -224,6 +224,18 @@ func (s *DocumentContext) ToStringTree(ruleNames []string, recog antlr.Recognize
 	return antlr.TreesStringTree(s, ruleNames, recog)
 }
 
+func (s *DocumentContext) EnterRule(listener antlr.ParseTreeListener) {
+	if listenerT, ok := listener.(XMLParserListener); ok {
+		listenerT.EnterDocument(s)
+	}
+}
+
+func (s *DocumentContext) ExitRule(listener antlr.ParseTreeListener) {
+	if listenerT, ok := listener.(XMLParserListener); ok {
+		listenerT.ExitDocument(s)
+	}
+}
+
 func (p *XMLParser) Document() (localctx IDocumentContext) {
 	localctx = NewDocumentContext(p, p.GetParserRuleContext(), p.GetState())
 	p.EnterRule(localctx, 0, XMLParserRULE_document)
@@ -368,6 +380,18 @@ func (s *PrologContext) GetRuleContext() antlr.RuleContext {
 
 func (s *PrologContext) ToStringTree(ruleNames []string, recog antlr.Recognizer) string {
 	return antlr.TreesStringTree(s, ruleNames, recog)
+}
+
+func (s *PrologContext) EnterRule(listener antlr.ParseTreeListener) {
+	if listenerT, ok := listener.(XMLParserListener); ok {
+		listenerT.EnterProlog(s)
+	}
+}
+
+func (s *PrologContext) ExitRule(listener antlr.ParseTreeListener) {
+	if listenerT, ok := listener.(XMLParserListener); ok {
+		listenerT.ExitProlog(s)
+	}
 }
 
 func (p *XMLParser) Prolog() (localctx IPrologContext) {
@@ -555,6 +579,18 @@ func (s *ContentContext) GetRuleContext() antlr.RuleContext {
 
 func (s *ContentContext) ToStringTree(ruleNames []string, recog antlr.Recognizer) string {
 	return antlr.TreesStringTree(s, ruleNames, recog)
+}
+
+func (s *ContentContext) EnterRule(listener antlr.ParseTreeListener) {
+	if listenerT, ok := listener.(XMLParserListener); ok {
+		listenerT.EnterContent(s)
+	}
+}
+
+func (s *ContentContext) ExitRule(listener antlr.ParseTreeListener) {
+	if listenerT, ok := listener.(XMLParserListener); ok {
+		listenerT.ExitContent(s)
+	}
 }
 
 func (p *XMLParser) Content() (localctx IContentContext) {
@@ -767,6 +803,18 @@ func (s *ElementContext) ToStringTree(ruleNames []string, recog antlr.Recognizer
 	return antlr.TreesStringTree(s, ruleNames, recog)
 }
 
+func (s *ElementContext) EnterRule(listener antlr.ParseTreeListener) {
+	if listenerT, ok := listener.(XMLParserListener); ok {
+		listenerT.EnterElement(s)
+	}
+}
+
+func (s *ElementContext) ExitRule(listener antlr.ParseTreeListener) {
+	if listenerT, ok := listener.(XMLParserListener); ok {
+		listenerT.ExitElement(s)
+	}
+}
+
 func (p *XMLParser) Element() (localctx IElementContext) {
 	localctx = NewElementContext(p, p.GetParserRuleContext(), p.GetState())
 	p.EnterRule(localctx, 6, XMLParserRULE_element)
@@ -928,6 +976,18 @@ func (s *ReferenceContext) ToStringTree(ruleNames []string, recog antlr.Recogniz
 	return antlr.TreesStringTree(s, ruleNames, recog)
 }
 
+func (s *ReferenceContext) EnterRule(listener antlr.ParseTreeListener) {
+	if listenerT, ok := listener.(XMLParserListener); ok {
+		listenerT.EnterReference(s)
+	}
+}
+
+func (s *ReferenceContext) ExitRule(listener antlr.ParseTreeListener) {
+	if listenerT, ok := listener.(XMLParserListener); ok {
+		listenerT.ExitReference(s)
+	}
+}
+
 func (p *XMLParser) Reference() (localctx IReferenceContext) {
 	localctx = NewReferenceContext(p, p.GetParserRuleContext(), p.GetState())
 	p.EnterRule(localctx, 8, XMLParserRULE_reference)
@@ -1023,6 +1083,18 @@ func (s *AttributeContext) ToStringTree(ruleNames []string, recog antlr.Recogniz
 	return antlr.TreesStringTree(s, ruleNames, recog)
 }
 
+func (s *AttributeContext) EnterRule(listener antlr.ParseTreeListener) {
+	if listenerT, ok := listener.(XMLParserListener); ok {
+		listenerT.EnterAttribute(s)
+	}
+}
+
+func (s *AttributeContext) ExitRule(listener antlr.ParseTreeListener) {
+	if listenerT, ok := listener.(XMLParserListener); ok {
+		listenerT.ExitAttribute(s)
+	}
+}
+
 func (p *XMLParser) Attribute() (localctx IAttributeContext) {
 	localctx = NewAttributeContext(p, p.GetParserRuleContext(), p.GetState())
 	p.EnterRule(localctx, 10, XMLParserRULE_attribute)
@@ -1112,6 +1184,18 @@ func (s *ChardataContext) GetRuleContext() antlr.RuleContext {
 
 func (s *ChardataContext) ToStringTree(ruleNames []string, recog antlr.Recognizer) string {
 	return antlr.TreesStringTree(s, ruleNames, recog)
+}
+
+func (s *ChardataContext) EnterRule(listener antlr.ParseTreeListener) {
+	if listenerT, ok := listener.(XMLParserListener); ok {
+		listenerT.EnterChardata(s)
+	}
+}
+
+func (s *ChardataContext) ExitRule(listener antlr.ParseTreeListener) {
+	if listenerT, ok := listener.(XMLParserListener); ok {
+		listenerT.ExitChardata(s)
+	}
 }
 
 func (p *XMLParser) Chardata() (localctx IChardataContext) {
@@ -1207,6 +1291,18 @@ func (s *MiscContext) GetRuleContext() antlr.RuleContext {
 
 func (s *MiscContext) ToStringTree(ruleNames []string, recog antlr.Recognizer) string {
 	return antlr.TreesStringTree(s, ruleNames, recog)
+}
+
+func (s *MiscContext) EnterRule(listener antlr.ParseTreeListener) {
+	if listenerT, ok := listener.(XMLParserListener); ok {
+		listenerT.EnterMisc(s)
+	}
+}
+
+func (s *MiscContext) ExitRule(listener antlr.ParseTreeListener) {
+	if listenerT, ok := listener.(XMLParserListener); ok {
+		listenerT.ExitMisc(s)
+	}
 }
 
 func (p *XMLParser) Misc() (localctx IMiscContext) {
