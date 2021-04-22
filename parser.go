@@ -2,7 +2,6 @@ package gobatis
 
 import (
 	"container/list"
-	"encoding/json"
 	"fmt"
 	"github.com/antlr/antlr4/runtime/Go/antlr"
 	"github.com/koyeo/gobatis/dtd"
@@ -11,7 +10,7 @@ import (
 	"sync"
 )
 
-func parseConfig(engine *Engine, file string, content []byte) (err error) {
+func parseConfig(engine *Engine, file, content string) (err error) {
 	listener := &xmlParser{
 		file:          file,
 		stack:         newXMLStack(),
@@ -28,7 +27,7 @@ func parseConfig(engine *Engine, file string, content []byte) (err error) {
 	return
 }
 
-func parseMapper(engine *Engine, file string, content []byte) (err error) {
+func parseMapper(engine *Engine, file, content string) (err error) {
 	
 	listener := &xmlParser{
 		file:          file,
@@ -64,14 +63,11 @@ func parseMapper(engine *Engine, file string, content []byte) (err error) {
 		}
 	}
 	
-	d, _ := json.MarshalIndent(engine.statements, "", "\t")
-	fmt.Println(string(d))
-	
 	return
 }
 
-func parseNode(listener *xmlParser, content []byte) (err error) {
-	lexer := xml.NewXMLLexer(antlr.NewInputStream(string(content)))
+func parseNode(listener *xmlParser, content string) (err error) {
+	lexer := xml.NewXMLLexer(antlr.NewInputStream(strings.TrimSpace(content)))
 	stream := antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel)
 	parser := xml.NewXMLParser(stream)
 	parser.BuildParseTrees = true
@@ -285,7 +281,7 @@ func (p *xmlParser) setError(msg string, token antlr.Token) {
 	p.error = parseError(p.file, token, msg)
 }
 
-func (p *xmlParser) EnterElement(c *xml.ElementContext) {
+func (p *xmlParser) enterElement(c *xml.ElementContext) {
 	if p.error != nil {
 		return
 	}
@@ -300,7 +296,7 @@ func (p *xmlParser) EnterElement(c *xml.ElementContext) {
 	p.depth++
 }
 
-func (p *xmlParser) ExitElement(_ *xml.ElementContext) {
+func (p *xmlParser) exitElement(_ *xml.ElementContext) {
 	if p.error != nil || p.stack.Peak() == nil {
 		return
 	}
@@ -315,7 +311,7 @@ func (p *xmlParser) ExitElement(_ *xml.ElementContext) {
 	}
 }
 
-func (p *xmlParser) EnterAttribute(c *xml.AttributeContext) {
+func (p *xmlParser) enterAttribute(c *xml.AttributeContext) {
 	// <?xml version="1.0" encoding="UTF-8" ?>
 	if p.error != nil || p.stack.Peak() == nil {
 		return
@@ -329,7 +325,7 @@ func (p *xmlParser) EnterAttribute(c *xml.AttributeContext) {
 	})
 }
 
-func (p *xmlParser) EnterChardata(c *xml.ChardataContext) {
+func (p *xmlParser) enterChardata(c *xml.ChardataContext) {
 	if p.error != nil || p.stack.Peak() == nil {
 		return
 	}
@@ -339,66 +335,29 @@ func (p *xmlParser) EnterChardata(c *xml.ChardataContext) {
 	}
 }
 
+func (p *xmlParser) EnterEveryRule(ctx antlr.ParserRuleContext) {
+	switch ctx.GetRuleIndex() {
+	case xml.XMLParserRULE_element:
+		p.enterElement(ctx.(*xml.ElementContext))
+	case xml.XMLParserRULE_attribute:
+		p.enterAttribute(ctx.(*xml.AttributeContext))
+	case xml.XMLParserRULE_chardata:
+		p.enterChardata(ctx.(*xml.ChardataContext))
+	}
+	
+}
+
+func (p *xmlParser) ExitEveryRule(ctx antlr.ParserRuleContext) {
+	switch ctx.GetRuleIndex() {
+	case xml.XMLParserRULE_element:
+		p.exitElement(nil)
+	}
+}
+
 func (p *xmlParser) VisitTerminal(_ antlr.TerminalNode) {
 	// pass
 }
 
 func (p *xmlParser) VisitErrorNode(_ antlr.ErrorNode) {
-	// pass
-}
-
-func (p *xmlParser) EnterEveryRule(_ antlr.ParserRuleContext) {
-	// pass
-}
-
-func (p *xmlParser) ExitEveryRule(_ antlr.ParserRuleContext) {
-	// pass
-}
-
-func (p *xmlParser) EnterDocument(_ *xml.DocumentContext) {
-	// pass
-}
-
-func (p *xmlParser) EnterProlog(_ *xml.PrologContext) {
-	// pass
-}
-
-func (p *xmlParser) EnterContent(_ *xml.ContentContext) {
-	// pass
-}
-
-func (p *xmlParser) EnterReference(_ *xml.ReferenceContext) {
-	// pass
-}
-
-func (p *xmlParser) ExitReference(_ *xml.ReferenceContext) {
-	// pass
-}
-
-func (p *xmlParser) ExitAttribute(_ *xml.AttributeContext) {
-	// pass
-}
-
-func (p *xmlParser) ExitChardata(_ *xml.ChardataContext) {
-	// pass
-}
-
-func (p *xmlParser) ExitMisc(_ *xml.MiscContext) {
-	// pass
-}
-
-func (p *xmlParser) EnterMisc(_ *xml.MiscContext) {
-	// pass
-}
-
-func (p *xmlParser) ExitDocument(_ *xml.DocumentContext) {
-	// pass
-}
-
-func (p *xmlParser) ExitProlog(_ *xml.PrologContext) {
-	// pass
-}
-
-func (p *xmlParser) ExitContent(_ *xml.ContentContext) {
 	// pass
 }

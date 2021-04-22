@@ -109,7 +109,7 @@ func (p *Engine) parseConfig() (err error) {
 	if err != nil {
 		return
 	}
-	err = parseConfig(p, CONFIG_XML, d)
+	err = parseConfig(p, CONFIG_XML, string(d))
 	return
 }
 
@@ -141,7 +141,7 @@ func (p *Engine) parseMappers() (err error) {
 		if err != nil {
 			return
 		}
-		err = parseMapper(p, v, d)
+		err = parseMapper(p, v, string(d))
 	}
 	return
 }
@@ -260,6 +260,7 @@ func (p *Engine) makeParams(args ...interface{}) Params {
 	params := make(Params)
 	for _, v := range args {
 		//rv :=
+		fmt.Println(v)
 	}
 	return params
 }

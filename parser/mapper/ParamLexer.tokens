@@ -1,0 +1,5 @@
+IDENTIFIER=1
+COMMA=2
+COLON=3
+','=2
+':'=3
