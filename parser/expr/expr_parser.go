@@ -35,7 +35,7 @@ var parserATN = []uint16{
 	10, 20, 3, 20, 5, 20, 168, 10, 20, 3, 20, 3, 20, 3, 20, 3, 20, 3, 20, 5,
 	20, 175, 10, 20, 3, 20, 3, 20, 3, 20, 2, 4, 10, 12, 21, 2, 4, 6, 8, 10,
 	12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 2, 8, 3, 2, 31,
-	36, 4, 2, 26, 30, 35, 36, 4, 2, 25, 25, 32, 34, 3, 2, 19, 24, 4, 2, 37,
+	34, 4, 2, 26, 30, 35, 36, 4, 2, 25, 25, 32, 34, 3, 2, 19, 24, 4, 2, 37,
 	40, 44, 45, 3, 2, 51, 52, 2, 185, 2, 40, 3, 2, 2, 2, 4, 54, 3, 2, 2, 2,
 	6, 56, 3, 2, 2, 2, 8, 58, 3, 2, 2, 2, 10, 65, 3, 2, 2, 2, 12, 90, 3, 2,
 	2, 2, 14, 102, 3, 2, 2, 2, 16, 116, 3, 2, 2, 2, 18, 118, 3, 2, 2, 2, 20,
@@ -831,10 +831,6 @@ func (s *ExpressionContext) STAR() antlr.TerminalNode {
 	return s.GetToken(ExprParserSTAR, 0)
 }
 
-func (s *ExpressionContext) AMPERSAND() antlr.TerminalNode {
-	return s.GetToken(ExprParserAMPERSAND, 0)
-}
-
 func (s *ExpressionContext) DIV() antlr.TerminalNode {
 	return s.GetToken(ExprParserDIV, 0)
 }
@@ -849,6 +845,10 @@ func (s *ExpressionContext) LSHIFT() antlr.TerminalNode {
 
 func (s *ExpressionContext) RSHIFT() antlr.TerminalNode {
 	return s.GetToken(ExprParserRSHIFT, 0)
+}
+
+func (s *ExpressionContext) AMPERSAND() antlr.TerminalNode {
+	return s.GetToken(ExprParserAMPERSAND, 0)
 }
 
 func (s *ExpressionContext) BIT_CLEAR() antlr.TerminalNode {
@@ -963,7 +963,7 @@ func (p *ExprParser) expression(_p int) (localctx IExpressionContext) {
 
 			_la = p.GetTokenStream().LA(1)
 
-			if !(((_la-29)&-(0x1f+1)) == 0 && ((1<<uint((_la-29)))&((1<<(ExprParserEXCLAMATION-29))|(1<<(ExprParserPLUS-29))|(1<<(ExprParserMINUS-29))|(1<<(ExprParserCARET-29))|(1<<(ExprParserSTAR-29))|(1<<(ExprParserAMPERSAND-29)))) != 0) {
+			if !(((_la-29)&-(0x1f+1)) == 0 && ((1<<uint((_la-29)))&((1<<(ExprParserEXCLAMATION-29))|(1<<(ExprParserPLUS-29))|(1<<(ExprParserMINUS-29))|(1<<(ExprParserCARET-29)))) != 0) {
 				var _ri = p.GetErrorHandler().RecoverInline(p)
 
 				localctx.(*ExpressionContext).unary_op = _ri

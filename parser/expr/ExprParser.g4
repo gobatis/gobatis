@@ -19,8 +19,8 @@ expression:
         | MINUS
         | EXCLAMATION
         | CARET
-        | STAR
-        | AMPERSAND
+//        | STAR
+//        | AMPERSAND
 	) expression
 	| expression mul_op = (
          STAR

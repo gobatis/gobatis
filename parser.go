@@ -479,17 +479,19 @@ func (p *exprParams) alias(name, expected string, index int) error {
 	}
 	vl := len(p.values) - 1
 	if index < 0 || index > vl {
-		return fmt.Errorf("alias index:%d out of params length: %d", index, vl)
+		return fmt.Errorf("alias: %s index: %d out of params length: %d", name, index, vl)
 	}
-	var err error
-	ev := p.values[index]
-	ev.aliasKind, err = p.toReflectKind(expected)
-	if err != nil {
-		return fmt.Errorf("convert alias: %s type error: %s", name, err.Error())
-	}
-	if !ev.isExpected() && !ev.convertible() {
-		return fmt.Errorf("param type: %s is not alias expteced type:%s, and can't convert",
-			ev.paramValue.Kind(), ev.aliasKind)
+	if expected != "" {
+		var err error
+		ev := p.values[index]
+		ev.aliasKind, err = p.toReflectKind(expected)
+		if err != nil {
+			return fmt.Errorf("convert alias: %s type: %s to %s error: %s", name, ev.aliasKind, expected, err)
+		}
+		if !ev.isExpected() && !ev.convertible() {
+			return fmt.Errorf("param type: %s is not alias expteced type: %s",
+				ev.paramValue.Kind(), ev.aliasKind)
+		}
 	}
 	p.aliases[name] = index
 	return nil
@@ -576,20 +578,54 @@ func (p *exprParser) ExitExpression(ctx *expr.ExpressionContext) {
 	if p.error != nil {
 		return
 	}
-	if ctx.GetMul_op() != nil || ctx.GetAdd_op() != nil {
+	
+	if ctx.GetUnary_op() != nil {
+		left, err := p.Pop()
+		if err != nil {
+			p.error = err
+			return
+		}
+		err = p.unaryCalc(left, ctx.GetUnary_op())
+		if err != nil {
+			p.error = err
+			return
+		}
+	} else if ctx.GetMul_op() != nil ||
+		ctx.GetAdd_op() != nil ||
+		ctx.GetRel_op() != nil ||
+		ctx.LOGICAL_AND() != nil ||
+		ctx.LOGICAL_OR() != nil {
 		left, right, err := p.popBinaryOperands()
 		if err != nil {
 			p.error = err
 			return
 		}
 		if ctx.GetAdd_op() != nil {
-			err = p.calcNumeric(left, right, ctx.GetAdd_op())
+			err = p.numericStringCalc(left, right, ctx.GetAdd_op())
 			if err != nil {
 				p.error = err
 				return
 			}
 		} else if ctx.GetMul_op() != nil {
-			err = p.calcNumeric(left, right, ctx.GetMul_op())
+			err = p.numericStringCalc(left, right, ctx.GetMul_op())
+			if err != nil {
+				p.error = err
+				return
+			}
+		} else if ctx.GetRel_op() != nil {
+			err = p.relationCalc(left, right, ctx.GetRel_op())
+			if err != nil {
+				p.error = err
+				return
+			}
+		} else if ctx.LOGICAL_AND() != nil {
+			err = p.logicCalc(left, right, ctx.LOGICAL_AND().GetSymbol())
+			if err != nil {
+				p.error = err
+				return
+			}
+		} else if ctx.LOGICAL_OR() != nil {
+			err = p.logicCalc(left, right, ctx.LOGICAL_OR().GetSymbol())
 			if err != nil {
 				p.error = err
 				return
@@ -626,7 +662,6 @@ func (p *exprParser) ExitOperandName(ctx *expr.OperandNameContext) {
 		return
 	}
 	p.Push(&val)
-	fmt.Println("scan var", ctx.GetText())
 }
 
 func (p *exprParser) ExitInteger(ctx *expr.IntegerContext) {
@@ -634,7 +669,6 @@ func (p *exprParser) ExitInteger(ctx *expr.IntegerContext) {
 		value:     ctx.GetText(),
 		aliasKind: reflect.Int,
 	})
-	fmt.Println("scan int", ctx.GetText())
 }
 
 func (p *exprParser) ExitString_(ctx *expr.String_Context) {
@@ -689,20 +723,15 @@ func (p *exprParser) popBinaryOperands() (left, right *exprValue, err error) {
 	return
 }
 
-func (p *exprParser) calcNumeric(left, right *exprValue, op antlr.Token) error {
-	var kind reflect.Kind
+func (p *exprParser) getReferKind(left, right *exprValue) (kind reflect.Kind) {
 	if left.value == nil && right.value != nil {
 		kind = right.aliasKind
-	} else {
-		kind = left.aliasKind
 	}
-	
-	if !p.isNumeric(kind) {
-		return parseError(p.file, op, fmt.Sprintf(
-			"invalid operation: %s %s %s", left.value, op.GetText(), right.value,
-		))
-	}
-	
+	kind = left.aliasKind
+	return p.getMaxKind(kind)
+}
+
+func (p *exprParser) getMaxKind(kind reflect.Kind) reflect.Kind {
 	if kind == reflect.Int ||
 		kind == reflect.Int8 ||
 		kind == reflect.Int16 ||
@@ -719,17 +748,27 @@ func (p *exprParser) calcNumeric(left, right *exprValue, op antlr.Token) error {
 		kind == reflect.Float64 {
 		kind = reflect.Float64
 	}
+	return kind
+}
+
+func (p *exprParser) numericStringCalc(left, right *exprValue, op antlr.Token) error {
+	kind := p.getReferKind(left, right)
+	if !p.isNumeric(kind) && (op.GetTokenType() == expr.ExprParserPLUS && kind != reflect.String) {
+		return parseError(p.file, op, fmt.Sprintf(
+			"invalid operation: %s %s %s,unsupported type: %s", left.value, op.GetText(), right.value, kind,
+		))
+	}
 	
 	result := &exprValue{aliasKind: kind}
 	switch kind {
 	case reflect.Int64:
 		a, err := cast.ToInt64E(left.value)
 		if err != nil {
-			return p.castError(op, kind, left, err)
+			return p.castError(op, err)
 		}
 		b, err := cast.ToInt64E(right.value)
 		if err != nil {
-			return p.castError(op, kind, right, err)
+			return p.castError(op, err)
 		}
 		switch op.GetTokenType() {
 		case expr.ExprParserPLUS:
@@ -763,11 +802,11 @@ func (p *exprParser) calcNumeric(left, right *exprValue, op antlr.Token) error {
 	case reflect.Uint64:
 		a, err := cast.ToInt8E(left.value)
 		if err != nil {
-			return p.castError(op, kind, left, err)
+			return p.castError(op, err)
 		}
 		b, err := cast.ToInt8E(right.value)
 		if err != nil {
-			return p.castError(op, kind, right, err)
+			return p.castError(op, err)
 		}
 		switch op.GetTokenType() {
 		case expr.ExprParserPLUS:
@@ -801,11 +840,11 @@ func (p *exprParser) calcNumeric(left, right *exprValue, op antlr.Token) error {
 	case reflect.Float64:
 		a, err := cast.ToIntE(left.value)
 		if err != nil {
-			return p.castError(op, kind, left, err)
+			return p.castError(op, err)
 		}
 		b, err := cast.ToIntE(right.value)
 		if err != nil {
-			return p.castError(op, kind, right, err)
+			return p.castError(op, err)
 		}
 		switch op.GetTokenType() {
 		case expr.ExprParserPLUS:
@@ -836,17 +875,216 @@ func (p *exprParser) calcNumeric(left, right *exprValue, op antlr.Token) error {
 		default:
 			return p.unsupportedOpError(op)
 		}
+	case reflect.String:
+		a, err := cast.ToStringE(left.value)
+		if err != nil {
+			return p.castError(op, err)
+		}
+		b, err := cast.ToStringE(right.value)
+		if err != nil {
+			return p.castError(op, err)
+		}
+		switch op.GetTokenType() {
+		case expr.ExprParserPLUS:
+			result.value = a + b
+		default:
+			return p.unsupportedOpError(op)
+		}
 	default:
 		return parseError(p.file, op, fmt.Sprintf("unsupported numeric op type: %s", kind))
 	}
-	
 	p.Push(result)
 	
 	return nil
 }
 
-func (p *exprParser) castError(op antlr.Token, kind reflect.Kind, val *exprValue, err error) error {
-	return parseError(p.file, op, fmt.Sprintf("convert %+v to type: %s error: %s", val.value, kind, err))
+func (p *exprParser) relationCalc(left, right *exprValue, op antlr.Token) error {
+	kind := p.getReferKind(left, right)
+	if !p.isNumeric(kind) && kind != reflect.String {
+		return parseError(p.file, op, fmt.Sprintf(
+			"invalid operation: %s %s %s, unsupported type: %s", left.value, op.GetText(), right.value, kind,
+		))
+	}
+	result := &exprValue{aliasKind: reflect.Bool}
+	switch kind {
+	case reflect.Int64:
+		a, err := cast.ToInt64E(left.value)
+		if err != nil {
+			return p.castError(op, err)
+		}
+		b, err := cast.ToInt64E(right.value)
+		if err != nil {
+			return p.castError(op, err)
+		}
+		switch op.GetTokenType() {
+		case expr.ExprParserEQUALS:
+			result.value = a == b
+		case expr.ExprParserNOT_EQUALS:
+			result.value = a != b
+		case expr.ExprParserLESS:
+			result.value = a < b
+		case expr.ExprParserLESS_OR_EQUALS:
+			result.value = a <= b
+		case expr.ExprParserGREATER:
+			result.value = a > b
+		case expr.ExprParserGREATER_OR_EQUALS:
+			result.value = a >= b
+		default:
+			return p.unsupportedOpError(op)
+		}
+	case reflect.Uint64:
+		a, err := cast.ToUint64E(left.value)
+		if err != nil {
+			return p.castError(op, err)
+		}
+		b, err := cast.ToUint64E(right.value)
+		if err != nil {
+			return p.castError(op, err)
+		}
+		switch op.GetTokenType() {
+		case expr.ExprParserEQUALS:
+			result.value = a == b
+		case expr.ExprParserNOT_EQUALS:
+			result.value = a != b
+		case expr.ExprParserLESS:
+			result.value = a < b
+		case expr.ExprParserLESS_OR_EQUALS:
+			result.value = a <= b
+		case expr.ExprParserGREATER:
+			result.value = a > b
+		case expr.ExprParserGREATER_OR_EQUALS:
+			result.value = a >= b
+		default:
+			return p.unsupportedOpError(op)
+		}
+	case reflect.Float64:
+		a, err := cast.ToFloat64E(left.value)
+		if err != nil {
+			return p.castError(op, err)
+		}
+		b, err := cast.ToFloat64E(right.value)
+		if err != nil {
+			return p.castError(op, err)
+		}
+		switch op.GetTokenType() {
+		case expr.ExprParserEQUALS:
+			result.value = a == b
+		case expr.ExprParserNOT_EQUALS:
+			result.value = a != b
+		case expr.ExprParserLESS:
+			result.value = a < b
+		case expr.ExprParserLESS_OR_EQUALS:
+			result.value = a <= b
+		case expr.ExprParserGREATER:
+			result.value = a > b
+		case expr.ExprParserGREATER_OR_EQUALS:
+			result.value = a >= b
+		default:
+			return p.unsupportedOpError(op)
+		}
+	default:
+		return parseError(p.file, op, fmt.Sprintf("unsupported relation op type: %s", kind))
+	}
+	p.Push(result)
+	
+	return nil
+}
+
+func (p *exprParser) unaryCalc(left *exprValue, op antlr.Token) error {
+	
+	if !p.isNumeric(left.aliasKind) && left.aliasKind != reflect.Bool {
+		return parseError(p.file, op, fmt.Sprintf(
+			"invalid operation: %s%s , unsupported type: %s", op.GetText(), left.value, left.aliasKind,
+		))
+	}
+	
+	kind := p.getMaxKind(left.aliasKind)
+	result := &exprValue{aliasKind: kind}
+	switch kind {
+	case reflect.Int64:
+		a, err := cast.ToInt64E(left.value)
+		if err != nil {
+			return p.castError(op, err)
+		}
+		switch op.GetTokenType() {
+		case expr.ExprParserPLUS:
+			result.value = +a
+		case expr.ExprParserMINUS:
+			result.value = -a
+		case expr.ExprParserCARET:
+			result.value = ^a
+		default:
+			return p.unsupportedOpError(op)
+		}
+	case reflect.Uint64:
+		a, err := cast.ToUint64E(left.value)
+		if err != nil {
+			return p.castError(op, err)
+		}
+		switch op.GetTokenType() {
+		case expr.ExprParserPLUS:
+			result.value = +a
+		case expr.ExprParserMINUS:
+			result.value = -a
+		case expr.ExprParserCARET:
+			result.value = ^a
+		default:
+			return p.unsupportedOpError(op)
+		}
+	case reflect.Float64:
+		a, err := cast.ToFloat64E(left.value)
+		if err != nil {
+			return p.castError(op, err)
+		}
+		switch op.GetTokenType() {
+		case expr.ExprParserPLUS:
+			result.value = +a
+		case expr.ExprParserMINUS:
+			result.value = -a
+		default:
+			return p.unsupportedOpError(op)
+		}
+	case reflect.Bool:
+		a, err := cast.ToBoolE(left.value)
+		if err != nil {
+			return p.castError(op, err)
+		}
+		switch op.GetTokenType() {
+		case expr.ExprParserEXCLAMATION:
+			result.value = !a
+		default:
+			return p.unsupportedOpError(op)
+		}
+	default:
+		return parseError(p.file, op, fmt.Sprintf("unsupported unary op type: %s", left.aliasKind))
+	}
+	p.Push(result)
+	
+	return nil
+}
+
+func (p *exprParser) logicCalc(left, right *exprValue, op antlr.Token) error {
+	a, err := cast.ToBoolE(left.value)
+	if err != nil {
+		return p.castError(op, err)
+	}
+	b, err := cast.ToBoolE(right.value)
+	if err != nil {
+		return p.castError(op, err)
+	}
+	result := &exprValue{aliasKind: reflect.Bool}
+	switch op.GetTokenType() {
+	case expr.ExprParserLOGICAL_AND:
+		result.value = a && b
+	case expr.ExprParserLOGICAL_OR:
+		result.value = a || b
+	}
+	p.Push(result)
+	return nil
+}
+
+func (p *exprParser) castError(op antlr.Token, err error) error {
+	return parseError(p.file, op, fmt.Sprintf("convert error: %s", err))
 }
 
 func (p *exprParser) divisionByZero(op antlr.Token) error {
