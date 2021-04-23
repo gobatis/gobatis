@@ -26,17 +26,17 @@ func (s *BaseExprParserListener) EnterParameters(ctx *ParametersContext) {}
 // ExitParameters is called when production parameters is exited.
 func (s *BaseExprParserListener) ExitParameters(ctx *ParametersContext) {}
 
-// EnterParamType is called when production paramType is entered.
-func (s *BaseExprParserListener) EnterParamType(ctx *ParamTypeContext) {}
-
-// ExitParamType is called when production paramType is exited.
-func (s *BaseExprParserListener) ExitParamType(ctx *ParamTypeContext) {}
-
 // EnterParamDecl is called when production paramDecl is entered.
 func (s *BaseExprParserListener) EnterParamDecl(ctx *ParamDeclContext) {}
 
 // ExitParamDecl is called when production paramDecl is exited.
 func (s *BaseExprParserListener) ExitParamDecl(ctx *ParamDeclContext) {}
+
+// EnterParamType is called when production paramType is entered.
+func (s *BaseExprParserListener) EnterParamType(ctx *ParamTypeContext) {}
+
+// ExitParamType is called when production paramType is exited.
+func (s *BaseExprParserListener) ExitParamType(ctx *ParamTypeContext) {}
 
 // EnterExpressions is called when production expressions is entered.
 func (s *BaseExprParserListener) EnterExpressions(ctx *ExpressionsContext) {}
@@ -98,6 +98,12 @@ func (s *BaseExprParserListener) EnterString_(ctx *String_Context) {}
 // ExitString_ is called when production string_ is exited.
 func (s *BaseExprParserListener) ExitString_(ctx *String_Context) {}
 
+// EnterFloat_ is called when production float_ is entered.
+func (s *BaseExprParserListener) EnterFloat_(ctx *Float_Context) {}
+
+// ExitFloat_ is called when production float_ is exited.
+func (s *BaseExprParserListener) ExitFloat_(ctx *Float_Context) {}
+
 // EnterIndex is called when production index is entered.
 func (s *BaseExprParserListener) EnterIndex(ctx *IndexContext) {}
 
@@ -121,24 +127,6 @@ func (s *BaseExprParserListener) EnterQualifiedIdent(ctx *QualifiedIdentContext)
 
 // ExitQualifiedIdent is called when production qualifiedIdent is exited.
 func (s *BaseExprParserListener) ExitQualifiedIdent(ctx *QualifiedIdentContext) {}
-
-// EnterTypeAssertion is called when production typeAssertion is entered.
-func (s *BaseExprParserListener) EnterTypeAssertion(ctx *TypeAssertionContext) {}
-
-// ExitTypeAssertion is called when production typeAssertion is exited.
-func (s *BaseExprParserListener) ExitTypeAssertion(ctx *TypeAssertionContext) {}
-
-// EnterExpressionList is called when production expressionList is entered.
-func (s *BaseExprParserListener) EnterExpressionList(ctx *ExpressionListContext) {}
-
-// ExitExpressionList is called when production expressionList is exited.
-func (s *BaseExprParserListener) ExitExpressionList(ctx *ExpressionListContext) {}
-
-// EnterArguments is called when production arguments is entered.
-func (s *BaseExprParserListener) EnterArguments(ctx *ArgumentsContext) {}
-
-// ExitArguments is called when production arguments is exited.
-func (s *BaseExprParserListener) ExitArguments(ctx *ArgumentsContext) {}
 
 // EnterSlice is called when production slice is entered.
 func (s *BaseExprParserListener) EnterSlice(ctx *SliceContext) {}

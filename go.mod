@@ -19,6 +19,7 @@ require (
 	github.com/shurcooL/httpfs v0.0.0-20190707220628-8d4bc4ba7749 // indirect
 	github.com/shurcooL/vfsgen v0.0.0-20200824052919-0d455de96546
 	github.com/sirupsen/logrus v1.8.1
+	github.com/spf13/cast v1.3.1
 	github.com/stretchr/testify v1.7.0
 	github.com/uniplaces/carbon v0.1.6 // indirect
 	go.uber.org/atomic v1.7.0

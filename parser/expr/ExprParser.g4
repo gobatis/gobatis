@@ -6,40 +6,40 @@ options {
 
 parameters: paramDecl (COMMA paramDecl)* EOF;
 
-paramType: IDENTIFIER;
-
 paramDecl: IDENTIFIER | (IDENTIFIER COLON paramType);
+
+paramType: IDENTIFIER;
 
 expressions: expression  EOF;
 
 expression:
 	primaryExpr
 	| unary_op = (
-		PLUS
-		| MINUS
-		| EXCLAMATION
-		| CARET
-		| STAR
-		| AMPERSAND
+	    PLUS
+        | MINUS
+        | EXCLAMATION
+        | CARET
+        | STAR
+        | AMPERSAND
 	) expression
 	| expression mul_op = (
-		STAR
-		| DIV
-		| MOD
-		| LSHIFT
-		| RSHIFT
-		| AMPERSAND
-		| BIT_CLEAR
+         STAR
+        | DIV
+        | MOD
+        | LSHIFT
+        | RSHIFT
+        | AMPERSAND
+        | BIT_CLEAR
 	) expression
 	| expression add_op = (PLUS | MINUS | OR | CARET) expression
 	| expression rel_op = (
-		EQUALS
-		| NOT_EQUALS
-		| LESS
-		| LESS_OR_EQUALS
-		| GREATER
-		| GREATER_OR_EQUALS
-	) expression
+	    EQUALS
+        | NOT_EQUALS
+        | LESS
+        | LESS_OR_EQUALS
+        | GREATER
+        | GREATER_OR_EQUALS
+	)  expression
 	| expression LOGICAL_AND expression
 	| expression LOGICAL_OR expression
 	;
@@ -71,7 +71,7 @@ basicLit:
 	NIL_LIT
 	| integer
 	| string_
-	| FLOAT_LIT
+	| float_
 	| IMAGINARY_LIT
 	| RUNE_LIT;
 
@@ -85,6 +85,8 @@ integer:
 
 string_: RAW_STRING_LIT | INTERPRETED_STRING_LIT;
 
+float_: FLOAT_LIT;
+
 index: L_BRACKET expression R_BRACKET;
 
 type_: typeName  | L_PAREN type_ R_PAREN;
@@ -97,14 +99,14 @@ qualifiedIdent: IDENTIFIER DOT IDENTIFIER;
 
 //receiverType: type_;
 
-typeAssertion: DOT L_PAREN type_ R_PAREN;
+//typeAssertion: DOT L_PAREN type_ R_PAREN;
 
-expressionList: expression (COMMA expression)*;
+//expressionList: expression (COMMA expression)*;
 
-arguments:
-	L_PAREN (
-		(expressionList | type_ (COMMA expressionList)?) ELLIPSIS? COMMA?
-	)? R_PAREN;
+//arguments:
+//	L_PAREN (
+//		(expressionList | type_ (COMMA expressionList)?) ELLIPSIS? COMMA?
+//	)? R_PAREN;
 
 slice:
 	L_BRACKET (

@@ -42,7 +42,6 @@ func (p *expressionListener) EnterEveryRule(ctx antlr.ParserRuleContext) {
 }
 
 func (p *expressionListener) ExitEveryRule(ctx antlr.ParserRuleContext) {
-	
 	fmt.Println(ctx.GetRuleIndex(), ctx.GetText(), ctx.GetStart().GetTokenIndex(), ctx.GetStop().GetTokenIndex())
 }
 
@@ -50,11 +49,13 @@ func TestParseExpression(t *testing.T) {
 	//lexer := NewExprLexer(antlr.NewInputStream("int(a) > 0"))
 	//lexer := NewExprLexer(antlr.NewInputStream("a.B > 0"))
 	//lexer := NewExprLexer(antlr.NewInputStream("a[0] > 0"))
-	lexer := NewExprLexer(antlr.NewInputStream("(aa+300)*2"))
+	//lexer := NewExprLexer(antlr.NewInputStream("(aa+300)*2"))
+	//lexer := NewExprLexer(antlr.NewInputStream(`a + (-1)`))
+	lexer := NewExprLexer(antlr.NewInputStream(`a - 1`))
 	stream := antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel)
 	p := NewExprParser(stream)
 	
-	p.BuildParseTrees = true
+	//p.BuildParseTrees = true
 	p.AddErrorListener(antlr.NewDiagnosticErrorListener(false))
 	antlr.ParseTreeWalkerDefault.Walk(&expressionListener{}, p.Expressions())
 }

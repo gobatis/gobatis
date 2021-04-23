@@ -7,6 +7,8 @@ import (
 	"github.com/koyeo/gobatis/dtd"
 	"github.com/koyeo/gobatis/parser/expr"
 	"github.com/koyeo/gobatis/parser/xml"
+	"github.com/spf13/cast"
+	"reflect"
 	"strings"
 	"sync"
 )
@@ -363,9 +365,17 @@ func (p *xmlParser) ExitEveryRule(ctx antlr.ParserRuleContext) {
 }
 
 type exprValue struct {
-	Value interface{}
-	Elem  string
-	Type  string
+	value      interface{}
+	paramValue reflect.Value
+	aliasKind  reflect.Kind
+}
+
+func (p *exprValue) isExpected() bool {
+	return p.aliasKind == reflect.Interface || p.paramValue.Kind() == p.aliasKind
+}
+
+func (p *exprValue) convertible() bool {
+	return false
 }
 
 type exprStack struct {
@@ -385,15 +395,20 @@ func (p *exprStack) Push(value *exprValue) {
 	p.list.PushBack(value)
 }
 
-func (p *exprStack) Pop() *exprValue {
+func (p *exprStack) Pop() (val *exprValue, err error) {
 	p.lock.Lock()
 	defer p.lock.Unlock()
+	if p.list.Len() < 1 {
+		err = fmt.Errorf("stack is empty unable to pop")
+		return
+	}
 	e := p.list.Back()
 	if e != nil {
 		p.list.Remove(e)
-		return e.Value.(*exprValue)
+		val = e.Value.(*exprValue)
+		return
 	}
-	return nil
+	return
 }
 
 func (p *exprStack) Peak() *exprValue {
@@ -408,21 +423,24 @@ func (p *exprStack) Peak() *exprValue {
 
 func (p *exprStack) Len() int {
 	p.lock.RLock()
-	defer p.lock.Unlock()
+	defer p.lock.RUnlock()
 	return p.list.Len()
 }
 
 func (p *exprStack) Empty() bool {
 	p.lock.RLock()
-	defer p.lock.Unlock()
+	defer p.lock.RUnlock()
 	return p.list.Len() == 0
 }
 
 func newExprParams(params ...interface{}) *exprParams {
 	r := &exprParams{}
 	for _, v := range params {
+		rv := reflect.ValueOf(v)
 		r.values = append(r.values, exprValue{
-			Value: v,
+			value:      v,
+			paramValue: rv,
+			aliasKind:  rv.Kind(),
 		})
 	}
 	return r
@@ -433,6 +451,7 @@ type exprParams struct {
 	aliases map[string]int
 }
 
+// return exprValue not *exprValue to protect params
 func (p *exprParams) get(name string) (val exprValue, ok bool) {
 	if p.aliases == nil {
 		return
@@ -449,7 +468,7 @@ func (p *exprParams) get(name string) (val exprValue, ok bool) {
 	return
 }
 
-func (p *exprParams) alias(name string, index int) error {
+func (p *exprParams) alias(name, expected string, index int) error {
 	if p.aliases == nil {
 		p.aliases = map[string]int{}
 	} else {
@@ -458,8 +477,71 @@ func (p *exprParams) alias(name string, index int) error {
 			return fmt.Errorf("duplicated alias: %s", name)
 		}
 	}
+	vl := len(p.values) - 1
+	if index < 0 || index > vl {
+		return fmt.Errorf("alias index:%d out of params length: %d", index, vl)
+	}
+	var err error
+	ev := p.values[index]
+	ev.aliasKind, err = p.toReflectKind(expected)
+	if err != nil {
+		return fmt.Errorf("convert alias: %s type error: %s", name, err.Error())
+	}
+	if !ev.isExpected() && !ev.convertible() {
+		return fmt.Errorf("param type: %s is not alias expteced type:%s, and can't convert",
+			ev.paramValue.Kind(), ev.aliasKind)
+	}
 	p.aliases[name] = index
 	return nil
+}
+
+func (p *exprParams) toReflectKind(t string) (kind reflect.Kind, err error) {
+	
+	switch t {
+	case "bool":
+		kind = reflect.Bool
+	case "int":
+		kind = reflect.Int
+	case "int8":
+		kind = reflect.Int8
+	case "int16":
+		kind = reflect.Int16
+	case "int32":
+		kind = reflect.Int32
+	case "int64":
+		kind = reflect.Int64
+	case "uint":
+		kind = reflect.Uint
+	case "uint8":
+		kind = reflect.Uint8
+	case "uint16":
+		kind = reflect.Uint16
+	case "uint32":
+		kind = reflect.Uint32
+	case "uint64":
+		kind = reflect.Uint64
+	case "float32":
+		kind = reflect.Float32
+	case "float64":
+		kind = reflect.Float64
+	case "complex64":
+		kind = reflect.Complex64
+	case "complex128":
+		kind = reflect.Complex128
+	case "array":
+		kind = reflect.Array
+	case "auto":
+		kind = reflect.Interface
+	case "map":
+		kind = reflect.Map
+	case "string":
+		kind = reflect.String
+	case "struct":
+		kind = reflect.Struct
+	default:
+		err = fmt.Errorf("unsupported type:%s", t)
+	}
+	return
 }
 
 func (p *exprParams) index(index int) (val exprValue, ok bool) {
@@ -476,4 +558,337 @@ func (p *exprParams) index(index int) (val exprValue, ok bool) {
 
 type exprParser struct {
 	*expr.BaseExprParserListener
+	*exprStack
+	params     *exprParams
+	error      error
+	file       string
+	aliasIndex int
+}
+
+func newExprParser(params ...interface{}) *exprParser {
+	r := new(exprParser)
+	r.exprStack = newExprStack()
+	r.params = newExprParams(params...)
+	return r
+}
+
+func (p *exprParser) ExitExpression(ctx *expr.ExpressionContext) {
+	if p.error != nil {
+		return
+	}
+	if ctx.GetMul_op() != nil || ctx.GetAdd_op() != nil {
+		left, right, err := p.popBinaryOperands()
+		if err != nil {
+			p.error = err
+			return
+		}
+		if ctx.GetAdd_op() != nil {
+			err = p.calcNumeric(left, right, ctx.GetAdd_op())
+			if err != nil {
+				p.error = err
+				return
+			}
+		} else if ctx.GetMul_op() != nil {
+			err = p.calcNumeric(left, right, ctx.GetMul_op())
+			if err != nil {
+				p.error = err
+				return
+			}
+		}
+	}
+}
+
+func (p *exprParser) EnterParamDecl(ctx *expr.ParamDeclContext) {
+	if p.error != nil {
+		return
+	}
+	name := ctx.IDENTIFIER().GetText()
+	var expected string
+	if ctx.ParamType() != nil {
+		expected = ctx.ParamType().GetText()
+	}
+	err := p.params.alias(name, expected, p.aliasIndex)
+	if err != nil {
+		p.error = parseError(p.file, ctx.GetStart(), err.Error())
+		return
+	}
+	p.aliasIndex++
+}
+
+func (p *exprParser) ExitOperandName(ctx *expr.OperandNameContext) {
+	if p.error != nil {
+		return
+	}
+	alias := ctx.IDENTIFIER(0).GetText()
+	val, ok := p.params.get(alias)
+	if !ok {
+		p.error = parseError(p.file, ctx.GetStart(), fmt.Sprintf("can't fetch alias: %s value", alias))
+		return
+	}
+	p.Push(&val)
+	fmt.Println("scan var", ctx.GetText())
+}
+
+func (p *exprParser) ExitInteger(ctx *expr.IntegerContext) {
+	p.Push(&exprValue{
+		value:     ctx.GetText(),
+		aliasKind: reflect.Int,
+	})
+	fmt.Println("scan int", ctx.GetText())
+}
+
+func (p *exprParser) ExitString_(ctx *expr.String_Context) {
+	p.Push(&exprValue{
+		value:     ctx.GetText(),
+		aliasKind: reflect.String,
+	})
+}
+
+func (p *exprParser) ExitFloat_(ctx *expr.Float_Context) {
+	p.Push(&exprValue{
+		value:     ctx.GetText(),
+		aliasKind: reflect.Float64,
+	})
+}
+
+func (p *exprParser) parseExpression(params, expresion string) (result interface{}, err error) {
+	err = p.parseParam(params)
+	if err != nil {
+		return
+	}
+	parser, err := p.parser(expresion)
+	if err != nil {
+		return
+	}
+	
+	antlr.ParseTreeWalkerDefault.Walk(p, parser.Expressions())
+	err = p.error
+	if err != nil {
+		return
+	}
+	if p.Len() != 1 {
+		err = fmt.Errorf("unexpected stack length: %d", p.Len())
+		return
+	}
+	
+	v, _ := p.Pop()
+	result = v.value
+	
+	return
+}
+
+func (p *exprParser) popBinaryOperands() (left, right *exprValue, err error) {
+	right, err = p.Pop()
+	if err != nil {
+		return
+	}
+	left, err = p.Pop()
+	if err != nil {
+		return
+	}
+	return
+}
+
+func (p *exprParser) calcNumeric(left, right *exprValue, op antlr.Token) error {
+	var kind reflect.Kind
+	if left.value == nil && right.value != nil {
+		kind = right.aliasKind
+	} else {
+		kind = left.aliasKind
+	}
+	
+	if !p.isNumeric(kind) {
+		return parseError(p.file, op, fmt.Sprintf(
+			"invalid operation: %s %s %s", left.value, op.GetText(), right.value,
+		))
+	}
+	
+	if kind == reflect.Int ||
+		kind == reflect.Int8 ||
+		kind == reflect.Int16 ||
+		kind == reflect.Int32 ||
+		kind == reflect.Int64 {
+		kind = reflect.Int64
+	} else if kind == reflect.Uint ||
+		kind == reflect.Uint8 ||
+		kind == reflect.Uint16 ||
+		kind == reflect.Uint32 ||
+		kind == reflect.Uint64 {
+		kind = reflect.Uint64
+	} else if kind == reflect.Float32 ||
+		kind == reflect.Float64 {
+		kind = reflect.Float64
+	}
+	
+	result := &exprValue{aliasKind: kind}
+	switch kind {
+	case reflect.Int64:
+		a, err := cast.ToInt64E(left.value)
+		if err != nil {
+			return p.castError(op, kind, left, err)
+		}
+		b, err := cast.ToInt64E(right.value)
+		if err != nil {
+			return p.castError(op, kind, right, err)
+		}
+		switch op.GetTokenType() {
+		case expr.ExprParserPLUS:
+			result.value = a + b
+		case expr.ExprParserMINUS:
+			result.value = a - b
+		case expr.ExprParserSTAR:
+			result.value = a * b
+		case expr.ExprParserDIV:
+			if b == 0 {
+				return p.divisionByZero(op)
+			}
+			result.value = a / b
+		case expr.ExprParserCARET:
+			result.value = a ^ b
+		case expr.ExprParserOR:
+			result.value = a | b
+		case expr.ExprParserAMPERSAND:
+			result.value = a & b
+		case expr.ExprParserMOD:
+			result.value = a % b
+		case expr.ExprParserLSHIFT:
+			result.value = a << b
+		case expr.ExprParserRSHIFT:
+			result.value = a >> b
+		case expr.ExprParserBIT_CLEAR:
+			result.value = a &^ b
+		default:
+			return p.unsupportedOpError(op)
+		}
+	case reflect.Uint64:
+		a, err := cast.ToInt8E(left.value)
+		if err != nil {
+			return p.castError(op, kind, left, err)
+		}
+		b, err := cast.ToInt8E(right.value)
+		if err != nil {
+			return p.castError(op, kind, right, err)
+		}
+		switch op.GetTokenType() {
+		case expr.ExprParserPLUS:
+			result.value = a + b
+		case expr.ExprParserMINUS:
+			result.value = a - b
+		case expr.ExprParserSTAR:
+			result.value = a * b
+		case expr.ExprParserDIV:
+			if b == 0 {
+				return p.divisionByZero(op)
+			}
+			result.value = a / b
+		case expr.ExprParserCARET:
+			result.value = a ^ b
+		case expr.ExprParserOR:
+			result.value = a | b
+		case expr.ExprParserAMPERSAND:
+			result.value = a & b
+		case expr.ExprParserMOD:
+			result.value = a % b
+		case expr.ExprParserLSHIFT:
+			result.value = a << b
+		case expr.ExprParserRSHIFT:
+			result.value = a >> b
+		case expr.ExprParserBIT_CLEAR:
+			result.value = a &^ b
+		default:
+			return p.unsupportedOpError(op)
+		}
+	case reflect.Float64:
+		a, err := cast.ToIntE(left.value)
+		if err != nil {
+			return p.castError(op, kind, left, err)
+		}
+		b, err := cast.ToIntE(right.value)
+		if err != nil {
+			return p.castError(op, kind, right, err)
+		}
+		switch op.GetTokenType() {
+		case expr.ExprParserPLUS:
+			result.value = a + b
+		case expr.ExprParserMINUS:
+			result.value = a - b
+		case expr.ExprParserSTAR:
+			result.value = a * b
+		case expr.ExprParserDIV:
+			if b == 0 {
+				return p.divisionByZero(op)
+			}
+			result.value = a / b
+		case expr.ExprParserCARET:
+			result.value = a ^ b
+		case expr.ExprParserOR:
+			result.value = a | b
+		case expr.ExprParserAMPERSAND:
+			result.value = a & b
+		case expr.ExprParserMOD:
+			result.value = a % b
+		case expr.ExprParserLSHIFT:
+			result.value = a << b
+		case expr.ExprParserRSHIFT:
+			result.value = a >> b
+		case expr.ExprParserBIT_CLEAR:
+			result.value = a &^ b
+		default:
+			return p.unsupportedOpError(op)
+		}
+	default:
+		return parseError(p.file, op, fmt.Sprintf("unsupported numeric op type: %s", kind))
+	}
+	
+	p.Push(result)
+	
+	return nil
+}
+
+func (p *exprParser) castError(op antlr.Token, kind reflect.Kind, val *exprValue, err error) error {
+	return parseError(p.file, op, fmt.Sprintf("convert %+v to type: %s error: %s", val.value, kind, err))
+}
+
+func (p *exprParser) divisionByZero(op antlr.Token) error {
+	return parseError(p.file, op, fmt.Sprintf("division by zero"))
+}
+
+func (p *exprParser) unsupportedOpError(op antlr.Token) error {
+	return parseError(p.file, op, fmt.Sprintf("unsupported op: %s", op.GetText()))
+}
+
+func (p *exprParser) isNumeric(kind reflect.Kind) bool {
+	if kind != reflect.Int &&
+		kind != reflect.Int8 &&
+		kind != reflect.Int16 &&
+		kind != reflect.Int32 &&
+		kind != reflect.Int64 &&
+		kind != reflect.Uint &&
+		kind != reflect.Uint8 &&
+		kind != reflect.Uint16 &&
+		kind != reflect.Uint32 &&
+		kind != reflect.Uint64 &&
+		kind != reflect.Float32 &&
+		kind != reflect.Float64 {
+		return true
+	}
+	return true
+}
+
+func (p *exprParser) parseParam(params string) (err error) {
+	parser, err := p.parser(params)
+	if err != nil {
+		return
+	}
+	antlr.ParseTreeWalkerDefault.Walk(p, parser.Parameters())
+	return
+}
+
+func (p *exprParser) parser(data string) (parser *expr.ExprParser, err error) {
+	lexer := expr.NewExprLexer(antlr.NewInputStream(data))
+	stream := antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel)
+	parser = expr.NewExprParser(stream)
+	parser.BuildParseTrees = true
+	parser.AddErrorListener(antlr.NewDiagnosticErrorListener(false))
+	return
 }

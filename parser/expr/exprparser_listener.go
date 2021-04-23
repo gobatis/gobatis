@@ -10,11 +10,11 @@ type ExprParserListener interface {
 	// EnterParameters is called when entering the parameters production.
 	EnterParameters(c *ParametersContext)
 
-	// EnterParamType is called when entering the paramType production.
-	EnterParamType(c *ParamTypeContext)
-
 	// EnterParamDecl is called when entering the paramDecl production.
 	EnterParamDecl(c *ParamDeclContext)
+
+	// EnterParamType is called when entering the paramType production.
+	EnterParamType(c *ParamTypeContext)
 
 	// EnterExpressions is called when entering the expressions production.
 	EnterExpressions(c *ExpressionsContext)
@@ -46,6 +46,9 @@ type ExprParserListener interface {
 	// EnterString_ is called when entering the string_ production.
 	EnterString_(c *String_Context)
 
+	// EnterFloat_ is called when entering the float_ production.
+	EnterFloat_(c *Float_Context)
+
 	// EnterIndex is called when entering the index production.
 	EnterIndex(c *IndexContext)
 
@@ -58,26 +61,17 @@ type ExprParserListener interface {
 	// EnterQualifiedIdent is called when entering the qualifiedIdent production.
 	EnterQualifiedIdent(c *QualifiedIdentContext)
 
-	// EnterTypeAssertion is called when entering the typeAssertion production.
-	EnterTypeAssertion(c *TypeAssertionContext)
-
-	// EnterExpressionList is called when entering the expressionList production.
-	EnterExpressionList(c *ExpressionListContext)
-
-	// EnterArguments is called when entering the arguments production.
-	EnterArguments(c *ArgumentsContext)
-
 	// EnterSlice is called when entering the slice production.
 	EnterSlice(c *SliceContext)
 
 	// ExitParameters is called when exiting the parameters production.
 	ExitParameters(c *ParametersContext)
 
-	// ExitParamType is called when exiting the paramType production.
-	ExitParamType(c *ParamTypeContext)
-
 	// ExitParamDecl is called when exiting the paramDecl production.
 	ExitParamDecl(c *ParamDeclContext)
+
+	// ExitParamType is called when exiting the paramType production.
+	ExitParamType(c *ParamTypeContext)
 
 	// ExitExpressions is called when exiting the expressions production.
 	ExitExpressions(c *ExpressionsContext)
@@ -109,6 +103,9 @@ type ExprParserListener interface {
 	// ExitString_ is called when exiting the string_ production.
 	ExitString_(c *String_Context)
 
+	// ExitFloat_ is called when exiting the float_ production.
+	ExitFloat_(c *Float_Context)
+
 	// ExitIndex is called when exiting the index production.
 	ExitIndex(c *IndexContext)
 
@@ -120,15 +117,6 @@ type ExprParserListener interface {
 
 	// ExitQualifiedIdent is called when exiting the qualifiedIdent production.
 	ExitQualifiedIdent(c *QualifiedIdentContext)
-
-	// ExitTypeAssertion is called when exiting the typeAssertion production.
-	ExitTypeAssertion(c *TypeAssertionContext)
-
-	// ExitExpressionList is called when exiting the expressionList production.
-	ExitExpressionList(c *ExpressionListContext)
-
-	// ExitArguments is called when exiting the arguments production.
-	ExitArguments(c *ArgumentsContext)
 
 	// ExitSlice is called when exiting the slice production.
 	ExitSlice(c *SliceContext)

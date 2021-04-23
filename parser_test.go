@@ -73,3 +73,12 @@ func TestParseMapper(t *testing.T) {
 	d, _ := json.MarshalIndent(engine.statements, "", "\t")
 	fmt.Println(string(d))
 }
+
+func TestParseExprExpression(t *testing.T) {
+	parser := newExprParser(10,20)
+	result, err := parser.parseExpression("a:int, b:int", "a+b")
+	require.NoError(t, err)
+	//require.Equal(t, int64(2), result)
+	t.Log("result:", result)
+	//
+}

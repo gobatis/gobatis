@@ -17,8 +17,9 @@
         </where>.
     </select>
 
-    <select id="SelectTestById" parameterType="id:int64,name:string,user:struct" resultType="int64">
+    <select id="SelectTestById" parameterType="id:int64, name:string,user:struct" resultType="int64">
         select * from test where id = #{1}
+        insert into users(name,age) values( #{a/3600*3600} #{b})
     </select>
 
     <!--    <select id="GetUser" parameterType="auto" resultType="test/entity@User">-->
