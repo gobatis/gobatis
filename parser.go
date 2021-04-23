@@ -661,6 +661,7 @@ func (p *exprParser) ExitOperandName(ctx *expr.OperandNameContext) {
 		p.error = parseError(p.file, ctx.GetStart(), fmt.Sprintf("can't fetch alias: %s", alias))
 		return
 	}
+	//ctx.AllIDENTIFIER()
 	p.Push(&val)
 }
 

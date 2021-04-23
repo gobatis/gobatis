@@ -51,7 +51,7 @@ func TestParseExpression(t *testing.T) {
 	//lexer := NewExprLexer(antlr.NewInputStream("a[0] > 0"))
 	//lexer := NewExprLexer(antlr.NewInputStream("(aa+300)*2"))
 	//lexer := NewExprLexer(antlr.NewInputStream(`a + (-1)`))
-	lexer := NewExprLexer(antlr.NewInputStream(`a - 1`))
+	lexer := NewExprLexer(antlr.NewInputStream(`a.Name(a,b,c) + 1`))
 	stream := antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel)
 	p := NewExprParser(stream)
 	

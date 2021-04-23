@@ -54,7 +54,7 @@ primaryExpr:
 		 index
 		| slice
 //		| typeAssertion
-//		| arguments
+		| arguments
 	)
 ;
 
@@ -64,6 +64,7 @@ conversion: type_ L_PAREN expression COMMA? R_PAREN;
 operand: literal | operandName | L_PAREN expression R_PAREN;
 
 operandName: IDENTIFIER (DOT IDENTIFIER)?;
+//operandName: IDENTIFIER (DOT IDENTIFIER)*;
 
 literal: basicLit;
 
@@ -101,12 +102,12 @@ qualifiedIdent: IDENTIFIER DOT IDENTIFIER;
 
 //typeAssertion: DOT L_PAREN type_ R_PAREN;
 
-//expressionList: expression (COMMA expression)*;
+expressionList: expression (COMMA expression)*;
 
-//arguments:
-//	L_PAREN (
-//		(expressionList | type_ (COMMA expressionList)?) ELLIPSIS? COMMA?
-//	)? R_PAREN;
+arguments:
+	L_PAREN (
+		(expressionList | type_ (COMMA expressionList)?) ELLIPSIS? COMMA?
+	)? R_PAREN;
 
 slice:
 	L_BRACKET (

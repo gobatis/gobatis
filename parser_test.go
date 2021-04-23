@@ -81,8 +81,10 @@ func TestParseExprExpression(t *testing.T) {
 	//result, err := parser.parseExpression("a, b, c", "a+b*((c+1))")
 	//parser := newExprParser(3,"2")
 	//result, err := parser.parseExpression("a, b", "a + b")
-	parser := newExprParser(3, 2)
-	result, err := parser.parseExpression("a, b", "")
+	a := 1
+	b := 2
+	parser := newExprParser(a, b)
+	result, err := parser.parseExpression("a, b", "a + b")
 	require.NoError(t, err)
 	//require.Equal(t, int64(2), result)
 	t.Log("result:", result)

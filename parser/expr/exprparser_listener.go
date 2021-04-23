@@ -61,6 +61,12 @@ type ExprParserListener interface {
 	// EnterQualifiedIdent is called when entering the qualifiedIdent production.
 	EnterQualifiedIdent(c *QualifiedIdentContext)
 
+	// EnterExpressionList is called when entering the expressionList production.
+	EnterExpressionList(c *ExpressionListContext)
+
+	// EnterArguments is called when entering the arguments production.
+	EnterArguments(c *ArgumentsContext)
+
 	// EnterSlice is called when entering the slice production.
 	EnterSlice(c *SliceContext)
 
@@ -117,6 +123,12 @@ type ExprParserListener interface {
 
 	// ExitQualifiedIdent is called when exiting the qualifiedIdent production.
 	ExitQualifiedIdent(c *QualifiedIdentContext)
+
+	// ExitExpressionList is called when exiting the expressionList production.
+	ExitExpressionList(c *ExpressionListContext)
+
+	// ExitArguments is called when exiting the arguments production.
+	ExitArguments(c *ArgumentsContext)
 
 	// ExitSlice is called when exiting the slice production.
 	ExitSlice(c *SliceContext)
