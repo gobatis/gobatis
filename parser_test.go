@@ -75,8 +75,8 @@ func TestParseMapper(t *testing.T) {
 }
 
 func TestParseExprExpression(t *testing.T) {
-	parser := newExprParser(10,20)
-	result, err := parser.parseExpression("a:int, b:int", "a+b")
+	parser := newExprParser(10,20,30)
+	result, err := parser.parseExpression("a:int, b:int", "a+b*c")
 	require.NoError(t, err)
 	//require.Equal(t, int64(2), result)
 	t.Log("result:", result)

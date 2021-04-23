@@ -622,7 +622,7 @@ func (p *exprParser) ExitOperandName(ctx *expr.OperandNameContext) {
 	alias := ctx.IDENTIFIER(0).GetText()
 	val, ok := p.params.get(alias)
 	if !ok {
-		p.error = parseError(p.file, ctx.GetStart(), fmt.Sprintf("can't fetch alias: %s value", alias))
+		p.error = parseError(p.file, ctx.GetStart(), fmt.Sprintf("can't fetch alias: %s", alias))
 		return
 	}
 	p.Push(&val)
