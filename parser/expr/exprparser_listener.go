@@ -25,14 +25,14 @@ type ExprParserListener interface {
 	// EnterPrimaryExpr is called when entering the primaryExpr production.
 	EnterPrimaryExpr(c *PrimaryExprContext)
 
-	// EnterConversion is called when entering the conversion production.
-	EnterConversion(c *ConversionContext)
-
 	// EnterOperand is called when entering the operand production.
 	EnterOperand(c *OperandContext)
 
-	// EnterOperandName is called when entering the operandName production.
-	EnterOperandName(c *OperandNameContext)
+	// EnterVar_ is called when entering the var_ production.
+	EnterVar_(c *Var_Context)
+
+	// EnterMember is called when entering the member production.
+	EnterMember(c *MemberContext)
 
 	// EnterLiteral is called when entering the literal production.
 	EnterLiteral(c *LiteralContext)
@@ -52,23 +52,17 @@ type ExprParserListener interface {
 	// EnterIndex is called when entering the index production.
 	EnterIndex(c *IndexContext)
 
-	// EnterType_ is called when entering the type_ production.
-	EnterType_(c *Type_Context)
-
-	// EnterTypeName is called when entering the typeName production.
-	EnterTypeName(c *TypeNameContext)
-
-	// EnterQualifiedIdent is called when entering the qualifiedIdent production.
-	EnterQualifiedIdent(c *QualifiedIdentContext)
-
 	// EnterExpressionList is called when entering the expressionList production.
 	EnterExpressionList(c *ExpressionListContext)
+
+	// EnterNo_arguments is called when entering the no_arguments production.
+	EnterNo_arguments(c *No_argumentsContext)
 
 	// EnterArguments is called when entering the arguments production.
 	EnterArguments(c *ArgumentsContext)
 
-	// EnterSlice is called when entering the slice production.
-	EnterSlice(c *SliceContext)
+	// EnterSlice_ is called when entering the slice_ production.
+	EnterSlice_(c *Slice_Context)
 
 	// ExitParameters is called when exiting the parameters production.
 	ExitParameters(c *ParametersContext)
@@ -88,14 +82,14 @@ type ExprParserListener interface {
 	// ExitPrimaryExpr is called when exiting the primaryExpr production.
 	ExitPrimaryExpr(c *PrimaryExprContext)
 
-	// ExitConversion is called when exiting the conversion production.
-	ExitConversion(c *ConversionContext)
-
 	// ExitOperand is called when exiting the operand production.
 	ExitOperand(c *OperandContext)
 
-	// ExitOperandName is called when exiting the operandName production.
-	ExitOperandName(c *OperandNameContext)
+	// ExitVar_ is called when exiting the var_ production.
+	ExitVar_(c *Var_Context)
+
+	// ExitMember is called when exiting the member production.
+	ExitMember(c *MemberContext)
 
 	// ExitLiteral is called when exiting the literal production.
 	ExitLiteral(c *LiteralContext)
@@ -115,21 +109,15 @@ type ExprParserListener interface {
 	// ExitIndex is called when exiting the index production.
 	ExitIndex(c *IndexContext)
 
-	// ExitType_ is called when exiting the type_ production.
-	ExitType_(c *Type_Context)
-
-	// ExitTypeName is called when exiting the typeName production.
-	ExitTypeName(c *TypeNameContext)
-
-	// ExitQualifiedIdent is called when exiting the qualifiedIdent production.
-	ExitQualifiedIdent(c *QualifiedIdentContext)
-
 	// ExitExpressionList is called when exiting the expressionList production.
 	ExitExpressionList(c *ExpressionListContext)
+
+	// ExitNo_arguments is called when exiting the no_arguments production.
+	ExitNo_arguments(c *No_argumentsContext)
 
 	// ExitArguments is called when exiting the arguments production.
 	ExitArguments(c *ArgumentsContext)
 
-	// ExitSlice is called when exiting the slice production.
-	ExitSlice(c *SliceContext)
+	// ExitSlice_ is called when exiting the slice_ production.
+	ExitSlice_(c *Slice_Context)
 }

@@ -8,6 +8,7 @@ require (
 	github.com/blastrain/vitess-sqlparser v0.0.0-20201030050434-a139afbb1aba // indirect
 	github.com/fatih/structs v1.1.0 // indirect
 	github.com/go-sql-driver/mysql v1.5.0
+	github.com/google/btree v1.0.1 // indirect
 	github.com/jackc/pgx v3.6.2+incompatible
 	github.com/magefile/mage v1.10.0 // indirect
 	github.com/pingcap/check v0.0.0-20200212061837-5e12011dc712 // indirect

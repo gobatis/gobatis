@@ -43,19 +43,34 @@ func (p *expressionListener) EnterEveryRule(ctx antlr.ParserRuleContext) {
 
 func (p *expressionListener) ExitEveryRule(ctx antlr.ParserRuleContext) {
 	fmt.Println(ctx.GetRuleIndex(), ctx.GetText(), ctx.GetStart().GetTokenIndex(), ctx.GetStop().GetTokenIndex())
+	//fmt.Println(ctx.GetRuleIndex(), ctx.GetText())
 }
 
 func TestParseExpression(t *testing.T) {
+	// a a.b a.b.c a.b() a.b(1) a.b(b1) a.b.c()
+	// a.b(c, d...) a.b().c
+	// a.b.c(c1, c2...).d
+	// a(int(1))
 	//lexer := NewExprLexer(antlr.NewInputStream("int(a) > 0"))
 	//lexer := NewExprLexer(antlr.NewInputStream("a.B > 0"))
 	//lexer := NewExprLexer(antlr.NewInputStream("a[0] > 0"))
 	//lexer := NewExprLexer(antlr.NewInputStream("(aa+300)*2"))
 	//lexer := NewExprLexer(antlr.NewInputStream(`a + (-1)`))
-	lexer := NewExprLexer(antlr.NewInputStream(`a.Name(a,b,c) + 1`))
+	//lexer := NewExprLexer(antlr.NewInputStream(`a[0:]`))
+	//lexer := NewExprLexer(antlr.NewInputStream(`a.Person(int(a),b,c) + 1`))
+	//lexer := NewExprLexer(antlr.NewInputStream(`int(a...) + 1`))
+	//lexer := NewExprLexer(antlr.NewInputStream(`int(a...) + 1`))
+	//lexer := NewExprLexer(antlr.NewInputStream(`a.b.c(1) + 1`))
+	//lexer := NewExprLexer(antlr.NewInputStream(`a.b.c(int(d))+3`))
+	//lexer := NewExprLexer(antlr.NewInputStream(`test(a,b,c) + 1`))
+	//lexer := NewExprLexer(antlr.NewInputStream(`a.b(1+1).c + 1`))
+	//lexer := NewExprLexer(antlr.NewInputStream(`a(a...)`))
+	lexer := NewExprLexer(antlr.NewInputStream(`a(smart(b[1:])) + 1`))
 	stream := antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel)
 	p := NewExprParser(stream)
 	
 	//p.BuildParseTrees = true
+	p.GetInterpreter().SetPredictionMode(antlr.PredictionModeLLExactAmbigDetection)
 	p.AddErrorListener(antlr.NewDiagnosticErrorListener(false))
 	antlr.ParseTreeWalkerDefault.Walk(&expressionListener{}, p.Expressions())
 }

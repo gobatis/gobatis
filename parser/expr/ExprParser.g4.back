@@ -14,13 +14,13 @@ expressions: expression  EOF;
 
 expression:
 	primaryExpr
-//	| expression no_arguments
-	| expression parameters
 	| unary_op = (
 	    PLUS
         | MINUS
         | EXCLAMATION
         | CARET
+//        | STAR
+//        | AMPERSAND
 	) expression
 	| expression mul_op = (
          STAR
@@ -45,19 +45,24 @@ expression:
 	;
 
 primaryExpr:
-    operand
+	operand
+	| conversion
+	| methodExpr
 	| primaryExpr (
-		member
+		(DOT IDENTIFIER)
 		| index
 		| slice_
+		| typeAssertion
 		| arguments
 	);
 
-operand: literal | var_ | L_PAREN expression R_PAREN;
+conversion: type_ L_PAREN expression COMMA? R_PAREN;
 
-var_: IDENTIFIER;
+// 文本、变量名（a a.b），括号包含表达式
+operand: literal | operandName | L_PAREN expression R_PAREN;
 
-member: DOT IDENTIFIER;
+operandName: IDENTIFIER (DOT IDENTIFIER)?;
+//operandName: IDENTIFIER (DOT IDENTIFIER)*;
 
 literal: basicLit;
 
@@ -83,17 +88,32 @@ float_: FLOAT_LIT;
 
 index: L_BRACKET expression R_BRACKET;
 
+
+type_: typeName  | L_PAREN type_ R_PAREN;
+typeName: qualifiedIdent | IDENTIFIER;
+
+qualifiedIdent: IDENTIFIER DOT IDENTIFIER;
+
+methodExpr: type_ DOT IDENTIFIER;
+
+receiverType: type_;
+
+typeAssertion: DOT L_PAREN type_ R_PAREN;
+
 expressionList: expression (COMMA expression)*;
 
 arguments:
-	 L_PAREN (
-        expressionList ELLIPSIS?
+	L_PAREN (
+		(expressionList | type_ (COMMA expressionList)?) ELLIPSIS? COMMA?
 	)? R_PAREN;
+
+//arguments:
+//	L_PAREN (
+//		(expressionList) ELLIPSIS? COMMA?
+//	)? R_PAREN;
 
 slice_:
 	L_BRACKET (
 		expression? COLON expression?
 		| expression? COLON expression COLON expression
 	) R_BRACKET;
-
-

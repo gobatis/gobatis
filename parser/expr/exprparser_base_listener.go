@@ -56,23 +56,23 @@ func (s *BaseExprParserListener) EnterPrimaryExpr(ctx *PrimaryExprContext) {}
 // ExitPrimaryExpr is called when production primaryExpr is exited.
 func (s *BaseExprParserListener) ExitPrimaryExpr(ctx *PrimaryExprContext) {}
 
-// EnterConversion is called when production conversion is entered.
-func (s *BaseExprParserListener) EnterConversion(ctx *ConversionContext) {}
-
-// ExitConversion is called when production conversion is exited.
-func (s *BaseExprParserListener) ExitConversion(ctx *ConversionContext) {}
-
 // EnterOperand is called when production operand is entered.
 func (s *BaseExprParserListener) EnterOperand(ctx *OperandContext) {}
 
 // ExitOperand is called when production operand is exited.
 func (s *BaseExprParserListener) ExitOperand(ctx *OperandContext) {}
 
-// EnterOperandName is called when production operandName is entered.
-func (s *BaseExprParserListener) EnterOperandName(ctx *OperandNameContext) {}
+// EnterVar_ is called when production var_ is entered.
+func (s *BaseExprParserListener) EnterVar_(ctx *Var_Context) {}
 
-// ExitOperandName is called when production operandName is exited.
-func (s *BaseExprParserListener) ExitOperandName(ctx *OperandNameContext) {}
+// ExitVar_ is called when production var_ is exited.
+func (s *BaseExprParserListener) ExitVar_(ctx *Var_Context) {}
+
+// EnterMember is called when production member is entered.
+func (s *BaseExprParserListener) EnterMember(ctx *MemberContext) {}
+
+// ExitMember is called when production member is exited.
+func (s *BaseExprParserListener) ExitMember(ctx *MemberContext) {}
 
 // EnterLiteral is called when production literal is entered.
 func (s *BaseExprParserListener) EnterLiteral(ctx *LiteralContext) {}
@@ -110,29 +110,17 @@ func (s *BaseExprParserListener) EnterIndex(ctx *IndexContext) {}
 // ExitIndex is called when production index is exited.
 func (s *BaseExprParserListener) ExitIndex(ctx *IndexContext) {}
 
-// EnterType_ is called when production type_ is entered.
-func (s *BaseExprParserListener) EnterType_(ctx *Type_Context) {}
-
-// ExitType_ is called when production type_ is exited.
-func (s *BaseExprParserListener) ExitType_(ctx *Type_Context) {}
-
-// EnterTypeName is called when production typeName is entered.
-func (s *BaseExprParserListener) EnterTypeName(ctx *TypeNameContext) {}
-
-// ExitTypeName is called when production typeName is exited.
-func (s *BaseExprParserListener) ExitTypeName(ctx *TypeNameContext) {}
-
-// EnterQualifiedIdent is called when production qualifiedIdent is entered.
-func (s *BaseExprParserListener) EnterQualifiedIdent(ctx *QualifiedIdentContext) {}
-
-// ExitQualifiedIdent is called when production qualifiedIdent is exited.
-func (s *BaseExprParserListener) ExitQualifiedIdent(ctx *QualifiedIdentContext) {}
-
 // EnterExpressionList is called when production expressionList is entered.
 func (s *BaseExprParserListener) EnterExpressionList(ctx *ExpressionListContext) {}
 
 // ExitExpressionList is called when production expressionList is exited.
 func (s *BaseExprParserListener) ExitExpressionList(ctx *ExpressionListContext) {}
+
+// EnterNo_arguments is called when production no_arguments is entered.
+func (s *BaseExprParserListener) EnterNo_arguments(ctx *No_argumentsContext) {}
+
+// ExitNo_arguments is called when production no_arguments is exited.
+func (s *BaseExprParserListener) ExitNo_arguments(ctx *No_argumentsContext) {}
 
 // EnterArguments is called when production arguments is entered.
 func (s *BaseExprParserListener) EnterArguments(ctx *ArgumentsContext) {}
@@ -140,8 +128,8 @@ func (s *BaseExprParserListener) EnterArguments(ctx *ArgumentsContext) {}
 // ExitArguments is called when production arguments is exited.
 func (s *BaseExprParserListener) ExitArguments(ctx *ArgumentsContext) {}
 
-// EnterSlice is called when production slice is entered.
-func (s *BaseExprParserListener) EnterSlice(ctx *SliceContext) {}
+// EnterSlice_ is called when production slice_ is entered.
+func (s *BaseExprParserListener) EnterSlice_(ctx *Slice_Context) {}
 
-// ExitSlice is called when production slice is exited.
-func (s *BaseExprParserListener) ExitSlice(ctx *SliceContext) {}
+// ExitSlice_ is called when production slice_ is exited.
+func (s *BaseExprParserListener) ExitSlice_(ctx *Slice_Context) {}
