@@ -10,6 +10,9 @@ type ExprParserListener interface {
 	// EnterParameters is called when entering the parameters production.
 	EnterParameters(c *ParametersContext)
 
+	// EnterParamComma is called when entering the paramComma production.
+	EnterParamComma(c *ParamCommaContext)
+
 	// EnterParamDecl is called when entering the paramDecl production.
 	EnterParamDecl(c *ParamDeclContext)
 
@@ -55,9 +58,6 @@ type ExprParserListener interface {
 	// EnterExpressionList is called when entering the expressionList production.
 	EnterExpressionList(c *ExpressionListContext)
 
-	// EnterNo_arguments is called when entering the no_arguments production.
-	EnterNo_arguments(c *No_argumentsContext)
-
 	// EnterArguments is called when entering the arguments production.
 	EnterArguments(c *ArgumentsContext)
 
@@ -66,6 +66,9 @@ type ExprParserListener interface {
 
 	// ExitParameters is called when exiting the parameters production.
 	ExitParameters(c *ParametersContext)
+
+	// ExitParamComma is called when exiting the paramComma production.
+	ExitParamComma(c *ParamCommaContext)
 
 	// ExitParamDecl is called when exiting the paramDecl production.
 	ExitParamDecl(c *ParamDeclContext)
@@ -111,9 +114,6 @@ type ExprParserListener interface {
 
 	// ExitExpressionList is called when exiting the expressionList production.
 	ExitExpressionList(c *ExpressionListContext)
-
-	// ExitNo_arguments is called when exiting the no_arguments production.
-	ExitNo_arguments(c *No_argumentsContext)
 
 	// ExitArguments is called when exiting the arguments production.
 	ExitArguments(c *ArgumentsContext)

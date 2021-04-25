@@ -4,8 +4,8 @@ options {
     tokenVocab=ExprLexer;
 }
 
-parameters: paramDecl (COMMA paramDecl)* EOF;
-
+parameters: paramDecl (paramComma paramDecl)* EOF;
+paramComma: COMMA;
 paramDecl: IDENTIFIER | (IDENTIFIER COLON paramType);
 
 paramType: IDENTIFIER;

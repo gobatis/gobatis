@@ -26,6 +26,12 @@ func (s *BaseExprParserListener) EnterParameters(ctx *ParametersContext) {}
 // ExitParameters is called when production parameters is exited.
 func (s *BaseExprParserListener) ExitParameters(ctx *ParametersContext) {}
 
+// EnterParamComma is called when production paramComma is entered.
+func (s *BaseExprParserListener) EnterParamComma(ctx *ParamCommaContext) {}
+
+// ExitParamComma is called when production paramComma is exited.
+func (s *BaseExprParserListener) ExitParamComma(ctx *ParamCommaContext) {}
+
 // EnterParamDecl is called when production paramDecl is entered.
 func (s *BaseExprParserListener) EnterParamDecl(ctx *ParamDeclContext) {}
 
@@ -115,12 +121,6 @@ func (s *BaseExprParserListener) EnterExpressionList(ctx *ExpressionListContext)
 
 // ExitExpressionList is called when production expressionList is exited.
 func (s *BaseExprParserListener) ExitExpressionList(ctx *ExpressionListContext) {}
-
-// EnterNo_arguments is called when production no_arguments is entered.
-func (s *BaseExprParserListener) EnterNo_arguments(ctx *No_argumentsContext) {}
-
-// ExitNo_arguments is called when production no_arguments is exited.
-func (s *BaseExprParserListener) ExitNo_arguments(ctx *No_argumentsContext) {}
 
 // EnterArguments is called when production arguments is entered.
 func (s *BaseExprParserListener) EnterArguments(ctx *ArgumentsContext) {}

@@ -14,41 +14,52 @@ import (
 )
 
 func parseConfig(engine *Engine, file, content string) (err error) {
-	listener := &xmlParser{
+	l := &xmlParser{
 		file:          file,
 		stack:         newXMLStack(),
+		coverage:      newCoverage(),
 		rootElement:   dtd.Configuration,
 		elementGetter: dtd.ConfigElement,
 	}
-	err = parseNode(listener, content)
+	err = parseNode(l, content)
 	if err != nil {
 		return
 	}
 	
-	//d, _ := json.MarshalIndent(listener.rootNode, "", "\t")
-	//fmt.Println(string(d))
+	if !l.coverage.covered() {
+		err = fmt.Errorf("parse config token not coverd: %d/%d", l.coverage.len(), l.coverage.total)
+		fmt.Println(l.coverage.notCovered())
+		return
+	}
+	
 	return
 }
 
 func parseMapper(engine *Engine, file, content string) (err error) {
 	
-	listener := &xmlParser{
+	l := &xmlParser{
 		file:          file,
 		stack:         newXMLStack(),
+		coverage:      newCoverage(),
 		rootElement:   dtd.Mapper,
 		elementGetter: dtd.MapperElement,
 	}
-	err = parseNode(listener, content)
+	err = parseNode(l, content)
 	if err != nil {
 		return
 	}
 	
-	if listener.rootNode == nil {
+	if !l.coverage.covered() {
+		err = fmt.Errorf("parse mapper token not coverd: %d/%d", l.coverage.len(), l.coverage.total)
+		return
+	}
+	
+	if l.rootNode == nil {
 		engine.logger.Warnf("empty mapperCache file: %s", file)
 		return
 	}
 	
-	for _, v := range listener.rootNode.Nodes {
+	for _, v := range l.rootNode.Nodes {
 		if v.Name == dtd.SELECT ||
 			v.Name == dtd.INSERT ||
 			v.Name == dtd.DELETE ||
@@ -76,6 +87,8 @@ func parseNode(listener *xmlParser, content string) (err error) {
 	parser.BuildParseTrees = true
 	parser.AddErrorListener(antlr.NewDiagnosticErrorListener(true))
 	//parser.SetErrorHandler()
+	//tokens := lexer.GetAllTokens()
+	//fmt.Println(tokens[8], tokens[9], len(tokens))
 	antlr.ParseTreeWalkerDefault.Walk(listener, parser.Document())
 	if listener.error != nil {
 		err = listener.error
@@ -86,6 +99,44 @@ func parseNode(listener *xmlParser, content string) (err error) {
 
 func parseError(file string, token antlr.Token, msg string) error {
 	return fmt.Errorf("%s line %d:%d, parse error: %s", file, token.GetLine(), token.GetColumn(), msg)
+}
+
+func newCoverage() *coverage {
+	return &coverage{
+		scan: map[int]bool{},
+	}
+}
+
+type coverage struct {
+	total int
+	scan  map[int]bool
+}
+
+func (p *coverage) setTotal(total int) {
+	p.total = total
+}
+
+func (p *coverage) add(ctx antlr.ParserRuleContext) {
+	for i := ctx.GetStart().GetTokenIndex(); i <= ctx.GetStop().GetTokenIndex(); i++ {
+		p.scan[i] = true
+	}
+}
+
+func (p *coverage) len() int {
+	return len(p.scan)
+}
+
+func (p *coverage) covered() bool {
+	return p.total == p.len()
+}
+
+func (p *coverage) notCovered() (indexes []int) {
+	for i := 0; i <= p.total; i++ {
+		if _, ok := p.scan[i]; !ok {
+			indexes = append(indexes, i)
+		}
+	}
+	return
 }
 
 func newXMLNode(file, name string, token antlr.Token) *xmlNode {
@@ -184,7 +235,7 @@ func (p *xmlNodeStack) Pop() *xmlNode {
 
 func (p *xmlNodeStack) Peak() *xmlNode {
 	p.lock.RLock()
-	defer p.lock.Unlock()
+	defer p.lock.RUnlock()
 	e := p.list.Back()
 	if e != nil {
 		return e.Value.(*xmlNode)
@@ -194,18 +245,19 @@ func (p *xmlNodeStack) Peak() *xmlNode {
 
 func (p *xmlNodeStack) Len() int {
 	p.lock.RLock()
-	defer p.lock.Unlock()
+	defer p.lock.RUnlock()
 	return p.list.Len()
 }
 
 func (p *xmlNodeStack) Empty() bool {
 	p.lock.RLock()
-	defer p.lock.Unlock()
+	defer p.lock.RUnlock()
 	return p.list.Len() == 0
 }
 
 type xmlParser struct {
 	*antlr.BaseParseTreeListener
+	coverage      *coverage
 	file          string
 	content       []byte
 	depth         int
@@ -347,12 +399,21 @@ func (p *xmlParser) enterChardata(c *xml.ChardataContext) {
 
 func (p *xmlParser) EnterEveryRule(ctx antlr.ParserRuleContext) {
 	switch ctx.GetRuleIndex() {
+	case xml.XMLParserRULE_document:
+		p.coverage.setTotal(ctx.GetStop().GetTokenIndex() + 1)
 	case xml.XMLParserRULE_element:
 		p.enterElement(ctx.(*xml.ElementContext))
+		p.coverage.add(ctx)
 	case xml.XMLParserRULE_attribute:
 		p.enterAttribute(ctx.(*xml.AttributeContext))
+		p.coverage.add(ctx)
 	case xml.XMLParserRULE_chardata:
 		p.enterChardata(ctx.(*xml.ChardataContext))
+		p.coverage.add(ctx)
+	case xml.XMLParserRULE_prolog:
+		p.coverage.add(ctx)
+	case xml.XMLParserRULE_misc:
+		p.coverage.add(ctx)
 	}
 	
 }
@@ -558,20 +619,30 @@ func (p *exprParams) index(index int) (val exprValue, ok bool) {
 	return
 }
 
+func newExprParser(params ...interface{}) *exprParser {
+	r := new(exprParser)
+	r.exprStack = newExprStack()
+	r.params = newExprParams(params...)
+	r.coverage = newCoverage()
+	return r
+}
+
 type exprParser struct {
 	*expr.BaseExprParserListener
 	*exprStack
+	coverage   *coverage
 	params     *exprParams
 	error      error
 	file       string
 	aliasIndex int
 }
 
-func newExprParser(params ...interface{}) *exprParser {
-	r := new(exprParser)
-	r.exprStack = newExprStack()
-	r.params = newExprParams(params...)
-	return r
+func (p *exprParser) EnterParameters(ctx *expr.ParametersContext) {
+	p.coverage.setTotal(ctx.GetStop().GetTokenIndex() + 1)
+}
+
+func (p *exprParser) EnterExpressions(ctx *expr.ExpressionsContext) {
+	p.coverage.setTotal(ctx.GetStop().GetTokenIndex() + 1)
 }
 
 func (p *exprParser) ExitExpression(ctx *expr.ExpressionContext) {
@@ -590,6 +661,7 @@ func (p *exprParser) ExitExpression(ctx *expr.ExpressionContext) {
 			p.error = err
 			return
 		}
+		p.coverage.add(ctx)
 	} else if ctx.GetMul_op() != nil ||
 		ctx.GetAdd_op() != nil ||
 		ctx.GetRel_op() != nil ||
@@ -606,30 +678,35 @@ func (p *exprParser) ExitExpression(ctx *expr.ExpressionContext) {
 				p.error = err
 				return
 			}
+			p.coverage.add(ctx)
 		} else if ctx.GetMul_op() != nil {
 			err = p.numericStringCalc(left, right, ctx.GetMul_op())
 			if err != nil {
 				p.error = err
 				return
 			}
+			p.coverage.add(ctx)
 		} else if ctx.GetRel_op() != nil {
 			err = p.relationCalc(left, right, ctx.GetRel_op())
 			if err != nil {
 				p.error = err
 				return
 			}
+			p.coverage.add(ctx)
 		} else if ctx.LOGICAL_AND() != nil {
 			err = p.logicCalc(left, right, ctx.LOGICAL_AND().GetSymbol())
 			if err != nil {
 				p.error = err
 				return
 			}
+			p.coverage.add(ctx)
 		} else if ctx.LOGICAL_OR() != nil {
 			err = p.logicCalc(left, right, ctx.LOGICAL_OR().GetSymbol())
 			if err != nil {
 				p.error = err
 				return
 			}
+			p.coverage.add(ctx)
 		}
 	}
 }
@@ -648,14 +725,19 @@ func (p *exprParser) EnterParamDecl(ctx *expr.ParamDeclContext) {
 		p.error = parseError(p.file, ctx.GetStart(), err.Error())
 		return
 	}
+	p.coverage.add(ctx)
 	p.aliasIndex++
 }
 
-func (p *exprParser) ExitOperandName(ctx *expr.OperandNameContext) {
+func (p *exprParser) EnterParamComma(ctx *expr.ParamCommaContext) {
+	p.coverage.add(ctx)
+}
+
+func (p *exprParser) ExitVar_(ctx *expr.Var_Context) {
 	if p.error != nil {
 		return
 	}
-	alias := ctx.IDENTIFIER(0).GetText()
+	alias := ctx.IDENTIFIER().GetText()
 	val, ok := p.params.get(alias)
 	if !ok {
 		p.error = parseError(p.file, ctx.GetStart(), fmt.Sprintf("can't fetch alias: %s", alias))
@@ -663,6 +745,7 @@ func (p *exprParser) ExitOperandName(ctx *expr.OperandNameContext) {
 	}
 	//ctx.AllIDENTIFIER()
 	p.Push(&val)
+	p.coverage.add(ctx)
 }
 
 func (p *exprParser) ExitInteger(ctx *expr.IntegerContext) {
@@ -670,6 +753,7 @@ func (p *exprParser) ExitInteger(ctx *expr.IntegerContext) {
 		value:     ctx.GetText(),
 		aliasKind: reflect.Int,
 	})
+	p.coverage.add(ctx)
 }
 
 func (p *exprParser) ExitString_(ctx *expr.String_Context) {
@@ -677,6 +761,7 @@ func (p *exprParser) ExitString_(ctx *expr.String_Context) {
 		value:     ctx.GetText(),
 		aliasKind: reflect.String,
 	})
+	p.coverage.add(ctx)
 }
 
 func (p *exprParser) ExitFloat_(ctx *expr.Float_Context) {
@@ -684,6 +769,7 @@ func (p *exprParser) ExitFloat_(ctx *expr.Float_Context) {
 		value:     ctx.GetText(),
 		aliasKind: reflect.Float64,
 	})
+	p.coverage.add(ctx)
 }
 
 func (p *exprParser) parseExpression(params, expresion string) (result interface{}, err error) {
@@ -703,6 +789,11 @@ func (p *exprParser) parseExpression(params, expresion string) (result interface
 	}
 	if p.Len() != 1 {
 		err = fmt.Errorf("unexpected stack length: %d", p.Len())
+		return
+	}
+	
+	if !p.coverage.covered() {
+		err = fmt.Errorf("parse expression token not coverd: %d/%d", p.coverage.len(), p.coverage.total)
 		return
 	}
 	
@@ -1120,6 +1211,10 @@ func (p *exprParser) parseParam(params string) (err error) {
 		return
 	}
 	antlr.ParseTreeWalkerDefault.Walk(p, parser.Parameters())
+	if !p.coverage.covered() {
+		err = fmt.Errorf("parse params token not coverd: %d/%d", p.coverage.len(), p.coverage.total)
+		return
+	}
 	return
 }
 
