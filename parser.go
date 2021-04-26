@@ -426,17 +426,165 @@ func (p *xmlParser) ExitEveryRule(ctx antlr.ParserRuleContext) {
 }
 
 type exprValue struct {
-	value      interface{}
-	paramValue reflect.Value
-	aliasKind  reflect.Kind
+	value    reflect.Value // required
+	expected reflect.Kind  // required at init params
+	source   string        // required at number type conversion and built-in call
+	alias    string        // optional, display var path
+	builtIn  bool          // mark if built in function or package
 }
 
-func (p *exprValue) isExpected() bool {
-	return p.aliasKind == reflect.Interface || p.paramValue.Kind() == p.aliasKind
+func (p *exprValue) setValue(v interface{}) {
+	p.value = reflect.ValueOf(v)
+}
+
+func (p *exprValue) received() bool {
+	return p.expected == reflect.Interface || p.value.Kind() == p.expected
 }
 
 func (p *exprValue) convertible() bool {
+	if p.expected == reflect.Array && p.value.Kind() == reflect.Slice {
+		return true
+	}
 	return false
+}
+
+func (p *exprValue) int() (v int, err error) {
+	defer func() {
+		e := recover()
+		if e != nil {
+			err = fmt.Errorf("%v", e)
+			return
+		}
+	}()
+	i := p.value.Int()
+	v = int(i)
+	if int64(v) != i {
+		err = fmt.Errorf("int64 to int no equal")
+		return
+	}
+	return
+}
+
+func (p *exprValue) elem() (elem reflect.Value) {
+	if p.value.Kind() == reflect.Ptr {
+		elem = p.value.Elem()
+	} else {
+		elem = p.value
+	}
+	return elem
+}
+
+func (p *exprValue) visitMember(name string) (r *exprValue, err error) {
+	
+	elem := p.elem()
+	if elem.Kind() != reflect.Struct {
+		err = fmt.Errorf("visit '%s.%s' is not struct", p.alias, name)
+		return
+	}
+	
+	mv := elem.FieldByName(name)
+	if mv.Kind() == reflect.Invalid {
+		mv = elem.MethodByName(name)
+		if mv.Kind() == reflect.Invalid {
+			err = fmt.Errorf("visit member '%s.%s' is invalid", p.alias, name)
+			return
+		}
+	}
+	
+	r = &exprValue{
+		value: mv,
+	}
+	
+	return
+}
+
+func (p *exprValue) visitArrayIndex(index int) (r *exprValue, err error) {
+	
+	elem := p.elem()
+	if elem.Kind() != reflect.Array && elem.Kind() != reflect.Slice {
+		err = fmt.Errorf("visit var is not array or slice")
+		return
+	}
+	
+	mv := elem.Index(index)
+	if mv.Kind() == reflect.Invalid {
+		err = fmt.Errorf("visit array index '%d' is invalid", index)
+		return
+	}
+	r = &exprValue{
+		value: mv,
+	}
+	return
+}
+
+func (p *exprValue) visitMapIndex(index reflect.Value) (r *exprValue, err error) {
+	
+	elem := p.elem()
+	if elem.Kind() != reflect.Map {
+		err = fmt.Errorf("visit var is not map")
+		return
+	}
+	
+	mv := elem.MapIndex(index)
+	if mv.Kind() == reflect.Invalid {
+		err = fmt.Errorf("visit map index '%s' is invalid", index)
+		return
+	}
+	r = &exprValue{
+		value: mv,
+	}
+	return
+}
+
+func (p *exprValue) call(ellipsis bool, params []reflect.Value) (r *exprValue, err error) {
+	
+	elem := p.elem()
+	if elem.Kind() != reflect.Func {
+		err = fmt.Errorf("visit var is not map")
+		return
+	}
+	
+	var out []reflect.Value
+	defer func() {
+		e := recover()
+		if e != nil {
+			err = fmt.Errorf("function call error: %v", e)
+			return
+		}
+	}()
+	if ellipsis {
+		out = elem.CallSlice(params)
+	} else {
+		out = elem.Call(params)
+	}
+	
+	if len(out) == 0 {
+		err = fmt.Errorf("function must return one reuslt")
+		return
+	} else if len(out) > 1 {
+		err = fmt.Errorf("function only support one result return")
+		return
+	}
+	
+	r = &exprValue{
+		value: out[0],
+	}
+	return
+}
+
+func (p *exprValue) visitSlice(format string, indexes ...int) (r *exprValue, err error) {
+	var v reflect.Value
+	switch len(indexes) {
+	case 2:
+		v = p.value.Slice(indexes[0], indexes[1])
+	case 3:
+		v = p.value.Slice3(indexes[0], indexes[1], indexes[2])
+	default:
+		err = fmt.Errorf("unsuppoted slice range index '%s'", format)
+		return
+	}
+	r = &exprValue{value: v}
+	return
 }
 
 type exprStack struct {
@@ -499,9 +647,7 @@ func newExprParams(params ...interface{}) *exprParams {
 	for _, v := range params {
 		rv := reflect.ValueOf(v)
 		r.values = append(r.values, exprValue{
-			value:      v,
-			paramValue: rv,
-			aliasKind:  rv.Kind(),
+			value: rv,
 		})
 	}
 	return r
@@ -529,29 +675,28 @@ func (p *exprParams) get(name string) (val exprValue, ok bool) {
 	return
 }
 
-func (p *exprParams) alias(name, expected string, index int) error {
+func (p *exprParams) alias(name, _type string, index int) error {
 	if p.aliases == nil {
 		p.aliases = map[string]int{}
 	} else {
 		_, ok := p.aliases[name]
 		if ok {
-			return fmt.Errorf("duplicated alias: %s", name)
+			return fmt.Errorf("duplicated alias '%s'", name)
 		}
 	}
 	vl := len(p.values) - 1
 	if index < 0 || index > vl {
-		return fmt.Errorf("alias: %s index: %d out of params length: %d", name, index, vl)
+		return fmt.Errorf("alias '%s' index '%d' out of params length '%d'", name, index, vl)
 	}
-	if expected != "" {
+	if _type != "" {
 		var err error
 		ev := p.values[index]
-		ev.aliasKind, err = p.toReflectKind(expected)
+		ev.expected, err = p.toReflectKind(_type)
 		if err != nil {
-			return fmt.Errorf("convert alias: %s type: %s to %s error: %s", name, ev.aliasKind, expected, err)
+			return fmt.Errorf("convert alias '%s' type error: %s", name, err)
 		}
-		if !ev.isExpected() && !ev.convertible() {
-			return fmt.Errorf("param type: %s is not alias expteced type: %s",
-				ev.paramValue.Kind(), ev.aliasKind)
+		if !ev.received() && !ev.convertible() {
+			return fmt.Errorf("param type '%s' is not alias expteced type '%s'", ev.value.Kind(), ev.expected)
 		}
 	}
 	p.aliases[name] = index
@@ -602,7 +747,7 @@ func (p *exprParams) toReflectKind(t string) (kind reflect.Kind, err error) {
 	case "struct":
 		kind = reflect.Struct
 	default:
-		err = fmt.Errorf("unsupported type:%s", t)
+		err = fmt.Errorf("unsupported type '%s'", t)
 	}
 	return
 }
@@ -621,24 +766,58 @@ func (p *exprParams) index(index int) (val exprValue, ok bool) {
 
 func newExprParser(params ...interface{}) *exprParser {
 	r := new(exprParser)
-	r.exprStack = newExprStack()
+	r.stack = newExprStack()
 	r.params = newExprParams(params...)
 	r.coverage = newCoverage()
+	r.initBuiltIn()
 	return r
 }
 
 type exprParser struct {
 	*expr.BaseExprParserListener
-	*exprStack
+	stack      *exprStack
 	coverage   *coverage
 	params     *exprParams
 	error      error
 	file       string
-	aliasIndex int
+	paramIndex int
+	builtIn    map[string]interface{}
 }
 
-func (p *exprParser) EnterParameters(ctx *expr.ParametersContext) {
-	p.coverage.setTotal(ctx.GetStop().GetTokenIndex() + 1)
+func (p *exprParser) initBuiltIn() {
+	p.builtIn = map[string]interface{}{}
+	p.builtIn["len"] = _len
+	p.builtIn["strings"] = _strings{}
+}
+
+func (p *exprParser) isBuiltIn(name string) bool {
+	_, ok := p.builtIn[name]
+	return ok
+}
+
+func (p *exprParser) EnterParamDecl(ctx *expr.ParamDeclContext) {
+	
+	if p.error != nil {
+		return
+	}
+	name := ctx.IDENTIFIER().GetText()
+	var expected string
+	if ctx.ParamType() != nil {
+		expected = ctx.ParamType().GetText()
+	}
+	
+	if p.isBuiltIn(name) {
+		p.error = parseError(p.file, ctx.GetStart(),
+			fmt.Sprintf("alias '%s' conflict with built-in functions or objects", name))
+		return
+	}
+	
+	err := p.params.alias(name, expected, p.paramIndex)
+	if err != nil {
+		p.error = parseError(p.file, ctx.GetStart(), err.Error())
+		return
+	}
+	p.paramIndex++
 }
 
 func (p *exprParser) EnterExpressions(ctx *expr.ExpressionsContext) {
@@ -651,9 +830,9 @@ func (p *exprParser) ExitExpression(ctx *expr.ExpressionContext) {
 	}
 	
 	if ctx.GetUnary_op() != nil {
-		left, err := p.Pop()
+		left, err := p.stack.Pop()
 		if err != nil {
-			p.error = err
+			p.error = parseError(p.file, ctx.GetStart(), err.Error())
 			return
 		}
 		err = p.unaryCalc(left, ctx.GetUnary_op())
@@ -669,7 +848,7 @@ func (p *exprParser) ExitExpression(ctx *expr.ExpressionContext) {
 		ctx.LOGICAL_OR() != nil {
 		left, right, err := p.popBinaryOperands()
 		if err != nil {
-			p.error = err
+			p.error = parseError(p.file, ctx.GetStart(), err.Error())
 			return
 		}
 		if ctx.GetAdd_op() != nil {
@@ -711,63 +890,194 @@ func (p *exprParser) ExitExpression(ctx *expr.ExpressionContext) {
 	}
 }
 
-func (p *exprParser) EnterParamDecl(ctx *expr.ParamDeclContext) {
-	if p.error != nil {
-		return
-	}
-	name := ctx.IDENTIFIER().GetText()
-	var expected string
-	if ctx.ParamType() != nil {
-		expected = ctx.ParamType().GetText()
-	}
-	err := p.params.alias(name, expected, p.aliasIndex)
-	if err != nil {
-		p.error = parseError(p.file, ctx.GetStart(), err.Error())
-		return
-	}
-	p.coverage.add(ctx)
-	p.aliasIndex++
-}
-
-func (p *exprParser) EnterParamComma(ctx *expr.ParamCommaContext) {
-	p.coverage.add(ctx)
-}
-
 func (p *exprParser) ExitVar_(ctx *expr.Var_Context) {
 	if p.error != nil {
 		return
 	}
 	alias := ctx.IDENTIFIER().GetText()
-	val, ok := p.params.get(alias)
-	if !ok {
-		p.error = parseError(p.file, ctx.GetStart(), fmt.Sprintf("can't fetch alias: %s", alias))
-		return
+	var val exprValue
+	if p.isBuiltIn(alias) {
+		val = exprValue{value: reflect.ValueOf(p.builtIn[alias]), alias: alias}
+	} else {
+		var ok bool
+		val, ok = p.params.get(alias)
+		if !ok {
+			p.error = parseError(p.file, ctx.GetStart(), fmt.Sprintf("can't find var '%s'", alias))
+			return
+		}
 	}
-	//ctx.AllIDENTIFIER()
-	p.Push(&val)
+	p.stack.Push(&val)
 	p.coverage.add(ctx)
 }
 
+func (p *exprParser) ExitMember(ctx *expr.MemberContext) {
+	if p.error != nil {
+		return
+	}
+	name := ctx.IDENTIFIER().GetText()
+	obj, err := p.stack.Pop()
+	if err != nil {
+		p.error = parseError(p.file, ctx.GetStart(), err.Error())
+		return
+	}
+	var mev *exprValue
+	mev, err = obj.visitMember(name)
+	if err != nil {
+		p.error = parseError(p.file, ctx.GetStart(), err.Error())
+		return
+	}
+	
+	p.stack.Push(mev)
+	p.coverage.add(ctx)
+}
+
+func (p *exprParser) ExitIndex(ctx *expr.IndexContext) {
+	
+	if p.error != nil {
+		return
+	}
+	
+	index, err := p.stack.Pop()
+	if err != nil {
+		p.error = parseError(p.file, ctx.GetStart(), err.Error())
+		return
+	}
+	
+	object, err := p.stack.Pop()
+	if err != nil {
+		p.error = parseError(p.file, ctx.GetStart(), err.Error())
+		return
+	}
+	
+	var ev *exprValue
+	if object.value.Kind() == reflect.Map {
+		ev, err = object.visitMapIndex(index.value)
+		if err != nil {
+			p.error = parseError(p.file, ctx.GetStart(), err.Error())
+			return
+		}
+	} else if object.value.Kind() == reflect.Slice || object.value.Kind() == reflect.Array {
+		var i int
+		i, err = index.int()
+		if err != nil {
+			p.error = parseError(p.file, ctx.GetStart(), err.Error())
+			return
+		}
+		
+		ev, err = object.visitArrayIndex(i)
+		if err != nil {
+			p.error = parseError(p.file, ctx.GetStart(), err.Error())
+			return
+		}
+		
+	} else {
+		p.error = parseError(p.file, ctx.GetStart(), "unsupported index object")
+		return
+	}
+	p.stack.Push(ev)
+	p.coverage.add(ctx)
+}
+
+func (p *exprParser) ExitSlice_(ctx *expr.Slice_Context) {
+	if p.error != nil {
+		return
+	}
+	l := len(ctx.AllExpression())
+	args := make([]int, l)
+	for i := l - 1; i >= 0; i-- {
+		arg, err := p.stack.Pop()
+		if err != nil {
+			p.error = parseError(p.file, ctx.GetStart(), err.Error())
+			return
+		}
+		args[i], err = arg.int()
+		if err != nil {
+			p.error = parseError(p.file, ctx.GetStart(), err.Error())
+			return
+		}
+	}
+	target, err := p.stack.Pop()
+	if err != nil {
+		p.error = parseError(p.file, ctx.GetStart(), err.Error())
+		return
+	}
+	r, err := target.visitSlice(ctx.GetText(), args...)
+	if err != nil {
+		p.error = parseError(p.file, ctx.GetStart(), err.Error())
+		return
+	}
+	p.stack.Push(r)
+	p.coverage.add(ctx)
+}
+
+func (p *exprParser) ExitCall(ctx *expr.CallContext) {
+	if p.error != nil {
+		return
+	}
+	l := len(ctx.ExpressionList().(*expr.ExpressionListContext).AllExpression())
+	args := make([]reflect.Value, l)
+	for i := l - 1; i >= 0; i-- {
+		arg, err := p.stack.Pop()
+		if err != nil {
+			p.error = parseError(p.file, ctx.GetStart(), err.Error())
+			return
+		}
+		args[i] = arg.value
+	}
+	f, err := p.stack.Pop()
+	if err != nil {
+		p.error = parseError(p.file, ctx.GetStart(), err.Error())
+		return
+	}
+	r, err := f.call(ctx.ELLIPSIS() != nil, args)
+	if err != nil {
+		p.error = parseError(p.file, ctx.GetStart(), err.Error())
+		return
+	}
+	p.stack.Push(r)
+	p.coverage.add(ctx)
+	return
+}
+
 func (p *exprParser) ExitInteger(ctx *expr.IntegerContext) {
-	p.Push(&exprValue{
-		value:     ctx.GetText(),
-		aliasKind: reflect.Int,
+	if p.error != nil {
+		return
+	}
+	v, err := cast.ToIntE(ctx.GetText())
+	if err != nil {
+		p.error = parseError(p.file, ctx.GetStart(), err.Error())
+		return
+	}
+	p.stack.Push(&exprValue{
+		value:  reflect.ValueOf(v),
+		source: ctx.GetText(),
 	})
 	p.coverage.add(ctx)
 }
 
 func (p *exprParser) ExitString_(ctx *expr.String_Context) {
-	p.Push(&exprValue{
-		value:     ctx.GetText(),
-		aliasKind: reflect.String,
+	if p.error != nil {
+		return
+	}
+	v := strings.TrimSuffix(strings.TrimPrefix(ctx.GetText(), "\""), "\"")
+	p.stack.Push(&exprValue{
+		value: reflect.ValueOf(v),
 	})
 	p.coverage.add(ctx)
 }
 
 func (p *exprParser) ExitFloat_(ctx *expr.Float_Context) {
-	p.Push(&exprValue{
-		value:     ctx.GetText(),
-		aliasKind: reflect.Float64,
+	if p.error != nil {
+		return
+	}
+	v, err := cast.ToFloat64E(ctx.GetText())
+	if err != nil {
+		p.error = parseError(p.file, ctx.GetStart(), err.Error())
+		return
+	}
+	p.stack.Push(&exprValue{
+		value:  reflect.ValueOf(v),
+		source: ctx.GetText(),
 	})
 	p.coverage.add(ctx)
 }
@@ -787,8 +1097,8 @@ func (p *exprParser) parseExpression(params, expresion string) (result interface
 	if err != nil {
 		return
 	}
-	if p.Len() != 1 {
-		err = fmt.Errorf("unexpected stack length: %d", p.Len())
+	if p.stack.Len() != 1 {
+		err = fmt.Errorf("unexpected reslut stack length: %d", p.stack.Len())
 		return
 	}
 	
@@ -797,33 +1107,25 @@ func (p *exprParser) parseExpression(params, expresion string) (result interface
 		return
 	}
 	
-	v, _ := p.Pop()
+	v, _ := p.stack.Pop()
 	result = v.value
 	
 	return
 }
 
 func (p *exprParser) popBinaryOperands() (left, right *exprValue, err error) {
-	right, err = p.Pop()
+	right, err = p.stack.Pop()
 	if err != nil {
 		return
 	}
-	left, err = p.Pop()
+	left, err = p.stack.Pop()
 	if err != nil {
 		return
 	}
 	return
 }
 
-func (p *exprParser) getReferKind(left, right *exprValue) (kind reflect.Kind) {
-	if left.value == nil && right.value != nil {
-		kind = right.aliasKind
-	}
-	kind = left.aliasKind
-	return p.getMaxKind(kind)
-}
-
-func (p *exprParser) getMaxKind(kind reflect.Kind) reflect.Kind {
+func (p *exprParser) parseMaxNumericKind(kind reflect.Kind) reflect.Kind {
 	if kind == reflect.Int ||
 		kind == reflect.Int8 ||
 		kind == reflect.Int16 ||
@@ -844,339 +1146,289 @@ func (p *exprParser) getMaxKind(kind reflect.Kind) reflect.Kind {
 }
 
 func (p *exprParser) numericStringCalc(left, right *exprValue, op antlr.Token) error {
-	kind := p.getReferKind(left, right)
+	kind := p.parseMaxNumericKind(left.value.Kind())
 	if !p.isNumeric(kind) && (op.GetTokenType() == expr.ExprParserPLUS && kind != reflect.String) {
 		return parseError(p.file, op, fmt.Sprintf(
 			"invalid operation: %s %s %s,unsupported type: %s", left.value, op.GetText(), right.value, kind,
 		))
 	}
-	
-	result := &exprValue{aliasKind: kind}
+	defer func() {
+		e := recover()
+		if e != nil {
+			p.error = parseError(p.file, op, fmt.Sprintf("%v", e))
+			return
+		}
+	}()
+	result := &exprValue{}
 	switch kind {
 	case reflect.Int64:
-		a, err := cast.ToInt64E(left.value)
-		if err != nil {
-			return p.castError(op, err)
-		}
-		b, err := cast.ToInt64E(right.value)
-		if err != nil {
-			return p.castError(op, err)
-		}
+		a := left.value.Int()
+		b := right.value.Int()
 		switch op.GetTokenType() {
 		case expr.ExprParserPLUS:
-			result.value = a + b
+			result.setValue(a + b)
 		case expr.ExprParserMINUS:
-			result.value = a - b
+			result.setValue(a - b)
 		case expr.ExprParserSTAR:
-			result.value = a * b
+			result.setValue(a * b)
 		case expr.ExprParserDIV:
 			if b == 0 {
 				return p.divisionByZero(op)
 			}
-			result.value = a / b
+			result.setValue(a / b)
 		case expr.ExprParserCARET:
-			result.value = a ^ b
+			result.setValue(a ^ b)
 		case expr.ExprParserOR:
-			result.value = a | b
+			result.setValue(a | b)
 		case expr.ExprParserAMPERSAND:
-			result.value = a & b
+			result.setValue(a & b)
 		case expr.ExprParserMOD:
-			result.value = a % b
+			result.setValue(a % b)
 		case expr.ExprParserLSHIFT:
-			result.value = a << b
+			result.setValue(a << b)
 		case expr.ExprParserRSHIFT:
-			result.value = a >> b
+			result.setValue(a >> b)
 		case expr.ExprParserBIT_CLEAR:
-			result.value = a &^ b
+			result.setValue(a &^ b)
 		default:
 			return p.unsupportedOpError(op)
 		}
 	case reflect.Uint64:
-		a, err := cast.ToInt8E(left.value)
-		if err != nil {
-			return p.castError(op, err)
-		}
-		b, err := cast.ToInt8E(right.value)
-		if err != nil {
-			return p.castError(op, err)
-		}
+		a := left.value.Uint()
+		b := right.value.Uint()
 		switch op.GetTokenType() {
 		case expr.ExprParserPLUS:
-			result.value = a + b
+			result.setValue(a + b)
 		case expr.ExprParserMINUS:
-			result.value = a - b
+			result.setValue(a - b)
 		case expr.ExprParserSTAR:
-			result.value = a * b
+			result.setValue(a * b)
 		case expr.ExprParserDIV:
 			if b == 0 {
 				return p.divisionByZero(op)
 			}
-			result.value = a / b
+			result.setValue(a / b)
 		case expr.ExprParserCARET:
-			result.value = a ^ b
+			result.setValue(a ^ b)
 		case expr.ExprParserOR:
-			result.value = a | b
+			result.setValue(a | b)
 		case expr.ExprParserAMPERSAND:
-			result.value = a & b
+			result.setValue(a & b)
 		case expr.ExprParserMOD:
-			result.value = a % b
+			result.setValue(a % b)
 		case expr.ExprParserLSHIFT:
-			result.value = a << b
+			result.setValue(a << b)
 		case expr.ExprParserRSHIFT:
-			result.value = a >> b
+			result.setValue(a >> b)
 		case expr.ExprParserBIT_CLEAR:
-			result.value = a &^ b
+			result.setValue(a &^ b)
 		default:
 			return p.unsupportedOpError(op)
 		}
 	case reflect.Float64:
-		a, err := cast.ToIntE(left.value)
-		if err != nil {
-			return p.castError(op, err)
-		}
-		b, err := cast.ToIntE(right.value)
-		if err != nil {
-			return p.castError(op, err)
-		}
+		a := left.value.Float()
+		b := right.value.Float()
 		switch op.GetTokenType() {
 		case expr.ExprParserPLUS:
-			result.value = a + b
+			result.setValue(a + b)
 		case expr.ExprParserMINUS:
-			result.value = a - b
+			result.setValue(a - b)
 		case expr.ExprParserSTAR:
-			result.value = a * b
+			result.setValue(a * b)
 		case expr.ExprParserDIV:
 			if b == 0 {
 				return p.divisionByZero(op)
 			}
-			result.value = a / b
-		case expr.ExprParserCARET:
-			result.value = a ^ b
-		case expr.ExprParserOR:
-			result.value = a | b
-		case expr.ExprParserAMPERSAND:
-			result.value = a & b
-		case expr.ExprParserMOD:
-			result.value = a % b
-		case expr.ExprParserLSHIFT:
-			result.value = a << b
-		case expr.ExprParserRSHIFT:
-			result.value = a >> b
-		case expr.ExprParserBIT_CLEAR:
-			result.value = a &^ b
+			result.setValue(a / b)
 		default:
 			return p.unsupportedOpError(op)
 		}
 	case reflect.String:
-		a, err := cast.ToStringE(left.value)
-		if err != nil {
-			return p.castError(op, err)
-		}
-		b, err := cast.ToStringE(right.value)
-		if err != nil {
-			return p.castError(op, err)
-		}
+		a := left.value.String()
+		b := right.value.String()
 		switch op.GetTokenType() {
 		case expr.ExprParserPLUS:
-			result.value = a + b
+			result.setValue(a + b)
 		default:
 			return p.unsupportedOpError(op)
 		}
 	default:
-		return parseError(p.file, op, fmt.Sprintf("unsupported numeric op type: %s", kind))
+		return parseError(p.file, op, fmt.Sprintf("unsupported numeric op type '%s'", kind))
 	}
-	p.Push(result)
+	p.stack.Push(result)
 	
 	return nil
 }
 
 func (p *exprParser) relationCalc(left, right *exprValue, op antlr.Token) error {
-	kind := p.getReferKind(left, right)
+	kind := p.parseMaxNumericKind(left.value.Kind())
 	if !p.isNumeric(kind) && kind != reflect.String {
 		return parseError(p.file, op, fmt.Sprintf(
 			"invalid operation: %s %s %s, unsupported type: %s", left.value, op.GetText(), right.value, kind,
 		))
 	}
-	result := &exprValue{aliasKind: reflect.Bool}
+	defer func() {
+		e := recover()
+		if e != nil {
+			p.error = parseError(p.file, op, fmt.Sprintf("%v", e))
+			return
+		}
+	}()
+	result := &exprValue{}
 	switch kind {
 	case reflect.Int64:
-		a, err := cast.ToInt64E(left.value)
-		if err != nil {
-			return p.castError(op, err)
-		}
-		b, err := cast.ToInt64E(right.value)
-		if err != nil {
-			return p.castError(op, err)
-		}
+		a := left.value.Int()
+		b := right.value.Int()
 		switch op.GetTokenType() {
 		case expr.ExprParserEQUALS:
-			result.value = a == b
+			result.setValue(a == b)
 		case expr.ExprParserNOT_EQUALS:
-			result.value = a != b
+			result.setValue(a != b)
 		case expr.ExprParserLESS:
-			result.value = a < b
+			result.setValue(a < b)
 		case expr.ExprParserLESS_OR_EQUALS:
-			result.value = a <= b
+			result.setValue(a <= b)
 		case expr.ExprParserGREATER:
-			result.value = a > b
+			result.setValue(a > b)
 		case expr.ExprParserGREATER_OR_EQUALS:
-			result.value = a >= b
+			result.setValue(a >= b)
 		default:
 			return p.unsupportedOpError(op)
 		}
 	case reflect.Uint64:
-		a, err := cast.ToUint64E(left.value)
-		if err != nil {
-			return p.castError(op, err)
-		}
-		b, err := cast.ToUint64E(right.value)
-		if err != nil {
-			return p.castError(op, err)
-		}
+		a := left.value.Uint()
+		b := right.value.Uint()
 		switch op.GetTokenType() {
 		case expr.ExprParserEQUALS:
-			result.value = a == b
+			result.setValue(a == b)
 		case expr.ExprParserNOT_EQUALS:
-			result.value = a != b
+			result.setValue(a != b)
 		case expr.ExprParserLESS:
-			result.value = a < b
+			result.setValue(a < b)
 		case expr.ExprParserLESS_OR_EQUALS:
-			result.value = a <= b
+			result.setValue(a <= b)
 		case expr.ExprParserGREATER:
-			result.value = a > b
+			result.setValue(a > b)
 		case expr.ExprParserGREATER_OR_EQUALS:
-			result.value = a >= b
+			result.setValue(a >= b)
 		default:
 			return p.unsupportedOpError(op)
 		}
 	case reflect.Float64:
-		a, err := cast.ToFloat64E(left.value)
-		if err != nil {
-			return p.castError(op, err)
-		}
-		b, err := cast.ToFloat64E(right.value)
-		if err != nil {
-			return p.castError(op, err)
-		}
+		a := left.value.Float()
+		b := right.value.Float()
 		switch op.GetTokenType() {
 		case expr.ExprParserEQUALS:
-			result.value = a == b
+			result.setValue(a == b)
 		case expr.ExprParserNOT_EQUALS:
-			result.value = a != b
+			result.setValue(a != b)
 		case expr.ExprParserLESS:
-			result.value = a < b
+			result.setValue(a < b)
 		case expr.ExprParserLESS_OR_EQUALS:
-			result.value = a <= b
+			result.setValue(a <= b)
 		case expr.ExprParserGREATER:
-			result.value = a > b
+			result.setValue(a > b)
 		case expr.ExprParserGREATER_OR_EQUALS:
-			result.value = a >= b
+			result.setValue(a >= b)
 		default:
 			return p.unsupportedOpError(op)
 		}
 	default:
 		return parseError(p.file, op, fmt.Sprintf("unsupported relation op type: %s", kind))
 	}
-	p.Push(result)
+	p.stack.Push(result)
 	
 	return nil
 }
 
 func (p *exprParser) unaryCalc(left *exprValue, op antlr.Token) error {
 	
-	if !p.isNumeric(left.aliasKind) && left.aliasKind != reflect.Bool {
+	if !p.isNumeric(left.value.Kind()) && left.value.Kind() != reflect.Bool {
 		return parseError(p.file, op, fmt.Sprintf(
-			"invalid operation: %s%s , unsupported type: %s", op.GetText(), left.value, left.aliasKind,
+			"invalid operation '%s%s', unsupported type '%s'", op.GetText(), left.value, left.value.Kind(),
 		))
 	}
-	
-	kind := p.getMaxKind(left.aliasKind)
-	result := &exprValue{aliasKind: kind}
+	defer func() {
+		e := recover()
+		if e != nil {
+			p.error = parseError(p.file, op, fmt.Sprintf("%v", e))
+			return
+		}
+	}()
+	kind := p.parseMaxNumericKind(left.value.Kind())
+	result := &exprValue{}
 	switch kind {
 	case reflect.Int64:
-		a, err := cast.ToInt64E(left.value)
-		if err != nil {
-			return p.castError(op, err)
-		}
+		a := left.value.Int()
 		switch op.GetTokenType() {
 		case expr.ExprParserPLUS:
-			result.value = +a
+			result.setValue(+a)
 		case expr.ExprParserMINUS:
-			result.value = -a
+			result.setValue(-a)
 		case expr.ExprParserCARET:
-			result.value = ^a
+			result.setValue(^a)
 		default:
 			return p.unsupportedOpError(op)
 		}
 	case reflect.Uint64:
-		a, err := cast.ToUint64E(left.value)
-		if err != nil {
-			return p.castError(op, err)
-		}
+		a := left.value.Uint()
 		switch op.GetTokenType() {
 		case expr.ExprParserPLUS:
-			result.value = +a
+			result.setValue(+a)
 		case expr.ExprParserMINUS:
-			result.value = -a
+			result.setValue(-a)
 		case expr.ExprParserCARET:
-			result.value = ^a
+			result.setValue(^a)
 		default:
 			return p.unsupportedOpError(op)
 		}
 	case reflect.Float64:
-		a, err := cast.ToFloat64E(left.value)
-		if err != nil {
-			return p.castError(op, err)
-		}
+		a := left.value.Float()
 		switch op.GetTokenType() {
 		case expr.ExprParserPLUS:
-			result.value = +a
+			result.setValue(+a)
 		case expr.ExprParserMINUS:
-			result.value = -a
+			result.setValue(-a)
 		default:
 			return p.unsupportedOpError(op)
 		}
 	case reflect.Bool:
-		a, err := cast.ToBoolE(left.value)
-		if err != nil {
-			return p.castError(op, err)
-		}
+		a := left.value.Bool()
 		switch op.GetTokenType() {
 		case expr.ExprParserEXCLAMATION:
-			result.value = !a
+			result.setValue(!a)
 		default:
 			return p.unsupportedOpError(op)
 		}
 	default:
-		return parseError(p.file, op, fmt.Sprintf("unsupported unary op type: %s", left.aliasKind))
+		return parseError(p.file, op, fmt.Sprintf("unsupported unary operation '%s%s(%s)'", op.GetText(),
+			left.source, left.value.Kind()))
 	}
-	p.Push(result)
+	p.stack.Push(result)
 	
 	return nil
 }
 
 func (p *exprParser) logicCalc(left, right *exprValue, op antlr.Token) error {
-	a, err := cast.ToBoolE(left.value)
-	if err != nil {
-		return p.castError(op, err)
-	}
-	b, err := cast.ToBoolE(right.value)
-	if err != nil {
-		return p.castError(op, err)
-	}
-	result := &exprValue{aliasKind: reflect.Bool}
+	defer func() {
+		e := recover()
+		if e != nil {
+			p.error = parseError(p.file, op, fmt.Sprintf("%v", e))
+			return
+		}
+	}()
+	a := left.value.Bool()
+	b := right.value.Bool()
+	result := &exprValue{}
 	switch op.GetTokenType() {
 	case expr.ExprParserLOGICAL_AND:
-		result.value = a && b
+		result.setValue(a && b)
 	case expr.ExprParserLOGICAL_OR:
-		result.value = a || b
+		result.setValue(a || b)
 	}
-	p.Push(result)
+	p.stack.Push(result)
+	
 	return nil
-}
-
-func (p *exprParser) castError(op antlr.Token, err error) error {
-	return parseError(p.file, op, fmt.Sprintf("convert error: %s", err))
 }
 
 func (p *exprParser) divisionByZero(op antlr.Token) error {
@@ -1211,10 +1463,6 @@ func (p *exprParser) parseParam(params string) (err error) {
 		return
 	}
 	antlr.ParseTreeWalkerDefault.Walk(p, parser.Parameters())
-	if !p.coverage.covered() {
-		err = fmt.Errorf("parse params token not coverd: %d/%d", p.coverage.len(), p.coverage.total)
-		return
-	}
 	return
 }
 

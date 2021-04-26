@@ -15,15 +15,16 @@ func (p *parameterListener) EnterEveryRule(ctx antlr.ParserRuleContext) {
 		_ctx := ctx.(*ParamDeclContext)
 		_type := _ctx.ParamType()
 		if _type != nil {
-			fmt.Println(_ctx.IDENTIFIER(), _type.(*ParamTypeContext).IDENTIFIER())
+			fmt.Println(ctx.GetRuleIndex(), _ctx.IDENTIFIER(), _type.(*ParamTypeContext).IDENTIFIER())
 		} else {
-			fmt.Println(_ctx.IDENTIFIER())
+			fmt.Println(ctx.GetRuleIndex(), _ctx.IDENTIFIER())
 		}
 	}
 }
 
 func TestParseParameters(t *testing.T) {
-	lexer := NewExprLexer(antlr.NewInputStream(`id:int64, mix, name:any, age:string`))
+	//lexer := NewExprLexer(antlr.NewInputStream(`id:int64, mix, name:any, age:string`))
+	lexer := NewExprLexer(antlr.NewInputStream(`a:struct, b:array`))
 	stream := antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel)
 	p := NewExprParser(stream)
 	p.BuildParseTrees = true
@@ -65,7 +66,8 @@ func TestParseExpression(t *testing.T) {
 	//lexer := NewExprLexer(antlr.NewInputStream(`test(a,b,c) + 1`))
 	//lexer := NewExprLexer(antlr.NewInputStream(`a.b(1+1).c + 1`))
 	//lexer := NewExprLexer(antlr.NewInputStream(`a(a...)`))
-	lexer := NewExprLexer(antlr.NewInputStream(`a(smart(b[1:])) + 1`))
+	//lexer := NewExprLexer(antlr.NewInputStream(`a.Age + b["2"]`))
+	lexer := NewExprLexer(antlr.NewInputStream(`a[2:3:4]`))
 	stream := antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel)
 	p := NewExprParser(stream)
 	

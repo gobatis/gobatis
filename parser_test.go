@@ -86,7 +86,47 @@ func TestParseExprExpression(t *testing.T) {
 	parser := newExprParser(a, b)
 	result, err := parser.parseExpression("a,b", "a + b")
 	require.NoError(t, err)
-	//require.Equal(t, int64(2), result)
+	require.Equal(t, int64(3), result)
+}
+
+type testStruct struct {
+	Name string
+	Age  int64
+	Map  map[string]int64
+	Calc func(val int64) int64
+	Max  func(a, b int64) int64
+}
+
+func TestParseExprExpressionMember(t *testing.T) {
+	//parser := newExprParser(1, 2)
+	//result, err := parser.parseExpression("a, b", "a+b")
+	//parser := newExprParser(10, 20, 30)
+	//result, err := parser.parseExpression("a, b, c", "a+b*((c+1))")
+	//parser := newExprParser(3,"2")
+	//result, err := parser.parseExpression("a, b", "a + b")
+	a := testStruct{
+		Name: "gobatis",
+		Age:  64,
+		Map: map[string]int64{
+			"weight": 60,
+		},
+		Calc: func(val int64) int64 {
+			fmt.Println("this val is :", val)
+			return val / 3
+		},
+		Max: func(a, b int64) int64 {
+			if a > b {
+				return a
+			}
+			return b
+		},
+	}
+	b := []int{1, 2, 3,4,5}
+	parser := newExprParser(a, b)
+	//result, err := parser.parseExpression("a:struct, b:array", `a.Max(a.Age, b[2] + a.Map["weight"])`)
+	//result, err := parser.parseExpression("a:struct, b:array", `strings.HasPrefix(a.Name, "go")`)
+	result, err := parser.parseExpression("a:struct, b:array", `b[0:len(b)]`)
+	require.NoError(t, err)
 	t.Log("result:", result)
-	//
+	
 }

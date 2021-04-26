@@ -5,7 +5,9 @@ options {
 }
 
 parameters: paramDecl (paramComma paramDecl)* EOF;
+
 paramComma: COMMA;
+
 paramDecl: IDENTIFIER | (IDENTIFIER COLON paramType);
 
 paramType: IDENTIFIER;
@@ -14,8 +16,7 @@ expressions: expression  EOF;
 
 expression:
 	primaryExpr
-//	| expression no_arguments
-	| expression parameters
+//	| expression arguments
 	| unary_op = (
 	    PLUS
         | MINUS
@@ -50,7 +51,7 @@ primaryExpr:
 		member
 		| index
 		| slice_
-		| arguments
+		| call
 	);
 
 operand: literal | var_ | L_PAREN expression R_PAREN;
@@ -85,7 +86,7 @@ index: L_BRACKET expression R_BRACKET;
 
 expressionList: expression (COMMA expression)*;
 
-arguments:
+call:
 	 L_PAREN (
         expressionList ELLIPSIS?
 	)? R_PAREN;

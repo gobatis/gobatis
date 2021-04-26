@@ -58,8 +58,8 @@ type ExprParserListener interface {
 	// EnterExpressionList is called when entering the expressionList production.
 	EnterExpressionList(c *ExpressionListContext)
 
-	// EnterArguments is called when entering the arguments production.
-	EnterArguments(c *ArgumentsContext)
+	// EnterCall is called when entering the call production.
+	EnterCall(c *CallContext)
 
 	// EnterSlice_ is called when entering the slice_ production.
 	EnterSlice_(c *Slice_Context)
@@ -115,8 +115,8 @@ type ExprParserListener interface {
 	// ExitExpressionList is called when exiting the expressionList production.
 	ExitExpressionList(c *ExpressionListContext)
 
-	// ExitArguments is called when exiting the arguments production.
-	ExitArguments(c *ArgumentsContext)
+	// ExitCall is called when exiting the call production.
+	ExitCall(c *CallContext)
 
 	// ExitSlice_ is called when exiting the slice_ production.
 	ExitSlice_(c *Slice_Context)

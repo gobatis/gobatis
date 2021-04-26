@@ -122,11 +122,11 @@ func (s *BaseExprParserListener) EnterExpressionList(ctx *ExpressionListContext)
 // ExitExpressionList is called when production expressionList is exited.
 func (s *BaseExprParserListener) ExitExpressionList(ctx *ExpressionListContext) {}
 
-// EnterArguments is called when production arguments is entered.
-func (s *BaseExprParserListener) EnterArguments(ctx *ArgumentsContext) {}
+// EnterCall is called when production call is entered.
+func (s *BaseExprParserListener) EnterCall(ctx *CallContext) {}
 
-// ExitArguments is called when production arguments is exited.
-func (s *BaseExprParserListener) ExitArguments(ctx *ArgumentsContext) {}
+// ExitCall is called when production call is exited.
+func (s *BaseExprParserListener) ExitCall(ctx *CallContext) {}
 
 // EnterSlice_ is called when production slice_ is entered.
 func (s *BaseExprParserListener) EnterSlice_(ctx *Slice_Context) {}
