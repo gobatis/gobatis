@@ -1,4 +1,4 @@
-module github.com/koyeo/gobatis
+module github.com/gobatis/gobatis
 
 go 1.13
 
