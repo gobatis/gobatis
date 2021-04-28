@@ -121,17 +121,91 @@ func DivInt64(a, b int64) (r int64, err error) {
 	return
 }
 
-func ModInt64(a, b int64) (r int64, err error) {
-	r = a % b
-	br := BigModInt64(a, b)
-	if big.NewInt(r).Cmp(br) != 0 {
-		err = resultOverFlowError("int64")
+func AddUint64(a, b uint64) (r uint64, err error) {
+	r = a + b
+	br := BigAddUint64(a, b)
+	rr := &big.Int{}
+	rr.SetUint64(r)
+	if rr.Cmp(br) != 0 {
+		err = resultOverFlowError("uint64")
+	}
+	return
+}
+
+func SubUint64(a, b uint64) (r uint64, err error) {
+	r = a - b
+	br := BigSubUint64(a, b)
+	rr := &big.Int{}
+	rr.SetUint64(r)
+	if rr.Cmp(br) != 0 {
+		err = resultOverFlowError("uint64")
+	}
+	return
+}
+
+func MulUint64(a, b uint64) (r uint64, err error) {
+	r = a * b
+	br := BigMulUint64(a, b)
+	rr := &big.Int{}
+	rr.SetUint64(r)
+	if rr.Cmp(br) != 0 {
+		err = resultOverFlowError("uint64")
+	}
+	return
+}
+
+func DivUint64(a, b uint64) (r uint64, err error) {
+	r = a + b
+	br := BigDivUint64(a, b)
+	rr := &big.Int{}
+	rr.SetUint64(r)
+	if rr.Cmp(br) != 0 {
+		err = resultOverFlowError("uint64")
 	}
 	return
 }
 
 func AddInt(a, b int) (r int, err error) {
 	r1, err := AddInt64(int64(a), int64(b))
+	if err != nil {
+		return
+	}
+	r = int(r1)
+	if int64(r) != r1 {
+		err = resultOverFlowError("int")
+		return
+	}
+	return
+}
+
+func SubInt(a, b int) (r int, err error) {
+	r1, err := SubInt64(int64(a), int64(b))
+	if err != nil {
+		return
+	}
+	r = int(r1)
+	if int64(r) != r1 {
+		err = resultOverFlowError("int")
+		return
+	}
+	return
+}
+
+func MulInt(a, b int) (r int, err error) {
+	r1, err := MulInt64(int64(a), int64(b))
+	if err != nil {
+		return
+	}
+	r = int(r1)
+	if int64(r) != r1 {
+		err = resultOverFlowError("int")
+		return
+	}
+	return
+}
+
+func DivInt(a, b int) (r int, err error) {
+	r1, err := DivInt64(int64(a), int64(b))
 	if err != nil {
 		return
 	}
@@ -156,6 +230,45 @@ func AddInt8(a, b int8) (r int8, err error) {
 	return
 }
 
+func SubInt8(a, b int8) (r int8, err error) {
+	r1, err := SubInt64(int64(a), int64(b))
+	if err != nil {
+		return
+	}
+	r = int8(r1)
+	if int64(r) != r1 {
+		err = resultOverFlowError("int8")
+		return
+	}
+	return
+}
+
+func MulInt8(a, b int8) (r int8, err error) {
+	r1, err := MulInt64(int64(a), int64(b))
+	if err != nil {
+		return
+	}
+	r = int8(r1)
+	if int64(r) != r1 {
+		err = resultOverFlowError("int8")
+		return
+	}
+	return
+}
+
+func DivInt8(a, b int8) (r int8, err error) {
+	r1, err := DivInt64(int64(a), int64(b))
+	if err != nil {
+		return
+	}
+	r = int8(r1)
+	if int64(r) != r1 {
+		err = resultOverFlowError("int8")
+		return
+	}
+	return
+}
+
 func AddInt16(a, b int16) (r int16, err error) {
 	r1, err := AddInt64(int64(a), int64(b))
 	if err != nil {
@@ -169,8 +282,86 @@ func AddInt16(a, b int16) (r int16, err error) {
 	return
 }
 
+func SubInt16(a, b int16) (r int16, err error) {
+	r1, err := SubInt64(int64(a), int64(b))
+	if err != nil {
+		return
+	}
+	r = int16(r1)
+	if int64(r) != r1 {
+		err = resultOverFlowError("int16")
+		return
+	}
+	return
+}
+
+func MulInt16(a, b int16) (r int16, err error) {
+	r1, err := MulInt64(int64(a), int64(b))
+	if err != nil {
+		return
+	}
+	r = int16(r1)
+	if int64(r) != r1 {
+		err = resultOverFlowError("int16")
+		return
+	}
+	return
+}
+
+func DivInt16(a, b int16) (r int16, err error) {
+	r1, err := DivInt64(int64(a), int64(b))
+	if err != nil {
+		return
+	}
+	r = int16(r1)
+	if int64(r) != r1 {
+		err = resultOverFlowError("int16")
+		return
+	}
+	return
+}
+
 func AddInt32(a, b int32) (r int32, err error) {
 	r1, err := AddInt64(int64(a), int64(b))
+	if err != nil {
+		return
+	}
+	r = int32(r1)
+	if int64(r) != r1 {
+		err = resultOverFlowError("int32")
+		return
+	}
+	return
+}
+
+func SubInt32(a, b int32) (r int32, err error) {
+	r1, err := SubInt64(int64(a), int64(b))
+	if err != nil {
+		return
+	}
+	r = int32(r1)
+	if int64(r) != r1 {
+		err = resultOverFlowError("int32")
+		return
+	}
+	return
+}
+
+func MulInt32(a, b int32) (r int32, err error) {
+	r1, err := MulInt64(int64(a), int64(b))
+	if err != nil {
+		return
+	}
+	r = int32(r1)
+	if int64(r) != r1 {
+		err = resultOverFlowError("int32")
+		return
+	}
+	return
+}
+
+func DivInt32(a, b int32) (r int32, err error) {
+	r1, err := DivInt64(int64(a), int64(b))
 	if err != nil {
 		return
 	}
