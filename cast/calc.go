@@ -2,6 +2,7 @@ package cast
 
 import (
 	"fmt"
+	"github.com/shopspring/decimal"
 	"math"
 	"math/big"
 )
@@ -28,11 +29,6 @@ func BigMulInt64(a, b int64) *big.Int {
 func BigDivInt64(a, b int64) *big.Int {
 	r := big.NewInt(0)
 	return r.Div(big.NewInt(a), big.NewInt(b))
-}
-
-func BigModInt64(a, b int64) *big.Int {
-	r := big.NewInt(0)
-	return r.Mod(big.NewInt(a), big.NewInt(b))
 }
 
 func BigAddUint64(a, b uint64) *big.Int {
@@ -71,13 +67,36 @@ func BigDivUint64(a, b uint64) *big.Int {
 	return r.Div(ba, bb)
 }
 
-func BigModUint64(a, b uint64) *big.Int {
-	r := big.NewInt(0)
-	ba := &big.Int{}
-	ba.SetUint64(a)
-	bb := &big.Int{}
-	bb.SetUint64(b)
-	return r.Div(ba, bb)
+func AddFloat64(a, b float64) (r decimal.Decimal) {
+	return decimal.NewFromFloat(a).Add(decimal.NewFromFloat(b))
+}
+
+func SubFloat64(a, b float64) (r decimal.Decimal) {
+	return decimal.NewFromFloat(a).Sub(decimal.NewFromFloat(b))
+}
+
+func MulFloat64(a, b float64) (r decimal.Decimal) {
+	return decimal.NewFromFloat(a).Mul(decimal.NewFromFloat(b))
+}
+
+func DivFloat64(a, b float64) (r decimal.Decimal) {
+	return decimal.NewFromFloat(a).Div(decimal.NewFromFloat(b))
+}
+
+func AddFloat32(a, b float32) (r decimal.Decimal) {
+	return decimal.NewFromFloat32(a).Add(decimal.NewFromFloat32(b))
+}
+
+func SubFloat32(a, b float32) (r decimal.Decimal) {
+	return decimal.NewFromFloat32(a).Sub(decimal.NewFromFloat32(b))
+}
+
+func MulFloat32(a, b float32) (r decimal.Decimal) {
+	return decimal.NewFromFloat32(a).Mul(decimal.NewFromFloat32(b))
+}
+
+func DivFloat32(a, b float32) (r decimal.Decimal) {
+	return decimal.NewFromFloat32(a).Div(decimal.NewFromFloat32(b))
 }
 
 func AddInt64(a, b int64) (r int64, err error) {
@@ -368,6 +387,214 @@ func DivInt32(a, b int32) (r int32, err error) {
 	r = int32(r1)
 	if int64(r) != r1 {
 		err = resultOverFlowError("int32")
+		return
+	}
+	return
+}
+
+func AddUint(a, b uint) (r uint, err error) {
+	r1, err := AddUint64(uint64(a), uint64(b))
+	if err != nil {
+		return
+	}
+	r = uint(r1)
+	if uint64(r) != r1 {
+		err = resultOverFlowError("uint")
+		return
+	}
+	return
+}
+
+func SubUint(a, b uint) (r uint, err error) {
+	r1, err := SubUint64(uint64(a), uint64(b))
+	if err != nil {
+		return
+	}
+	r = uint(r1)
+	if uint64(r) != r1 {
+		err = resultOverFlowError("uint")
+		return
+	}
+	return
+}
+
+func MulUint(a, b uint) (r uint, err error) {
+	r1, err := MulUint64(uint64(a), uint64(b))
+	if err != nil {
+		return
+	}
+	r = uint(r1)
+	if uint64(r) != r1 {
+		err = resultOverFlowError("uint")
+		return
+	}
+	return
+}
+
+func DivUint(a, b uint) (r uint, err error) {
+	r1, err := DivUint64(uint64(a), uint64(b))
+	if err != nil {
+		return
+	}
+	r = uint(r1)
+	if uint64(r) != r1 {
+		err = resultOverFlowError("uint")
+		return
+	}
+	return
+}
+
+func AddUint8(a, b uint8) (r uint8, err error) {
+	r1, err := AddUint64(uint64(a), uint64(b))
+	if err != nil {
+		return
+	}
+	r = uint8(r1)
+	if uint64(r) != r1 {
+		err = resultOverFlowError("uint8")
+		return
+	}
+	return
+}
+
+func SubUint8(a, b uint8) (r uint8, err error) {
+	r1, err := SubUint64(uint64(a), uint64(b))
+	if err != nil {
+		return
+	}
+	r = uint8(r1)
+	if uint64(r) != r1 {
+		err = resultOverFlowError("uint8")
+		return
+	}
+	return
+}
+
+func MulUint8(a, b uint8) (r uint8, err error) {
+	r1, err := MulUint64(uint64(a), uint64(b))
+	if err != nil {
+		return
+	}
+	r = uint8(r1)
+	if uint64(r) != r1 {
+		err = resultOverFlowError("uint8")
+		return
+	}
+	return
+}
+
+func DivUint8(a, b uint8) (r uint8, err error) {
+	r1, err := DivUint64(uint64(a), uint64(b))
+	if err != nil {
+		return
+	}
+	r = uint8(r1)
+	if uint64(r) != r1 {
+		err = resultOverFlowError("uint8")
+		return
+	}
+	return
+}
+
+func AddUint16(a, b uint16) (r uint16, err error) {
+	r1, err := AddUint64(uint64(a), uint64(b))
+	if err != nil {
+		return
+	}
+	r = uint16(r1)
+	if uint64(r) != r1 {
+		err = resultOverFlowError("uint16")
+		return
+	}
+	return
+}
+
+func SubUint16(a, b uint16) (r uint16, err error) {
+	r1, err := SubUint64(uint64(a), uint64(b))
+	if err != nil {
+		return
+	}
+	r = uint16(r1)
+	if uint64(r) != r1 {
+		err = resultOverFlowError("uint16")
+		return
+	}
+	return
+}
+
+func MulUint16(a, b uint16) (r uint16, err error) {
+	r1, err := MulUint64(uint64(a), uint64(b))
+	if err != nil {
+		return
+	}
+	r = uint16(r1)
+	if uint64(r) != r1 {
+		err = resultOverFlowError("uint16")
+		return
+	}
+	return
+}
+
+func DivUint16(a, b uint16) (r uint16, err error) {
+	r1, err := DivUint64(uint64(a), uint64(b))
+	if err != nil {
+		return
+	}
+	r = uint16(r1)
+	if uint64(r) != r1 {
+		err = resultOverFlowError("uint16")
+		return
+	}
+	return
+}
+
+func AddUint32(a, b uint32) (r uint32, err error) {
+	r1, err := AddUint64(uint64(a), uint64(b))
+	if err != nil {
+		return
+	}
+	r = uint32(r1)
+	if uint64(r) != r1 {
+		err = resultOverFlowError("uint32")
+		return
+	}
+	return
+}
+
+func SubUint32(a, b uint32) (r uint32, err error) {
+	r1, err := SubUint64(uint64(a), uint64(b))
+	if err != nil {
+		return
+	}
+	r = uint32(r1)
+	if uint64(r) != r1 {
+		err = resultOverFlowError("uint32")
+		return
+	}
+	return
+}
+
+func MulUint32(a, b uint32) (r uint32, err error) {
+	r1, err := DivUint64(uint64(a), uint64(b))
+	if err != nil {
+		return
+	}
+	r = uint32(r1)
+	if uint64(r) != r1 {
+		err = resultOverFlowError("uint32")
+		return
+	}
+	return
+}
+
+func DivUint32(a, b uint32) (r uint32, err error) {
+	r1, err := DivUint64(uint64(a), uint64(b))
+	if err != nil {
+		return
+	}
+	r = uint32(r1)
+	if uint64(r) != r1 {
+		err = resultOverFlowError("uint32")
 		return
 	}
 	return
