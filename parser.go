@@ -4,10 +4,10 @@ import (
 	"container/list"
 	"fmt"
 	"github.com/antlr/antlr4/runtime/Go/antlr"
+	"github.com/gobatis/gobatis/cast"
 	"github.com/gobatis/gobatis/dtd"
 	"github.com/gobatis/gobatis/parser/expr"
 	"github.com/gobatis/gobatis/parser/xml"
-	"github.com/spf13/cast"
 	"reflect"
 	"strings"
 	"sync"
@@ -787,6 +787,17 @@ type exprParser struct {
 func (p *exprParser) initBuiltIn() {
 	p.builtIn = map[string]interface{}{}
 	p.builtIn["len"] = _len
+	p.builtIn["int"] = _int
+	p.builtIn["int8"] = _int8
+	p.builtIn["int16"] = _int16
+	p.builtIn["int32"] = _int32
+	p.builtIn["int64"] = _int64
+	p.builtIn["uint"] = _uint
+	p.builtIn["uint8"] = _uint8
+	p.builtIn["uint16"] = _uint16
+	p.builtIn["uint32"] = _uint32
+	p.builtIn["uint64"] = _uint64
+	p.builtIn["decimal"] = _decimal
 	p.builtIn["strings"] = _strings{}
 }
 
@@ -1070,7 +1081,7 @@ func (p *exprParser) ExitFloat_(ctx *expr.Float_Context) {
 	if p.error != nil {
 		return
 	}
-	v, err := cast.ToFloat64E(ctx.GetText())
+	v, err := cast.ToDecimalE(ctx.GetText())
 	if err != nil {
 		p.error = parseError(p.file, ctx.GetStart(), err.Error())
 		return
@@ -1240,7 +1251,7 @@ func (p *exprParser) numericStringCalc(left, right *exprValue, op antlr.Token) e
 				return p.divisionByZero(op)
 			}
 			result.setValue(a / b)
-			
+		
 		default:
 			return p.unsupportedOpError(op)
 		}

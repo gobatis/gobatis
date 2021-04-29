@@ -980,6 +980,18 @@ func ToUint8E(i interface{}) (uint8, error) {
 	}
 }
 
+func ToDecimalE(v interface{}) (decimal.Decimal, error) {
+	s, err := ToStringE(v)
+	if err != nil {
+		return decimal.Decimal{}, err
+	}
+	d, err := decimal.NewFromString(s)
+	if err != nil {
+		return decimal.Decimal{}, err
+	}
+	return d, nil
+}
+
 // From html/template/content.go
 // Copyright 2011 The Go Authors. All rights reserved.
 // indirect returns the value, after dereferencing as many times

@@ -1,6 +1,8 @@
 package gobatis
 
 import (
+	"github.com/gobatis/gobatis/cast"
+	"github.com/shopspring/decimal"
 	"reflect"
 	"strings"
 )
@@ -10,38 +12,91 @@ func _len(v interface{}) int {
 }
 
 func _int(v interface{}) int {
-	a := reflect.ValueOf(v).Int()
-	r := int(a)
-	if int64(r) != a {
-		panic("int convert not equal")
+	r, err := cast.ToIntE(v)
+	if err != nil {
+		panic(err)
+	}
+	return r
+}
+
+func _int8(v interface{}) int8 {
+	r, err := cast.ToInt8E(v)
+	if err != nil {
+		panic(err)
+	}
+	return r
+}
+
+func _int16(v interface{}) int16 {
+	r, err := cast.ToInt16E(v)
+	if err != nil {
+		panic(err)
 	}
 	return r
 }
 
 func _int32(v interface{}) int32 {
-	a := reflect.ValueOf(v).Int()
-	r := int32(a)
-	if int64(r) != a {
-		panic("int convert not equal")
+	r, err := cast.ToInt32E(v)
+	if err != nil {
+		panic(err)
 	}
 	return r
 }
 
 func _int64(v interface{}) int64 {
-	return reflect.ValueOf(v).Int()
-}
-
-func _float32(v interface{}) float32 {
-	a := reflect.ValueOf(v).Float()
-	r := float32(a)
-	if float64(r) != a {
-		panic("float convert not equal")
+	r, err := cast.ToInt64E(v)
+	if err != nil {
+		panic(err)
 	}
 	return r
 }
 
-func _float64(v interface{}) float64 {
-	return reflect.ValueOf(v).Float()
+func _uint(v interface{}) uint {
+	r, err := cast.ToUintE(v)
+	if err != nil {
+		panic(err)
+	}
+	return r
+}
+
+func _uint8(v interface{}) uint8 {
+	r, err := cast.ToUint8E(v)
+	if err != nil {
+		panic(err)
+	}
+	return r
+}
+
+func _uint16(v interface{}) uint16 {
+	r, err := cast.ToUint16E(v)
+	if err != nil {
+		panic(err)
+	}
+	return r
+}
+
+func _uint32(v interface{}) uint32 {
+	r, err := cast.ToUint32E(v)
+	if err != nil {
+		panic(err)
+	}
+	return r
+}
+
+func _uint64(v interface{}) uint64 {
+	r, err := cast.ToUint64E(v)
+	if err != nil {
+		panic(err)
+	}
+	return r
+}
+
+func _decimal(v interface{}) decimal.Decimal {
+	r, err := cast.ToDecimalE(v)
+	if err != nil {
+		panic(err)
+	}
+	return r
 }
 
 type _strings struct{}
