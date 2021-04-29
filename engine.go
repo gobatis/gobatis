@@ -3,9 +3,9 @@ package gobatis
 import (
 	"fmt"
 	"github.com/antlr/antlr4/runtime/Go/antlr"
-	"github.com/koyeo/gobatis/driver/mysql"
-	"github.com/koyeo/gobatis/driver/postgresql"
-	"github.com/koyeo/gobatis/dtd"
+	"github.com/gobatis/gobatis/driver/mysql"
+	"github.com/gobatis/gobatis/driver/postgresql"
+	"github.com/gobatis/gobatis/dtd"
 	"io/ioutil"
 	"net/http"
 	"path/filepath"

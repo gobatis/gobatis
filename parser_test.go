@@ -16,7 +16,7 @@ const defaultConfigXML = `
 <configuration>
     <module base="github.com/gobatis/gobatis"/>
 <!--    <properties>-->
-    <!--        <property name="module" value="github.com/koyeo/gobatis"/>-->
+    <!--        <property name="module" value="github.com/gobatis/gobatis"/>-->
     <!--        <property name="null2zero" value="true"/>-->
     <!--    </properties>-->
     <typeAliases>
@@ -121,7 +121,7 @@ func TestParseExprExpressionMember(t *testing.T) {
 			return b
 		},
 	}
-	b := []int{1, 2, 3,4,5}
+	b := []int{1, 2, 3, 4, 5}
 	parser := newExprParser(a, b)
 	//result, err := parser.parseExpression("a:struct, b:array", `a.Max(a.Age, b[2] + a.Map["weight"])`)
 	//result, err := parser.parseExpression("a:struct, b:array", `strings.HasPrefix(a.Name, "go")`)

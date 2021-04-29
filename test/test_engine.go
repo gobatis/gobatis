@@ -3,8 +3,8 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/koyeo/gobatis/engine"
-	"github.com/koyeo/gobatis/test/mapper"
+	"github.com/gobatis/gobatis/engine"
+	"github.com/gobatis/gobatis/test/mapper"
 )
 
 func main() {

@@ -2,7 +2,7 @@ package engine
 
 import (
 	"fmt"
-	"github.com/koyeo/gobatis/schema"
+	"github.com/gobatis/gobatis/schema"
 	"io/ioutil"
 )
 

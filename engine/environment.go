@@ -2,7 +2,7 @@ package engine
 
 import (
 	"fmt"
-	"github.com/koyeo/gobatis/schema"
+	"github.com/gobatis/gobatis/schema"
 )
 
 func (p *Engine) defaultEnvironment() (env *schema.Environment, err error) {

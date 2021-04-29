@@ -16,7 +16,7 @@ func TestNodeParser_ParseConfiguration(t *testing.T) {
 
 <configuration>
     <properties>
-        <property name="module" value="github.com/koyeo/gobatis"/>
+        <property name="module" value="github.com/gobatis/gobatis"/>
     </properties>
     <typeAliases>
         <typeAlias alias="User" type="test/entity@User"/>

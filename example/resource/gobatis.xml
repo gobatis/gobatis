@@ -4,7 +4,7 @@
         "../assets/gobatis-3-config.dtd">
 <configuration>
 
-    <module base="github.com/koyeo/gobatis"/>
+    <module base="github.com/gobatis/gobatis"/>
 
 
     <typeAliases>

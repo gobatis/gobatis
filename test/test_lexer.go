@@ -1,6 +1,6 @@
 package main
 
-import "github.com/koyeo/gobatis/compiler"
+import "github.com/gobatis/gobatis/compiler"
 
 func main() {
 

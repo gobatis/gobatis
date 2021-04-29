@@ -1,8 +1,8 @@
 package mapper
 
 import (
-	"github.com/koyeo/gobatis/engine"
-	"github.com/koyeo/gobatis/test/entity"
+	"github.com/gobatis/gobatis/engine"
+	"github.com/gobatis/gobatis/test/entity"
 )
 
 type UserMapper struct {

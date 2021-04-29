@@ -2,7 +2,7 @@ package engine
 
 import (
 	"fmt"
-	"github.com/koyeo/gobatis/test/entity"
+	"github.com/gobatis/gobatis/test/entity"
 	"reflect"
 )
 
@@ -50,7 +50,7 @@ func (p *Engine) BindMapper(instance interface{}) (err error) {
 	//	fieldType := elem.Field(i).Type
 	//	for j := 0; j < fieldType.NumOut(); j++ {
 	//		if fieldType.Out(j).Kind() == reflect.Ptr {
-	//			// github.com/koyeo/gobatis/test/entity User
+	//			// github.com/gobatis/gobatis/test/entity User
 	//			fmt.Println(fieldType.Out(j))
 	//			a := reflect.New(fieldType.Out(j).Elem())
 	//			for k := 0; k < a.Elem().NumField(); k++ {

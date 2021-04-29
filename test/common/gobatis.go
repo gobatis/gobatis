@@ -1,6 +1,6 @@
 package common
 
-import "github.com/koyeo/gobatis"
+import "github.com/gobatis/gobatis"
 
 var Gobatis *gobatis.Engine
 

@@ -5,8 +5,8 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"fmt"
-	"github.com/koyeo/gobatis/driver/mysql"
-	"github.com/koyeo/gobatis/driver/postgresql"
+	"github.com/gobatis/gobatis/driver/mysql"
+	"github.com/gobatis/gobatis/driver/postgresql"
 	"time"
 )
 

@@ -2,7 +2,7 @@ package gobatis
 
 import (
 	"encoding/json"
-	"github.com/koyeo/gobatis/bundle"
+	"github.com/gobatis/gobatis/bundle"
 	"os"
 	"path/filepath"
 	"testing"

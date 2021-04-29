@@ -6,7 +6,7 @@
 <configuration>
     <module base="github.com/gobatis/gobatis"/>
 <!--    <properties>-->
-    <!--        <property name="module" value="github.com/koyeo/gobatis"/>-->
+    <!--        <property name="module" value="github.com/gobatis/gobatis"/>-->
     <!--        <property name="null2zero" value="true"/>-->
     <!--    </properties>-->
     <typeAliases>

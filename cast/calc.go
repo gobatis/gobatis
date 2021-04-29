@@ -4,7 +4,11 @@ import (
 	"fmt"
 	"github.com/shopspring/decimal"
 	"math/big"
+	"reflect"
+	"strings"
 )
+
+var differentOperandTypeErr = fmt.Errorf("operand types are different")
 
 func resultOverFlowError(t string) error {
 	return fmt.Errorf("result overflow type %s", t)
@@ -607,4 +611,708 @@ func DivUint32E(a, b uint32) (r uint32, err error) {
 		return
 	}
 	return
+}
+
+func binOperands(left, right interface{}) (o1, o2 interface{}, err error) {
+	o1 = indirect(left)
+	o2 = indirect(right)
+	if reflect.TypeOf(o1).Kind() != reflect.TypeOf(o2).Kind() {
+		return nil, nil, differentOperandTypeErr
+	}
+	return o1, o2, nil
+}
+
+func AddAnyE(left, right interface{}) (interface{}, error) {
+	o1, o2, err := binOperands(left, right)
+	if err != nil {
+		return nil, err
+	}
+	switch s := o1.(type) {
+	case int:
+		return AddIntE(o1.(int), o2.(int))
+	case int8:
+		return AddInt8E(o1.(int8), o2.(int8))
+	case int16:
+		return AddInt16E(o1.(int16), o2.(int16))
+	case int32:
+		return AddInt32E(o1.(int32), o2.(int32))
+	case int64:
+		return AddInt64E(o1.(int64), o2.(int64))
+	case uint:
+		return AddUintE(o1.(uint), o2.(uint))
+	case uint8:
+		return AddUint8E(o1.(uint8), o2.(uint8))
+	case uint16:
+		return AddUint16E(o1.(uint16), o2.(uint16))
+	case uint32:
+		return AddUint32E(o1.(uint32), o2.(uint32))
+	case uint64:
+		return AddUint64E(o1.(uint64), o2.(uint64))
+	case decimal.Decimal:
+		return o1.(decimal.Decimal).Add(o2.(decimal.Decimal)), nil
+	case string:
+		return o1.(string) + o2.(string), nil
+	default:
+		return nil, fmt.Errorf("unsupport add type '%s'", s)
+	}
+}
+
+func SubAnyE(left, right interface{}) (interface{}, error) {
+	o1, o2, err := binOperands(left, right)
+	if err != nil {
+		return nil, err
+	}
+	switch s := o1.(type) {
+	case int:
+		return SubIntE(o1.(int), o2.(int))
+	case int8:
+		return SubInt8E(o1.(int8), o2.(int8))
+	case int16:
+		return SubInt16E(o1.(int16), o2.(int16))
+	case int32:
+		return SubInt32E(o1.(int32), o2.(int32))
+	case int64:
+		return SubInt64E(o1.(int64), o2.(int64))
+	case uint:
+		return SubUintE(o1.(uint), o2.(uint))
+	case uint8:
+		return SubUint8E(o1.(uint8), o2.(uint8))
+	case uint16:
+		return SubUint16E(o1.(uint16), o2.(uint16))
+	case uint32:
+		return SubUint32E(o1.(uint32), o2.(uint32))
+	case uint64:
+		return SubUint64E(o1.(uint64), o2.(uint64))
+	case decimal.Decimal:
+		return o1.(decimal.Decimal).Sub(o2.(decimal.Decimal)), nil
+	default:
+		return nil, fmt.Errorf("unsupport sub type '%s'", s)
+	}
+}
+
+func MulAnyE(left, right interface{}) (interface{}, error) {
+	o1, o2, err := binOperands(left, right)
+	if err != nil {
+		return nil, err
+	}
+	switch s := o1.(type) {
+	case int:
+		return MulIntE(o1.(int), o2.(int))
+	case int8:
+		return MulInt8E(o1.(int8), o2.(int8))
+	case int16:
+		return MulInt16E(o1.(int16), o2.(int16))
+	case int32:
+		return MulInt32E(o1.(int32), o2.(int32))
+	case int64:
+		return MulInt64E(o1.(int64), o2.(int64))
+	case uint:
+		return MulUintE(o1.(uint), o2.(uint))
+	case uint8:
+		return MulUint8E(o1.(uint8), o2.(uint8))
+	case uint16:
+		return MulUint16E(o1.(uint16), o2.(uint16))
+	case uint32:
+		return MulUint32E(o1.(uint32), o2.(uint32))
+	case uint64:
+		return MulUint64E(o1.(uint64), o2.(uint64))
+	case decimal.Decimal:
+		return o1.(decimal.Decimal).Mul(o2.(decimal.Decimal)), nil
+	default:
+		return nil, fmt.Errorf("unsupport mul type '%s'", s)
+	}
+}
+
+func DivAnyE(left, right interface{}) (interface{}, error) {
+	o1, o2, err := binOperands(left, right)
+	if err != nil {
+		return nil, err
+	}
+	switch s := o1.(type) {
+	case int:
+		return DivIntE(o1.(int), o2.(int))
+	case int8:
+		return DivInt8E(o1.(int8), o2.(int8))
+	case int16:
+		return DivInt16E(o1.(int16), o2.(int16))
+	case int32:
+		return DivInt32E(o1.(int32), o2.(int32))
+	case int64:
+		return DivInt64E(o1.(int64), o2.(int64))
+	case uint:
+		return DivUintE(o1.(uint), o2.(uint))
+	case uint8:
+		return DivUint8E(o1.(uint8), o2.(uint8))
+	case uint16:
+		return DivUint16E(o1.(uint16), o2.(uint16))
+	case uint32:
+		return DivUint32E(o1.(uint32), o2.(uint32))
+	case uint64:
+		return DivUint64E(o1.(uint64), o2.(uint64))
+	case decimal.Decimal:
+		return o1.(decimal.Decimal).Div(o2.(decimal.Decimal)), nil
+	default:
+		return nil, fmt.Errorf("unsupport div type '%s'", s)
+	}
+}
+
+func CaretAnyE(left, right interface{}) (interface{}, error) {
+	o1, o2, err := binOperands(left, right)
+	if err != nil {
+		return nil, err
+	}
+	switch s := o1.(type) {
+	case int:
+		return o1.(int) ^ o2.(int), nil
+	case int8:
+		return o1.(int8) ^ o2.(int8), nil
+	case int16:
+		return o1.(int16) ^ o2.(int16), nil
+	case int32:
+		return o1.(int32) ^ o2.(int32), nil
+	case int64:
+		return o1.(int64) ^ o2.(int64), nil
+	case uint:
+		return o1.(uint) ^ o2.(uint), nil
+	case uint8:
+		return o1.(uint8) ^ o2.(uint8), nil
+	case uint16:
+		return o1.(uint16) ^ o2.(uint16), nil
+	case uint32:
+		return o1.(uint32) ^ o2.(uint32), nil
+	case uint64:
+		return o1.(uint64) ^ o2.(uint64), nil
+	default:
+		return nil, fmt.Errorf("unsupport caret type '%s'", s)
+	}
+}
+
+func OrAnyE(left, right interface{}) (interface{}, error) {
+	o1, o2, err := binOperands(left, right)
+	if err != nil {
+		return nil, err
+	}
+	switch s := o1.(type) {
+	case int:
+		return o1.(int) | o2.(int), nil
+	case int8:
+		return o1.(int8) | o2.(int8), nil
+	case int16:
+		return o1.(int16) | o2.(int16), nil
+	case int32:
+		return o1.(int32) | o2.(int32), nil
+	case int64:
+		return o1.(int64) | o2.(int64), nil
+	case uint:
+		return o1.(uint) | o2.(uint), nil
+	case uint8:
+		return o1.(uint8) | o2.(uint8), nil
+	case uint16:
+		return o1.(uint16) | o2.(uint16), nil
+	case uint32:
+		return o1.(uint32) | o2.(uint32), nil
+	case uint64:
+		return o1.(uint64) | o2.(uint64), nil
+	default:
+		return nil, fmt.Errorf("unsupport or type '%s'", s)
+	}
+}
+
+func AndAnyE(left, right interface{}) (interface{}, error) {
+	o1, o2, err := binOperands(left, right)
+	if err != nil {
+		return nil, err
+	}
+	switch s := o1.(type) {
+	case int:
+		return o1.(int) & o2.(int), nil
+	case int8:
+		return o1.(int8) & o2.(int8), nil
+	case int16:
+		return o1.(int16) & o2.(int16), nil
+	case int32:
+		return o1.(int32) & o2.(int32), nil
+	case int64:
+		return o1.(int64) & o2.(int64), nil
+	case uint:
+		return o1.(uint) & o2.(uint), nil
+	case uint8:
+		return o1.(uint8) & o2.(uint8), nil
+	case uint16:
+		return o1.(uint16) & o2.(uint16), nil
+	case uint32:
+		return o1.(uint32) & o2.(uint32), nil
+	case uint64:
+		return o1.(uint64) & o2.(uint64), nil
+	default:
+		return nil, fmt.Errorf("unsupport and type '%s'", s)
+	}
+}
+
+func ModAnyE(left, right interface{}) (interface{}, error) {
+	o1, o2, err := binOperands(left, right)
+	if err != nil {
+		return nil, err
+	}
+	switch s := o1.(type) {
+	case int:
+		return o1.(int) % o2.(int), nil
+	case int8:
+		return o1.(int8) % o2.(int8), nil
+	case int16:
+		return o1.(int16) % o2.(int16), nil
+	case int32:
+		return o1.(int32) % o2.(int32), nil
+	case int64:
+		return o1.(int64) % o2.(int64), nil
+	case uint:
+		return o1.(uint) % o2.(uint), nil
+	case uint8:
+		return o1.(uint8) % o2.(uint8), nil
+	case uint16:
+		return o1.(uint16) % o2.(uint16), nil
+	case uint32:
+		return o1.(uint32) % o2.(uint32), nil
+	case uint64:
+		return o1.(uint64) % o2.(uint64), nil
+	default:
+		return nil, fmt.Errorf("unsupport mod type '%s'", s)
+	}
+}
+
+func LeftShiftAnyE(left, right interface{}) (interface{}, error) {
+	o1, o2, err := binOperands(left, right)
+	if err != nil {
+		return nil, err
+	}
+	switch s := o1.(type) {
+	case int:
+		return o1.(int) << o2.(int), nil
+	case int8:
+		return o1.(int8) << o2.(int8), nil
+	case int16:
+		return o1.(int16) << o2.(int16), nil
+	case int32:
+		return o1.(int32) << o2.(int32), nil
+	case int64:
+		return o1.(int64) << o2.(int64), nil
+	case uint:
+		return o1.(uint) << o2.(uint), nil
+	case uint8:
+		return o1.(uint8) << o2.(uint8), nil
+	case uint16:
+		return o1.(uint16) << o2.(uint16), nil
+	case uint32:
+		return o1.(uint32) << o2.(uint32), nil
+	case uint64:
+		return o1.(uint64) << o2.(uint64), nil
+	default:
+		return nil, fmt.Errorf("unsupport left shift type '%s'", s)
+	}
+}
+
+func RightShiftAnyE(left, right interface{}) (interface{}, error) {
+	o1, o2, err := binOperands(left, right)
+	if err != nil {
+		return nil, err
+	}
+	switch s := o1.(type) {
+	case int:
+		return o1.(int) >> o2.(int), nil
+	case int8:
+		return o1.(int8) >> o2.(int8), nil
+	case int16:
+		return o1.(int16) >> o2.(int16), nil
+	case int32:
+		return o1.(int32) >> o2.(int32), nil
+	case int64:
+		return o1.(int64) >> o2.(int64), nil
+	case uint:
+		return o1.(uint) >> o2.(uint), nil
+	case uint8:
+		return o1.(uint8) >> o2.(uint8), nil
+	case uint16:
+		return o1.(uint16) >> o2.(uint16), nil
+	case uint32:
+		return o1.(uint32) >> o2.(uint32), nil
+	case uint64:
+		return o1.(uint64) >> o2.(uint64), nil
+	default:
+		return nil, fmt.Errorf("unsupport right shift type '%s'", s)
+	}
+}
+
+func BitClearAnyE(left, right interface{}) (interface{}, error) {
+	o1, o2, err := binOperands(left, right)
+	if err != nil {
+		return nil, err
+	}
+	switch s := o1.(type) {
+	case int:
+		return o1.(int) &^ o2.(int), nil
+	case int8:
+		return o1.(int8) &^ o2.(int8), nil
+	case int16:
+		return o1.(int16) &^ o2.(int16), nil
+	case int32:
+		return o1.(int32) &^ o2.(int32), nil
+	case int64:
+		return o1.(int64) &^ o2.(int64), nil
+	case uint:
+		return o1.(uint) &^ o2.(uint), nil
+	case uint8:
+		return o1.(uint8) &^ o2.(uint8), nil
+	case uint16:
+		return o1.(uint16) &^ o2.(uint16), nil
+	case uint32:
+		return o1.(uint32) &^ o2.(uint32), nil
+	case uint64:
+		return o1.(uint64) &^ o2.(uint64), nil
+	default:
+		return nil, fmt.Errorf("unsupport bit clear type '%s'", s)
+	}
+}
+
+func EqualAnyE(left, right interface{}) (bool, error) {
+	o1, o2, err := binOperands(left, right)
+	if err != nil {
+		return false, err
+	}
+	switch s := o1.(type) {
+	case int:
+		return o1.(int) == o2.(int), nil
+	case int8:
+		return o1.(int8) == o2.(int8), nil
+	case int16:
+		return o1.(int16) == o2.(int16), nil
+	case int32:
+		return o1.(int32) == o2.(int32), nil
+	case int64:
+		return o1.(int64) == o2.(int64), nil
+	case uint:
+		return o1.(uint) == o2.(uint), nil
+	case uint8:
+		return o1.(uint8) == o2.(uint8), nil
+	case uint16:
+		return o1.(uint16) == o2.(uint16), nil
+	case uint32:
+		return o1.(uint32) == o2.(uint32), nil
+	case uint64:
+		return o1.(uint64) == o2.(uint64), nil
+	case string:
+		return o1.(string) == o2.(string), nil
+	case decimal.Decimal:
+		return o1.(decimal.Decimal).Equal(o2.(decimal.Decimal)), nil
+	default:
+		return false, fmt.Errorf("unsupport equal type '%s'", s)
+	}
+}
+
+func NotEqualAnyE(left, right interface{}) (bool, error) {
+	o1, o2, err := binOperands(left, right)
+	if err != nil {
+		return false, err
+	}
+	switch s := o1.(type) {
+	case int:
+		return o1.(int) != o2.(int), nil
+	case int8:
+		return o1.(int8) != o2.(int8), nil
+	case int16:
+		return o1.(int16) != o2.(int16), nil
+	case int32:
+		return o1.(int32) != o2.(int32), nil
+	case int64:
+		return o1.(int64) != o2.(int64), nil
+	case uint:
+		return o1.(uint) != o2.(uint), nil
+	case uint8:
+		return o1.(uint8) != o2.(uint8), nil
+	case uint16:
+		return o1.(uint16) != o2.(uint16), nil
+	case uint32:
+		return o1.(uint32) != o2.(uint32), nil
+	case uint64:
+		return o1.(uint64) != o2.(uint64), nil
+	case string:
+		return o1.(string) != o2.(string), nil
+	case decimal.Decimal:
+		return !o1.(decimal.Decimal).Equal(o2.(decimal.Decimal)), nil
+	default:
+		return false, fmt.Errorf("unsupport not equal type '%s'", s)
+	}
+}
+
+func LessAnyE(left, right interface{}) (bool, error) {
+	o1, o2, err := binOperands(left, right)
+	if err != nil {
+		return false, err
+	}
+	switch s := o1.(type) {
+	case int:
+		return o1.(int) < o2.(int), nil
+	case int8:
+		return o1.(int8) < o2.(int8), nil
+	case int16:
+		return o1.(int16) < o2.(int16), nil
+	case int32:
+		return o1.(int32) < o2.(int32), nil
+	case int64:
+		return o1.(int64) < o2.(int64), nil
+	case uint:
+		return o1.(uint) < o2.(uint), nil
+	case uint8:
+		return o1.(uint8) < o2.(uint8), nil
+	case uint16:
+		return o1.(uint16) < o2.(uint16), nil
+	case uint32:
+		return o1.(uint32) < o2.(uint32), nil
+	case uint64:
+		return o1.(uint64) < o2.(uint64), nil
+	case string:
+		return o1.(string) < o2.(string), nil
+	case decimal.Decimal:
+		return o1.(decimal.Decimal).LessThan(o2.(decimal.Decimal)), nil
+	default:
+		return false, fmt.Errorf("unsupport less type '%s'", s)
+	}
+}
+
+func LessOrEqualAnyE(left, right interface{}) (bool, error) {
+	o1, o2, err := binOperands(left, right)
+	if err != nil {
+		return false, err
+	}
+	switch s := o1.(type) {
+	case int:
+		return o1.(int) <= o2.(int), nil
+	case int8:
+		return o1.(int8) <= o2.(int8), nil
+	case int16:
+		return o1.(int16) <= o2.(int16), nil
+	case int32:
+		return o1.(int32) <= o2.(int32), nil
+	case int64:
+		return o1.(int64) <= o2.(int64), nil
+	case uint:
+		return o1.(uint) <= o2.(uint), nil
+	case uint8:
+		return o1.(uint8) <= o2.(uint8), nil
+	case uint16:
+		return o1.(uint16) <= o2.(uint16), nil
+	case uint32:
+		return o1.(uint32) <= o2.(uint32), nil
+	case uint64:
+		return o1.(uint64) <= o2.(uint64), nil
+	case string:
+		return o1.(string) <= o2.(string), nil
+	case decimal.Decimal:
+		return o1.(decimal.Decimal).LessThanOrEqual(o2.(decimal.Decimal)), nil
+	default:
+		return false, fmt.Errorf("unsupport less or equal type '%s'", s)
+	}
+}
+
+func GreaterAnyE(left, right interface{}) (bool, error) {
+	o1, o2, err := binOperands(left, right)
+	if err != nil {
+		return false, err
+	}
+	switch s := o1.(type) {
+	case int:
+		return o1.(int) > o2.(int), nil
+	case int8:
+		return o1.(int8) > o2.(int8), nil
+	case int16:
+		return o1.(int16) > o2.(int16), nil
+	case int32:
+		return o1.(int32) > o2.(int32), nil
+	case int64:
+		return o1.(int64) > o2.(int64), nil
+	case uint:
+		return o1.(uint) > o2.(uint), nil
+	case uint8:
+		return o1.(uint8) > o2.(uint8), nil
+	case uint16:
+		return o1.(uint16) > o2.(uint16), nil
+	case uint32:
+		return o1.(uint32) > o2.(uint32), nil
+	case uint64:
+		return o1.(uint64) > o2.(uint64), nil
+	case string:
+		return o1.(string) > o2.(string), nil
+	case decimal.Decimal:
+		return o1.(decimal.Decimal).GreaterThanOrEqual(o2.(decimal.Decimal)), nil
+	default:
+		return false, fmt.Errorf("unsupport greater type '%s'", s)
+	}
+}
+
+func GreaterOrEqualAnyE(left, right interface{}) (bool, error) {
+	o1, o2, err := binOperands(left, right)
+	if err != nil {
+		return false, err
+	}
+	switch s := o1.(type) {
+	case int:
+		return o1.(int) >= o2.(int), nil
+	case int8:
+		return o1.(int8) >= o2.(int8), nil
+	case int16:
+		return o1.(int16) >= o2.(int16), nil
+	case int32:
+		return o1.(int32) >= o2.(int32), nil
+	case int64:
+		return o1.(int64) >= o2.(int64), nil
+	case uint:
+		return o1.(uint) >= o2.(uint), nil
+	case uint8:
+		return o1.(uint8) >= o2.(uint8), nil
+	case uint16:
+		return o1.(uint16) >= o2.(uint16), nil
+	case uint32:
+		return o1.(uint32) >= o2.(uint32), nil
+	case uint64:
+		return o1.(uint64) >= o2.(uint64), nil
+	case string:
+		return o1.(string) >= o2.(string), nil
+	case decimal.Decimal:
+		return o1.(decimal.Decimal).GreaterThanOrEqual(o2.(decimal.Decimal)), nil
+	default:
+		return false, fmt.Errorf("unsupport greater or equal type '%s'", s)
+	}
+}
+
+func UnaryPlusAnyE(v interface{}) (interface{}, error) {
+	v = indirect(v)
+	switch s := v.(type) {
+	case int:
+		return +v.(int), nil
+	case int8:
+		return +v.(int8), nil
+	case int16:
+		return +v.(int16), nil
+	case int32:
+		return +v.(int32), nil
+	case int64:
+		return +v.(int64), nil
+	case uint:
+		return +v.(uint), nil
+	case uint8:
+		return +v.(uint8), nil
+	case uint16:
+		return +v.(uint16), nil
+	case uint32:
+		return +v.(uint32), nil
+	case uint64:
+		return +v.(uint64), nil
+	case decimal.Decimal:
+		vv := v.(decimal.Decimal).String()
+		if strings.HasPrefix(vv, "-") {
+			r, err := decimal.NewFromString(strings.TrimPrefix(vv, "-"))
+			return r, err
+		}
+		return v.(decimal.Decimal), nil
+	default:
+		return false, fmt.Errorf("unsupport unary plus type '%s'", s)
+	}
+}
+
+func UnaryMinusAnyE(v interface{}) (interface{}, error) {
+	v = indirect(v)
+	switch s := v.(type) {
+	case int:
+		return -v.(int), nil
+	case int8:
+		return -v.(int8), nil
+	case int16:
+		return -v.(int16), nil
+	case int32:
+		return -v.(int32), nil
+	case int64:
+		return -v.(int64), nil
+	case uint:
+		return -v.(uint), nil
+	case uint8:
+		return -v.(uint8), nil
+	case uint16:
+		return -v.(uint16), nil
+	case uint32:
+		return -v.(uint32), nil
+	case uint64:
+		return -v.(uint64), nil
+	case decimal.Decimal:
+		vv := v.(decimal.Decimal).String()
+		if strings.HasPrefix(vv, "-") {
+			r, err := decimal.NewFromString(strings.TrimPrefix(vv, "-"))
+			return r, err
+		} else {
+			r, err := decimal.NewFromString("-" + vv)
+			return r, err
+		}
+	default:
+		return false, fmt.Errorf("unsupport unary minus type '%s'", s)
+	}
+}
+
+func UnaryCaretAnyE(v interface{}) (interface{}, error) {
+	v = indirect(v)
+	switch s := v.(type) {
+	case int:
+		return ^v.(int), nil
+	case int8:
+		return ^v.(int8), nil
+	case int16:
+		return ^v.(int16), nil
+	case int32:
+		return ^v.(int32), nil
+	case int64:
+		return ^v.(int64), nil
+	case uint:
+		return ^v.(uint), nil
+	case uint8:
+		return ^v.(uint8), nil
+	case uint16:
+		return ^v.(uint16), nil
+	case uint32:
+		return ^v.(uint32), nil
+	case uint64:
+		return ^v.(uint64), nil
+	default:
+		return false, fmt.Errorf("unsupport unary caret type '%s'", s)
+	}
+}
+
+func UnaryNotAnyE(v interface{}) (interface{}, error) {
+	v = indirect(v)
+	switch s := v.(type) {
+	case bool:
+		return !v.(bool), nil
+	default:
+		return false, fmt.Errorf("unsupport unary not type '%s'", s)
+	}
+}
+
+func LogicAndAnyE(left, right interface{}) (bool, error) {
+	a, err := ToBoolE(left)
+	if err != nil {
+		return false, err
+	}
+	b, err := ToBoolE(right)
+	if err != nil {
+		return false, err
+	}
+	return a && b, nil
+}
+
+func LogicOrAnyE(left, right interface{}) (bool, error) {
+	a, err := ToBoolE(left)
+	if err != nil {
+		return false, err
+	}
+	b, err := ToBoolE(right)
+	if err != nil {
+		return false, err
+	}
+	return a || b, nil
 }
