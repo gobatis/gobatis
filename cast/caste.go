@@ -1134,6 +1134,83 @@ func ToStringE(i interface{}) (string, error) {
 	}
 }
 
+func ToReflectTypeE(_type reflect.Type, operand interface{}) (interface{}, error) {
+	var err error
+	var result interface{}
+	switch _type.Kind() {
+	case reflect.Int8:
+		result, err = ToInt8E(operand)
+	case reflect.Int16:
+		result, err = ToInt16E(operand)
+	case reflect.Int32:
+		result, err = ToInt32E(operand)
+	case reflect.Int64:
+		result, err = ToInt64E(operand)
+	case reflect.Uint:
+		result, err = ToUintE(operand)
+	case reflect.Uint8:
+		result, err = ToUint8E(operand)
+	case reflect.Uint16:
+		result, err = ToUint16E(operand)
+	case reflect.Uint32:
+		result, err = ToUint32E(operand)
+	case reflect.Uint64:
+		result, err = ToUint64E(operand)
+	case reflect.String:
+		result, err = ToStringE(operand)
+	case reflect.Interface:
+		result = operand
+	default:
+		if _type.Kind() == reflect.Struct && _type.String() == "decimal.Decimal" {
+			result, err = ToDecimalE(operand)
+		} else {
+			return nil, fmt.Errorf("unsupport convert type '%s'", _type)
+		}
+	}
+	if err != nil {
+		return nil, fmt.Errorf("convert type '%s' error: %s", _type, err)
+	}
+	return result, nil
+}
+
+func ToBinOperandE(left, right interface{}) (o1, o2 interface{}, err error) {
+	o1 = indirect(left)
+	o2 = indirect(right)
+	if reflect.TypeOf(o1).Kind() == reflect.TypeOf(o2).Kind() {
+		return left, right, nil
+	}
+	switch left.(type) {
+	case int8:
+		o2, err = ToInt8E(right)
+	case int16:
+		o2, err = ToInt16E(right)
+	case int32:
+		o2, err = ToInt32E(right)
+	case int64:
+		o2, err = ToInt64E(right)
+	case uint:
+		o2, err = ToUintE(right)
+	case uint8:
+		o2, err = ToUint8E(right)
+	case uint16:
+		o2, err = ToUint16E(right)
+	case uint32:
+		o2, err = ToUint32E(right)
+	case uint64:
+		o2, err = ToUint64E(right)
+	case decimal.Decimal:
+		o2, err = ToDecimalE(right)
+	case string:
+		o2, err = ToStringE(right)
+	default:
+		return nil, nil, fmt.Errorf("operand types are different and unsupport convert")
+	}
+	if err != nil {
+		return nil, nil, fmt.Errorf("operand types are different and %s", err)
+	}
+	return left, o2, nil
+}
+
 // StringToDate attempts to parse a string into a time.Time type using a
 // predefined list of formats.  If no suitable format is found, an error is
 // returned.

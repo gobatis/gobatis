@@ -3,8 +3,8 @@ package gobatis
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/require"
-	"reflect"
 	"testing"
 )
 
@@ -96,6 +96,7 @@ type testStruct struct {
 	Map  map[string]int64
 	Calc func(val int64) int64
 	Max  func(a, b int64) int64
+	Dec  func(a decimal.Decimal) string
 }
 
 func TestParseExprExpressionMember(t *testing.T) {
@@ -121,6 +122,9 @@ func TestParseExprExpressionMember(t *testing.T) {
 			}
 			return b
 		},
+		Dec: func(a decimal.Decimal) string {
+			return a.Add(decimal.NewFromFloat(1.1234)).String()
+		},
 	}
 	b := []int{1, 2, 3, 4, 5}
 	parser := newExprParser(a, b)
@@ -129,7 +133,7 @@ func TestParseExprExpressionMember(t *testing.T) {
 	//result, err := parser.parseExpression("a:struct, b:array", `b[0:len(b)]`)
 	//result, err := parser.parseExpression("a:struct, b:array", `a.Age > int64(1) && b[2] > int64(1)`)
 	//result, err := parser.parseExpression("a:struct, b:array", `a.Age > 1 && b[2] > 1`)
-	result, err := parser.parseExpression("a:struct, b:array", `1 + 1.1`)
+	result, err := parser.parseExpression("a:struct, b:array", `a.Dec(100)`)
 	require.NoError(t, err)
-	t.Log("result:", result, reflect.TypeOf(result))
+	t.Log("result:", result)
 }

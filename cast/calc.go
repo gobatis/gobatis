@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/shopspring/decimal"
 	"math/big"
-	"reflect"
 	"strings"
 )
 
@@ -613,46 +612,8 @@ func DivUint32E(a, b uint32) (r uint32, err error) {
 	return
 }
 
-func castBinOperand(left, right interface{}) (o1, o2 interface{}, err error) {
-	o1 = indirect(left)
-	o2 = indirect(right)
-	if reflect.TypeOf(o1).Kind() == reflect.TypeOf(o2).Kind() {
-		return left, right, nil
-	}
-	switch left.(type) {
-	case int8:
-		o2, err = ToInt8E(right)
-	case int16:
-		o2, err = ToInt16E(right)
-	case int32:
-		o2, err = ToInt32E(right)
-	case int64:
-		o2, err = ToInt64E(right)
-	case uint:
-		o2, err = ToUintE(right)
-	case uint8:
-		o2, err = ToUint8E(right)
-	case uint16:
-		o2, err = ToUint16E(right)
-	case uint32:
-		o2, err = ToUint32E(right)
-	case uint64:
-		o2, err = ToUint64E(right)
-	case decimal.Decimal:
-		o2, err = ToDecimalE(right)
-	case string:
-		o2, err = ToStringE(right)
-	default:
-		return nil, nil, fmt.Errorf("operand types are different and unsupport convert")
-	}
-	if err != nil {
-		return nil, nil, fmt.Errorf("operand types are different and %s", err)
-	}
-	return left, o2, nil
-}
-
 func AddAnyE(left, right interface{}) (interface{}, error) {
-	o1, o2, err := castBinOperand(left, right)
+	o1, o2, err := ToBinOperandE(left, right)
 	if err != nil {
 		return nil, err
 	}
@@ -687,7 +648,7 @@ func AddAnyE(left, right interface{}) (interface{}, error) {
 }
 
 func SubAnyE(left, right interface{}) (interface{}, error) {
-	o1, o2, err := castBinOperand(left, right)
+	o1, o2, err := ToBinOperandE(left, right)
 	if err != nil {
 		return nil, err
 	}
@@ -720,7 +681,7 @@ func SubAnyE(left, right interface{}) (interface{}, error) {
 }
 
 func MulAnyE(left, right interface{}) (interface{}, error) {
-	o1, o2, err := castBinOperand(left, right)
+	o1, o2, err := ToBinOperandE(left, right)
 	if err != nil {
 		return nil, err
 	}
@@ -753,7 +714,7 @@ func MulAnyE(left, right interface{}) (interface{}, error) {
 }
 
 func DivAnyE(left, right interface{}) (interface{}, error) {
-	o1, o2, err := castBinOperand(left, right)
+	o1, o2, err := ToBinOperandE(left, right)
 	if err != nil {
 		return nil, err
 	}
@@ -786,7 +747,7 @@ func DivAnyE(left, right interface{}) (interface{}, error) {
 }
 
 func CaretAnyE(left, right interface{}) (interface{}, error) {
-	o1, o2, err := castBinOperand(left, right)
+	o1, o2, err := ToBinOperandE(left, right)
 	if err != nil {
 		return nil, err
 	}
@@ -817,7 +778,7 @@ func CaretAnyE(left, right interface{}) (interface{}, error) {
 }
 
 func OrAnyE(left, right interface{}) (interface{}, error) {
-	o1, o2, err := castBinOperand(left, right)
+	o1, o2, err := ToBinOperandE(left, right)
 	if err != nil {
 		return nil, err
 	}
@@ -848,7 +809,7 @@ func OrAnyE(left, right interface{}) (interface{}, error) {
 }
 
 func AndAnyE(left, right interface{}) (interface{}, error) {
-	o1, o2, err := castBinOperand(left, right)
+	o1, o2, err := ToBinOperandE(left, right)
 	if err != nil {
 		return nil, err
 	}
@@ -879,7 +840,7 @@ func AndAnyE(left, right interface{}) (interface{}, error) {
 }
 
 func ModAnyE(left, right interface{}) (interface{}, error) {
-	o1, o2, err := castBinOperand(left, right)
+	o1, o2, err := ToBinOperandE(left, right)
 	if err != nil {
 		return nil, err
 	}
@@ -910,7 +871,7 @@ func ModAnyE(left, right interface{}) (interface{}, error) {
 }
 
 func LeftShiftAnyE(left, right interface{}) (interface{}, error) {
-	o1, o2, err := castBinOperand(left, right)
+	o1, o2, err := ToBinOperandE(left, right)
 	if err != nil {
 		return nil, err
 	}
@@ -941,7 +902,7 @@ func LeftShiftAnyE(left, right interface{}) (interface{}, error) {
 }
 
 func RightShiftAnyE(left, right interface{}) (interface{}, error) {
-	o1, o2, err := castBinOperand(left, right)
+	o1, o2, err := ToBinOperandE(left, right)
 	if err != nil {
 		return nil, err
 	}
@@ -972,7 +933,7 @@ func RightShiftAnyE(left, right interface{}) (interface{}, error) {
 }
 
 func BitClearAnyE(left, right interface{}) (interface{}, error) {
-	o1, o2, err := castBinOperand(left, right)
+	o1, o2, err := ToBinOperandE(left, right)
 	if err != nil {
 		return nil, err
 	}
@@ -1003,7 +964,7 @@ func BitClearAnyE(left, right interface{}) (interface{}, error) {
 }
 
 func EqualAnyE(left, right interface{}) (bool, error) {
-	o1, o2, err := castBinOperand(left, right)
+	o1, o2, err := ToBinOperandE(left, right)
 	if err != nil {
 		return false, err
 	}
@@ -1038,7 +999,7 @@ func EqualAnyE(left, right interface{}) (bool, error) {
 }
 
 func NotEqualAnyE(left, right interface{}) (bool, error) {
-	o1, o2, err := castBinOperand(left, right)
+	o1, o2, err := ToBinOperandE(left, right)
 	if err != nil {
 		return false, err
 	}
@@ -1073,7 +1034,7 @@ func NotEqualAnyE(left, right interface{}) (bool, error) {
 }
 
 func LessAnyE(left, right interface{}) (bool, error) {
-	o1, o2, err := castBinOperand(left, right)
+	o1, o2, err := ToBinOperandE(left, right)
 	if err != nil {
 		return false, err
 	}
@@ -1108,7 +1069,7 @@ func LessAnyE(left, right interface{}) (bool, error) {
 }
 
 func LessOrEqualAnyE(left, right interface{}) (bool, error) {
-	o1, o2, err := castBinOperand(left, right)
+	o1, o2, err := ToBinOperandE(left, right)
 	if err != nil {
 		return false, err
 	}
@@ -1143,7 +1104,7 @@ func LessOrEqualAnyE(left, right interface{}) (bool, error) {
 }
 
 func GreaterAnyE(left, right interface{}) (bool, error) {
-	o1, o2, err := castBinOperand(left, right)
+	o1, o2, err := ToBinOperandE(left, right)
 	if err != nil {
 		return false, err
 	}
@@ -1178,7 +1139,7 @@ func GreaterAnyE(left, right interface{}) (bool, error) {
 }
 
 func GreaterOrEqualAnyE(left, right interface{}) (bool, error) {
-	o1, o2, err := castBinOperand(left, right)
+	o1, o2, err := ToBinOperandE(left, right)
 	if err != nil {
 		return false, err
 	}

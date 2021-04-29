@@ -95,7 +95,7 @@ func parseNode(listener *xmlParser, content string) (err error) {
 }
 
 func parseError(file string, ctx antlr.ParserRuleContext, msg string) error {
-	return fmt.Errorf("%s line %d:%d: %s parse error: %s", file, ctx.GetStart().GetLine(), ctx.GetStart().GetColumn(), ctx.GetText(), msg)
+	return fmt.Errorf("%s line %d:%d: < %s > parse error: %s", file, ctx.GetStart().GetLine(), ctx.GetStart().GetColumn(), ctx.GetText(), msg)
 }
 
 func newCoverage() *coverage {
@@ -525,7 +525,6 @@ func (p *exprValue) call(ellipsis bool, params []reflect.Value) (r *exprValue, e
 		err = fmt.Errorf("visit '%s' is not func", elem.Kind())
 		return
 	}
-	
 	var out []reflect.Value
 	defer func() {
 		e := recover()
@@ -534,6 +533,18 @@ func (p *exprValue) call(ellipsis bool, params []reflect.Value) (r *exprValue, e
 			return
 		}
 	}()
+	for i, v := range params {
+		if i < elem.Type().NumIn() {
+			va := elem.Type().In(i)
+			if va.Kind() != reflect.Interface && va.String() != v.Type().String() {
+				var vt interface{}
+				vt, err = cast.ToReflectTypeE(va, v.Interface())
+				if err == nil {
+					params[i] = reflect.ValueOf(vt)
+				}
+			}
+		}
+	}
 	if ellipsis {
 		out = elem.CallSlice(params)
 	} else {
