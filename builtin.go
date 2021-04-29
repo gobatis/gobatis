@@ -99,6 +99,14 @@ func _decimal(v interface{}) decimal.Decimal {
 	return r
 }
 
+func _bool(v interface{}) bool {
+	r, err := cast.ToBoolE(v)
+	if err != nil {
+		panic(err)
+	}
+	return r
+}
+
 type _strings struct{}
 
 func (p _strings) Count(s, substr string) int                { return strings.Count(s, substr) }

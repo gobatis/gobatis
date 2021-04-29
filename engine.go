@@ -173,7 +173,7 @@ func (p *Engine) walkMappers(root string) (files []string, err error) {
 	return
 }
 
-func (p *Engine) addStatement(file string, token antlr.Token, id string, node *xmlNode) (err error) {
+func (p *Engine) addStatement(file string, ctx antlr.ParserRuleContext, token antlr.Token, id string, node *xmlNode) (err error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	if p.statements == nil {
@@ -181,7 +181,7 @@ func (p *Engine) addStatement(file string, token antlr.Token, id string, node *x
 	}
 	_, ok := p.statements[id]
 	if ok {
-		err = parseError(file, token, fmt.Sprintf("duplicate statement: %s", id))
+		err = parseError(file, ctx, fmt.Sprintf("duplicate statement: %s", id))
 		return
 	}
 	p.statements[id] = node

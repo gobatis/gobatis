@@ -123,10 +123,11 @@ func TestParseExprExpressionMember(t *testing.T) {
 	}
 	b := []int{1, 2, 3, 4, 5}
 	parser := newExprParser(a, b)
-	//result, err := parser.parseExpression("a:struct, b:array", `a.Max(a.Age, b[2] + a.Map["weight"])`)
+	//result, err := parser.parseExpression("a:struct, b:array", `a.Max(a.Age, int64(b[2]) + a.Map["weight"])`)
 	//result, err := parser.parseExpression("a:struct, b:array", `strings.HasPrefix(a.Name, "go")`)
-	result, err := parser.parseExpression("a:struct, b:array", `b[0:len(b)]`)
+	//result, err := parser.parseExpression("a:struct, b:array", `b[0:len(b)]`)
+	//result, err := parser.parseExpression("a:struct, b:array", `a.Age > int64(1) && b[2] > int64(1)`)
+	result, err := parser.parseExpression("a:struct, b:array", `a.Age > int64(1) && b[2] > 1`)
 	require.NoError(t, err)
 	t.Log("result:", result)
-	
 }

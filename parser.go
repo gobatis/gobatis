@@ -66,10 +66,10 @@ func parseMapper(engine *Engine, file, content string) (err error) {
 			v.Name == dtd.SQL {
 			id := v.GetAttribute(dtd.ID)
 			if id == "" {
-				err = parseError(file, v.start, fmt.Sprintf("element: %s miss id", v.Name))
+				err = parseError(file, v.ctx, fmt.Sprintf("element: %s miss id", v.Name))
 				return
 			}
-			err = engine.addStatement(file, v.start, id, v)
+			err = engine.addStatement(file, v.ctx, v.start, id, v)
 			if err != nil {
 				return
 			}
@@ -94,8 +94,8 @@ func parseNode(listener *xmlParser, content string) (err error) {
 	return
 }
 
-func parseError(file string, token antlr.Token, msg string) error {
-	return fmt.Errorf("%s line %d:%d, parse error: %s", file, token.GetLine(), token.GetColumn(), msg)
+func parseError(file string, ctx antlr.ParserRuleContext, msg string) error {
+	return fmt.Errorf("%s line %d:%d: %s parse error: %s", file, ctx.GetStart().GetLine(), ctx.GetStart().GetColumn(), ctx.GetText(), msg)
 }
 
 func newCoverage() *coverage {
@@ -136,10 +136,11 @@ func (p *coverage) notCovered() (indexes []int) {
 	return
 }
 
-func newXMLNode(file, name string, token antlr.Token) *xmlNode {
+func newXMLNode(file, name string, ctx antlr.ParserRuleContext, token antlr.Token) *xmlNode {
 	return &xmlNode{
 		File:  file,
 		Name:  name,
+		ctx:   ctx,
 		start: token,
 	}
 }
@@ -152,6 +153,7 @@ type xmlNode struct {
 	Nodes      []*xmlNode
 	nodesCount map[string]int
 	start      antlr.Token
+	ctx        antlr.ParserRuleContext
 	textOnly   bool
 }
 
@@ -159,6 +161,7 @@ type xmlNodeAttribute struct {
 	File  string      `json:"-"`
 	Start antlr.Token `json:"-"`
 	Value string
+	ctx   antlr.ParserRuleContext
 }
 
 func (p *xmlNode) GetAttribute(name string) string {
@@ -283,7 +286,7 @@ func (p *xmlParser) validateNode(node *xmlNode, elem *dtd.Element) {
 	if elem.Attributes != nil {
 		for k, v := range elem.Attributes {
 			if v == dtd.REQUIRED && !node.HasAttribute(k) {
-				p.setError(fmt.Sprintf("element: %s miss required attribute: %s", node.Name, k), node.start)
+				p.setError(fmt.Sprintf("element: %s miss required attribute: %s", node.Name, k), node.ctx)
 				return
 			}
 		}
@@ -299,7 +302,7 @@ func (p *xmlParser) validateNode(node *xmlNode, elem *dtd.Element) {
 		if !elem.HasNode(childNode.Name) {
 			p.setError(
 				fmt.Sprintf("element: %s not support child element: %s", node.Name, childNode.Name),
-				childNode.start,
+				childNode.ctx,
 			)
 			return
 		}
@@ -308,14 +311,14 @@ func (p *xmlParser) validateNode(node *xmlNode, elem *dtd.Element) {
 		if elem.GetNodeCount(childNode.Name) == dtd.AT_MOST_ONCE && node.countNode(childNode.Name) > 1 {
 			p.setError(
 				fmt.Sprintf("element: %s not support duplicate element: %s", node.Name, childNode.Name),
-				childNode.start,
+				childNode.ctx,
 			)
 			return
 		}
 		
 		childElem, err := p.elementGetter(childNode.Name)
 		if err != nil {
-			p.setError(err.Error(), childNode.start)
+			p.setError(err.Error(), childNode.ctx)
 			return
 		}
 		
@@ -329,15 +332,15 @@ func (p *xmlParser) validateNode(node *xmlNode, elem *dtd.Element) {
 	if elem.Nodes != nil {
 		for k, v := range elem.Nodes {
 			if v == dtd.AT_LEAST_ONCE && node.countNode(k) == 0 {
-				p.setError(fmt.Sprintf("element %s miss required element %s", node.Name, k), node.start)
+				p.setError(fmt.Sprintf("element %s miss required element %s", node.Name, k), node.ctx)
 				return
 			}
 		}
 	}
 }
 
-func (p *xmlParser) setError(msg string, token antlr.Token) {
-	p.error = parseError(p.file, token, msg)
+func (p *xmlParser) setError(msg string, ctx antlr.ParserRuleContext) {
+	p.error = parseError(p.file, ctx, msg)
 }
 
 func (p *xmlParser) enterElement(c *xml.ElementContext) {
@@ -347,11 +350,11 @@ func (p *xmlParser) enterElement(c *xml.ElementContext) {
 	name := c.Name(0)
 	if p.depth == 0 {
 		if name.GetText() != p.rootElement.Name {
-			p.setError(fmt.Sprintf("first level tag %s unsupported", name.GetText()), name.GetSymbol())
+			p.setError(fmt.Sprintf("first level tag %s unsupported", name.GetText()), c)
 			return
 		}
 	}
-	p.stack.Push(newXMLNode(p.file, name.GetText(), name.GetSymbol()))
+	p.stack.Push(newXMLNode(p.file, name.GetText(), c, name.GetSymbol()))
 	p.depth++
 }
 
@@ -379,8 +382,9 @@ func (p *xmlParser) enterAttribute(c *xml.AttributeContext) {
 	value := strings.TrimSpace(p.trimAttributeValueQuote(c.STRING().GetText()))
 	p.stack.Peak().AddAttribute(name, &xmlNodeAttribute{
 		File:  p.file,
-		Start: c.STRING().GetSymbol(),
 		Value: value,
+		Start: c.STRING().GetSymbol(),
+		ctx:   c,
 	})
 }
 
@@ -390,7 +394,7 @@ func (p *xmlParser) enterChardata(c *xml.ChardataContext) {
 	}
 	text := strings.TrimSpace(c.GetText())
 	if text != "" {
-		p.stack.Peak().AddNode(&xmlNode{File: p.file, Text: text, start: c.GetStart(), textOnly: true})
+		p.stack.Peak().AddNode(&xmlNode{File: p.file, Text: text, ctx: c, start: c.GetStart(), textOnly: true})
 	}
 }
 
@@ -407,9 +411,7 @@ func (p *xmlParser) EnterEveryRule(ctx antlr.ParserRuleContext) {
 	case xml.XMLParserRULE_chardata:
 		p.enterChardata(ctx.(*xml.ChardataContext))
 		p.coverage.add(ctx)
-	case xml.XMLParserRULE_prolog:
-		p.coverage.add(ctx)
-	case xml.XMLParserRULE_misc:
+	case xml.XMLParserRULE_prolog, xml.XMLParserRULE_misc:
 		p.coverage.add(ctx)
 	}
 	
@@ -778,6 +780,7 @@ func (p *exprParser) initBuiltIn() {
 	p.builtIn["uint32"] = _uint32
 	p.builtIn["uint64"] = _uint64
 	p.builtIn["decimal"] = _decimal
+	p.builtIn["bool"] = _bool
 	p.builtIn["strings"] = _strings{}
 }
 
@@ -798,14 +801,14 @@ func (p *exprParser) EnterParamDecl(ctx *expr.ParamDeclContext) {
 	}
 	
 	if p.isBuiltIn(name) {
-		p.error = parseError(p.file, ctx.GetStart(),
+		p.error = parseError(p.file, ctx,
 			fmt.Sprintf("alias '%s' conflict with built-in functions or objects", name))
 		return
 	}
 	
 	err := p.params.alias(name, expected, p.paramIndex)
 	if err != nil {
-		p.error = parseError(p.file, ctx.GetStart(), err.Error())
+		p.error = parseError(p.file, ctx, err.Error())
 		return
 	}
 	p.paramIndex++
@@ -823,10 +826,10 @@ func (p *exprParser) ExitExpression(ctx *expr.ExpressionContext) {
 	if ctx.GetUnary_op() != nil {
 		left, err := p.stack.Pop()
 		if err != nil {
-			p.error = parseError(p.file, ctx.GetStart(), err.Error())
+			p.error = parseError(p.file, ctx, err.Error())
 			return
 		}
-		err = p.unaryCalc(left, ctx.GetUnary_op())
+		err = p.unaryCalc(left, ctx, ctx.GetUnary_op())
 		if err != nil {
 			p.error = err
 			return
@@ -839,39 +842,39 @@ func (p *exprParser) ExitExpression(ctx *expr.ExpressionContext) {
 		ctx.LOGICAL_OR() != nil {
 		left, right, err := p.popBinaryOperands()
 		if err != nil {
-			p.error = parseError(p.file, ctx.GetStart(), err.Error())
+			p.error = parseError(p.file, ctx, err.Error())
 			return
 		}
 		if ctx.GetAdd_op() != nil {
-			err = p.numericStringCalc(left, right, ctx.GetAdd_op())
+			err = p.numericStringCalc(left, right, ctx, ctx.GetAdd_op())
 			if err != nil {
 				p.error = err
 				return
 			}
 			p.coverage.add(ctx)
 		} else if ctx.GetMul_op() != nil {
-			err = p.numericStringCalc(left, right, ctx.GetMul_op())
+			err = p.numericStringCalc(left, right, ctx, ctx.GetMul_op())
 			if err != nil {
 				p.error = err
 				return
 			}
 			p.coverage.add(ctx)
 		} else if ctx.GetRel_op() != nil {
-			err = p.relationCalc(left, right, ctx.GetRel_op())
+			err = p.relationCalc(left, right, ctx, ctx.GetRel_op())
 			if err != nil {
 				p.error = err
 				return
 			}
 			p.coverage.add(ctx)
 		} else if ctx.LOGICAL_AND() != nil {
-			err = p.logicCalc(left, right, ctx.LOGICAL_AND().GetSymbol())
+			err = p.logicCalc(left, right, ctx, ctx.LOGICAL_AND().GetSymbol())
 			if err != nil {
 				p.error = err
 				return
 			}
 			p.coverage.add(ctx)
 		} else if ctx.LOGICAL_OR() != nil {
-			err = p.logicCalc(left, right, ctx.LOGICAL_OR().GetSymbol())
+			err = p.logicCalc(left, right, ctx, ctx.LOGICAL_OR().GetSymbol())
 			if err != nil {
 				p.error = err
 				return
@@ -893,7 +896,7 @@ func (p *exprParser) ExitVar_(ctx *expr.Var_Context) {
 		var ok bool
 		val, ok = p.params.get(alias)
 		if !ok {
-			p.error = parseError(p.file, ctx.GetStart(), fmt.Sprintf("can't find var '%s'", alias))
+			p.error = parseError(p.file, ctx, fmt.Sprintf("can't find var '%s'", alias))
 			return
 		}
 	}
@@ -908,13 +911,13 @@ func (p *exprParser) ExitMember(ctx *expr.MemberContext) {
 	name := ctx.IDENTIFIER().GetText()
 	obj, err := p.stack.Pop()
 	if err != nil {
-		p.error = parseError(p.file, ctx.GetStart(), err.Error())
+		p.error = parseError(p.file, ctx, err.Error())
 		return
 	}
 	var mev *exprValue
 	mev, err = obj.visitMember(name)
 	if err != nil {
-		p.error = parseError(p.file, ctx.GetStart(), err.Error())
+		p.error = parseError(p.file, ctx, err.Error())
 		return
 	}
 	
@@ -930,13 +933,13 @@ func (p *exprParser) ExitIndex(ctx *expr.IndexContext) {
 	
 	index, err := p.stack.Pop()
 	if err != nil {
-		p.error = parseError(p.file, ctx.GetStart(), err.Error())
+		p.error = parseError(p.file, ctx, err.Error())
 		return
 	}
 	
 	object, err := p.stack.Pop()
 	if err != nil {
-		p.error = parseError(p.file, ctx.GetStart(), err.Error())
+		p.error = parseError(p.file, ctx, err.Error())
 		return
 	}
 	objectReflectElem := object.reflectElem()
@@ -944,25 +947,25 @@ func (p *exprParser) ExitIndex(ctx *expr.IndexContext) {
 	if objectReflectElem.Kind() == reflect.Map {
 		ev, err = object.visitMapIndex(index.reflectElem())
 		if err != nil {
-			p.error = parseError(p.file, ctx.GetStart(), err.Error())
+			p.error = parseError(p.file, ctx, err.Error())
 			return
 		}
 	} else if objectReflectElem.Kind() == reflect.Slice || objectReflectElem.Kind() == reflect.Array {
 		var i int
 		i, err = index.int()
 		if err != nil {
-			p.error = parseError(p.file, ctx.GetStart(), fmt.Sprintf("array index error: %s", err))
+			p.error = parseError(p.file, ctx, fmt.Sprintf("array index error: %s", err))
 			return
 		}
 		
 		ev, err = object.visitArrayIndex(i)
 		if err != nil {
-			p.error = parseError(p.file, ctx.GetStart(), fmt.Sprintf("array index error: %s", err))
+			p.error = parseError(p.file, ctx, fmt.Sprintf("array index error: %s", err))
 			return
 		}
 		
 	} else {
-		p.error = parseError(p.file, ctx.GetStart(), "unsupported index object")
+		p.error = parseError(p.file, ctx, "unsupported index object")
 		return
 	}
 	p.stack.Push(ev)
@@ -978,23 +981,23 @@ func (p *exprParser) ExitSlice_(ctx *expr.Slice_Context) {
 	for i := l - 1; i >= 0; i-- {
 		arg, err := p.stack.Pop()
 		if err != nil {
-			p.error = parseError(p.file, ctx.GetStart(), err.Error())
+			p.error = parseError(p.file, ctx, err.Error())
 			return
 		}
 		args[i], err = arg.int()
 		if err != nil {
-			p.error = parseError(p.file, ctx.GetStart(), err.Error())
+			p.error = parseError(p.file, ctx, err.Error())
 			return
 		}
 	}
 	target, err := p.stack.Pop()
 	if err != nil {
-		p.error = parseError(p.file, ctx.GetStart(), err.Error())
+		p.error = parseError(p.file, ctx, err.Error())
 		return
 	}
 	r, err := target.visitSlice(ctx.GetText(), args...)
 	if err != nil {
-		p.error = parseError(p.file, ctx.GetStart(), err.Error())
+		p.error = parseError(p.file, ctx, err.Error())
 		return
 	}
 	p.stack.Push(r)
@@ -1010,19 +1013,19 @@ func (p *exprParser) ExitCall(ctx *expr.CallContext) {
 	for i := l - 1; i >= 0; i-- {
 		arg, err := p.stack.Pop()
 		if err != nil {
-			p.error = parseError(p.file, ctx.GetStart(), err.Error())
+			p.error = parseError(p.file, ctx, err.Error())
 			return
 		}
 		args[i] = arg.reflectElem()
 	}
 	f, err := p.stack.Pop()
 	if err != nil {
-		p.error = parseError(p.file, ctx.GetStart(), err.Error())
+		p.error = parseError(p.file, ctx, err.Error())
 		return
 	}
 	r, err := f.call(ctx.ELLIPSIS() != nil, args)
 	if err != nil {
-		p.error = parseError(p.file, ctx.GetStart(), err.Error())
+		p.error = parseError(p.file, ctx, err.Error())
 		return
 	}
 	p.stack.Push(r)
@@ -1036,7 +1039,7 @@ func (p *exprParser) ExitInteger(ctx *expr.IntegerContext) {
 	}
 	v, err := cast.ToIntE(ctx.GetText())
 	if err != nil {
-		p.error = parseError(p.file, ctx.GetStart(), err.Error())
+		p.error = parseError(p.file, ctx, err.Error())
 		return
 	}
 	p.stack.Push(&exprValue{
@@ -1063,7 +1066,7 @@ func (p *exprParser) ExitFloat_(ctx *expr.Float_Context) {
 	}
 	v, err := cast.ToDecimalE(ctx.GetText())
 	if err != nil {
-		p.error = parseError(p.file, ctx.GetStart(), err.Error())
+		p.error = parseError(p.file, ctx, err.Error())
 		return
 	}
 	p.stack.Push(&exprValue{
@@ -1116,7 +1119,7 @@ func (p *exprParser) popBinaryOperands() (left, right *exprValue, err error) {
 	return
 }
 
-func (p *exprParser) numericStringCalc(left, right *exprValue, op antlr.Token) error {
+func (p *exprParser) numericStringCalc(left, right *exprValue, ctx antlr.ParserRuleContext, op antlr.Token) error {
 	
 	var err error
 	var result interface{}
@@ -1142,16 +1145,16 @@ func (p *exprParser) numericStringCalc(left, right *exprValue, op antlr.Token) e
 	case expr.ExprParserBIT_CLEAR:
 		result, err = cast.BitClearAnyE(left.value, right.value)
 	default:
-		return p.unsupportedOpError(op)
+		return p.unsupportedOpError(ctx)
 	}
 	if err != nil {
-		return parseError(p.file, op, err.Error())
+		return parseError(p.file, ctx, err.Error())
 	}
 	p.stack.Push(&exprValue{value: result})
 	return nil
 }
 
-func (p *exprParser) relationCalc(left, right *exprValue, op antlr.Token) error {
+func (p *exprParser) relationCalc(left, right *exprValue, ctx antlr.ParserRuleContext, op antlr.Token) error {
 	
 	var err error
 	var result bool
@@ -1169,17 +1172,17 @@ func (p *exprParser) relationCalc(left, right *exprValue, op antlr.Token) error 
 	case expr.ExprParserGREATER_OR_EQUALS:
 		result, err = cast.GreaterOrEqualAnyE(left.value, right.value)
 	default:
-		return p.unsupportedOpError(op)
+		return p.unsupportedOpError(ctx)
 	}
 	if err != nil {
-		return parseError(p.file, op, err.Error())
+		return parseError(p.file, ctx, err.Error())
 	}
 	p.stack.Push(&exprValue{value: result})
 	
 	return nil
 }
 
-func (p *exprParser) unaryCalc(left *exprValue, op antlr.Token) error {
+func (p *exprParser) unaryCalc(left *exprValue, ctx antlr.ParserRuleContext, op antlr.Token) error {
 	var err error
 	var result interface{}
 	switch op.GetTokenType() {
@@ -1192,16 +1195,16 @@ func (p *exprParser) unaryCalc(left *exprValue, op antlr.Token) error {
 	case expr.ExprParserEXCLAMATION:
 		result, err = cast.UnaryNotAnyE(left.value)
 	default:
-		return p.unsupportedOpError(op)
+		return p.unsupportedOpError(ctx)
 	}
 	if err != nil {
-		return parseError(p.file, op, err.Error())
+		return parseError(p.file, ctx, err.Error())
 	}
 	p.stack.Push(&exprValue{value: result})
 	return nil
 }
 
-func (p *exprParser) logicCalc(left, right *exprValue, op antlr.Token) error {
+func (p *exprParser) logicCalc(left, right *exprValue, ctx antlr.ParserRuleContext, op antlr.Token) error {
 	var err error
 	var result interface{}
 	switch op.GetTokenType() {
@@ -1211,19 +1214,15 @@ func (p *exprParser) logicCalc(left, right *exprValue, op antlr.Token) error {
 		result, err = cast.LogicOrAnyE(left.value, right.value)
 	}
 	if err != nil {
-		return parseError(p.file, op, err.Error())
+		return parseError(p.file, ctx, err.Error())
 	}
 	p.stack.Push(&exprValue{value: result})
 	
 	return nil
 }
 
-func (p *exprParser) divisionByZero(op antlr.Token) error {
-	return parseError(p.file, op, fmt.Sprintf("division by zero"))
-}
-
-func (p *exprParser) unsupportedOpError(op antlr.Token) error {
-	return parseError(p.file, op, fmt.Sprintf("unsupported op '%s'", op.GetText()))
+func (p *exprParser) unsupportedOpError(ctx antlr.ParserRuleContext) error {
+	return parseError(p.file, ctx, fmt.Sprintf("unsupported operation"))
 }
 
 func (p *exprParser) parseParam(params string) (err error) {
