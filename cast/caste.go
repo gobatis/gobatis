@@ -16,7 +16,6 @@ import (
 	"math/big"
 	"reflect"
 	"strconv"
-	"strings"
 	"time"
 )
 
@@ -140,17 +139,17 @@ func ToInt32E(i interface{}) (int32, error) {
 	
 	switch s := i.(type) {
 	case int:
-		a := int32(s)
-		if int(a) != s {
+		r := int32(s)
+		if int(r) != s {
 			return 0, castOverFlowError("int", "int32")
 		}
-		return a, nil
+		return r, nil
 	case int64:
-		a := int32(s)
-		if int64(a) != s {
+		r := int32(s)
+		if int64(r) != s {
 			return 0, castOverFlowError("int64", "int32")
 		}
-		return a, nil
+		return r, nil
 	case int32:
 		return s, nil
 	case int16:
@@ -158,23 +157,23 @@ func ToInt32E(i interface{}) (int32, error) {
 	case int8:
 		return int32(s), nil
 	case uint:
-		a := int32(s)
-		if uint(a) != s {
+		r := int32(s)
+		if uint(r) != s {
 			return 0, castOverFlowError("uint", "int32")
 		}
-		return a, nil
+		return r, nil
 	case uint64:
-		a := int32(s)
-		if uint64(a) != s {
+		r := int32(s)
+		if uint64(r) != s {
 			return 0, castOverFlowError("uint64", "int32")
 		}
-		return a, nil
+		return r, nil
 	case uint32:
-		a := int32(s)
-		if uint32(a) != s {
+		r := int32(s)
+		if uint32(r) != s {
 			return 0, castOverFlowError("uint32", "int32")
 		}
-		return a, nil
+		return r, nil
 	case uint16:
 		return int32(s), nil
 	case uint8:
@@ -212,32 +211,69 @@ func ToInt32E(i interface{}) (int32, error) {
 // ToInt16E casts an interface to an int16 type.
 func ToInt16E(i interface{}) (int16, error) {
 	i = indirect(i)
-	
 	switch s := i.(type) {
 	case int:
-		return int16(s), nil
+		r := int16(s)
+		if int(r) != s {
+			return 0, castOverFlowError("int", "int16")
+		}
+		return r, nil
 	case int64:
-		return int16(s), nil
+		r := int16(s)
+		if int64(r) != s {
+			return 0, castOverFlowError("int64", "int16")
+		}
+		return r, nil
 	case int32:
-		return int16(s), nil
+		r := int16(s)
+		if int32(r) != s {
+			return 0, castOverFlowError("int32", "int16")
+		}
+		return r, nil
 	case int16:
 		return s, nil
 	case int8:
 		return int16(s), nil
 	case uint:
+		r := int16(s)
+		if uint(r) != s {
+			return 0, castOverFlowError("uint", "int16")
+		}
 		return int16(s), nil
 	case uint64:
-		return int16(s), nil
+		r := int16(s)
+		if uint64(r) != s {
+			return 0, castOverFlowError("uint64", "int16")
+		}
+		return r, nil
 	case uint32:
-		return int16(s), nil
+		r := int16(s)
+		if uint32(r) != s {
+			return 0, castOverFlowError("uint32", "int16")
+		}
+		return r, nil
 	case uint16:
-		return int16(s), nil
+		r := int16(s)
+		if uint16(r) != s {
+			return 0, castOverFlowError("uint64", "int16")
+		}
+		return r, nil
 	case uint8:
 		return int16(s), nil
 	case float64:
-		return int16(s), nil
+		u := int64(s)
+		r := int16(s)
+		if int64(r) != u {
+			return 0, castOverFlowError("float64", "int16")
+		}
+		return r, nil
 	case float32:
-		return int16(s), nil
+		u := int32(s)
+		r := int16(s)
+		if int32(r) != u {
+			return 0, castOverFlowError("float32", "int16")
+		}
+		return r, nil
 	case string:
 		v, err := strconv.ParseInt(s, 0, 0)
 		if err != nil {
@@ -270,29 +306,75 @@ func ToInt8E(i interface{}) (int8, error) {
 	
 	switch s := i.(type) {
 	case int:
-		return int8(s), nil
+		r := int8(s)
+		if int(r) != s {
+			return 0, castOverFlowError("int", "int8")
+		}
+		return r, nil
 	case int64:
-		return int8(s), nil
+		r := int8(s)
+		if int64(r) != s {
+			return 0, castOverFlowError("int64", "int8")
+		}
+		return r, nil
 	case int32:
-		return int8(s), nil
+		r := int8(s)
+		if int32(r) != s {
+			return 0, castOverFlowError("int32", "int8")
+		}
+		return r, nil
 	case int16:
-		return int8(s), nil
+		r := int8(s)
+		if int16(r) != s {
+			return 0, castOverFlowError("int16", "int8")
+		}
+		return r, nil
 	case int8:
 		return s, nil
 	case uint:
-		return int8(s), nil
+		r := int8(s)
+		if uint(r) != s {
+			return 0, castOverFlowError("uint", "int8")
+		}
+		return r, nil
 	case uint64:
-		return int8(s), nil
+		r := int8(s)
+		if uint64(r) != s {
+			return 0, castOverFlowError("uint64", "int8")
+		}
+		return r, nil
 	case uint32:
-		return int8(s), nil
+		r := int8(s)
+		if uint32(r) != s {
+			return 0, castOverFlowError("uint32", "int8")
+		}
+		return r, nil
 	case uint16:
-		return int8(s), nil
+		r := int8(s)
+		if uint16(r) != s {
+			return 0, castOverFlowError("uint16", "int8")
+		}
+		return r, nil
 	case uint8:
-		return int8(s), nil
+		r := int8(s)
+		if uint8(r) != s {
+			return 0, castOverFlowError("uint8", "int8")
+		}
+		return r, nil
 	case float64:
-		return int8(s), nil
+		u := int64(s)
+		r := int8(s)
+		if int64(r) != u {
+			return 0, castOverFlowError("float64", "int8")
+		}
+		return r, nil
 	case float32:
-		return int8(s), nil
+		u := int32(s)
+		r := int8(s)
+		if int32(r) != u {
+			return 0, castOverFlowError("float32", "int8")
+		}
+		return r, nil
 	case string:
 		v, err := strconv.ParseInt(s, 0, 0)
 		if err != nil {
@@ -327,27 +409,57 @@ func ToIntE(i interface{}) (int, error) {
 	case int:
 		return s, nil
 	case int64:
-		return int(s), nil
+		r := int(s)
+		if int64(r) != s {
+			return 0, castOverFlowError("int64", "int")
+		}
+		return r, nil
 	case int32:
-		return int(s), nil
+		r := int(s)
+		if int32(r) != s {
+			return 0, castOverFlowError("int64", "int")
+		}
+		return r, nil
 	case int16:
 		return int(s), nil
 	case int8:
 		return int(s), nil
 	case uint:
-		return int(s), nil
+		r := int(s)
+		if uint(r) != s {
+			return 0, castOverFlowError("uint", "int")
+		}
+		return r, nil
 	case uint64:
-		return int(s), nil
+		r := int(s)
+		if uint64(r) != s {
+			return 0, castOverFlowError("uint64", "int")
+		}
+		return r, nil
 	case uint32:
-		return int(s), nil
+		r := int(s)
+		if uint32(r) != s {
+			return 0, castOverFlowError("uint32", "int")
+		}
+		return r, nil
 	case uint16:
 		return int(s), nil
 	case uint8:
 		return int(s), nil
 	case float64:
-		return int(s), nil
+		u := int64(s)
+		r := int(s)
+		if int64(r) != u {
+			return 0, castOverFlowError("float64", "int")
+		}
+		return r, nil
 	case float32:
-		return int(s), nil
+		u := int32(s)
+		r := int(s)
+		if int32(r) != u {
+			return 0, castOverFlowError("float32", "int8")
+		}
+		return r, nil
 	case string:
 		v, err := strconv.ParseInt(s, 0, 0)
 		if err != nil {
@@ -403,7 +515,11 @@ func ToUintE(i interface{}) (uint, error) {
 		if s < 0 {
 			return 0, errNegativeNotAllowed
 		}
-		return uint(s), nil
+		r := uint(s)
+		if int64(r) != s {
+			return 0, castOverFlowError("int64", "uint")
+		}
+		return r, nil
 	case int32:
 		if s < 0 {
 			return 0, errNegativeNotAllowed
@@ -422,7 +538,11 @@ func ToUintE(i interface{}) (uint, error) {
 	case uint:
 		return s, nil
 	case uint64:
-		return uint(s), nil
+		r := uint(s)
+		if uint64(r) != s {
+			return 0, castOverFlowError("uint64", "uint")
+		}
+		return r, nil
 	case uint32:
 		return uint(s), nil
 	case uint16:
@@ -433,7 +553,12 @@ func ToUintE(i interface{}) (uint, error) {
 		if s < 0 {
 			return 0, errNegativeNotAllowed
 		}
-		return uint(s), nil
+		u := int64(s)
+		r := uint(s)
+		if int64(r) != u {
+			return 0, castOverFlowError("float64", "uint")
+		}
+		return r, nil
 	case float32:
 		if s < 0 {
 			return 0, errNegativeNotAllowed
@@ -551,12 +676,20 @@ func ToUint32E(i interface{}) (uint32, error) {
 		if s < 0 {
 			return 0, errNegativeNotAllowed
 		}
-		return uint32(s), nil
+		r := uint32(s)
+		if int(r) != s {
+			return 0, castOverFlowError("int", "uint32")
+		}
+		return r, nil
 	case int64:
 		if s < 0 {
 			return 0, errNegativeNotAllowed
 		}
-		return uint32(s), nil
+		r := uint32(s)
+		if int64(r) != s {
+			return 0, castOverFlowError("int64", "uint32")
+		}
+		return r, nil
 	case int32:
 		if s < 0 {
 			return 0, errNegativeNotAllowed
@@ -573,9 +706,17 @@ func ToUint32E(i interface{}) (uint32, error) {
 		}
 		return uint32(s), nil
 	case uint:
-		return uint32(s), nil
+		r := uint32(s)
+		if uint(r) != s {
+			return 0, castOverFlowError("uint", "uint32")
+		}
+		return r, nil
 	case uint64:
-		return uint32(s), nil
+		r := uint32(s)
+		if uint64(r) != s {
+			return 0, castOverFlowError("uint", "uint32")
+		}
+		return r, nil
 	case uint32:
 		return s, nil
 	case uint16:
@@ -586,7 +727,12 @@ func ToUint32E(i interface{}) (uint32, error) {
 		if s < 0 {
 			return 0, errNegativeNotAllowed
 		}
-		return uint32(s), nil
+		u := int64(s)
+		r := uint32(s)
+		if int64(r) != u {
+			return 0, castOverFlowError("float64", "uint32")
+		}
+		return r, nil
 	case float32:
 		if s < 0 {
 			return 0, errNegativeNotAllowed
@@ -628,17 +774,29 @@ func ToUint16E(i interface{}) (uint16, error) {
 		if s < 0 {
 			return 0, errNegativeNotAllowed
 		}
-		return uint16(s), nil
+		r := uint16(s)
+		if int(r) != s {
+			return 0, castOverFlowError("int", "uint16")
+		}
+		return r, nil
 	case int64:
 		if s < 0 {
 			return 0, errNegativeNotAllowed
 		}
-		return uint16(s), nil
+		r := uint16(s)
+		if int64(r) != s {
+			return 0, castOverFlowError("int64", "uint16")
+		}
+		return r, nil
 	case int32:
 		if s < 0 {
 			return 0, errNegativeNotAllowed
 		}
-		return uint16(s), nil
+		r := uint16(s)
+		if int32(r) != s {
+			return 0, castOverFlowError("int32", "uint16")
+		}
+		return r, nil
 	case int16:
 		if s < 0 {
 			return 0, errNegativeNotAllowed
@@ -650,11 +808,23 @@ func ToUint16E(i interface{}) (uint16, error) {
 		}
 		return uint16(s), nil
 	case uint:
-		return uint16(s), nil
+		r := uint16(s)
+		if uint(r) != s {
+			return 0, castOverFlowError("uint", "uint16")
+		}
+		return r, nil
 	case uint64:
-		return uint16(s), nil
+		r := uint16(s)
+		if uint64(r) != s {
+			return 0, castOverFlowError("uint64", "uint16")
+		}
+		return r, nil
 	case uint32:
-		return uint16(s), nil
+		r := uint16(s)
+		if uint32(r) != s {
+			return 0, castOverFlowError("uint32", "uint16")
+		}
+		return r, nil
 	case uint16:
 		return s, nil
 	case uint8:
@@ -663,12 +833,22 @@ func ToUint16E(i interface{}) (uint16, error) {
 		if s < 0 {
 			return 0, errNegativeNotAllowed
 		}
-		return uint16(s), nil
+		u := int64(s)
+		r := uint16(s)
+		if int64(r) != u {
+			return 0, castOverFlowError("float64", "uint16")
+		}
+		return r, nil
 	case float32:
 		if s < 0 {
 			return 0, errNegativeNotAllowed
 		}
-		return uint16(s), nil
+		u := int32(s)
+		r := uint16(s)
+		if int32(r) != u {
+			return 0, castOverFlowError("float32", "uint16")
+		}
+		return r, nil
 	case bool:
 		if s {
 			return 1, nil
@@ -705,47 +885,89 @@ func ToUint8E(i interface{}) (uint8, error) {
 		if s < 0 {
 			return 0, errNegativeNotAllowed
 		}
-		return uint8(s), nil
+		r := uint8(s)
+		if int(r) != s {
+			return 0, castOverFlowError("int", "uint8")
+		}
+		return r, nil
 	case int64:
 		if s < 0 {
 			return 0, errNegativeNotAllowed
 		}
-		return uint8(s), nil
+		r := uint8(s)
+		if int64(r) != s {
+			return 0, castOverFlowError("int64", "uint8")
+		}
+		return r, nil
 	case int32:
 		if s < 0 {
 			return 0, errNegativeNotAllowed
 		}
-		return uint8(s), nil
+		r := uint8(s)
+		if int32(r) != s {
+			return 0, castOverFlowError("int32", "uint8")
+		}
+		return r, nil
 	case int16:
 		if s < 0 {
 			return 0, errNegativeNotAllowed
 		}
-		return uint8(s), nil
+		r := uint8(s)
+		if int16(r) != s {
+			return 0, castOverFlowError("int16", "uint8")
+		}
+		return r, nil
 	case int8:
 		if s < 0 {
 			return 0, errNegativeNotAllowed
 		}
 		return uint8(s), nil
 	case uint:
-		return uint8(s), nil
+		r := uint8(s)
+		if uint(r) != s {
+			return 0, castOverFlowError("uint", "uint8")
+		}
+		return r, nil
 	case uint64:
-		return uint8(s), nil
+		r := uint8(s)
+		if uint64(r) != s {
+			return 0, castOverFlowError("uint64", "uint8")
+		}
+		return r, nil
 	case uint32:
-		return uint8(s), nil
+		r := uint8(s)
+		if uint32(r) != s {
+			return 0, castOverFlowError("uint32", "uint8")
+		}
+		return r, nil
 	case uint16:
-		return uint8(s), nil
+		r := uint8(s)
+		if uint16(r) != s {
+			return 0, castOverFlowError("uint16", "uint8")
+		}
+		return r, nil
 	case uint8:
 		return s, nil
 	case float64:
 		if s < 0 {
 			return 0, errNegativeNotAllowed
 		}
-		return uint8(s), nil
+		u := int64(s)
+		r := uint8(s)
+		if int64(r) != u {
+			return 0, castOverFlowError("float64", "uint8")
+		}
+		return r, nil
 	case float32:
 		if s < 0 {
 			return 0, errNegativeNotAllowed
 		}
-		return uint8(s), nil
+		u := int32(s)
+		r := uint8(s)
+		if int32(r) != u {
+			return 0, castOverFlowError("float32", "uint8")
+		}
+		return r, nil
 	case bool:
 		if s {
 			return 1, nil
@@ -850,361 +1072,6 @@ func ToStringE(i interface{}) (string, error) {
 		return s.Error(), nil
 	default:
 		return "", fmt.Errorf("unable to cast %#v of type %T to string", i, i)
-	}
-}
-
-// ToStringMapStringE casts an interface to a map[string]string type.
-func ToStringMapStringE(i interface{}) (map[string]string, error) {
-	var m = map[string]string{}
-	
-	switch v := i.(type) {
-	case map[string]string:
-		return v, nil
-	case map[string]interface{}:
-		for k, val := range v {
-			m[ToString(k)] = ToString(val)
-		}
-		return m, nil
-	case map[interface{}]string:
-		for k, val := range v {
-			m[ToString(k)] = ToString(val)
-		}
-		return m, nil
-	case map[interface{}]interface{}:
-		for k, val := range v {
-			m[ToString(k)] = ToString(val)
-		}
-		return m, nil
-	case string:
-		err := jsonStringToObject(v, &m)
-		return m, err
-	default:
-		return m, fmt.Errorf("unable to cast %#v of type %T to map[string]string", i, i)
-	}
-}
-
-// ToStringMapStringSliceE casts an interface to a map[string][]string type.
-func ToStringMapStringSliceE(i interface{}) (map[string][]string, error) {
-	var m = map[string][]string{}
-	
-	switch v := i.(type) {
-	case map[string][]string:
-		return v, nil
-	case map[string][]interface{}:
-		for k, val := range v {
-			m[ToString(k)] = ToStringSlice(val)
-		}
-		return m, nil
-	case map[string]string:
-		for k, val := range v {
-			m[ToString(k)] = []string{val}
-		}
-	case map[string]interface{}:
-		for k, val := range v {
-			switch vt := val.(type) {
-			case []interface{}:
-				m[ToString(k)] = ToStringSlice(vt)
-			case []string:
-				m[ToString(k)] = vt
-			default:
-				m[ToString(k)] = []string{ToString(val)}
-			}
-		}
-		return m, nil
-	case map[interface{}][]string:
-		for k, val := range v {
-			m[ToString(k)] = ToStringSlice(val)
-		}
-		return m, nil
-	case map[interface{}]string:
-		for k, val := range v {
-			m[ToString(k)] = ToStringSlice(val)
-		}
-		return m, nil
-	case map[interface{}][]interface{}:
-		for k, val := range v {
-			m[ToString(k)] = ToStringSlice(val)
-		}
-		return m, nil
-	case map[interface{}]interface{}:
-		for k, val := range v {
-			key, err := ToStringE(k)
-			if err != nil {
-				return m, fmt.Errorf("unable to cast %#v of type %T to map[string][]string", i, i)
-			}
-			value, err := ToStringSliceE(val)
-			if err != nil {
-				return m, fmt.Errorf("unable to cast %#v of type %T to map[string][]string", i, i)
-			}
-			m[key] = value
-		}
-	case string:
-		err := jsonStringToObject(v, &m)
-		return m, err
-	default:
-		return m, fmt.Errorf("unable to cast %#v of type %T to map[string][]string", i, i)
-	}
-	return m, nil
-}
-
-// ToStringMapBoolE casts an interface to a map[string]bool type.
-func ToStringMapBoolE(i interface{}) (map[string]bool, error) {
-	var m = map[string]bool{}
-	
-	switch v := i.(type) {
-	case map[interface{}]interface{}:
-		for k, val := range v {
-			m[ToString(k)] = ToBool(val)
-		}
-		return m, nil
-	case map[string]interface{}:
-		for k, val := range v {
-			m[ToString(k)] = ToBool(val)
-		}
-		return m, nil
-	case map[string]bool:
-		return v, nil
-	case string:
-		err := jsonStringToObject(v, &m)
-		return m, err
-	default:
-		return m, fmt.Errorf("unable to cast %#v of type %T to map[string]bool", i, i)
-	}
-}
-
-// ToStringMapE casts an interface to a map[string]interface{} type.
-func ToStringMapE(i interface{}) (map[string]interface{}, error) {
-	var m = map[string]interface{}{}
-	
-	switch v := i.(type) {
-	case map[interface{}]interface{}:
-		for k, val := range v {
-			m[ToString(k)] = val
-		}
-		return m, nil
-	case map[string]interface{}:
-		return v, nil
-	case string:
-		err := jsonStringToObject(v, &m)
-		return m, err
-	default:
-		return m, fmt.Errorf("unable to cast %#v of type %T to map[string]interface{}", i, i)
-	}
-}
-
-// ToStringMapIntE casts an interface to a map[string]int{} type.
-func ToStringMapIntE(i interface{}) (map[string]int, error) {
-	var m = map[string]int{}
-	if i == nil {
-		return m, fmt.Errorf("unable to cast %#v of type %T to map[string]int", i, i)
-	}
-	
-	switch v := i.(type) {
-	case map[interface{}]interface{}:
-		for k, val := range v {
-			m[ToString(k)] = ToInt(val)
-		}
-		return m, nil
-	case map[string]interface{}:
-		for k, val := range v {
-			m[k] = ToInt(val)
-		}
-		return m, nil
-	case map[string]int:
-		return v, nil
-	case string:
-		err := jsonStringToObject(v, &m)
-		return m, err
-	}
-	
-	if reflect.TypeOf(i).Kind() != reflect.Map {
-		return m, fmt.Errorf("unable to cast %#v of type %T to map[string]int", i, i)
-	}
-	
-	mVal := reflect.ValueOf(m)
-	v := reflect.ValueOf(i)
-	for _, keyVal := range v.MapKeys() {
-		val, err := ToIntE(v.MapIndex(keyVal).Interface())
-		if err != nil {
-			return m, fmt.Errorf("unable to cast %#v of type %T to map[string]int", i, i)
-		}
-		mVal.SetMapIndex(keyVal, reflect.ValueOf(val))
-	}
-	return m, nil
-}
-
-// ToStringMapInt64E casts an interface to a map[string]int64{} type.
-func ToStringMapInt64E(i interface{}) (map[string]int64, error) {
-	var m = map[string]int64{}
-	if i == nil {
-		return m, fmt.Errorf("unable to cast %#v of type %T to map[string]int64", i, i)
-	}
-	
-	switch v := i.(type) {
-	case map[interface{}]interface{}:
-		for k, val := range v {
-			m[ToString(k)] = ToInt64(val)
-		}
-		return m, nil
-	case map[string]interface{}:
-		for k, val := range v {
-			m[k] = ToInt64(val)
-		}
-		return m, nil
-	case map[string]int64:
-		return v, nil
-	case string:
-		err := jsonStringToObject(v, &m)
-		return m, err
-	}
-	
-	if reflect.TypeOf(i).Kind() != reflect.Map {
-		return m, fmt.Errorf("unable to cast %#v of type %T to map[string]int64", i, i)
-	}
-	mVal := reflect.ValueOf(m)
-	v := reflect.ValueOf(i)
-	for _, keyVal := range v.MapKeys() {
-		val, err := ToInt64E(v.MapIndex(keyVal).Interface())
-		if err != nil {
-			return m, fmt.Errorf("unable to cast %#v of type %T to map[string]int64", i, i)
-		}
-		mVal.SetMapIndex(keyVal, reflect.ValueOf(val))
-	}
-	return m, nil
-}
-
-// ToSliceE casts an interface to a []interface{} type.
-func ToSliceE(i interface{}) ([]interface{}, error) {
-	var s []interface{}
-	
-	switch v := i.(type) {
-	case []interface{}:
-		return append(s, v...), nil
-	case []map[string]interface{}:
-		for _, u := range v {
-			s = append(s, u)
-		}
-		return s, nil
-	default:
-		return s, fmt.Errorf("unable to cast %#v of type %T to []interface{}", i, i)
-	}
-}
-
-// ToBoolSliceE casts an interface to a []bool type.
-func ToBoolSliceE(i interface{}) ([]bool, error) {
-	if i == nil {
-		return []bool{}, fmt.Errorf("unable to cast %#v of type %T to []bool", i, i)
-	}
-	
-	switch v := i.(type) {
-	case []bool:
-		return v, nil
-	}
-	
-	kind := reflect.TypeOf(i).Kind()
-	switch kind {
-	case reflect.Slice, reflect.Array:
-		s := reflect.ValueOf(i)
-		a := make([]bool, s.Len())
-		for j := 0; j < s.Len(); j++ {
-			val, err := ToBoolE(s.Index(j).Interface())
-			if err != nil {
-				return []bool{}, fmt.Errorf("unable to cast %#v of type %T to []bool", i, i)
-			}
-			a[j] = val
-		}
-		return a, nil
-	default:
-		return []bool{}, fmt.Errorf("unable to cast %#v of type %T to []bool", i, i)
-	}
-}
-
-// ToStringSliceE casts an interface to a []string type.
-func ToStringSliceE(i interface{}) ([]string, error) {
-	var a []string
-	
-	switch v := i.(type) {
-	case []interface{}:
-		for _, u := range v {
-			a = append(a, ToString(u))
-		}
-		return a, nil
-	case []string:
-		return v, nil
-	case []int8:
-		for _, u := range v {
-			a = append(a, ToString(u))
-		}
-		return a, nil
-	case []int:
-		for _, u := range v {
-			a = append(a, ToString(u))
-		}
-		return a, nil
-	case []int32:
-		for _, u := range v {
-			a = append(a, ToString(u))
-		}
-		return a, nil
-	case []int64:
-		for _, u := range v {
-			a = append(a, ToString(u))
-		}
-		return a, nil
-	case []float32:
-		for _, u := range v {
-			a = append(a, ToString(u))
-		}
-		return a, nil
-	case []float64:
-		for _, u := range v {
-			a = append(a, ToString(u))
-		}
-		return a, nil
-	case string:
-		return strings.Fields(v), nil
-	case []error:
-		for _, err := range i.([]error) {
-			a = append(a, err.Error())
-		}
-		return a, nil
-	case interface{}:
-		str, err := ToStringE(v)
-		if err != nil {
-			return a, fmt.Errorf("unable to cast %#v of type %T to []string", i, i)
-		}
-		return []string{str}, nil
-	default:
-		return a, fmt.Errorf("unable to cast %#v of type %T to []string", i, i)
-	}
-}
-
-// ToIntSliceE casts an interface to a []int type.
-func ToIntSliceE(i interface{}) ([]int, error) {
-	if i == nil {
-		return []int{}, fmt.Errorf("unable to cast %#v of type %T to []int", i, i)
-	}
-	
-	switch v := i.(type) {
-	case []int:
-		return v, nil
-	}
-	
-	kind := reflect.TypeOf(i).Kind()
-	switch kind {
-	case reflect.Slice, reflect.Array:
-		s := reflect.ValueOf(i)
-		a := make([]int, s.Len())
-		for j := 0; j < s.Len(); j++ {
-			val, err := ToIntE(s.Index(j).Interface())
-			if err != nil {
-				return []int{}, fmt.Errorf("unable to cast %#v of type %T to []int", i, i)
-			}
-			a[j] = val
-		}
-		return a, nil
-	default:
-		return []int{}, fmt.Errorf("unable to cast %#v of type %T to []int", i, i)
 	}
 }
 

@@ -2,7 +2,7 @@ package compiler
 
 import (
 	"fmt"
-	"github.com/koyeo/gobatis/dtd"
+	"github.com/gobatis/gobatis/dtd"
 )
 
 func NewNode(name string) *Node {
@@ -58,7 +58,7 @@ type NodeParser struct {
 }
 
 func (p *NodeParser) ParseConfiguration(content []byte) (configuration *Node, err error) {
-
+	
 	xmlNodes, err := NewXMLParser().Parse(content)
 	if err != nil {
 		return
@@ -110,12 +110,12 @@ func (p *NodeParser) parseXMLAttribute(node *Node, xmlNode *XMLNode, elem *dtd.E
 }
 
 func (p *NodeParser) parseNode(node *Node, xmlNode *XMLNode, elem *dtd.Element) (err error) {
-
+	
 	err = p.parseXMLAttribute(node, xmlNode, elem)
 	if err != nil {
 		return
 	}
-
+	
 	// 判断是否包换必填属性
 	if elem.Attributes != nil {
 		for k, v := range elem.Attributes {
@@ -124,23 +124,23 @@ func (p *NodeParser) parseNode(node *Node, xmlNode *XMLNode, elem *dtd.Element) 
 			}
 		}
 	}
-
+	
 	// 判断是否解析 SQL Tokens
 	if elem.HasNode(dtd.PCDATA) {
 		node.Tokens = xmlNode.Tokens
 	}
-
+	
 	for _, childXmlNode := range xmlNode.Body {
-
+		
 		childNode := NewNode(childXmlNode.Name)
 		node.addNode(childNode)
-
+		
 		if childXmlNode.Type == ST_TEXT {
-
+			
 			childNode.Tokens = childXmlNode.Tokens
 			continue
 		}
-
+		
 		// 子节点不支持
 		if !elem.HasNode(childXmlNode.Name) {
 			return p.newNodeNotSupportErr(childXmlNode)
@@ -150,18 +150,18 @@ func (p *NodeParser) parseNode(node *Node, xmlNode *XMLNode, elem *dtd.Element) 
 			node.countNode(childXmlNode.Name) > 0 {
 			return p.newNodeDuplicateErr(childXmlNode)
 		}
-
+		
 		childElem, err := dtd.MapperElement(childXmlNode.Name)
 		if err != nil {
 			return err
 		}
-
+		
 		err = p.parseNode(childNode, childXmlNode, childElem)
 		if err != nil {
 			return err
 		}
 	}
-
+	
 	// 判断是否包含必填节点
 	if elem.Nodes != nil {
 		for k, v := range elem.Nodes {
@@ -170,7 +170,7 @@ func (p *NodeParser) parseNode(node *Node, xmlNode *XMLNode, elem *dtd.Element) 
 			}
 		}
 	}
-
+	
 	return nil
 }
 

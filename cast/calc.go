@@ -3,7 +3,6 @@ package cast
 import (
 	"fmt"
 	"github.com/shopspring/decimal"
-	"math"
 	"math/big"
 )
 
@@ -99,93 +98,103 @@ func DivFloat32(a, b float32) (r decimal.Decimal) {
 	return decimal.NewFromFloat32(a).Div(decimal.NewFromFloat32(b))
 }
 
-func AddInt64(a, b int64) (r int64, err error) {
+func AddInt64E(a, b int64) (r int64, err error) {
 	r = a + b
-	if (a >= math.MaxInt32 && b >= math.MaxInt32) ||
-		(a <= math.MinInt32 && b <= math.MinInt32) {
-		br := BigAddInt64(a, b)
-		if big.NewInt(r).Cmp(br) != 0 {
-			err = resultOverFlowError("int64")
-		}
+	br := BigAddInt64(a, b)
+	if big.NewInt(r).Cmp(br) != 0 {
+		err = resultOverFlowError("int64")
+		return
 	}
 	return
 }
 
-func SubInt64(a, b int64) (r int64, err error) {
+func SubInt64E(a, b int64) (r int64, err error) {
 	r = a - b
-	if a >= math.MaxUint32 && b >= math.MaxUint64 {
-		br := BigSubInt64(a, b)
-		if big.NewInt(r).Cmp(br) != 0 {
-			err = resultOverFlowError("int64")
-		}
+	br := BigSubInt64(a, b)
+	if big.NewInt(r).Cmp(br) != 0 {
+		err = resultOverFlowError("int64")
+		return
 	}
 	return
 }
 
-func MulInt64(a, b int64) (r int64, err error) {
+func MulInt64E(a, b int64) (r int64, err error) {
 	r = a * b
 	br := BigMulInt64(a, b)
 	if big.NewInt(r).Cmp(br) != 0 {
 		err = resultOverFlowError("int64")
+		return
 	}
 	return
 }
 
-func DivInt64(a, b int64) (r int64, err error) {
-	r = a / b
-	br := BigDivInt64(a, b)
-	if big.NewInt(r).Cmp(br) != 0 {
-		err = resultOverFlowError("int64")
+func DivInt64E(a, b int64) (r int64, err error) {
+	if b == 0 {
+		err = fmt.Errorf("divide 0")
+		return
 	}
-	return
+	//br := BigDivInt64(a, b)
+	//if big.NewInt(r).Cmp(br) != 0 {
+	//	err = resultOverFlowError("int64")
+	//	return
+	//}
+	return a / b, nil
 }
 
-func AddUint64(a, b uint64) (r uint64, err error) {
+func AddUint64E(a, b uint64) (r uint64, err error) {
 	r = a + b
 	br := BigAddUint64(a, b)
 	rr := &big.Int{}
 	rr.SetUint64(r)
 	if rr.Cmp(br) != 0 {
 		err = resultOverFlowError("uint64")
+		return
 	}
 	return
 }
 
-func SubUint64(a, b uint64) (r uint64, err error) {
-	r = a - b
-	br := BigSubUint64(a, b)
-	rr := &big.Int{}
-	rr.SetUint64(r)
-	if rr.Cmp(br) != 0 {
-		err = resultOverFlowError("uint64")
-	}
-	return
+func SubUint64E(a, b uint64) (r uint64, err error) {
+	//r = a - b
+	//br := BigSubUint64(a, b)
+	//rr := &big.Int{}
+	//rr.SetUint64(r)
+	//if rr.Cmp(br) != 0 {
+	//	err = resultOverFlowError("uint64")
+	//	return
+	//}
+	return a - b, nil
 }
 
-func MulUint64(a, b uint64) (r uint64, err error) {
+func MulUint64E(a, b uint64) (r uint64, err error) {
 	r = a * b
 	br := BigMulUint64(a, b)
 	rr := &big.Int{}
 	rr.SetUint64(r)
 	if rr.Cmp(br) != 0 {
 		err = resultOverFlowError("uint64")
+		return
 	}
 	return
 }
 
-func DivUint64(a, b uint64) (r uint64, err error) {
-	r = a + b
-	br := BigDivUint64(a, b)
-	rr := &big.Int{}
-	rr.SetUint64(r)
-	if rr.Cmp(br) != 0 {
-		err = resultOverFlowError("uint64")
+func DivUint64E(a, b uint64) (r uint64, err error) {
+	if b == 0 {
+		err = fmt.Errorf("divide 0")
+		return
 	}
-	return
+	//r = a / b
+	//br := BigDivUint64(a, b)
+	//rr := &big.Int{}
+	//rr.SetUint64(r)
+	//if rr.Cmp(br) != 0 {
+	//	err = resultOverFlowError("uint64")
+	//	return
+	//}
+	return a / b, nil
 }
 
-func AddInt(a, b int) (r int, err error) {
-	r1, err := AddInt64(int64(a), int64(b))
+func AddIntE(a, b int) (r int, err error) {
+	r1, err := AddInt64E(int64(a), int64(b))
 	if err != nil {
 		return
 	}
@@ -197,8 +206,8 @@ func AddInt(a, b int) (r int, err error) {
 	return
 }
 
-func SubInt(a, b int) (r int, err error) {
-	r1, err := SubInt64(int64(a), int64(b))
+func SubIntE(a, b int) (r int, err error) {
+	r1, err := SubInt64E(int64(a), int64(b))
 	if err != nil {
 		return
 	}
@@ -210,8 +219,8 @@ func SubInt(a, b int) (r int, err error) {
 	return
 }
 
-func MulInt(a, b int) (r int, err error) {
-	r1, err := MulInt64(int64(a), int64(b))
+func MulIntE(a, b int) (r int, err error) {
+	r1, err := MulInt64E(int64(a), int64(b))
 	if err != nil {
 		return
 	}
@@ -223,8 +232,8 @@ func MulInt(a, b int) (r int, err error) {
 	return
 }
 
-func DivInt(a, b int) (r int, err error) {
-	r1, err := DivInt64(int64(a), int64(b))
+func DivIntE(a, b int) (r int, err error) {
+	r1, err := DivInt64E(int64(a), int64(b))
 	if err != nil {
 		return
 	}
@@ -236,8 +245,8 @@ func DivInt(a, b int) (r int, err error) {
 	return
 }
 
-func AddInt8(a, b int8) (r int8, err error) {
-	r1, err := AddInt64(int64(a), int64(b))
+func AddInt8E(a, b int8) (r int8, err error) {
+	r1, err := AddInt64E(int64(a), int64(b))
 	if err != nil {
 		return
 	}
@@ -249,8 +258,8 @@ func AddInt8(a, b int8) (r int8, err error) {
 	return
 }
 
-func SubInt8(a, b int8) (r int8, err error) {
-	r1, err := SubInt64(int64(a), int64(b))
+func SubInt8E(a, b int8) (r int8, err error) {
+	r1, err := SubInt64E(int64(a), int64(b))
 	if err != nil {
 		return
 	}
@@ -262,8 +271,8 @@ func SubInt8(a, b int8) (r int8, err error) {
 	return
 }
 
-func MulInt8(a, b int8) (r int8, err error) {
-	r1, err := MulInt64(int64(a), int64(b))
+func MulInt8E(a, b int8) (r int8, err error) {
+	r1, err := MulInt64E(int64(a), int64(b))
 	if err != nil {
 		return
 	}
@@ -275,8 +284,8 @@ func MulInt8(a, b int8) (r int8, err error) {
 	return
 }
 
-func DivInt8(a, b int8) (r int8, err error) {
-	r1, err := DivInt64(int64(a), int64(b))
+func DivInt8E(a, b int8) (r int8, err error) {
+	r1, err := DivInt64E(int64(a), int64(b))
 	if err != nil {
 		return
 	}
@@ -288,8 +297,8 @@ func DivInt8(a, b int8) (r int8, err error) {
 	return
 }
 
-func AddInt16(a, b int16) (r int16, err error) {
-	r1, err := AddInt64(int64(a), int64(b))
+func AddInt16E(a, b int16) (r int16, err error) {
+	r1, err := AddInt64E(int64(a), int64(b))
 	if err != nil {
 		return
 	}
@@ -301,8 +310,8 @@ func AddInt16(a, b int16) (r int16, err error) {
 	return
 }
 
-func SubInt16(a, b int16) (r int16, err error) {
-	r1, err := SubInt64(int64(a), int64(b))
+func SubInt16E(a, b int16) (r int16, err error) {
+	r1, err := SubInt64E(int64(a), int64(b))
 	if err != nil {
 		return
 	}
@@ -314,8 +323,8 @@ func SubInt16(a, b int16) (r int16, err error) {
 	return
 }
 
-func MulInt16(a, b int16) (r int16, err error) {
-	r1, err := MulInt64(int64(a), int64(b))
+func MulInt16E(a, b int16) (r int16, err error) {
+	r1, err := MulInt64E(int64(a), int64(b))
 	if err != nil {
 		return
 	}
@@ -327,8 +336,8 @@ func MulInt16(a, b int16) (r int16, err error) {
 	return
 }
 
-func DivInt16(a, b int16) (r int16, err error) {
-	r1, err := DivInt64(int64(a), int64(b))
+func DivInt16E(a, b int16) (r int16, err error) {
+	r1, err := DivInt64E(int64(a), int64(b))
 	if err != nil {
 		return
 	}
@@ -340,8 +349,8 @@ func DivInt16(a, b int16) (r int16, err error) {
 	return
 }
 
-func AddInt32(a, b int32) (r int32, err error) {
-	r1, err := AddInt64(int64(a), int64(b))
+func AddInt32E(a, b int32) (r int32, err error) {
+	r1, err := AddInt64E(int64(a), int64(b))
 	if err != nil {
 		return
 	}
@@ -353,8 +362,8 @@ func AddInt32(a, b int32) (r int32, err error) {
 	return
 }
 
-func SubInt32(a, b int32) (r int32, err error) {
-	r1, err := SubInt64(int64(a), int64(b))
+func SubInt32E(a, b int32) (r int32, err error) {
+	r1, err := SubInt64E(int64(a), int64(b))
 	if err != nil {
 		return
 	}
@@ -366,8 +375,8 @@ func SubInt32(a, b int32) (r int32, err error) {
 	return
 }
 
-func MulInt32(a, b int32) (r int32, err error) {
-	r1, err := MulInt64(int64(a), int64(b))
+func MulInt32E(a, b int32) (r int32, err error) {
+	r1, err := MulInt64E(int64(a), int64(b))
 	if err != nil {
 		return
 	}
@@ -379,8 +388,8 @@ func MulInt32(a, b int32) (r int32, err error) {
 	return
 }
 
-func DivInt32(a, b int32) (r int32, err error) {
-	r1, err := DivInt64(int64(a), int64(b))
+func DivInt32E(a, b int32) (r int32, err error) {
+	r1, err := DivInt64E(int64(a), int64(b))
 	if err != nil {
 		return
 	}
@@ -392,8 +401,8 @@ func DivInt32(a, b int32) (r int32, err error) {
 	return
 }
 
-func AddUint(a, b uint) (r uint, err error) {
-	r1, err := AddUint64(uint64(a), uint64(b))
+func AddUintE(a, b uint) (r uint, err error) {
+	r1, err := AddUint64E(uint64(a), uint64(b))
 	if err != nil {
 		return
 	}
@@ -405,8 +414,8 @@ func AddUint(a, b uint) (r uint, err error) {
 	return
 }
 
-func SubUint(a, b uint) (r uint, err error) {
-	r1, err := SubUint64(uint64(a), uint64(b))
+func SubUintE(a, b uint) (r uint, err error) {
+	r1, err := SubUint64E(uint64(a), uint64(b))
 	if err != nil {
 		return
 	}
@@ -418,8 +427,8 @@ func SubUint(a, b uint) (r uint, err error) {
 	return
 }
 
-func MulUint(a, b uint) (r uint, err error) {
-	r1, err := MulUint64(uint64(a), uint64(b))
+func MulUintE(a, b uint) (r uint, err error) {
+	r1, err := MulUint64E(uint64(a), uint64(b))
 	if err != nil {
 		return
 	}
@@ -431,8 +440,8 @@ func MulUint(a, b uint) (r uint, err error) {
 	return
 }
 
-func DivUint(a, b uint) (r uint, err error) {
-	r1, err := DivUint64(uint64(a), uint64(b))
+func DivUintE(a, b uint) (r uint, err error) {
+	r1, err := DivUint64E(uint64(a), uint64(b))
 	if err != nil {
 		return
 	}
@@ -444,8 +453,8 @@ func DivUint(a, b uint) (r uint, err error) {
 	return
 }
 
-func AddUint8(a, b uint8) (r uint8, err error) {
-	r1, err := AddUint64(uint64(a), uint64(b))
+func AddUint8E(a, b uint8) (r uint8, err error) {
+	r1, err := AddUint64E(uint64(a), uint64(b))
 	if err != nil {
 		return
 	}
@@ -457,8 +466,8 @@ func AddUint8(a, b uint8) (r uint8, err error) {
 	return
 }
 
-func SubUint8(a, b uint8) (r uint8, err error) {
-	r1, err := SubUint64(uint64(a), uint64(b))
+func SubUint8E(a, b uint8) (r uint8, err error) {
+	r1, err := SubUint64E(uint64(a), uint64(b))
 	if err != nil {
 		return
 	}
@@ -470,8 +479,8 @@ func SubUint8(a, b uint8) (r uint8, err error) {
 	return
 }
 
-func MulUint8(a, b uint8) (r uint8, err error) {
-	r1, err := MulUint64(uint64(a), uint64(b))
+func MulUint8E(a, b uint8) (r uint8, err error) {
+	r1, err := MulUint64E(uint64(a), uint64(b))
 	if err != nil {
 		return
 	}
@@ -483,8 +492,8 @@ func MulUint8(a, b uint8) (r uint8, err error) {
 	return
 }
 
-func DivUint8(a, b uint8) (r uint8, err error) {
-	r1, err := DivUint64(uint64(a), uint64(b))
+func DivUint8E(a, b uint8) (r uint8, err error) {
+	r1, err := DivUint64E(uint64(a), uint64(b))
 	if err != nil {
 		return
 	}
@@ -496,8 +505,8 @@ func DivUint8(a, b uint8) (r uint8, err error) {
 	return
 }
 
-func AddUint16(a, b uint16) (r uint16, err error) {
-	r1, err := AddUint64(uint64(a), uint64(b))
+func AddUint16E(a, b uint16) (r uint16, err error) {
+	r1, err := AddUint64E(uint64(a), uint64(b))
 	if err != nil {
 		return
 	}
@@ -509,8 +518,8 @@ func AddUint16(a, b uint16) (r uint16, err error) {
 	return
 }
 
-func SubUint16(a, b uint16) (r uint16, err error) {
-	r1, err := SubUint64(uint64(a), uint64(b))
+func SubUint16E(a, b uint16) (r uint16, err error) {
+	r1, err := SubUint64E(uint64(a), uint64(b))
 	if err != nil {
 		return
 	}
@@ -522,8 +531,8 @@ func SubUint16(a, b uint16) (r uint16, err error) {
 	return
 }
 
-func MulUint16(a, b uint16) (r uint16, err error) {
-	r1, err := MulUint64(uint64(a), uint64(b))
+func MulUint16E(a, b uint16) (r uint16, err error) {
+	r1, err := MulUint64E(uint64(a), uint64(b))
 	if err != nil {
 		return
 	}
@@ -535,8 +544,8 @@ func MulUint16(a, b uint16) (r uint16, err error) {
 	return
 }
 
-func DivUint16(a, b uint16) (r uint16, err error) {
-	r1, err := DivUint64(uint64(a), uint64(b))
+func DivUint16E(a, b uint16) (r uint16, err error) {
+	r1, err := DivUint64E(uint64(a), uint64(b))
 	if err != nil {
 		return
 	}
@@ -548,8 +557,8 @@ func DivUint16(a, b uint16) (r uint16, err error) {
 	return
 }
 
-func AddUint32(a, b uint32) (r uint32, err error) {
-	r1, err := AddUint64(uint64(a), uint64(b))
+func AddUint32E(a, b uint32) (r uint32, err error) {
+	r1, err := AddUint64E(uint64(a), uint64(b))
 	if err != nil {
 		return
 	}
@@ -561,8 +570,8 @@ func AddUint32(a, b uint32) (r uint32, err error) {
 	return
 }
 
-func SubUint32(a, b uint32) (r uint32, err error) {
-	r1, err := SubUint64(uint64(a), uint64(b))
+func SubUint32E(a, b uint32) (r uint32, err error) {
+	r1, err := SubUint64E(uint64(a), uint64(b))
 	if err != nil {
 		return
 	}
@@ -574,8 +583,8 @@ func SubUint32(a, b uint32) (r uint32, err error) {
 	return
 }
 
-func MulUint32(a, b uint32) (r uint32, err error) {
-	r1, err := DivUint64(uint64(a), uint64(b))
+func MulUint32E(a, b uint32) (r uint32, err error) {
+	r1, err := DivUint64E(uint64(a), uint64(b))
 	if err != nil {
 		return
 	}
@@ -587,8 +596,8 @@ func MulUint32(a, b uint32) (r uint32, err error) {
 	return
 }
 
-func DivUint32(a, b uint32) (r uint32, err error) {
-	r1, err := DivUint64(uint64(a), uint64(b))
+func DivUint32E(a, b uint32) (r uint32, err error) {
+	r1, err := DivUint64E(uint64(a), uint64(b))
 	if err != nil {
 		return
 	}

@@ -1240,6 +1240,7 @@ func (p *exprParser) numericStringCalc(left, right *exprValue, op antlr.Token) e
 				return p.divisionByZero(op)
 			}
 			result.setValue(a / b)
+			
 		default:
 			return p.unsupportedOpError(op)
 		}
