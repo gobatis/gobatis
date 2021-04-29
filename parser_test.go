@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/stretchr/testify/require"
+	"reflect"
 	"testing"
 )
 
@@ -127,7 +128,8 @@ func TestParseExprExpressionMember(t *testing.T) {
 	//result, err := parser.parseExpression("a:struct, b:array", `strings.HasPrefix(a.Name, "go")`)
 	//result, err := parser.parseExpression("a:struct, b:array", `b[0:len(b)]`)
 	//result, err := parser.parseExpression("a:struct, b:array", `a.Age > int64(1) && b[2] > int64(1)`)
-	result, err := parser.parseExpression("a:struct, b:array", `a.Age > int64(1) && b[2] > 1`)
+	//result, err := parser.parseExpression("a:struct, b:array", `a.Age > 1 && b[2] > 1`)
+	result, err := parser.parseExpression("a:struct, b:array", `1 + 1.1`)
 	require.NoError(t, err)
-	t.Log("result:", result)
+	t.Log("result:", result, reflect.TypeOf(result))
 }
