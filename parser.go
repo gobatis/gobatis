@@ -95,7 +95,7 @@ func parseNode(listener *xmlParser, content string) (err error) {
 }
 
 func parseError(file string, ctx antlr.ParserRuleContext, msg string) error {
-	return fmt.Errorf("%s line %d:%d: %s\nparse error: %s", file, ctx.GetStart().GetLine(), ctx.GetStart().GetColumn(), ctx.GetText(), msg)
+	return fmt.Errorf("%s line %d:%d:\n%s\nparse error: %s", file, ctx.GetStart().GetLine(), ctx.GetStart().GetColumn(), ctx.GetText(), msg)
 }
 
 func newCoverage() *coverage {
@@ -268,12 +268,11 @@ type xmlParser struct {
 	elementGetter func(name string) (elem *dtd.Element, err error)
 }
 
-func (p *xmlParser) trimAttributeValueQuote(val string) string {
-	if strings.HasPrefix(val, "'") || strings.HasSuffix(val, "'") {
+func trimValueQuote(val string) string {
+	if strings.HasPrefix(val, "'") && strings.HasSuffix(val, "'") {
 		val = strings.TrimPrefix(val, "'")
 		return strings.TrimSuffix(val, "'")
-	}
-	if strings.HasPrefix(val, "\"") || strings.HasSuffix(val, "\"") {
+	} else if strings.HasPrefix(val, "\"") && strings.HasSuffix(val, "\"") {
 		val = strings.TrimPrefix(val, "\"")
 		return strings.TrimSuffix(val, "\"")
 	}
@@ -379,7 +378,7 @@ func (p *xmlParser) enterAttribute(c *xml.AttributeContext) {
 		return
 	}
 	name := strings.TrimSpace(c.Name().GetText())
-	value := strings.TrimSpace(p.trimAttributeValueQuote(c.STRING().GetText()))
+	value := strings.TrimSpace(trimValueQuote(c.STRING().GetText()))
 	p.stack.Peak().AddAttribute(name, &xmlNodeAttribute{
 		File:  p.file,
 		Value: value,
@@ -664,6 +663,7 @@ func (p *exprParams) get(name string) (val exprValue, ok bool) {
 }
 
 func (p *exprParams) set(params ...interface{}) {
+	p.values = make([]exprValue, 0)
 	for _, v := range params {
 		p.values = append(p.values, exprValue{
 			value: v,
@@ -672,6 +672,9 @@ func (p *exprParams) set(params ...interface{}) {
 }
 
 func (p *exprParams) alias(name, _type string, index int) error {
+	if name == "" {
+		return fmt.Errorf("alias name is empty")
+	}
 	if p.aliases == nil {
 		p.aliases = map[string]int{}
 	} else {
@@ -682,7 +685,7 @@ func (p *exprParams) alias(name, _type string, index int) error {
 	}
 	vl := len(p.values) - 1
 	if index < 0 || index > vl {
-		return fmt.Errorf("alias '%s' index '%d' out of params length '%d'", name, index, vl)
+		return fmt.Errorf("alias '%s' index %d out of params length %d", name, index, vl)
 	}
 	if _type != "" {
 		ev := p.values[index]
@@ -779,6 +782,8 @@ type exprParser struct {
 	file          string
 	paramIndex    int
 	builtIn       map[string]interface{}
+	vars          []interface{}
+	varIndex      int
 }
 
 func (p *exprParser) initBuiltIn() {
@@ -1083,9 +1088,8 @@ func (p *exprParser) ExitString_(ctx *expr.String_Context) {
 	if p.error != nil {
 		return
 	}
-	v := strings.TrimSuffix(strings.TrimPrefix(ctx.GetText(), "\""), "\"")
 	p.stack.Push(&exprValue{
-		value: v,
+		value: trimValueQuote(ctx.GetText()),
 	})
 	p.coverage.add(ctx)
 }

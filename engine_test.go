@@ -50,7 +50,9 @@ func TestEngine(t *testing.T) {
 		}
 	}()
 	
-	test, err := engine.Call("SelectTestById", 26)
+	//test, err := engine.Call("SelectTestById", 0, "gobatis", 10)
+	//test, err := engine.Call("SelectTestByName", 0, "", 10)
+	test, err := engine.Call("SelectTestForeach", []string{"a", "b", "c"})
 	if err != nil {
 		t.Error("Call SelectTestById error:", err)
 		return

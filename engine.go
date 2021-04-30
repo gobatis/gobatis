@@ -71,7 +71,8 @@ func (p *Engine) Call(name string, args ...interface{}) (res interface{}, err er
 		return
 	}
 	var r *psr
-	r, err = p.parseStatement(node, args...)
+	var in []interface{}
+	r, in, err = p.parseStatement(node, args...)
 	if err != nil {
 		return
 	}
@@ -80,9 +81,8 @@ func (p *Engine) Call(name string, args ...interface{}) (res interface{}, err er
 	//}
 	//sql = r.sql
 	//}
-	
-	fmt.Println("sql:", r.id, r.sql)
-	
+	fmt.Printf("sql[%s]:%s\n", name, r.sql)
+	fmt.Printf("params[%s]:%+v\n", name, in)
 	return
 }
 
@@ -202,27 +202,6 @@ func (p *Engine) getStatement(id string) (node *xmlNode, ok bool) {
 	return
 }
 
-// mapper file duplicate cache tag has filtered
-//func (p *Engine) addCache(file string, node *xmlNode) (err error) {
-//	p.mu.Lock()
-//	defer p.mu.Unlock()
-//	if p.caches == nil {
-//		p.caches = map[string]*xmlNode{}
-//	}
-//	p.caches[file] = node
-//	return
-//}
-//
-//func (p *Engine) getCache(file string) (node *xmlNode, ok bool) {
-//	p.mu.RLock()
-//	defer p.mu.RUnlock()
-//	if p.caches == nil {
-//		return
-//	}
-//	node, ok = p.caches[file]
-//	return
-//}
-
 func (p *Engine) addSqlCache(id, sql string) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -246,7 +225,6 @@ func (p *Engine) getSqlCache(id string) (sql string, ok bool) {
 type psr struct {
 	sql   string
 	cache bool
-	id    string
 }
 
 func (p *psr) appendSql(s ...string) {
@@ -262,35 +240,22 @@ func (p *psr) appendSql(s ...string) {
 	}
 }
 
-//func (p *Engine) makeParams(args ...interface{}) Params {
-//	if len(args) == 0 {
-//		return nil
-//	}
-//	baseParams := make(Params)
-//	for _, v := range args {
-//		//rv :=
-//		fmt.Println("make baseParams 参数:", v)
-//	}
-//	return baseParams
-//}
-
-func (p *Engine) parseStatement(node *xmlNode, params ...interface{}) (res *psr, err error) {
+func (p *Engine) parseStatement(node *xmlNode, params ...interface{}) (res *psr, in []interface{}, err error) {
 	if node == nil {
 		err = fmt.Errorf("parse node is nil")
 		return
 	}
 	res = new(psr)
-	//params := p.makeParams(args...)
 	parser := newExprParser(params...)
 	err = parser.parseParameter(node.GetAttribute(dtd.PARAMETER_TYPE))
 	if err != nil {
 		return
 	}
-	err = p.parseBlock(parser, node, params, res)
+	err = p.parseBlocks(parser, node, res)
 	if err != nil {
 		return
 	}
-	
+	in = parser.vars
 	return
 }
 
@@ -303,84 +268,124 @@ func (p *Engine) trimPrefixOverride(sql, prefix string) (r string, err error) {
 	return
 }
 
-func (p *Engine) parseBlock(parser *exprParser, node *xmlNode, params []interface{}, res *psr) (err error) {
-	for _, child := range node.Nodes {
-		if child.textOnly {
-			res.appendSql(child.Text)
-		} else {
-			switch child.Name {
-			case dtd.IF:
-				err = p.parseTest(parser, child, params, res)
-			case dtd.WHERE:
-				err = p.parseWhere(parser, child, params, res)
-			case dtd.CHOOSE:
-				err = p.parseChoose(parser, child, params, res)
-			case dtd.FOREACH:
-				err = p.parseForeach(parser, child, params, res)
-			case dtd.TRIM:
-				err = p.parseTrim(parser, child, params, res)
-			case dtd.SET:
-				err = p.parseSet(parser, child, params, res)
+func (p *Engine) parseSql(parser *exprParser, node *xmlNode, res *psr) error {
+	chars := []rune(node.Text)
+	begin := false
+	var from int
+	var next int
+	var sql string
+	for i := 0; i < len(chars); i++ {
+		if !begin {
+			next = i + 1
+			if chars[i] == 35 && next <= len(chars)-1 && chars[next] == 123 {
+				begin = true
+				i++
+				from = i + 1
+				continue
+			} else {
+				sql += string(chars[i])
 			}
+		} else if chars[i] == 125 {
+			r, err := parser.parseExpression(string(chars[from:i]))
+			if err != nil {
+				return err
+			}
+			i++
+			parser.varIndex++
+			sql += fmt.Sprintf("$%d", parser.varIndex)
+			parser.vars = append(parser.vars, r)
+			begin = false
+		}
+	}
+	res.appendSql(sql)
+	return nil
+}
+
+func (p *Engine) parseBlocks(parser *exprParser, node *xmlNode, res *psr) (err error) {
+	for _, child := range node.Nodes {
+		err = p.parseBlock(parser, child, res)
+		if err != nil {
+			return
 		}
 	}
 	return
 }
 
-func (p *Engine) renderSql(parser *exprParser, sql string) (result string, err error) {
+func (p *Engine) parseBlock(parser *exprParser, node *xmlNode, res *psr) (err error) {
+	if node.textOnly {
+		err = p.parseSql(parser, node, res)
+	} else {
+		switch node.Name {
+		case dtd.IF:
+			_, err = p.parseTest(parser, node, res)
+		case dtd.WHERE:
+			err = p.parseWhere(parser, node, res)
+		case dtd.CHOOSE:
+			err = p.parseChoose(parser, node, res)
+		case dtd.FOREACH:
+			err = p.parseForeach(parser, node, res)
+		case dtd.TRIM:
+			err = p.parseTrim(parser, node, res)
+		case dtd.SET:
+			err = p.parseSet(parser, node, res)
+		}
+	}
 	return
 }
 
-func (p *Engine) parseTest(parser *exprParser, node *xmlNode, params []interface{}, res *psr) error {
+func (p *Engine) parseTest(parser *exprParser, node *xmlNode, res *psr) (bool, error) {
 	v, err := parser.parseExpression(node.GetAttribute(dtd.TEST))
 	if err != nil {
-		return err
+		return false, err
 	}
 	b, err := cast.ToBoolE(v)
 	if err != nil {
-		return err
+		return false, err
 	}
 	if !b {
-		return nil
+		return false, nil
 	}
-	return p.parseBlock(parser, node, params, res)
+	return true, p.parseBlocks(parser, node, res)
 }
 
-func (p *Engine) parseWhere(parser *exprParser, node *xmlNode, params []interface{}, res *psr) (err error) {
-	return p.trimPrefixOverrides(parser, node, params, res, dtd.WHERE, "AND |OR ")
+func (p *Engine) parseWhere(parser *exprParser, node *xmlNode, res *psr) (err error) {
+	return p.trimPrefixOverrides(parser, node, res, dtd.WHERE, "AND |OR ")
 }
 
-func (p *Engine) parseChoose(parser *exprParser, node *xmlNode, params []interface{}, res *psr) (err error) {
+func (p *Engine) parseChoose(parser *exprParser, node *xmlNode, res *psr) error {
+	var pass bool
 	for i, child := range node.Nodes {
+		if pass {
+			break
+		}
 		switch child.Name {
 		case dtd.WHEN:
-			err = p.parseTest(parser, node, params, res)
-		case dtd.OTHERWISE:
-			if i != len(node.Nodes) {
-				err = parseError(parser.file, node.ctx, "otherwise should be last element in choose")
-				return
+			var err error
+			pass, err = p.parseTest(parser, child, res)
+			if err != nil {
+				return err
 			}
-			err = p.parseBlock(parser, node, params, res)
+		case dtd.OTHERWISE:
+			if i != len(node.Nodes)-1 {
+				return parseError(parser.file, node.ctx, "otherwise should be last element in choose")
+			}
+			return p.parseBlocks(parser, child, res)
+		default:
+			return parseError(parser.file, child.ctx, fmt.Sprintf("unsupported element '%s' element in choose", child.Name))
 		}
 	}
-	return
+	return nil
 }
 
-func (p *Engine) parseTrim(parser *exprParser, node *xmlNode, params []interface{}, res *psr) (err error) {
-	return p.trimPrefixOverrides(parser, node, params, res, node.GetAttribute(dtd.PREFIX), node.GetAttribute(dtd.PREFIX_OVERRIDES))
+func (p *Engine) parseTrim(parser *exprParser, node *xmlNode, res *psr) (err error) {
+	return p.trimPrefixOverrides(parser, node, res, node.GetAttribute(dtd.PREFIX), node.GetAttribute(dtd.PREFIX_OVERRIDES))
 }
 
-func (p *Engine) trimPrefixOverrides(parser *exprParser, node *xmlNode, params []interface{}, res *psr, tag, prefixes string) (err error) {
+func (p *Engine) trimPrefixOverrides(parser *exprParser, node *xmlNode, res *psr, tag, prefixes string) error {
 	wr := new(psr)
-	for _, child := range node.Nodes {
-		if child.textOnly {
-			res.appendSql(child.Text)
-		} else {
-			err = p.parseBlock(parser, child, params, wr)
-			if err != nil {
-				return
-			}
-		}
+	err := p.parseBlocks(parser, node, wr)
+	if err != nil {
+		return err
 	}
 	sql := strings.TrimSpace(wr.sql)
 	filters := strings.Split(prefixes, "|")
@@ -388,64 +393,83 @@ func (p *Engine) trimPrefixOverrides(parser *exprParser, node *xmlNode, params [
 		sql, err = p.trimPrefixOverride(sql, v)
 		if err != nil {
 			err = parseError(parser.file, node.ctx, fmt.Sprintf("regexp compile error: %s", err))
-			return
+			return err
 		}
 	}
-	res.appendSql(tag, sql)
-	return
-}
-
-func (p *Engine) parseSet(parser *exprParser, node *xmlNode, params []interface{}, res *psr) (err error) {
-	return p.trimPrefixOverrides(parser, node, params, res, dtd.SET, ",")
-}
-
-func (p *Engine) parseForeach(parser *exprParser, node *xmlNode, params []interface{}, res *psr) error {
-	
-	collection, ok := parser.baseParams.get(node.GetAttribute(dtd.COLLECTION))
-	if !ok {
-		return parseError(parser.file, node.ctx, "can't get foreach collection value")
+	if strings.TrimSpace(sql) != "" {
+		res.appendSql(tag, sql)
 	}
+	return nil
+}
+
+func (p *Engine) parseSet(parser *exprParser, node *xmlNode, res *psr) (err error) {
+	return p.trimPrefixOverrides(parser, node, res, dtd.SET, ",")
+}
+
+func (p *Engine) parseForeach(parser *exprParser, node *xmlNode, res *psr) error {
 	
-	subParams := fmt.Sprintf("%s,%s", node.GetAttribute(dtd.INDEX), node.GetAttribute(dtd.ITEM))
+	_var := node.GetAttribute(dtd.COLLECTION)
+	collection, ok := parser.baseParams.get(_var)
+	if !ok {
+		return parseError(parser.file, node.ctx, fmt.Sprintf("can't get foreach collection '%s' value", _var))
+	}
+	index := node.GetAttribute(dtd.INDEX)
+	if index == "" {
+		index = dtd.INDEX
+	}
+	item := node.GetAttribute(dtd.ITEM)
+	if item == "" {
+		item = dtd.ITEM
+	}
+	subParams := fmt.Sprintf("%s,%s", index, item)
 	open := node.GetAttribute(dtd.OPEN)
 	_close := node.GetAttribute(dtd.CLOSE)
 	separator := node.GetAttribute(dtd.SEPARATOR)
+	
 	parser.foreachParams = newExprParams()
+	parser.paramIndex = 0
+	
 	elem := collection.reflectElem()
 	frags := make([]string, 0)
 	switch elem.Kind() {
 	case reflect.Slice, reflect.Array:
-		for i := 0; i < elem.Len()-1; i++ {
+		for i := 0; i < elem.Len(); i++ {
 			parser.foreachParams.set(i, elem.Index(i).Interface())
-			err := parser.parseParameter(subParams)
-			if err != nil {
-				return err
+			if i == 0 {
+				err := parser.parseParameter(subParams)
+				if err != nil {
+					return err
+				}
 			}
-			err = p.parseForeachChild(parser, node, params, &frags, separator)
+			err := p.parseForeachChild(parser, node, &frags)
 			if err != nil {
 				return err
 			}
 		}
 	case reflect.Map:
-		for _, v := range elem.MapKeys() {
+		for i, v := range elem.MapKeys() {
 			parser.foreachParams.set(v.Interface(), elem.MapIndex(v).Interface())
-			err := parser.parseParameter(subParams)
-			if err != nil {
-				return err
+			if i == 0 {
+				err := parser.parseParameter(subParams)
+				if err != nil {
+					return err
+				}
 			}
-			err = p.parseForeachChild(parser, node, params, &frags, separator)
+			err := p.parseForeachChild(parser, node, &frags)
 			if err != nil {
 				return err
 			}
 		}
 	case reflect.Struct:
-		for i := 0; i < elem.NumField()-1; i++ {
+		for i := 0; i < elem.NumField(); i++ {
 			parser.foreachParams.set(elem.Field(i).Interface(), elem.Field(i).Elem().Interface())
-			err := parser.parseParameter(subParams)
-			if err != nil {
-				return err
+			if i == 0 {
+				err := parser.parseParameter(subParams)
+				if err != nil {
+					return err
+				}
 			}
-			err = p.parseForeachChild(parser, node, params, &frags, separator)
+			err := p.parseForeachChild(parser, node, &frags)
 			if err != nil {
 				return err
 			}
@@ -456,20 +480,19 @@ func (p *Engine) parseForeach(parser *exprParser, node *xmlNode, params []interf
 	parser.foreachParams = nil
 	
 	if len(frags) > 0 {
-		res.appendSql(open, strings.Join(frags, ""), _close)
+		res.appendSql(open + strings.Join(frags, separator) + _close)
 	}
 	
 	return nil
 }
 
-func (p *Engine) parseForeachChild(parser *exprParser, node *xmlNode, params []interface{}, frags *[]string, separator string) error {
+func (p *Engine) parseForeachChild(parser *exprParser, node *xmlNode, frags *[]string) error {
 	for _, child := range node.Nodes {
 		br := new(psr)
-		err := p.parseBlock(parser, child, params, br)
+		err := p.parseBlock(parser, child, br)
 		if err != nil {
 			return err
 		}
-		br.appendSql(separator)
 		*frags = append(*frags, br.sql)
 	}
 	return nil

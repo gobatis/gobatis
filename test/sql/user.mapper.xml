@@ -8,7 +8,7 @@
     <cache blocking="123">
     </cache>
 
-<!--    <select id="">-->
+    <!--    <select id="">-->
     <!--        select a from users left jion shops on qlllsdfdsf-->
     <!--        <where>-->
     <!--            <if test="" >-->
@@ -17,9 +17,44 @@
     <!--        </where>.-->
     <!--    </select>-->
 
-    <select id="SelectTestById" parameterType="id:int64, name:string,user:struct" resultType="int64">
-        select * from test where id = #{1}
-        insert into users(name,age) values( #{a/3600*3600} #{b})
+    <select id="SelectTestById" parameterType="id:int, name:string, age:int" resultType="int64">
+        select * from test
+        <where>
+            <if test="id>0">
+                id = #{id}
+            </if>
+            <if test='name!=""'>
+                and name = '#{name}'
+            </if>
+            <if test='age != 0'>
+                and age = #{age+10}
+            </if>
+        </where>
+    </select>
+
+    <select id="SelectTestByName" parameterType="id:int, name:string, age:int" resultType="int64">
+        select * from test
+        <choose>
+            <when test="id>0">
+                id = #{id}
+            </when>
+            <when test="name != ''">
+                name = '{#name}'
+            </when>
+            <otherwise>
+                age = #{age}
+            </otherwise>
+        </choose>
+    </select>
+
+    <select id="SelectTestForeach" parameterType="names" resultType="int64">
+        select * from test
+        <where>
+            name in
+            <foreach item="item" collection="names" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </where>
     </select>
 
     <!--    <select id="GetUser" parameterType="auto" resultType="test/entity@User">-->
