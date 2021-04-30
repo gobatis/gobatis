@@ -99,8 +99,10 @@ RAW_STRING_LIT         : '`' ~'`'*                      '`';
 INTERPRETED_STRING_LIT : '"' (~["\\] | ESCAPED_VALUE)*  '"';
 
 // Hidden tokens
-WS                     : [ \t]+             -> channel(HIDDEN);
-TERMINATOR             : [\r\n]+            -> channel(HIDDEN);
+//WS                     : [ \t]+             -> channel(HIDDEN);
+//TERMINATOR             : [\r\n]+            -> channel(HIDDEN);
+WS                     : [ \t]+             -> skip;
+TERMINATOR             : [\r\n]+            -> skip;
 
 fragment UNICODE_VALUE: ~[\r\n'] | LITTLE_U_VALUE | BIG_U_VALUE | ESCAPED_VALUE;
 // Fragments

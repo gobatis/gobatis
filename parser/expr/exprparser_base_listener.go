@@ -50,6 +50,12 @@ func (s *BaseExprParserListener) EnterExpressions(ctx *ExpressionsContext) {}
 // ExitExpressions is called when production expressions is exited.
 func (s *BaseExprParserListener) ExitExpressions(ctx *ExpressionsContext) {}
 
+// EnterMisc is called when production misc is entered.
+func (s *BaseExprParserListener) EnterMisc(ctx *MiscContext) {}
+
+// ExitMisc is called when production misc is exited.
+func (s *BaseExprParserListener) ExitMisc(ctx *MiscContext) {}
+
 // EnterExpression is called when production expression is entered.
 func (s *BaseExprParserListener) EnterExpression(ctx *ExpressionContext) {}
 

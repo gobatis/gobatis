@@ -12,7 +12,9 @@ paramDecl: IDENTIFIER | (IDENTIFIER COLON paramType);
 
 paramType: IDENTIFIER;
 
-expressions: expression  EOF;
+expressions: misc* expression misc*  EOF;
+
+misc: WS TERMINATOR;
 
 expression:
 	primaryExpr

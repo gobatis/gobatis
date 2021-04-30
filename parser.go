@@ -95,7 +95,7 @@ func parseNode(listener *xmlParser, content string) (err error) {
 }
 
 func parseError(file string, ctx antlr.ParserRuleContext, msg string) error {
-	return fmt.Errorf("%s line %d:%d: < %s > parse error: %s", file, ctx.GetStart().GetLine(), ctx.GetStart().GetColumn(), ctx.GetText(), msg)
+	return fmt.Errorf("%s line %d:%d: %s\nparse error: %s", file, ctx.GetStart().GetLine(), ctx.GetStart().GetColumn(), ctx.GetText(), msg)
 }
 
 func newCoverage() *coverage {
@@ -637,11 +637,7 @@ func (p *exprStack) Empty() bool {
 
 func newExprParams(params ...interface{}) *exprParams {
 	r := &exprParams{}
-	for _, v := range params {
-		r.values = append(r.values, exprValue{
-			value: v,
-		})
-	}
+	r.set(params...)
 	return r
 }
 
@@ -665,6 +661,14 @@ func (p *exprParams) get(name string) (val exprValue, ok bool) {
 	ok = true
 	val = p.values[index]
 	return
+}
+
+func (p *exprParams) set(params ...interface{}) {
+	for _, v := range params {
+		p.values = append(p.values, exprValue{
+			value: v,
+		})
+	}
 }
 
 func (p *exprParams) alias(name, _type string, index int) error {
@@ -759,8 +763,7 @@ func (p *exprParams) index(index int) (val exprValue, ok bool) {
 
 func newExprParser(params ...interface{}) *exprParser {
 	r := new(exprParser)
-	r.stack = newExprStack()
-	r.params = newExprParams(params...)
+	r.baseParams = newExprParams(params...)
 	r.coverage = newCoverage()
 	r.initBuiltIn()
 	return r
@@ -768,13 +771,14 @@ func newExprParser(params ...interface{}) *exprParser {
 
 type exprParser struct {
 	*expr.BaseExprParserListener
-	stack      *exprStack
-	coverage   *coverage
-	params     *exprParams
-	error      error
-	file       string
-	paramIndex int
-	builtIn    map[string]interface{}
+	stack         *exprStack
+	coverage      *coverage
+	baseParams    *exprParams
+	foreachParams *exprParams
+	error         error
+	file          string
+	paramIndex    int
+	builtIn       map[string]interface{}
 }
 
 func (p *exprParser) initBuiltIn() {
@@ -816,8 +820,12 @@ func (p *exprParser) EnterParamDecl(ctx *expr.ParamDeclContext) {
 			fmt.Sprintf("alias '%s' conflict with built-in functions or objects", name))
 		return
 	}
-	
-	err := p.params.alias(name, expected, p.paramIndex)
+	var err error
+	if p.foreachParams != nil {
+		err = p.foreachParams.alias(name, expected, p.paramIndex)
+	} else {
+		err = p.baseParams.alias(name, expected, p.paramIndex)
+	}
 	if err != nil {
 		p.error = parseError(p.file, ctx, err.Error())
 		return
@@ -827,6 +835,10 @@ func (p *exprParser) EnterParamDecl(ctx *expr.ParamDeclContext) {
 
 func (p *exprParser) EnterExpressions(ctx *expr.ExpressionsContext) {
 	p.coverage.setTotal(ctx.GetStop().GetTokenIndex() + 1)
+}
+
+func (p *exprParser) ExitMisc(ctx *expr.MiscContext) {
+	p.coverage.add(ctx)
 }
 
 func (p *exprParser) ExitExpression(ctx *expr.ExpressionContext) {
@@ -905,7 +917,14 @@ func (p *exprParser) ExitVar_(ctx *expr.Var_Context) {
 		val = exprValue{value: p.builtIn[alias], alias: alias}
 	} else {
 		var ok bool
-		val, ok = p.params.get(alias)
+		if p.foreachParams != nil {
+			val, ok = p.foreachParams.get(alias)
+			if !ok {
+				val, ok = p.baseParams.get(alias)
+			}
+		} else {
+			val, ok = p.baseParams.get(alias)
+		}
 		if !ok {
 			p.error = parseError(p.file, ctx, fmt.Sprintf("can't find var '%s'", alias))
 			return
@@ -1087,17 +1106,27 @@ func (p *exprParser) ExitFloat_(ctx *expr.Float_Context) {
 	p.coverage.add(ctx)
 }
 
-func (p *exprParser) parseExpression(params, expresion string) (result interface{}, err error) {
-	err = p.parseParam(params)
+func (p *exprParser) parseParameter(params string) (err error) {
+	parser, err := p.parser(params)
 	if err != nil {
 		return
 	}
+	antlr.ParseTreeWalkerDefault.Walk(p, parser.Parameters())
+	return
+}
+
+func (p *exprParser) parseExpression(expresion string) (result interface{}, err error) {
+	
+	p.stack = newExprStack()
+	p.coverage = newCoverage()
+	
 	parser, err := p.parser(expresion)
 	if err != nil {
 		return
 	}
 	
 	antlr.ParseTreeWalkerDefault.Walk(p, parser.Expressions())
+	
 	err = p.error
 	if err != nil {
 		return
@@ -1106,7 +1135,6 @@ func (p *exprParser) parseExpression(params, expresion string) (result interface
 		err = fmt.Errorf("unexpected reslut stack length: %d", p.stack.Len())
 		return
 	}
-	
 	if !p.coverage.covered() {
 		err = fmt.Errorf("parse expression token not coverd: %d/%d", p.coverage.len(), p.coverage.total)
 		return
@@ -1234,15 +1262,6 @@ func (p *exprParser) logicCalc(left, right *exprValue, ctx antlr.ParserRuleConte
 
 func (p *exprParser) unsupportedOpError(ctx antlr.ParserRuleContext) error {
 	return parseError(p.file, ctx, fmt.Sprintf("unsupported operation"))
-}
-
-func (p *exprParser) parseParam(params string) (err error) {
-	parser, err := p.parser(params)
-	if err != nil {
-		return
-	}
-	antlr.ParseTreeWalkerDefault.Walk(p, parser.Parameters())
-	return
 }
 
 func (p *exprParser) parser(data string) (parser *expr.ExprParser, err error) {

@@ -85,7 +85,9 @@ func TestParseExprExpression(t *testing.T) {
 	a := 1
 	b := 2
 	parser := newExprParser(a, b)
-	result, err := parser.parseExpression("a,b", "a + b")
+	err := parser.parseParameter("a,b")
+	require.NoError(t, err)
+	result, err := parser.parseExpression("a + b")
 	require.NoError(t, err)
 	require.Equal(t, int64(3), result)
 }
@@ -133,7 +135,9 @@ func TestParseExprExpressionMember(t *testing.T) {
 	//result, err := parser.parseExpression("a:struct, b:array", `b[0:len(b)]`)
 	//result, err := parser.parseExpression("a:struct, b:array", `a.Age > int64(1) && b[2] > int64(1)`)
 	//result, err := parser.parseExpression("a:struct, b:array", `a.Age > 1 && b[2] > 1`)
-	result, err := parser.parseExpression("a:struct, b:array", `a.Dec(100)`)
+	err := parser.parseParameter("a:struct, b:array")
+	require.NoError(t, err)
+	result, err := parser.parseExpression(`a.Dec(100)`)
 	require.NoError(t, err)
 	t.Log("result:", result)
 }

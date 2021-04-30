@@ -22,6 +22,9 @@ type ExprParserListener interface {
 	// EnterExpressions is called when entering the expressions production.
 	EnterExpressions(c *ExpressionsContext)
 
+	// EnterMisc is called when entering the misc production.
+	EnterMisc(c *MiscContext)
+
 	// EnterExpression is called when entering the expression production.
 	EnterExpression(c *ExpressionContext)
 
@@ -78,6 +81,9 @@ type ExprParserListener interface {
 
 	// ExitExpressions is called when exiting the expressions production.
 	ExitExpressions(c *ExpressionsContext)
+
+	// ExitMisc is called when exiting the misc production.
+	ExitMisc(c *MiscContext)
 
 	// ExitExpression is called when exiting the expression production.
 	ExitExpression(c *ExpressionContext)

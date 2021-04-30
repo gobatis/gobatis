@@ -440,7 +440,7 @@ public class ExprLexer extends Lexer {
 		"\2\u008a\u008c\u00df\u00e4\u00e7\u00ec\u00f1\u00f5\u00f8\u00fd\u0102\u0107"+
 		"\u010b\u0110\u0113\u0116\u011b\u011d\u0125\u012a\u012e\u0133\u0136\u013b"+
 		"\u0140\u0143\u014e\u0155\u015b\u017d\u0185\u0187\u018f\u0196\u019e\u01ba"+
-		"\u01be\u01c3\u01ce\u01d4\3\2\3\2";
+		"\u01be\u01c3\u01ce\u01d4\3\b\2\2";
 	public static final ATN _ATN =
 		new ATNDeserializer().deserialize(_serializedATN.toCharArray());
 	static {

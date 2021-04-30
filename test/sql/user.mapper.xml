@@ -8,14 +8,14 @@
     <cache blocking="123">
     </cache>
 
-    <select id="">
-        select a from users left jion shops on qlllsdfdsf
-        <where>
-            <if test="" >
-                asd
-            </if>
-        </where>.
-    </select>
+<!--    <select id="">-->
+    <!--        select a from users left jion shops on qlllsdfdsf-->
+    <!--        <where>-->
+    <!--            <if test="" >-->
+    <!--                asd-->
+    <!--            </if>-->
+    <!--        </where>.-->
+    <!--    </select>-->
 
     <select id="SelectTestById" parameterType="id:int64, name:string,user:struct" resultType="int64">
         select * from test where id = #{1}

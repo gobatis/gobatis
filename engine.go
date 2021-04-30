@@ -3,12 +3,15 @@ package gobatis
 import (
 	"fmt"
 	"github.com/antlr/antlr4/runtime/Go/antlr"
+	"github.com/gobatis/gobatis/cast"
 	"github.com/gobatis/gobatis/driver/mysql"
 	"github.com/gobatis/gobatis/driver/postgresql"
 	"github.com/gobatis/gobatis/dtd"
 	"io/ioutil"
 	"net/http"
 	"path/filepath"
+	"reflect"
+	"regexp"
 	"strings"
 	"sync"
 )
@@ -58,26 +61,27 @@ func (p *Engine) Init() (err error) {
 }
 
 func (p *Engine) Call(name string, args ...interface{}) (res interface{}, err error) {
-	sql, ok := p.getSqlCache(name)
+	var ok bool
+	//sql, ok := p.getSqlCache(name)
+	//if !ok {
+	var node *xmlNode
+	node, ok = p.getStatement(name)
 	if !ok {
-		var node *xmlNode
-		node, ok = p.getStatement(name)
-		if !ok {
-			err = fmt.Errorf("not found statement: %s", name)
-			return
-		}
-		var r *psr
-		r, err = p.parseStatement(node, args...)
-		if err != nil {
-			return
-		}
-		if r.cache {
-			p.addSqlCache(r.id, r.sql)
-		}
-		sql = r.sql
+		err = fmt.Errorf("not found statement: %s", name)
+		return
 	}
+	var r *psr
+	r, err = p.parseStatement(node, args...)
+	if err != nil {
+		return
+	}
+	//if r.cache {
+	//	p.addSqlCache(r.id, r.sql)
+	//}
+	//sql = r.sql
+	//}
 	
-	fmt.Println(sql)
+	fmt.Println("sql:", r.id, r.sql)
 	
 	return
 }
@@ -245,76 +249,228 @@ type psr struct {
 	id    string
 }
 
-func (p *psr) appendSql(s string) {
-	if p.sql != "" && !strings.HasSuffix(p.sql, " ") {
-		p.sql += " " + s
-	} else {
-		p.sql += s
+func (p *psr) appendSql(s ...string) {
+	for _, v := range s {
+		v = strings.TrimSpace(v)
+		if v != "" {
+			if p.sql != "" {
+				p.sql += " " + v
+			} else {
+				p.sql += v
+			}
+		}
 	}
 }
 
-func (p *Engine) makeParams(args ...interface{}) Params {
-	if len(args) == 0 {
-		return nil
-	}
-	params := make(Params)
-	for _, v := range args {
-		//rv :=
-		fmt.Println(v)
-	}
-	return params
-}
+//func (p *Engine) makeParams(args ...interface{}) Params {
+//	if len(args) == 0 {
+//		return nil
+//	}
+//	baseParams := make(Params)
+//	for _, v := range args {
+//		//rv :=
+//		fmt.Println("make baseParams 参数:", v)
+//	}
+//	return baseParams
+//}
 
-func (p *Engine) parseStatement(node *xmlNode, args ...interface{}) (res *psr, err error) {
+func (p *Engine) parseStatement(node *xmlNode, params ...interface{}) (res *psr, err error) {
 	if node == nil {
 		err = fmt.Errorf("parse node is nil")
 		return
 	}
 	res = new(psr)
-	params := p.makeParams(args...)
-	for _, v := range node.Nodes {
-		if v.textOnly {
-			res.appendSql(v.Text)
+	//params := p.makeParams(args...)
+	parser := newExprParser(params...)
+	err = parser.parseParameter(node.GetAttribute(dtd.PARAMETER_TYPE))
+	if err != nil {
+		return
+	}
+	err = p.parseBlock(parser, node, params, res)
+	if err != nil {
+		return
+	}
+	
+	return
+}
+
+func (p *Engine) trimPrefixOverride(sql, prefix string) (r string, err error) {
+	reg, err := regexp.Compile(`(?i)^` + prefix)
+	if err != nil {
+		return
+	}
+	r = reg.ReplaceAllString(sql, "")
+	return
+}
+
+func (p *Engine) parseBlock(parser *exprParser, node *xmlNode, params []interface{}, res *psr) (err error) {
+	for _, child := range node.Nodes {
+		if child.textOnly {
+			res.appendSql(child.Text)
 		} else {
-			switch v.Name {
+			switch child.Name {
 			case dtd.IF:
-				err = p.parseIf(v, params, res)
+				err = p.parseTest(parser, child, params, res)
 			case dtd.WHERE:
-				err = p.parseWhere(v, params, res)
+				err = p.parseWhere(parser, child, params, res)
+			case dtd.CHOOSE:
+				err = p.parseChoose(parser, child, params, res)
+			case dtd.FOREACH:
+				err = p.parseForeach(parser, child, params, res)
+			case dtd.TRIM:
+				err = p.parseTrim(parser, child, params, res)
+			case dtd.SET:
+				err = p.parseSet(parser, child, params, res)
 			}
 		}
 	}
 	return
 }
 
-func (p *Engine) parseIf(node *xmlNode, params Params, res *psr) (err error) {
+func (p *Engine) renderSql(parser *exprParser, sql string) (result string, err error) {
 	return
 }
 
-func (p *Engine) parseWhere(node *xmlNode, params Params, res *psr) (err error) {
+func (p *Engine) parseTest(parser *exprParser, node *xmlNode, params []interface{}, res *psr) error {
+	v, err := parser.parseExpression(node.GetAttribute(dtd.TEST))
+	if err != nil {
+		return err
+	}
+	b, err := cast.ToBoolE(v)
+	if err != nil {
+		return err
+	}
+	if !b {
+		return nil
+	}
+	return p.parseBlock(parser, node, params, res)
+}
+
+func (p *Engine) parseWhere(parser *exprParser, node *xmlNode, params []interface{}, res *psr) (err error) {
+	return p.trimPrefixOverrides(parser, node, params, res, dtd.WHERE, "AND |OR ")
+}
+
+func (p *Engine) parseChoose(parser *exprParser, node *xmlNode, params []interface{}, res *psr) (err error) {
+	for i, child := range node.Nodes {
+		switch child.Name {
+		case dtd.WHEN:
+			err = p.parseTest(parser, node, params, res)
+		case dtd.OTHERWISE:
+			if i != len(node.Nodes) {
+				err = parseError(parser.file, node.ctx, "otherwise should be last element in choose")
+				return
+			}
+			err = p.parseBlock(parser, node, params, res)
+		}
+	}
 	return
 }
 
-func (p *Engine) parseChoose(node *xmlNode, params Params, res *psr) (err error) {
+func (p *Engine) parseTrim(parser *exprParser, node *xmlNode, params []interface{}, res *psr) (err error) {
+	return p.trimPrefixOverrides(parser, node, params, res, node.GetAttribute(dtd.PREFIX), node.GetAttribute(dtd.PREFIX_OVERRIDES))
+}
+
+func (p *Engine) trimPrefixOverrides(parser *exprParser, node *xmlNode, params []interface{}, res *psr, tag, prefixes string) (err error) {
+	wr := new(psr)
+	for _, child := range node.Nodes {
+		if child.textOnly {
+			res.appendSql(child.Text)
+		} else {
+			err = p.parseBlock(parser, child, params, wr)
+			if err != nil {
+				return
+			}
+		}
+	}
+	sql := strings.TrimSpace(wr.sql)
+	filters := strings.Split(prefixes, "|")
+	for _, v := range filters {
+		sql, err = p.trimPrefixOverride(sql, v)
+		if err != nil {
+			err = parseError(parser.file, node.ctx, fmt.Sprintf("regexp compile error: %s", err))
+			return
+		}
+	}
+	res.appendSql(tag, sql)
 	return
 }
 
-func (p *Engine) parseWhen(node *xmlNode, params Params, res *psr) (err error) {
-	return
+func (p *Engine) parseSet(parser *exprParser, node *xmlNode, params []interface{}, res *psr) (err error) {
+	return p.trimPrefixOverrides(parser, node, params, res, dtd.SET, ",")
 }
 
-func (p *Engine) parseOtherwise(node *xmlNode, params Params, res *psr) (err error) {
-	return
+func (p *Engine) parseForeach(parser *exprParser, node *xmlNode, params []interface{}, res *psr) error {
+	
+	collection, ok := parser.baseParams.get(node.GetAttribute(dtd.COLLECTION))
+	if !ok {
+		return parseError(parser.file, node.ctx, "can't get foreach collection value")
+	}
+	
+	subParams := fmt.Sprintf("%s,%s", node.GetAttribute(dtd.INDEX), node.GetAttribute(dtd.ITEM))
+	open := node.GetAttribute(dtd.OPEN)
+	_close := node.GetAttribute(dtd.CLOSE)
+	separator := node.GetAttribute(dtd.SEPARATOR)
+	parser.foreachParams = newExprParams()
+	elem := collection.reflectElem()
+	frags := make([]string, 0)
+	switch elem.Kind() {
+	case reflect.Slice, reflect.Array:
+		for i := 0; i < elem.Len()-1; i++ {
+			parser.foreachParams.set(i, elem.Index(i).Interface())
+			err := parser.parseParameter(subParams)
+			if err != nil {
+				return err
+			}
+			err = p.parseForeachChild(parser, node, params, &frags, separator)
+			if err != nil {
+				return err
+			}
+		}
+	case reflect.Map:
+		for _, v := range elem.MapKeys() {
+			parser.foreachParams.set(v.Interface(), elem.MapIndex(v).Interface())
+			err := parser.parseParameter(subParams)
+			if err != nil {
+				return err
+			}
+			err = p.parseForeachChild(parser, node, params, &frags, separator)
+			if err != nil {
+				return err
+			}
+		}
+	case reflect.Struct:
+		for i := 0; i < elem.NumField()-1; i++ {
+			parser.foreachParams.set(elem.Field(i).Interface(), elem.Field(i).Elem().Interface())
+			err := parser.parseParameter(subParams)
+			if err != nil {
+				return err
+			}
+			err = p.parseForeachChild(parser, node, params, &frags, separator)
+			if err != nil {
+				return err
+			}
+		}
+	default:
+		return parseError(parser.file, node.ctx, "foreach collection type can't range")
+	}
+	parser.foreachParams = nil
+	
+	if len(frags) > 0 {
+		res.appendSql(open, strings.Join(frags, ""), _close)
+	}
+	
+	return nil
 }
 
-func (p *Engine) parseTrim(node *xmlNode, params Params, res *psr) (err error) {
-	return
-}
-
-func (p *Engine) parseSet(node *xmlNode, params Params, res *psr) (err error) {
-	return
-}
-
-func (p *Engine) parseForeach(node *xmlNode, params Params, res *psr) (err error) {
-	return
+func (p *Engine) parseForeachChild(parser *exprParser, node *xmlNode, params []interface{}, frags *[]string, separator string) error {
+	for _, child := range node.Nodes {
+		br := new(psr)
+		err := p.parseBlock(parser, child, params, br)
+		if err != nil {
+			return err
+		}
+		br.appendSql(separator)
+		*frags = append(*frags, br.sql)
+	}
+	return nil
 }
