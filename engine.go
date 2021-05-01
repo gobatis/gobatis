@@ -25,7 +25,7 @@ func NewMySQL(dsn string) *Engine {
 }
 
 func NewEngine(db *DB) *Engine {
-	engine := &Engine{DB: db}
+	engine := &Engine{DB: db, logger: newLogger()}
 	return engine
 }
 
@@ -44,16 +44,24 @@ func (p *Engine) SetBundle(bundle http.FileSystem) {
 }
 
 func (p *Engine) Init() (err error) {
-	p.logger = newLogger()
 	err = p.initDB()
 	if err != nil {
 		err = fmt.Errorf("init master db error: %s", err)
 		return
 	}
+	err = p.parseBundle()
+	if err != nil {
+		return
+	}
+	return
+}
+
+func (p *Engine) parseBundle() (err error) {
 	err = p.parseConfig()
 	if err != nil {
 		return
 	}
+	
 	err = p.parseMappers()
 	if err != nil {
 		return

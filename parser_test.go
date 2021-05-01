@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/require"
+	"reflect"
 	"testing"
 )
 
@@ -140,4 +141,26 @@ func TestParseExprExpressionMember(t *testing.T) {
 	result, err := parser.parseExpression(`a.Dec(100)`)
 	require.NoError(t, err)
 	t.Log("result:", result)
+}
+
+func TestBindParser(t *testing.T) {
+	
+	m := func(a, b string) (_a int, _b bool, err error) { return }
+	f := reflect.ValueOf(m)
+	
+	var err error
+	err = parseMethod("", f.Type(), "a:string, b:string", "a:string, b:string")
+	require.NoError(t, err)
+	
+	//err = parseMethod("", f.Type(), "a, b:string", "a:string, b:string")
+	//require.NoError(t, err)
+	//
+	//err = parseMethod("", f.Type(), "a:int, b:string", "a:string, b:string")
+	//require.Error(t, err)
+	//
+	//err = parseMethod("", f.Type(), "a:string, b:int", "a:string, b:string")
+	//require.Error(t, err)
+	//
+	//err = parseMethod("", f.Type(), "a:string, b:string", "a:int, b:string")
+	//require.Error(t, err)
 }

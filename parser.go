@@ -13,7 +13,7 @@ import (
 	"sync"
 )
 
-func parseConfig(engine *Engine, file, content string) (err error) {
+func parseConfig(engine *Engine, file, content string) error {
 	l := &xmlParser{
 		file:          file,
 		stack:         newXMLStack(),
@@ -21,20 +21,18 @@ func parseConfig(engine *Engine, file, content string) (err error) {
 		rootElement:   dtd.Configuration,
 		elementGetter: dtd.ConfigElement,
 	}
-	err = parseNode(l, content)
-	if err != nil {
-		return
+	walkXMLNodes(l, content)
+	if l.error != nil {
+		return l.error
 	}
-	
 	if !l.coverage.covered() {
-		err = fmt.Errorf("parse config token not coverd: %d/%d", l.coverage.len(), l.coverage.total)
-		return
+		return fmt.Errorf("parse config token not coverd: %d/%d", l.coverage.len(), l.coverage.total)
+		
 	}
-	
-	return
+	return nil
 }
 
-func parseMapper(engine *Engine, file, content string) (err error) {
+func parseMapper(engine *Engine, file, content string) error {
 	
 	l := &xmlParser{
 		file:          file,
@@ -43,19 +41,19 @@ func parseMapper(engine *Engine, file, content string) (err error) {
 		rootElement:   dtd.Mapper,
 		elementGetter: dtd.MapperElement,
 	}
-	err = parseNode(l, content)
-	if err != nil {
-		return
+	walkXMLNodes(l, content)
+	if l.error != nil {
+		
+		return l.error
 	}
 	
 	if !l.coverage.covered() {
-		err = fmt.Errorf("parse mapper token not coverd: %d/%d", l.coverage.len(), l.coverage.total)
-		return
+		return fmt.Errorf("parse mapper token not coverd: %d/%d", l.coverage.len(), l.coverage.total)
 	}
 	
 	if l.rootNode == nil {
 		engine.logger.Warnf("empty mapperCache file: %s", file)
-		return
+		return nil
 	}
 	
 	for _, v := range l.rootNode.Nodes {
@@ -66,20 +64,18 @@ func parseMapper(engine *Engine, file, content string) (err error) {
 			v.Name == dtd.SQL {
 			id := v.GetAttribute(dtd.ID)
 			if id == "" {
-				err = parseError(file, v.ctx, fmt.Sprintf("element: %s miss id", v.Name))
-				return
+				return parseError(file, v.ctx, fmt.Sprintf("element: %s miss id", v.Name))
 			}
-			err = engine.addStatement(file, v.ctx, v.start, id, v)
+			err := engine.addStatement(file, v.ctx, v.start, id, v)
 			if err != nil {
-				return
+				return err
 			}
 		}
 	}
-	
-	return
+	return nil
 }
 
-func parseNode(listener *xmlParser, content string) (err error) {
+func walkXMLNodes(listener antlr.ParseTreeListener, content string) {
 	lexer := xml.NewXMLLexer(antlr.NewInputStream(strings.TrimSpace(content)))
 	stream := antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel)
 	parser := xml.NewXMLParser(stream)
@@ -87,11 +83,30 @@ func parseNode(listener *xmlParser, content string) (err error) {
 	parser.AddErrorListener(antlr.NewDiagnosticErrorListener(true))
 	//parser.SetErrorHandler()
 	antlr.ParseTreeWalkerDefault.Walk(listener, parser.Document())
-	if listener.error != nil {
-		err = listener.error
-		return
-	}
+}
+
+func initExprParser(data string) (parser *expr.ExprParser, err error) {
+	lexer := expr.NewExprLexer(antlr.NewInputStream(data))
+	stream := antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel)
+	parser = expr.NewExprParser(stream)
+	parser.BuildParseTrees = true
+	parser.AddErrorListener(antlr.NewDiagnosticErrorListener(false))
 	return
+}
+
+func parseMethod(file string, f reflect.Type, in, out string) error {
+	l := &bindParser{
+		coverage: newCoverage(),
+		f:        f,
+		in:       in,
+		out:      out,
+		file:     file,
+	}
+	err := l.parse()
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func reflectElem(source interface{}) (elem reflect.Value) {
@@ -1087,7 +1102,7 @@ func (p *exprParser) ExitFloat_(ctx *expr.Float_Context) {
 }
 
 func (p *exprParser) parseParameter(params string) (err error) {
-	parser, err := newParser(params)
+	parser, err := initExprParser(params)
 	if err != nil {
 		return
 	}
@@ -1100,7 +1115,7 @@ func (p *exprParser) parseExpression(expresion string) (result interface{}, err 
 	p.stack = newExprStack()
 	p.coverage = newCoverage()
 	
-	parser, err := newParser(expresion)
+	parser, err := initExprParser(expresion)
 	if err != nil {
 		return
 	}
@@ -1244,16 +1259,7 @@ func (p *exprParser) unsupportedOpError(ctx antlr.ParserRuleContext) error {
 	return parseError(p.file, ctx, fmt.Sprintf("unsupported operation"))
 }
 
-func newParser(data string) (parser *expr.ExprParser, err error) {
-	lexer := expr.NewExprLexer(antlr.NewInputStream(data))
-	stream := antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel)
-	parser = expr.NewExprParser(stream)
-	parser.BuildParseTrees = true
-	parser.AddErrorListener(antlr.NewDiagnosticErrorListener(false))
-	return
-}
-
-func newBindParser(file string, f interface{}, in, out string) *bindParser {
+func newBindParser(file string, f reflect.Type, in, out string) *bindParser {
 	r := new(bindParser)
 	r.coverage = newCoverage()
 	r.f = f
@@ -1267,7 +1273,7 @@ type bindParser struct {
 	*expr.BaseExprParserListener
 	coverage   *coverage
 	error      error
-	f          interface{}
+	f          reflect.Type
 	in         string
 	out        string
 	file       string
@@ -1291,9 +1297,9 @@ func (p *bindParser) EnterParamDecl(ctx *expr.ParamDeclContext) {
 	var err error
 	switch p.step {
 	case 0:
-		err = p.checkIn(expected)
+		err = p.checkIn(ctx, expected)
 	case 1:
-		err = p.checkOut(expected)
+		err = p.checkOut(ctx, expected)
 	}
 	if err != nil {
 		p.error = err
@@ -1306,29 +1312,59 @@ func (p *bindParser) parse() error {
 	if p.in != "" {
 		p.step = 0
 		p.paramIndex = 0
-		parser, err := newParser(p.in)
+		parser, err := initExprParser(p.in)
 		if err != nil {
 			return err
 		}
-		antlr.ParseTreeWalkerDefault.Walk(p, parser.Parameters())
+		err = p.walkMethods(parser)
+		if err != nil {
+			return err
+		}
 	}
 	if p.out != "" {
 		p.step = 1
 		p.paramIndex = 0
-		parser, err := newParser(p.out)
+		parser, err := initExprParser(p.out)
 		if err != nil {
 			return err
 		}
-		antlr.ParseTreeWalkerDefault.Walk(p, parser.Parameters())
-		
+		err = p.walkMethods(parser)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+func (p *bindParser) walkMethods(parser *expr.ExprParser) error {
+	antlr.ParseTreeWalkerDefault.Walk(p, parser.Parameters())
+	if p.error != nil {
+		return p.error
+	}
+	if !p.coverage.covered() {
+		return fmt.Errorf("parse mapper method not coverd: %d/%d", p.coverage.len(), p.coverage.total)
 	}
 	return nil
 }
 
-func (p *bindParser) checkIn(expected string) (err error) {
-	return
+func (p *bindParser) checkIn(ctx antlr.ParserRuleContext, expected string) error {
+	
+	if p.paramIndex > p.f.NumIn()-1 {
+		return parseError(p.file, ctx,
+			fmt.Sprintf("alias '%s' index %d out of mapper in params length", expected, p.paramIndex))
+	}
+	
+	fmt.Println("in:", p.paramIndex, expected)
+	
+	return nil
 }
 
-func (p *bindParser) checkOut(expected string) (err error) {
-	return
+func (p *bindParser) checkOut(ctx antlr.ParserRuleContext, expected string) error {
+	
+	fmt.Println("out:", p.paramIndex, expected)
+	if p.paramIndex > p.f.NumIn()-1 {
+		return parseError(p.file, ctx,
+			fmt.Sprintf("alias '%s' index %d out of mapper in params length", expected, p.paramIndex))
+	}
+	
+	return nil
 }
