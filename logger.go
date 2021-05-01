@@ -2,6 +2,7 @@ package gobatis
 
 import (
 	"github.com/sirupsen/logrus"
+	"log"
 )
 
 type Logger interface {
@@ -22,17 +23,21 @@ type logger struct {
 }
 
 func (p logger) Debugf(format string, args ...interface{}) {
-	p.logger.Debugf(format, args...)
+	//p.logger.Debugf(format, args...)
+	log.Printf(format, args...)
 }
 
 func (p logger) Infof(format string, args ...interface{}) {
-	p.logger.Infof(format, args...)
+	//p.logger.Infof(format, args...)
+	log.Printf(format, args...)
 }
 
 func (p logger) Warnf(format string, args ...interface{}) {
-	p.logger.Warnf(format, args...)
+	//p.logger.Warnf(format, args...)
+	log.Printf(format, args...)
 }
 
 func (p logger) Errorf(format string, args ...interface{}) {
-	p.logger.Errorf(format, args...)
+	//p.logger.Errorf(format, args...)
+	log.Printf(format, args...)
 }

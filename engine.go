@@ -44,6 +44,7 @@ func (p *Engine) SetBundle(bundle http.FileSystem) {
 }
 
 func (p *Engine) Init() (err error) {
+	p.logger = newLogger()
 	err = p.initDB()
 	if err != nil {
 		err = fmt.Errorf("init master db error: %s", err)
@@ -60,7 +61,7 @@ func (p *Engine) Init() (err error) {
 	return
 }
 
-func (p *Engine) Call(name string, args ...interface{}) (res interface{}, err error) {
+func (p *Engine) Call(name string, args ...interface{}) (res []interface{}, err error) {
 	var ok bool
 	//sql, ok := p.getSqlCache(name)
 	//if !ok {
@@ -76,13 +77,20 @@ func (p *Engine) Call(name string, args ...interface{}) (res interface{}, err er
 	if err != nil {
 		return
 	}
-	//if r.cache {
-	//	p.addSqlCache(r.id, r.sql)
-	//}
-	//sql = r.sql
-	//}
-	fmt.Printf("sql[%s]:%s\n", name, r.sql)
-	fmt.Printf("params[%s]:%+v\n", name, in)
+	p.logger.Debugf("[%s] query: %s", name, r.sql)
+	p.logger.Debugf("[%s]  args: %+v", name, in)
+	stmt, err := p.Prepare(r.sql)
+	if err != nil {
+		return
+	}
+	defer func() {
+		_ = stmt.Close()
+	}()
+	_, err = stmt.Exec(in...)
+	if err != nil {
+		return
+	}
+	stmt.QueryRow()
 	return
 }
 
@@ -94,8 +102,12 @@ func (p *Engine) BindMapper(mapper ...interface{}) {
 	//p.db.QueryRow()
 }
 
-func (p *Engine) SQL(name string) string {
-	return "hello world!"
+func (p *Engine) BindVar(pointer interface{}, result map[string]interface{}) error {
+	return nil
+}
+
+func (p *Engine) makeMapper() {
+
 }
 
 func (p *Engine) initLogger() {
@@ -106,7 +118,7 @@ func (p *Engine) initLogger() {
 
 func (p *Engine) parseConfig() (err error) {
 	if p.bundle == nil {
-		err = fmt.Errorf("no set bundle")
+		err = fmt.Errorf("no bundle")
 		return
 	}
 	d, err := p.readBundleFile(CONFIG_XML)
@@ -429,7 +441,7 @@ func (p *Engine) parseForeach(parser *exprParser, node *xmlNode, res *psr) error
 	parser.foreachParams = newExprParams()
 	parser.paramIndex = 0
 	
-	elem := collection.reflectElem()
+	elem := reflectElem(collection.value)
 	frags := make([]string, 0)
 	switch elem.Kind() {
 	case reflect.Slice, reflect.Array:
@@ -475,7 +487,8 @@ func (p *Engine) parseForeach(parser *exprParser, node *xmlNode, res *psr) error
 			}
 		}
 	default:
-		return parseError(parser.file, node.ctx, "foreach collection type can't range")
+		return parseError(parser.file, node.ctx,
+			fmt.Sprintf("foreach collection type '%s' can't range", elem.Kind()))
 	}
 	parser.foreachParams = nil
 	

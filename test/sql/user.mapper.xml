@@ -5,18 +5,6 @@
 
 <mapper namespace="test/mapper@UserMapper">
 
-    <cache blocking="123">
-    </cache>
-
-    <!--    <select id="">-->
-    <!--        select a from users left jion shops on qlllsdfdsf-->
-    <!--        <where>-->
-    <!--            <if test="" >-->
-    <!--                asd-->
-    <!--            </if>-->
-    <!--        </where>.-->
-    <!--    </select>-->
-
     <select id="SelectTestById" parameterType="id:int, name:string, age:int" resultType="int64">
         select * from test
         <where>
@@ -57,22 +45,5 @@
         </where>
     </select>
 
-    <!--    <select id="GetUser" parameterType="auto" resultType="test/entity@User">-->
-    <!--        select * from users-->
-    <!--        <where>-->
-    <!--            <if test="Id != nil">-->
-    <!--                id = #{Id}-->
-    <!--            </if>-->
-    <!--            <if test="Name != nil">-->
-    <!--                name = #{Name}-->
-    <!--            </if>-->
-    <!--        </where>-->
-    <!--    </select>-->
-    <!--    <select id="selectUsers" parameterType="id:int64,name:string" resultMap="Blog[]">-->
-    <!--        select * from blog-->
-    <!--    </select>-->
 
-    <!--    <select id="countUsers" parameterType="id:int64,name:string" resultType="int,int,string">-->
-    <!--        select * from users where id=#{id} and name=#{name}-->
-    <!--    </select>-->
 </mapper>

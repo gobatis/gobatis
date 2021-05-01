@@ -5,7 +5,51 @@ import (
 	"github.com/shopspring/decimal"
 	"reflect"
 	"strings"
+	"sync"
 )
+
+var _builtin *builtin
+
+func init() {
+	_builtin = &builtin{
+		mu: sync.RWMutex{},
+		_map: map[string]interface{}{
+			"len":     _len,
+			"int":     _int,
+			"int8":    _int8,
+			"int16":   _int16,
+			"int32":   _int32,
+			"int64":   _int64,
+			"uint":    _uint,
+			"uint8":   _uint8,
+			"uint16":  _uint16,
+			"uint32":  _uint32,
+			"uint64":  _uint64,
+			"decimal": _decimal,
+			"bool":    _bool,
+			"strings": _strings{},
+		},
+	}
+}
+
+type builtin struct {
+	mu   sync.RWMutex
+	_map map[string]interface{}
+}
+
+func (p *builtin) get(name string) interface{} {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	v, _ := p._map[name]
+	return v
+}
+
+func (p *builtin) is(name string) bool {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	_, ok := p._map[name]
+	return ok
+}
 
 func _len(v interface{}) int {
 	return reflect.ValueOf(v).Len()

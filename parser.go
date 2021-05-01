@@ -94,6 +94,19 @@ func parseNode(listener *xmlParser, content string) (err error) {
 	return
 }
 
+func reflectElem(source interface{}) (elem reflect.Value) {
+	v := reflect.ValueOf(source)
+	for {
+		if v.Kind() == reflect.Ptr {
+			v = v.Elem()
+		} else {
+			elem = v
+			break
+		}
+	}
+	return
+}
+
 func parseError(file string, ctx antlr.ParserRuleContext, msg string) error {
 	return fmt.Errorf("%s line %d:%d:\n%s\nparse error: %s", file, ctx.GetStart().GetLine(), ctx.GetStart().GetColumn(), ctx.GetText(), msg)
 }
@@ -445,19 +458,9 @@ func (p *exprValue) int() (v int, err error) {
 	return cast.ToIntE(p.value)
 }
 
-func (p *exprValue) reflectElem() (elem reflect.Value) {
-	v := reflect.ValueOf(p.value)
-	if v.Kind() == reflect.Ptr {
-		elem = v.Elem()
-	} else {
-		elem = v
-	}
-	return elem
-}
-
 func (p *exprValue) visitMember(name string) (r *exprValue, err error) {
 	
-	elem := p.reflectElem()
+	elem := reflectElem(p.value)
 	if elem.Kind() != reflect.Struct {
 		err = fmt.Errorf("visit '%s.%s' is not struct", p.alias, name)
 		return
@@ -481,7 +484,7 @@ func (p *exprValue) visitMember(name string) (r *exprValue, err error) {
 
 func (p *exprValue) visitArrayIndex(index int) (r *exprValue, err error) {
 	
-	elem := p.reflectElem()
+	elem := reflectElem(p.value)
 	if elem.Kind() != reflect.Array && elem.Kind() != reflect.Slice {
 		err = fmt.Errorf("visit var is not array or slice")
 		return
@@ -500,7 +503,7 @@ func (p *exprValue) visitArrayIndex(index int) (r *exprValue, err error) {
 
 func (p *exprValue) visitMapIndex(index reflect.Value) (r *exprValue, err error) {
 	
-	elem := p.reflectElem()
+	elem := reflectElem(p.value)
 	if elem.Kind() != reflect.Map {
 		err = fmt.Errorf("visit '%s' is not map", elem.Kind())
 		return
@@ -519,7 +522,7 @@ func (p *exprValue) visitMapIndex(index reflect.Value) (r *exprValue, err error)
 
 func (p *exprValue) call(ellipsis bool, params []reflect.Value) (r *exprValue, err error) {
 	
-	elem := p.reflectElem()
+	elem := reflectElem(p.value)
 	if elem.Kind() != reflect.Func {
 		err = fmt.Errorf("visit '%s' is not func", elem.Kind())
 		return
@@ -568,9 +571,9 @@ func (p *exprValue) visitSlice(format string, indexes ...int) (r *exprValue, err
 	var v reflect.Value
 	switch len(indexes) {
 	case 2:
-		v = p.reflectElem().Slice(indexes[0], indexes[1])
+		v = reflectElem(p.value).Slice(indexes[0], indexes[1])
 	case 3:
-		v = p.reflectElem().Slice3(indexes[0], indexes[1], indexes[2])
+		v = reflectElem(p.value).Slice3(indexes[0], indexes[1], indexes[2])
 	default:
 		err = fmt.Errorf("unsuppoted slice range index '%s'", format)
 		return
@@ -689,7 +692,7 @@ func (p *exprParams) alias(name, _type string, index int) error {
 	}
 	if _type != "" {
 		ev := p.values[index]
-		kind := ev.reflectElem().Kind()
+		kind := reflectElem(ev.value).Kind()
 		var err error
 		var expected reflect.Kind
 		expected, err = p.toReflectKind(_type)
@@ -768,7 +771,6 @@ func newExprParser(params ...interface{}) *exprParser {
 	r := new(exprParser)
 	r.baseParams = newExprParams(params...)
 	r.coverage = newCoverage()
-	r.initBuiltIn()
 	return r
 }
 
@@ -781,36 +783,11 @@ type exprParser struct {
 	error         error
 	file          string
 	paramIndex    int
-	builtIn       map[string]interface{}
 	vars          []interface{}
 	varIndex      int
 }
 
-func (p *exprParser) initBuiltIn() {
-	p.builtIn = map[string]interface{}{}
-	p.builtIn["len"] = _len
-	p.builtIn["int"] = _int
-	p.builtIn["int8"] = _int8
-	p.builtIn["int16"] = _int16
-	p.builtIn["int32"] = _int32
-	p.builtIn["int64"] = _int64
-	p.builtIn["uint"] = _uint
-	p.builtIn["uint8"] = _uint8
-	p.builtIn["uint16"] = _uint16
-	p.builtIn["uint32"] = _uint32
-	p.builtIn["uint64"] = _uint64
-	p.builtIn["decimal"] = _decimal
-	p.builtIn["bool"] = _bool
-	p.builtIn["strings"] = _strings{}
-}
-
-func (p *exprParser) isBuiltIn(name string) bool {
-	_, ok := p.builtIn[name]
-	return ok
-}
-
 func (p *exprParser) EnterParamDecl(ctx *expr.ParamDeclContext) {
-	
 	if p.error != nil {
 		return
 	}
@@ -819,8 +796,7 @@ func (p *exprParser) EnterParamDecl(ctx *expr.ParamDeclContext) {
 	if ctx.ParamType() != nil {
 		expected = ctx.ParamType().GetText()
 	}
-	
-	if p.isBuiltIn(name) {
+	if _builtin.is(name) {
 		p.error = parseError(p.file, ctx,
 			fmt.Sprintf("alias '%s' conflict with built-in functions or objects", name))
 		return
@@ -918,8 +894,8 @@ func (p *exprParser) ExitVar_(ctx *expr.Var_Context) {
 	}
 	alias := ctx.IDENTIFIER().GetText()
 	var val exprValue
-	if p.isBuiltIn(alias) {
-		val = exprValue{value: p.builtIn[alias], alias: alias}
+	if _builtin.is(alias) {
+		val = exprValue{value: _builtin.get(alias), alias: alias}
 	} else {
 		var ok bool
 		if p.foreachParams != nil {
@@ -977,10 +953,10 @@ func (p *exprParser) ExitIndex(ctx *expr.IndexContext) {
 		p.error = parseError(p.file, ctx, err.Error())
 		return
 	}
-	objectReflectElem := object.reflectElem()
+	objectReflectElem := reflectElem(object.value)
 	var ev *exprValue
 	if objectReflectElem.Kind() == reflect.Map {
-		ev, err = object.visitMapIndex(index.reflectElem())
+		ev, err = object.visitMapIndex(reflectElem(index.value))
 		if err != nil {
 			p.error = parseError(p.file, ctx, err.Error())
 			return
@@ -1051,7 +1027,7 @@ func (p *exprParser) ExitCall(ctx *expr.CallContext) {
 			p.error = parseError(p.file, ctx, err.Error())
 			return
 		}
-		args[i] = arg.reflectElem()
+		args[i] = reflectElem(arg.value)
 	}
 	f, err := p.stack.Pop()
 	if err != nil {
@@ -1111,7 +1087,7 @@ func (p *exprParser) ExitFloat_(ctx *expr.Float_Context) {
 }
 
 func (p *exprParser) parseParameter(params string) (err error) {
-	parser, err := p.parser(params)
+	parser, err := newParser(params)
 	if err != nil {
 		return
 	}
@@ -1124,7 +1100,7 @@ func (p *exprParser) parseExpression(expresion string) (result interface{}, err 
 	p.stack = newExprStack()
 	p.coverage = newCoverage()
 	
-	parser, err := p.parser(expresion)
+	parser, err := newParser(expresion)
 	if err != nil {
 		return
 	}
@@ -1268,11 +1244,91 @@ func (p *exprParser) unsupportedOpError(ctx antlr.ParserRuleContext) error {
 	return parseError(p.file, ctx, fmt.Sprintf("unsupported operation"))
 }
 
-func (p *exprParser) parser(data string) (parser *expr.ExprParser, err error) {
+func newParser(data string) (parser *expr.ExprParser, err error) {
 	lexer := expr.NewExprLexer(antlr.NewInputStream(data))
 	stream := antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel)
 	parser = expr.NewExprParser(stream)
 	parser.BuildParseTrees = true
 	parser.AddErrorListener(antlr.NewDiagnosticErrorListener(false))
+	return
+}
+
+func newBindParser(file string, f interface{}, in, out string) *bindParser {
+	r := new(bindParser)
+	r.coverage = newCoverage()
+	r.f = f
+	r.in = in
+	r.out = out
+	r.file = file
+	return r
+}
+
+type bindParser struct {
+	*expr.BaseExprParserListener
+	coverage   *coverage
+	error      error
+	f          interface{}
+	in         string
+	out        string
+	file       string
+	paramIndex int
+	step       int
+}
+
+func (p *bindParser) EnterParamDecl(ctx *expr.ParamDeclContext) {
+	if p.error != nil {
+		return
+	}
+	name := ctx.IDENTIFIER().GetText()
+	var expected string
+	if ctx.ParamType() != nil {
+		expected = ctx.ParamType().GetText()
+	}
+	if _builtin.is(name) {
+		p.error = parseError(p.file, ctx, fmt.Sprintf("alias '%s' conflict with builtin", name))
+		return
+	}
+	var err error
+	switch p.step {
+	case 0:
+		err = p.checkIn(expected)
+	case 1:
+		err = p.checkOut(expected)
+	}
+	if err != nil {
+		p.error = err
+		return
+	}
+	p.paramIndex++
+}
+
+func (p *bindParser) parse() error {
+	if p.in != "" {
+		p.step = 0
+		p.paramIndex = 0
+		parser, err := newParser(p.in)
+		if err != nil {
+			return err
+		}
+		antlr.ParseTreeWalkerDefault.Walk(p, parser.Parameters())
+	}
+	if p.out != "" {
+		p.step = 1
+		p.paramIndex = 0
+		parser, err := newParser(p.out)
+		if err != nil {
+			return err
+		}
+		antlr.ParseTreeWalkerDefault.Walk(p, parser.Parameters())
+		
+	}
+	return nil
+}
+
+func (p *bindParser) checkIn(expected string) (err error) {
+	return
+}
+
+func (p *bindParser) checkOut(expected string) (err error) {
 	return
 }
