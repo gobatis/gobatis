@@ -27,13 +27,13 @@ func parseConfig(engine *Engine, file, content string) error {
 	}
 	if !l.coverage.covered() {
 		return fmt.Errorf("parse config token not coverd: %d/%d", l.coverage.len(), l.coverage.total)
-		
+
 	}
 	return nil
 }
 
 func parseMapper(engine *Engine, file, content string) error {
-	
+
 	l := &xmlParser{
 		file:          file,
 		stack:         newXMLStack(),
@@ -43,19 +43,19 @@ func parseMapper(engine *Engine, file, content string) error {
 	}
 	walkXMLNodes(l, content)
 	if l.error != nil {
-		
+
 		return l.error
 	}
-	
+
 	if !l.coverage.covered() {
 		return fmt.Errorf("parse mapper token not coverd: %d/%d", l.coverage.len(), l.coverage.total)
 	}
-	
+
 	if l.rootNode == nil {
 		engine.logger.Warnf("empty mapperCache file: %s", file)
 		return nil
 	}
-	
+
 	for _, v := range l.rootNode.Nodes {
 		if v.Name == dtd.SELECT ||
 			v.Name == dtd.INSERT ||
@@ -95,31 +95,39 @@ func initExprParser(data string) (parser *expr.ExprParser, err error) {
 }
 
 func parseMethod(file string, f reflect.Type, in, out string) error {
-	l := &bindParser{
-		coverage: newCoverage(),
-		f:        f,
-		in:       in,
-		out:      out,
-		file:     file,
+
+	l := newBindParser(file, f, in, out)
+	err := l.checkInjectFields()
+	if err != nil {
+		return err
 	}
-	err := l.parse()
+	err = l.parse()
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func reflectElem(source interface{}) (elem reflect.Value) {
+func realReflectElem(source interface{}) reflect.Value {
 	v := reflect.ValueOf(source)
 	for {
 		if v.Kind() == reflect.Ptr {
 			v = v.Elem()
 		} else {
-			elem = v
-			break
+			return v
 		}
 	}
-	return
+}
+
+func realReflectType(source interface{}) reflect.Type {
+	v := reflect.TypeOf(source)
+	for {
+		if v.Kind() == reflect.Ptr {
+			v = v.Elem()
+		} else {
+			return v
+		}
+	}
 }
 
 func parseError(file string, ctx antlr.ParserRuleContext, msg string) error {
@@ -308,7 +316,7 @@ func trimValueQuote(val string) string {
 }
 
 func (p *xmlParser) validateNode(node *xmlNode, elem *dtd.Element) {
-	
+
 	// check required attributes
 	if elem.Attributes != nil {
 		for k, v := range elem.Attributes {
@@ -318,13 +326,13 @@ func (p *xmlParser) validateNode(node *xmlNode, elem *dtd.Element) {
 			}
 		}
 	}
-	
+
 	for _, childNode := range node.Nodes {
-		
+
 		if childNode.textOnly {
 			continue
 		}
-		
+
 		// check not supported node
 		if !elem.HasNode(childNode.Name) {
 			p.setError(
@@ -333,7 +341,7 @@ func (p *xmlParser) validateNode(node *xmlNode, elem *dtd.Element) {
 			)
 			return
 		}
-		
+
 		// check at most once node
 		if elem.GetNodeCount(childNode.Name) == dtd.AT_MOST_ONCE && node.countNode(childNode.Name) > 1 {
 			p.setError(
@@ -342,19 +350,19 @@ func (p *xmlParser) validateNode(node *xmlNode, elem *dtd.Element) {
 			)
 			return
 		}
-		
+
 		childElem, err := p.elementGetter(childNode.Name)
 		if err != nil {
 			p.setError(err.Error(), childNode.ctx)
 			return
 		}
-		
+
 		p.validateNode(childNode, childElem)
 		if p.error != nil {
 			return
 		}
 	}
-	
+
 	// check at least once node
 	if elem.Nodes != nil {
 		for k, v := range elem.Nodes {
@@ -391,7 +399,7 @@ func (p *xmlParser) exitElement(_ *xml.ElementContext) {
 	}
 	p.depth--
 	child := p.stack.Pop()
-	
+
 	if p.stack.Len() > 0 {
 		p.stack.Peak().AddNode(child)
 	} else {
@@ -441,7 +449,7 @@ func (p *xmlParser) EnterEveryRule(ctx antlr.ParserRuleContext) {
 	case xml.XMLParserRULE_prolog, xml.XMLParserRULE_misc:
 		p.coverage.add(ctx)
 	}
-	
+
 }
 
 func (p *xmlParser) ExitEveryRule(ctx antlr.ParserRuleContext) {
@@ -474,13 +482,13 @@ func (p *exprValue) int() (v int, err error) {
 }
 
 func (p *exprValue) visitMember(name string) (r *exprValue, err error) {
-	
-	elem := reflectElem(p.value)
+
+	elem := realReflectElem(p.value)
 	if elem.Kind() != reflect.Struct {
 		err = fmt.Errorf("visit '%s.%s' is not struct", p.alias, name)
 		return
 	}
-	
+
 	mv := elem.FieldByName(name)
 	if mv.Kind() == reflect.Invalid {
 		mv = elem.MethodByName(name)
@@ -489,22 +497,22 @@ func (p *exprValue) visitMember(name string) (r *exprValue, err error) {
 			return
 		}
 	}
-	
+
 	r = &exprValue{
 		value: mv.Interface(),
 	}
-	
+
 	return
 }
 
 func (p *exprValue) visitArrayIndex(index int) (r *exprValue, err error) {
-	
-	elem := reflectElem(p.value)
+
+	elem := realReflectElem(p.value)
 	if elem.Kind() != reflect.Array && elem.Kind() != reflect.Slice {
 		err = fmt.Errorf("visit var is not array or slice")
 		return
 	}
-	
+
 	mv := elem.Index(index)
 	if mv.Kind() == reflect.Invalid {
 		err = fmt.Errorf("visit array index '%d' is invalid", index)
@@ -517,13 +525,13 @@ func (p *exprValue) visitArrayIndex(index int) (r *exprValue, err error) {
 }
 
 func (p *exprValue) visitMapIndex(index reflect.Value) (r *exprValue, err error) {
-	
-	elem := reflectElem(p.value)
+
+	elem := realReflectElem(p.value)
 	if elem.Kind() != reflect.Map {
 		err = fmt.Errorf("visit '%s' is not map", elem.Kind())
 		return
 	}
-	
+
 	mv := elem.MapIndex(index)
 	if mv.Kind() == reflect.Invalid {
 		err = fmt.Errorf("visit map index '%s' is invalid", index)
@@ -536,8 +544,8 @@ func (p *exprValue) visitMapIndex(index reflect.Value) (r *exprValue, err error)
 }
 
 func (p *exprValue) call(ellipsis bool, params []reflect.Value) (r *exprValue, err error) {
-	
-	elem := reflectElem(p.value)
+
+	elem := realReflectElem(p.value)
 	if elem.Kind() != reflect.Func {
 		err = fmt.Errorf("visit '%s' is not func", elem.Kind())
 		return
@@ -567,7 +575,7 @@ func (p *exprValue) call(ellipsis bool, params []reflect.Value) (r *exprValue, e
 	} else {
 		out = elem.Call(params)
 	}
-	
+
 	if len(out) == 0 {
 		err = fmt.Errorf("function must return one reuslt")
 		return
@@ -575,7 +583,7 @@ func (p *exprValue) call(ellipsis bool, params []reflect.Value) (r *exprValue, e
 		err = fmt.Errorf("function only support one result return")
 		return
 	}
-	
+
 	r = &exprValue{
 		value: out[0].Interface(),
 	}
@@ -586,9 +594,9 @@ func (p *exprValue) visitSlice(format string, indexes ...int) (r *exprValue, err
 	var v reflect.Value
 	switch len(indexes) {
 	case 2:
-		v = reflectElem(p.value).Slice(indexes[0], indexes[1])
+		v = realReflectElem(p.value).Slice(indexes[0], indexes[1])
 	case 3:
-		v = reflectElem(p.value).Slice3(indexes[0], indexes[1], indexes[2])
+		v = realReflectElem(p.value).Slice3(indexes[0], indexes[1], indexes[2])
 	default:
 		err = fmt.Errorf("unsuppoted slice range index '%s'", format)
 		return
@@ -707,10 +715,10 @@ func (p *exprParams) alias(name, _type string, index int) error {
 	}
 	if _type != "" {
 		ev := p.values[index]
-		kind := reflectElem(ev.value).Kind()
+		kind := realReflectElem(ev.value).Kind()
 		var err error
 		var expected reflect.Kind
-		expected, err = p.toReflectKind(_type)
+		expected, err = toReflectKind(_type)
 		if err != nil {
 			return fmt.Errorf("convert alias '%s' type error: %s", name, err)
 		}
@@ -722,7 +730,7 @@ func (p *exprParams) alias(name, _type string, index int) error {
 	return nil
 }
 
-func (p *exprParams) toReflectKind(t string) (kind reflect.Kind, err error) {
+func toReflectKind(t string) (kind reflect.Kind, err error) {
 	switch t {
 	case "bool":
 		kind = reflect.Bool
@@ -841,7 +849,7 @@ func (p *exprParser) ExitExpression(ctx *expr.ExpressionContext) {
 	if p.error != nil {
 		return
 	}
-	
+
 	if ctx.GetUnary_op() != nil {
 		left, err := p.stack.Pop()
 		if err != nil {
@@ -946,32 +954,32 @@ func (p *exprParser) ExitMember(ctx *expr.MemberContext) {
 		p.error = parseError(p.file, ctx, err.Error())
 		return
 	}
-	
+
 	p.stack.Push(mev)
 	p.coverage.add(ctx)
 }
 
 func (p *exprParser) ExitIndex(ctx *expr.IndexContext) {
-	
+
 	if p.error != nil {
 		return
 	}
-	
+
 	index, err := p.stack.Pop()
 	if err != nil {
 		p.error = parseError(p.file, ctx, err.Error())
 		return
 	}
-	
+
 	object, err := p.stack.Pop()
 	if err != nil {
 		p.error = parseError(p.file, ctx, err.Error())
 		return
 	}
-	objectReflectElem := reflectElem(object.value)
+	objectReflectElem := realReflectElem(object.value)
 	var ev *exprValue
 	if objectReflectElem.Kind() == reflect.Map {
-		ev, err = object.visitMapIndex(reflectElem(index.value))
+		ev, err = object.visitMapIndex(realReflectElem(index.value))
 		if err != nil {
 			p.error = parseError(p.file, ctx, err.Error())
 			return
@@ -983,13 +991,13 @@ func (p *exprParser) ExitIndex(ctx *expr.IndexContext) {
 			p.error = parseError(p.file, ctx, fmt.Sprintf("array index error: %s", err))
 			return
 		}
-		
+
 		ev, err = object.visitArrayIndex(i)
 		if err != nil {
 			p.error = parseError(p.file, ctx, fmt.Sprintf("array index error: %s", err))
 			return
 		}
-		
+
 	} else {
 		p.error = parseError(p.file, ctx, "unsupported index object")
 		return
@@ -1042,7 +1050,7 @@ func (p *exprParser) ExitCall(ctx *expr.CallContext) {
 			p.error = parseError(p.file, ctx, err.Error())
 			return
 		}
-		args[i] = reflectElem(arg.value)
+		args[i] = realReflectElem(arg.value)
 	}
 	f, err := p.stack.Pop()
 	if err != nil {
@@ -1111,17 +1119,17 @@ func (p *exprParser) parseParameter(params string) (err error) {
 }
 
 func (p *exprParser) parseExpression(expresion string) (result interface{}, err error) {
-	
+
 	p.stack = newExprStack()
 	p.coverage = newCoverage()
-	
+
 	parser, err := initExprParser(expresion)
 	if err != nil {
 		return
 	}
-	
+
 	antlr.ParseTreeWalkerDefault.Walk(p, parser.Expressions())
-	
+
 	err = p.error
 	if err != nil {
 		return
@@ -1134,10 +1142,10 @@ func (p *exprParser) parseExpression(expresion string) (result interface{}, err 
 		err = fmt.Errorf("parse expression token not coverd: %d/%d", p.coverage.len(), p.coverage.total)
 		return
 	}
-	
+
 	v, _ := p.stack.Pop()
 	result = v.value
-	
+
 	return
 }
 
@@ -1154,7 +1162,7 @@ func (p *exprParser) popBinaryOperands() (left, right *exprValue, err error) {
 }
 
 func (p *exprParser) numericStringCalc(left, right *exprValue, ctx antlr.ParserRuleContext, op antlr.Token) error {
-	
+
 	var err error
 	var result interface{}
 	switch op.GetTokenType() {
@@ -1189,7 +1197,7 @@ func (p *exprParser) numericStringCalc(left, right *exprValue, ctx antlr.ParserR
 }
 
 func (p *exprParser) relationCalc(left, right *exprValue, ctx antlr.ParserRuleContext, op antlr.Token) error {
-	
+
 	var err error
 	var result bool
 	switch op.GetTokenType() {
@@ -1212,7 +1220,7 @@ func (p *exprParser) relationCalc(left, right *exprValue, ctx antlr.ParserRuleCo
 		return parseError(p.file, ctx, err.Error())
 	}
 	p.stack.Push(&exprValue{value: result})
-	
+
 	return nil
 }
 
@@ -1251,12 +1259,18 @@ func (p *exprParser) logicCalc(left, right *exprValue, ctx antlr.ParserRuleConte
 		return parseError(p.file, ctx, err.Error())
 	}
 	p.stack.Push(&exprValue{value: result})
-	
+
 	return nil
 }
 
 func (p *exprParser) unsupportedOpError(ctx antlr.ParserRuleContext) error {
 	return parseError(p.file, ctx, fmt.Sprintf("unsupported operation"))
+}
+
+type bindContext struct {
+	f        reflect.Type
+	txIndex  int
+	errIndex int
 }
 
 func newBindParser(file string, f reflect.Type, in, out string) *bindParser {
@@ -1266,6 +1280,8 @@ func newBindParser(file string, f reflect.Type, in, out string) *bindParser {
 	r.in = in
 	r.out = out
 	r.file = file
+	r.txIndex = -1
+	r.errIndex = -1
 	return r
 }
 
@@ -1279,6 +1295,10 @@ type bindParser struct {
 	file       string
 	paramIndex int
 	step       int
+	txIndex    int
+	errIndex   int
+	inMap      map[string]bool
+	outMap     map[string]bool
 }
 
 func (p *bindParser) EnterParamDecl(ctx *expr.ParamDeclContext) {
@@ -1286,26 +1306,58 @@ func (p *bindParser) EnterParamDecl(ctx *expr.ParamDeclContext) {
 		return
 	}
 	name := ctx.IDENTIFIER().GetText()
-	var expected string
+	var _type string
 	if ctx.ParamType() != nil {
-		expected = ctx.ParamType().GetText()
+		_type = ctx.ParamType().GetText()
 	}
 	if _builtin.is(name) {
 		p.error = parseError(p.file, ctx, fmt.Sprintf("alias '%s' conflict with builtin", name))
 		return
 	}
 	var err error
-	switch p.step {
-	case 0:
-		err = p.checkIn(ctx, expected)
-	case 1:
-		err = p.checkOut(ctx, expected)
-	}
-	if err != nil {
-		p.error = err
-		return
+	if _type != "" {
+		var expected reflect.Kind
+		expected, err = toReflectKind(_type)
+		if err != nil {
+			p.error = parseError(p.file, ctx, err.Error())
+			return
+		}
+		switch p.step {
+		case 0:
+			err = p.checkIn(ctx, name, expected)
+		case 1:
+			err = p.checkOut(ctx, name, expected)
+		}
+		if err != nil {
+			p.error = err
+			return
+		}
 	}
 	p.paramIndex++
+}
+
+func (p *bindParser) checkInjectFields() error {
+	for i := 0; i < p.f.NumIn(); i++ {
+		if p.f.In(i).Kind() == reflect.Ptr &&
+			p.f.In(i).Elem().String() == "sql.Tx" &&
+			p.f.In(i).Elem().PkgPath() == "database/sql" {
+			if p.txIndex == -1 {
+				p.txIndex = i
+			} else {
+				return fmt.Errorf("func at most accept one *sql.Tx")
+			}
+		}
+	}
+	for i := 0; i < p.f.NumOut(); i++ {
+		if p.f.Out(i).Kind() == reflect.Interface && p.f.Out(i).Name() == "error" {
+			if p.errIndex == -1 {
+				p.errIndex = i
+			} else {
+				return fmt.Errorf("func result at most accept one error")
+			}
+		}
+	}
+	return nil
 }
 
 func (p *bindParser) parse() error {
@@ -1346,25 +1398,62 @@ func (p *bindParser) walkMethods(parser *expr.ExprParser) error {
 	return nil
 }
 
-func (p *bindParser) checkIn(ctx antlr.ParserRuleContext, expected string) error {
-	
+func (p *bindParser) checkIn(ctx antlr.ParserRuleContext, name string, expected reflect.Kind) error {
+
+	if p.txIndex != -1 && p.paramIndex == p.txIndex {
+		p.paramIndex++
+	}
+
 	if p.paramIndex > p.f.NumIn()-1 {
 		return parseError(p.file, ctx,
-			fmt.Sprintf("alias '%s' index %d out of mapper in params length", expected, p.paramIndex))
+			fmt.Sprintf("alias '%s' index %d out of func params length", name, p.paramIndex))
 	}
-	
-	fmt.Println("in:", p.paramIndex, expected)
-	
+
+	if p.inMap == nil {
+		p.inMap = map[string]bool{}
+	}
+
+	if _, ok := p.inMap[name]; ok {
+		return parseError(p.file, ctx, fmt.Sprintf("param alias '%s' duplication", name))
+	}
+
+	if expected != p.f.In(p.paramIndex).Kind() {
+		return parseError(p.file, ctx,
+			fmt.Sprintf("parma alias '%s' type '%s' is not equal func type '%s'",
+				name, expected, p.f.In(p.paramIndex).Kind()))
+	}
+
+	p.inMap[name] = true
+
 	return nil
 }
 
-func (p *bindParser) checkOut(ctx antlr.ParserRuleContext, expected string) error {
-	
-	fmt.Println("out:", p.paramIndex, expected)
+func (p *bindParser) checkOut(ctx antlr.ParserRuleContext, name string, expected reflect.Kind) error {
+
+	if p.errIndex != -1 && p.paramIndex == p.errIndex {
+		p.paramIndex++
+	}
+
 	if p.paramIndex > p.f.NumIn()-1 {
 		return parseError(p.file, ctx,
-			fmt.Sprintf("alias '%s' index %d out of mapper in params length", expected, p.paramIndex))
+			fmt.Sprintf("result filed '%s' index %d out of func result length", name, p.paramIndex))
 	}
-	
+
+	if p.outMap == nil {
+		p.outMap = map[string]bool{}
+	}
+
+	if _, ok := p.outMap[name]; ok {
+		return parseError(p.file, ctx, fmt.Sprintf("result filed '%s' duplication", name))
+	}
+
+	if expected != p.f.Out(p.paramIndex).Kind() {
+		return parseError(p.file, ctx,
+			fmt.Sprintf("result filed '%s' type '%s' is not equal func type '%s'",
+				name, expected, p.f.Out(p.paramIndex).Kind()))
+	}
+
+	p.outMap[name] = true
+
 	return nil
 }

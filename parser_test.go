@@ -1,11 +1,11 @@
 package gobatis
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/require"
-	"reflect"
 	"testing"
 )
 
@@ -144,23 +144,50 @@ func TestParseExprExpressionMember(t *testing.T) {
 }
 
 func TestBindParser(t *testing.T) {
-	
-	m := func(a, b string) (_a int, _b bool, err error) { return }
-	f := reflect.ValueOf(m)
-	
+
+	m := func(tx *sql.Tx, a, b string) (_a int, _b bool, err error) { return }
+	f := realReflectType(m)
+
 	var err error
-	err = parseMethod("", f.Type(), "a:string, b:string", "a:string, b:string")
+	err = parseMethod("", f, "a:string, b:string", "a:int, b:bool")
 	require.NoError(t, err)
-	
-	//err = parseMethod("", f.Type(), "a, b:string", "a:string, b:string")
-	//require.NoError(t, err)
-	//
-	//err = parseMethod("", f.Type(), "a:int, b:string", "a:string, b:string")
-	//require.Error(t, err)
-	//
-	//err = parseMethod("", f.Type(), "a:string, b:int", "a:string, b:string")
-	//require.Error(t, err)
-	//
-	//err = parseMethod("", f.Type(), "a:string, b:string", "a:int, b:string")
-	//require.Error(t, err)
+
+	err = parseMethod("", f, "a, b:string", "a:int, b:bool")
+	require.NoError(t, err)
+
+	err = parseMethod("", f, "a, b", "a:int, b:bool")
+	require.NoError(t, err)
+
+	err = parseMethod("", f, "a, b", "a, b:bool")
+	require.NoError(t, err)
+
+	err = parseMethod("", f, "a, b", "a, b")
+	require.NoError(t, err)
+
+	err = parseMethod("", f, "a:string,b:string", "a:int,b:bool")
+	require.NoError(t, err)
+
+	err = parseMethod("", f, "a,b:string", "a:int,b:bool")
+	require.NoError(t, err)
+
+	err = parseMethod("", f, "a,b", "a:int,b:bool")
+	require.NoError(t, err)
+
+	err = parseMethod("", f, "a,b", "a,b:bool")
+	require.NoError(t, err)
+
+	err = parseMethod("", f, "a,b", "a,b")
+	require.NoError(t, err)
+
+	err = parseMethod("", f, "a:int, b:string", "a:string, b:string")
+	require.Error(t, err)
+
+	err = parseMethod("", f, "a:string, b:string", "a:string, b:string")
+	require.Error(t, err)
+
+	err = parseMethod("", f, "a:string, b:string, c", "a:string, b:string")
+	require.Error(t, err)
+
+	err = parseMethod("", f, "a:string, b:string", "a:int, b:string, c")
+	require.Error(t, err)
 }

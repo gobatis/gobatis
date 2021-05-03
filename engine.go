@@ -449,7 +449,7 @@ func (p *Engine) parseForeach(parser *exprParser, node *xmlNode, res *psr) error
 	parser.foreachParams = newExprParams()
 	parser.paramIndex = 0
 	
-	elem := reflectElem(collection.value)
+	elem := realReflectElem(collection.value)
 	frags := make([]string, 0)
 	switch elem.Kind() {
 	case reflect.Slice, reflect.Array:
