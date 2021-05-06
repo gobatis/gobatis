@@ -1,8 +1,6 @@
 package gobatis
 
 import (
-	"database/sql"
-	"encoding/json"
 	"fmt"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/require"
@@ -70,10 +68,10 @@ func TestParseConfig(t *testing.T) {
 }
 
 func TestParseMapper(t *testing.T) {
-	engine := NewEngine(NewDB("nil", "nil"))
-	require.NoError(t, parseMapper(engine, "user.Mapper.xml", defaultUserMapper))
-	d, _ := json.MarshalIndent(engine.statements, "", "\t")
-	fmt.Println(string(d))
+	//engine := NewEngine(NewDB("nil", "nil"))
+	//require.NoError(t, parseMapper(engine, "user.Mapper.xml", defaultUserMapper))
+	//d, _ := json.MarshalIndent(engine.statements, "", "\t")
+	//fmt.Println(string(d))
 }
 
 func TestParseExprExpression(t *testing.T) {
@@ -145,49 +143,49 @@ func TestParseExprExpressionMember(t *testing.T) {
 
 func TestBindParser(t *testing.T) {
 
-	m := func(tx *sql.Tx, a, b string) (_a int, _b bool, err error) { return }
-	f := realReflectType(m)
+	//m := func(tx *sql.Tx, a, b string) (_a int, _b bool, err error) { return }
+	//f := realReflectType(m)
 
 	var err error
-	err = parseMethod("", f, "a:string, b:string", "a:int, b:bool")
+	_, err = parseFragment("", "selectUser", "a:string, b:string", "a:int, b:bool", nil)
 	require.NoError(t, err)
 
-	err = parseMethod("", f, "a, b:string", "a:int, b:bool")
-	require.NoError(t, err)
-
-	err = parseMethod("", f, "a, b", "a:int, b:bool")
-	require.NoError(t, err)
-
-	err = parseMethod("", f, "a, b", "a, b:bool")
-	require.NoError(t, err)
-
-	err = parseMethod("", f, "a, b", "a, b")
-	require.NoError(t, err)
-
-	err = parseMethod("", f, "a:string,b:string", "a:int,b:bool")
-	require.NoError(t, err)
-
-	err = parseMethod("", f, "a,b:string", "a:int,b:bool")
-	require.NoError(t, err)
-
-	err = parseMethod("", f, "a,b", "a:int,b:bool")
-	require.NoError(t, err)
-
-	err = parseMethod("", f, "a,b", "a,b:bool")
-	require.NoError(t, err)
-
-	err = parseMethod("", f, "a,b", "a,b")
-	require.NoError(t, err)
-
-	err = parseMethod("", f, "a:int, b:string", "a:string, b:string")
-	require.Error(t, err)
-
-	err = parseMethod("", f, "a:string, b:string", "a:string, b:string")
-	require.Error(t, err)
-
-	err = parseMethod("", f, "a:string, b:string, c", "a:string, b:string")
-	require.Error(t, err)
-
-	err = parseMethod("", f, "a:string, b:string", "a:int, b:string, c")
-	require.Error(t, err)
+	//err = parseFragment("", f, "a, b:string", "a:int, b:bool")
+	//require.NoError(t, err)
+	//
+	//err = parseFragment("", f, "a, b", "a:int, b:bool")
+	//require.NoError(t, err)
+	//
+	//err = parseFragment("", f, "a, b", "a, b:bool")
+	//require.NoError(t, err)
+	//
+	//err = parseFragment("", f, "a, b", "a, b")
+	//require.NoError(t, err)
+	//
+	//err = parseFragment("", f, "a:string,b:string", "a:int,b:bool")
+	//require.NoError(t, err)
+	//
+	//err = parseFragment("", f, "a,b:string", "a:int,b:bool")
+	//require.NoError(t, err)
+	//
+	//err = parseFragment("", f, "a,b", "a:int,b:bool")
+	//require.NoError(t, err)
+	//
+	//err = parseFragment("", f, "a,b", "a,b:bool")
+	//require.NoError(t, err)
+	//
+	//err = parseFragment("", f, "a,b", "a,b")
+	//require.NoError(t, err)
+	//
+	//err = parseFragment("", f, "a:int, b:string", "a:string, b:string")
+	//require.Error(t, err)
+	//
+	//err = parseFragment("", f, "a:string, b:string", "a:string, b:string")
+	//require.Error(t, err)
+	//
+	//err = parseFragment("", f, "a:string, b:string, c", "a:string, b:string")
+	//require.Error(t, err)
+	//
+	//err = parseFragment("", f, "a:string, b:string", "a:int, b:string, c")
+	//require.Error(t, err)
 }

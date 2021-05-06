@@ -13,7 +13,6 @@ import (
 	"reflect"
 	"regexp"
 	"strings"
-	"sync"
 )
 
 func NewPostgresql(dsn string) *Engine {
@@ -25,18 +24,16 @@ func NewMySQL(dsn string) *Engine {
 }
 
 func NewEngine(db *DB) *Engine {
-	engine := &Engine{DB: db, logger: newLogger()}
+	engine := &Engine{master: db, logger: newLogger(), fragmentManager: newMethodManager()}
 	return engine
 }
 
 type Engine struct {
-	*DB
-	mu         sync.RWMutex
-	bundle     http.FileSystem
-	slaves     []*DB
-	logger     Logger
-	statements map[string]*xmlNode
-	sqlCaches  map[string]string
+	master          *DB
+	bundle          http.FileSystem
+	slaves          []*DB
+	logger          Logger
+	fragmentManager *fragmentManager
 }
 
 func (p *Engine) SetBundle(bundle http.FileSystem) {
@@ -44,7 +41,7 @@ func (p *Engine) SetBundle(bundle http.FileSystem) {
 }
 
 func (p *Engine) Init() (err error) {
-	err = p.initDB()
+	err = p.master.initDB()
 	if err != nil {
 		err = fmt.Errorf("init master db error: %s", err)
 		return
@@ -61,7 +58,7 @@ func (p *Engine) parseBundle() (err error) {
 	if err != nil {
 		return
 	}
-	
+
 	err = p.parseMappers()
 	if err != nil {
 		return
@@ -69,38 +66,42 @@ func (p *Engine) parseBundle() (err error) {
 	return
 }
 
-func (p *Engine) Call(name string, args ...interface{}) (res []interface{}, err error) {
-	var ok bool
-	//sql, ok := p.getSqlCache(name)
-	//if !ok {
-	var node *xmlNode
-	node, ok = p.getStatement(name)
-	if !ok {
-		err = fmt.Errorf("not found statement: %s", name)
-		return
-	}
-	var r *psr
-	var in []interface{}
-	r, in, err = p.parseStatement(node, args...)
-	if err != nil {
-		return
-	}
-	p.logger.Debugf("[%s] query: %s", name, r.sql)
-	p.logger.Debugf("[%s]  args: %+v", name, in)
-	stmt, err := p.Prepare(r.sql)
-	if err != nil {
-		return
-	}
-	defer func() {
-		_ = stmt.Close()
-	}()
-	_, err = stmt.Exec(in...)
-	if err != nil {
-		return
-	}
-	stmt.QueryRow()
-	return
-}
+//func (p *Engine) Call(name string, args ...interface{}) (res []interface{}, err error) {
+//	var ok bool
+//	//sql, ok := p.getSqlCache(name)
+//	//if !ok {
+//	var node *xmlNode
+//	node, ok = p.getStatement(name)
+//	if !ok {
+//		err = fmt.Errorf("not found statement: %s", name)
+//		return
+//	}
+//	var r *psr
+//	var in []interface{}
+//	r, in, err = p.parseStatement(node, args...)
+//	if err != nil {
+//		return
+//	}
+//	p.logger.Debugf("[%s] query: %s", name, r.sql)
+//	p.logger.Debugf("[%s]  args: %+v", name, in)
+//	stmt, err := p.Prepare(r.sql)
+//	if err != nil {
+//		return
+//	}
+//	defer func() {
+//		_ = stmt.Close()
+//	}()
+//	_, err = stmt.Exec(in...)
+//	if err != nil {
+//		return
+//	}
+//	stmt.QueryRow()
+//	//conn, err := p.DB.Conn(context.Background())
+//	//conn.B
+//	//tx ,_:= p.Begin()
+//	//tx.PrepareContext()
+//	return
+//}
 
 func (p *Engine) BindMapper(mapper ...interface{}) {
 	//tx := p.db.Begin()
@@ -197,48 +198,15 @@ func (p *Engine) walkMappers(root string) (files []string, err error) {
 	return
 }
 
-func (p *Engine) addStatement(file string, ctx antlr.ParserRuleContext, token antlr.Token, id string, node *xmlNode) (err error) {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	if p.statements == nil {
-		p.statements = map[string]*xmlNode{}
-	}
-	_, ok := p.statements[id]
-	if ok {
-		err = parseError(file, ctx, fmt.Sprintf("duplicate statement: %s", id))
+func (p *Engine) addFragment(file string, ctx antlr.ParserRuleContext, id string, node *xmlNode) (err error) {
+	m, err := parseFragment(file, id, node.GetAttribute(dtd.PARAMETER_TYPE), node.GetAttribute(dtd.RESULT_TYPE), node)
+	if err != nil {
 		return
 	}
-	p.statements[id] = node
-	return
-}
-
-func (p *Engine) getStatement(id string) (node *xmlNode, ok bool) {
-	p.mu.RLock()
-	defer p.mu.RUnlock()
-	if p.statements == nil {
-		return
+	err = p.fragmentManager.add(m)
+	if err != nil {
+		return parseError(file, ctx, err.Error())
 	}
-	node, ok = p.statements[id]
-	return
-}
-
-func (p *Engine) addSqlCache(id, sql string) {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	if p.sqlCaches == nil {
-		p.sqlCaches = map[string]string{}
-	}
-	p.sqlCaches[id] = sql
-	return
-}
-
-func (p *Engine) getSqlCache(id string) (sql string, ok bool) {
-	p.mu.RLock()
-	defer p.mu.RUnlock()
-	if p.sqlCaches == nil {
-		return
-	}
-	sql, ok = p.sqlCaches[id]
 	return
 }
 
@@ -247,7 +215,7 @@ type psr struct {
 	cache bool
 }
 
-func (p *psr) appendSql(s ...string) {
+func (p *psr) merge(s ...string) {
 	for _, v := range s {
 		v = strings.TrimSpace(v)
 		if v != "" {
@@ -317,7 +285,7 @@ func (p *Engine) parseSql(parser *exprParser, node *xmlNode, res *psr) error {
 			begin = false
 		}
 	}
-	res.appendSql(sql)
+	res.merge(sql)
 	return nil
 }
 
@@ -417,7 +385,7 @@ func (p *Engine) trimPrefixOverrides(parser *exprParser, node *xmlNode, res *psr
 		}
 	}
 	if strings.TrimSpace(sql) != "" {
-		res.appendSql(tag, sql)
+		res.merge(tag, sql)
 	}
 	return nil
 }
@@ -427,7 +395,7 @@ func (p *Engine) parseSet(parser *exprParser, node *xmlNode, res *psr) (err erro
 }
 
 func (p *Engine) parseForeach(parser *exprParser, node *xmlNode, res *psr) error {
-	
+
 	_var := node.GetAttribute(dtd.COLLECTION)
 	collection, ok := parser.baseParams.get(_var)
 	if !ok {
@@ -445,10 +413,10 @@ func (p *Engine) parseForeach(parser *exprParser, node *xmlNode, res *psr) error
 	open := node.GetAttribute(dtd.OPEN)
 	_close := node.GetAttribute(dtd.CLOSE)
 	separator := node.GetAttribute(dtd.SEPARATOR)
-	
+
 	parser.foreachParams = newExprParams()
 	parser.paramIndex = 0
-	
+
 	elem := realReflectElem(collection.value)
 	frags := make([]string, 0)
 	switch elem.Kind() {
@@ -499,11 +467,11 @@ func (p *Engine) parseForeach(parser *exprParser, node *xmlNode, res *psr) error
 			fmt.Sprintf("foreach collection type '%s' can't range", elem.Kind()))
 	}
 	parser.foreachParams = nil
-	
+
 	if len(frags) > 0 {
-		res.appendSql(open + strings.Join(frags, separator) + _close)
+		res.merge(open + strings.Join(frags, separator) + _close)
 	}
-	
+
 	return nil
 }
 
