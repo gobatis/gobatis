@@ -63,8 +63,9 @@ func (p *fragmentManager) get(id string) (m *fragment, ok bool) {
 }
 
 type param struct {
-	name string
-	kind reflect.Kind
+	name    string
+	kind    reflect.Kind
+	isArray bool
 }
 
 type execer interface {
@@ -236,17 +237,14 @@ func (p *caller) query(in ...interface{}) (err error) {
 	return p.parseQueryResult(rows)
 }
 
-func (p *caller) parseQueryResult(rows *sql.Rows) (err error) {
+func (p *caller) parseQueryResult(rows *sql.Rows) error {
 
 	res := newResult(result_rows)
 	res.rows = rows
 	res.setSelected(p.fragment.out)
 	res.setValues(p.values)
-	err = res.scanAll()
-	if err != nil {
-		return
-	}
-	return
+
+	return res.scanAll()
 }
 
 func (p *caller) removeParam(a []interface{}, i int) []interface{} {

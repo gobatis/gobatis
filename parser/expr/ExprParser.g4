@@ -10,7 +10,7 @@ paramComma: COMMA;
 
 paramDecl: IDENTIFIER | (COLON paramType) | (IDENTIFIER COLON paramType);
 
-paramType: IDENTIFIER;
+paramType: (L_BRACKET R_BRACKET)? IDENTIFIER;
 
 expressions: misc* expression misc*  EOF;
 

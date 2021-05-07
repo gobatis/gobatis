@@ -514,7 +514,12 @@ func (p *fragmentParser) EnterParamDecl(ctx *expr.ParamDeclContext) {
 	}
 	var err error
 	var kind reflect.Kind
+	var isArray bool
 	if _type != "" {
+		isArray = strings.HasPrefix(_type, "[]")
+		if isArray {
+			_type = strings.TrimSpace(strings.TrimPrefix(_type, "[]"))
+		}
 		kind, err = toReflectKind(_type)
 		if err != nil {
 			p.error = parseError(p.file, ctx, err.Error())
@@ -525,9 +530,9 @@ func (p *fragmentParser) EnterParamDecl(ctx *expr.ParamDeclContext) {
 	}
 	switch p.step {
 	case 0:
-		err = p.checkIn(ctx, name, kind)
+		err = p.checkIn(ctx, name, kind, isArray)
 	case 1:
-		err = p.checkOut(ctx, name, kind)
+		err = p.checkOut(ctx, name, kind, isArray)
 	}
 	if err != nil {
 		p.error = err
@@ -581,16 +586,7 @@ func (p *fragmentParser) walkMethods(parser *expr.ExprParser) error {
 	return nil
 }
 
-func (p *fragmentParser) checkIn(ctx antlr.ParserRuleContext, name string, kind reflect.Kind) error {
-
-	//if p.txIndex != -1 && p.paramIndex == p.txIndex {
-	//	p.paramIndex++
-	//}
-
-	//if p.paramIndex > p.f.NumIn()-1 {
-	//	return parseError(p.file, ctx,
-	//		fmt.Sprintf("alias '%s' index %d out of func params length", name, p.paramIndex))
-	//}
+func (p *fragmentParser) checkIn(ctx antlr.ParserRuleContext, name string, kind reflect.Kind, isArray bool) error {
 
 	if name == "" {
 		return parseError(p.file, ctx, fmt.Sprintf("in param not accept anonymous var"))
@@ -604,29 +600,13 @@ func (p *fragmentParser) checkIn(ctx antlr.ParserRuleContext, name string, kind 
 		return parseError(p.file, ctx, fmt.Sprintf("duplicated param '%s'", name))
 	}
 
-	//if expected != p.f.In(p.paramIndex).Kind() {
-	//	return parseError(p.file, ctx,
-	//		fmt.Sprintf("parma alias '%s' type '%s' is not equal func type '%s'",
-	//			name, expected, p.f.In(p.paramIndex).Kind()))
-	//}
-	//
-
 	p.inMap[name] = true
-	p.in = append(p.in, param{name: name, kind: kind})
+	p.in = append(p.in, param{name: name, kind: kind, isArray: isArray})
 
 	return nil
 }
 
-func (p *fragmentParser) checkOut(ctx antlr.ParserRuleContext, name string, kind reflect.Kind) error {
-
-	//if p.errIndex != -1 && p.paramIndex == p.errIndex {
-	//	p.paramIndex++
-	//}
-
-	//if p.paramIndex > p.f.NumIn()-1 {
-	//	return parseError(p.file, ctx,
-	//		fmt.Sprintf("result filed '%s' index %d out of func result length", name, p.paramIndex))
-	//}
+func (p *fragmentParser) checkOut(ctx antlr.ParserRuleContext, name string, kind reflect.Kind, isArray bool) error {
 
 	if p.outMap == nil {
 		p.outMap = map[string]bool{}
@@ -639,14 +619,8 @@ func (p *fragmentParser) checkOut(ctx antlr.ParserRuleContext, name string, kind
 		return parseError(p.file, ctx, fmt.Sprintf("duplicated result filed '%s'", name))
 	}
 
-	//if expected != p.f.Out(p.paramIndex).Kind() {
-	//	return parseError(p.file, ctx,
-	//		fmt.Sprintf("result filed '%s' type '%s' is not equal func type '%s'",
-	//			name, expected, p.f.Out(p.paramIndex).Kind()))
-	//}
-
 	p.outMap[name] = true
-	p.out = append(p.out, param{name: name, kind: kind})
+	p.out = append(p.out, param{name: name, kind: kind, isArray: isArray})
 
 	return nil
 }

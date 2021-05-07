@@ -1161,7 +1161,7 @@ func ToReflectTypeE(_type reflect.Type, operand interface{}) (interface{}, error
 	case reflect.Interface:
 		result = operand
 	default:
-		if _type.Kind() == reflect.Struct && _type.String() == "decimal.Decimal" {
+		if _type.Kind() == reflect.Struct && _type.Name() == "decimal.Decimal" {
 			result, err = ToDecimalE(operand)
 		} else {
 			return nil, fmt.Errorf("unsupport convert type '%s'", _type)
