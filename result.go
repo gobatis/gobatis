@@ -33,15 +33,6 @@ func (p *Result) Result() sql.Result {
 	return p.result
 }
 
-func (p *Result) Bind(pointer interface{}, column ...string) error {
-	switch p.typ {
-	case result_rows:
-		return nil
-	default:
-		return fmt.Errorf("no rows")
-	}
-}
-
 func (p *Result) setSelected(fields []param) {
 	for i, v := range fields {
 		if p.selectedMap == nil {
@@ -64,7 +55,7 @@ func (p *Result) setValues(values []reflect.Value) {
 	p.values = values
 }
 
-func (p *Result) scanAll() (err error) {
+func (p *Result) scan() (err error) {
 	columns, err := p.rows.Columns()
 	if err != nil {
 		return

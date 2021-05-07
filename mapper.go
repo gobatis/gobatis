@@ -244,7 +244,7 @@ func (p *caller) parseQueryResult(rows *sql.Rows) error {
 	res.setSelected(p.fragment.out)
 	res.setValues(p.values)
 
-	return res.scanAll()
+	return res.scan()
 }
 
 func (p *caller) removeParam(a []interface{}, i int) []interface{} {
