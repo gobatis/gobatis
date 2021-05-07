@@ -1,12 +1,18 @@
 package gobatis
 
 import (
-	"database/sql"
-	"database/sql/driver"
 	"fmt"
+	"github.com/gobatis/gobatis/bundle"
+	"github.com/stretchr/testify/require"
+	"os"
+	"path/filepath"
 	"reflect"
 	"testing"
 )
+
+func rv(a interface{}) reflect.Value {
+	return reflect.ValueOf(a)
+}
 
 func TestEngine(t *testing.T) {
 
@@ -22,39 +28,47 @@ func TestEngine(t *testing.T) {
 
 	//var testMapper TestMapper
 
-	//pwd, err := os.Getwd()
-	//if err != nil {
-	//	t.Error(err)
-	//	return
-	//}
-	//
-	//engine := NewPostgresql("postgresql://postgres:postgres@127.0.0.1:54322/angel?connect_timeout=10&sslmode=disable")
-	//engine.SetBundle(bundle.Dir(filepath.Join(pwd, "test")))
+	pwd, err := os.Getwd()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	engine := NewPostgresql("postgresql://postgres:postgres@127.0.0.1:54322/angel?connect_timeout=10&sslmode=disable")
+	engine.SetBundle(bundle.Dir(filepath.Join(pwd, "test")))
 	////engine.BindMapper(&testMapper)
 	//
-	//err = engine.Init()
-	//if err != nil {
-	//	t.Error("DB init error:", err)
-	//	return
-	//}
-	//err = engine.master.Ping()
-	//if err != nil {
-	//	t.Error("DB ping error:", err)
-	//	return
-	//}
-	//defer func() {
-	//	err = engine.master.Close()
-	//	if err != nil {
-	//		t.Error("DB close error:", err)
-	//		return
-	//	}
-	//}()
-	//var a driver.ExecerContext
-	b := new(sql.DB)
+	err = engine.Init()
+	if err != nil {
+		t.Error("DB init error:", err)
+		return
+	}
+	err = engine.master.Ping()
+	if err != nil {
+		t.Error("DB ping error:", err)
+		return
+	}
+	defer func() {
+		err = engine.master.Close()
+		if err != nil {
+			t.Error("DB close error:", err)
+			return
+		}
+	}()
 
-	itf := reflect.TypeOf((*driver.QueryerContext)(nil)).Elem()
-	fmt.Println(itf)
-	fmt.Println(reflect.TypeOf(b).Implements(itf))
+	f, ok := engine.fragmentManager.get("SelectTestById")
+	require.True(t, ok)
+
+	for _, v := range f.in {
+		fmt.Println(v.name, v.kind)
+	}
+
+	res := f.call(rv(1), rv("hello"), rv(2))
+	for _, v := range res {
+		fmt.Println(v.Interface())
+	}
+
+	//var a driver.ExecerContext
 	//fmt.Println("ok:", reflect.TypeOf(engine.master).Implements(reflect.TypeOf(a)))
 	//tx, _ := engine.master.Begin()
 	//tx.Query()

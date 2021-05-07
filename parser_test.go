@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/require"
+	"reflect"
 	"testing"
 )
 
@@ -134,7 +135,8 @@ func TestParseExprExpressionMember(t *testing.T) {
 	//result, err := parser.parseExpression("a:struct, b:array", `b[0:len(b)]`)
 	//result, err := parser.parseExpression("a:struct, b:array", `a.Age > int64(1) && b[2] > int64(1)`)
 	//result, err := parser.parseExpression("a:struct, b:array", `a.Age > 1 && b[2] > 1`)
-	err := parser.parseParameter("a:struct, b:array")
+	//err := parser.parseParameter("a:struct, b:array")
+	err := parser.baseParams.alias("a", reflect.Interface, 0)
 	require.NoError(t, err)
 	result, err := parser.parseExpression(`a.Dec(100)`)
 	require.NoError(t, err)
@@ -146,9 +148,9 @@ func TestBindParser(t *testing.T) {
 	//m := func(tx *sql.Tx, a, b string) (_a int, _b bool, err error) { return }
 	//f := realReflectType(m)
 
-	var err error
-	_, err = parseFragment("", "selectUser", "a:string, b:string", "a:int, b:bool", nil)
-	require.NoError(t, err)
+	//var err error
+	//_, err = parseFragment("", "selectUser", "a:string, b:string", "a:int, b:bool", nil)
+	//require.NoError(t, err)
 
 	//err = parseFragment("", f, "a, b:string", "a:int, b:bool")
 	//require.NoError(t, err)

@@ -90,7 +90,8 @@ func initExprParser(data string) (parser *expr.ExprParser, err error) {
 	return
 }
 
-func parseFragment(file string, name, in, out string, statement *xmlNode) (frag *fragment, err error) {
+func parseFragment(db *DB, logger Logger, file string, name, in, out string, statement *xmlNode) (
+	frag *fragment, err error) {
 
 	l := newFragmentParser(file)
 	var parser *expr.ExprParser
@@ -119,7 +120,7 @@ func parseFragment(file string, name, in, out string, statement *xmlNode) (frag 
 		}
 	}
 
-	frag = newFragment(name, l.in, l.out, statement)
+	frag = newFragment(db, logger, name, l.in, l.out, statement)
 
 	return
 }
@@ -878,7 +879,7 @@ func (p *exprParams) set(params ...interface{}) {
 	}
 }
 
-func (p *exprParams) alias(name, _type string, index int) error {
+func (p *exprParams) alias(name string, expected reflect.Kind, index int) error {
 	if name == "" {
 		return fmt.Errorf("alias name is empty")
 	}
@@ -894,19 +895,13 @@ func (p *exprParams) alias(name, _type string, index int) error {
 	if index < 0 || index > vl {
 		return fmt.Errorf("alias '%s' index %d out of params length %d", name, index, vl)
 	}
-	if _type != "" {
-		ev := p.values[index]
-		kind := realReflectElem(ev.value).Kind()
-		var err error
-		var expected reflect.Kind
-		expected, err = toReflectKind(_type)
-		if err != nil {
-			return fmt.Errorf("convert alias '%s' type error: %s", name, err)
-		}
-		if !ev.accept(kind, expected) && !ev.convertible(kind, expected) {
-			return fmt.Errorf("param type '%s' is not alias '%s' expteced type '%s'", kind, name, expected)
-		}
+
+	ev := p.values[index]
+	kind := realReflectElem(ev.value).Kind()
+	if !ev.accept(kind, expected) && !ev.convertible(kind, expected) {
+		return fmt.Errorf("param type '%s' is not alias '%s' expteced type '%s'", kind, name, expected)
 	}
+
 	p.aliases[name] = index
 	return nil
 }
@@ -1006,10 +1001,20 @@ func (p *exprParser) EnterParamDecl(ctx *expr.ParamDeclContext) {
 		return
 	}
 	var err error
-	if p.foreachParams != nil {
-		err = p.foreachParams.alias(name, expected, p.paramIndex)
+	var ek reflect.Kind
+	if expected != "" {
+		ek, err = toReflectKind(expected)
+		if err != nil {
+			p.error = err
+			return
+		}
 	} else {
-		err = p.baseParams.alias(name, expected, p.paramIndex)
+		ek = reflect.Interface
+	}
+	if p.foreachParams != nil {
+		err = p.foreachParams.alias(name, ek, p.paramIndex)
+	} else {
+		err = p.baseParams.alias(name, ek, p.paramIndex)
 	}
 	if err != nil {
 		p.error = parseError(p.file, ctx, err.Error())

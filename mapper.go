@@ -4,7 +4,12 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"github.com/gobatis/gobatis/cast"
+	"github.com/gobatis/gobatis/dtd"
+	"log"
 	"reflect"
+	"regexp"
+	"strings"
 	"sync"
 )
 
@@ -70,12 +75,13 @@ type queryer interface {
 	QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error)
 }
 
-func newFragment(id string, in, out []param, statement *xmlNode) *fragment {
-	return &fragment{id: id, in: in, out: out, statement: statement}
+func newFragment(db *DB, logger Logger, id string, in, out []param, statement *xmlNode) *fragment {
+	return &fragment{db: db, logger: logger, id: id, in: in, out: out, statement: statement}
 }
 
 type fragment struct {
 	db        *DB
+	logger    Logger
 	id        string
 	statement *xmlNode
 	cacheable bool
@@ -84,17 +90,121 @@ type fragment struct {
 	out       []param
 }
 
-func (p *fragment) exec(in ...reflect.Value) (out []reflect.Value) {
+func (p *fragment) call(in ...reflect.Value) []reflect.Value {
 
-	return
+	if len(p.in) != len(in) {
+		return p.error(fmt.Errorf("expected %d params, but pass %d", len(p.in), len(in)))
+	}
+
+	switch p.statement.Name {
+	case dtd.SELECT:
+		return p.query(in...)
+	case dtd.INSERT, dtd.DELETE, dtd.UPDATE:
+		return p.exec(in...)
+	default:
+		return p.error(
+			parseError(
+				p.statement.File,
+				p.statement.ctx,
+				fmt.Sprintf("unsupported call method '%s'", p.statement.Name),
+			),
+		)
+	}
+}
+
+func (p *fragment) exec(in ...reflect.Value) []reflect.Value {
+
+	exec, index := p.execer(in...)
+	if index > -1 {
+		in = p.removeParam(in, index)
+	}
+	ctx, index := p.context(in...)
+	if index > -1 {
+		in = p.removeParam(in, index)
+	}
+	args := make([]interface{}, len(in))
+	for i, v := range in {
+		args[i] = v.Interface()
+	}
+
+	s, vars, err := p.parseStatement(args)
+	if err != nil {
+		return p.error(err)
+	}
+	if len(vars) > 0 {
+		args = vars
+	}
+	p.logger.Debugf("[gobatis] [%s args]: %s", p.id, args)
+	res, err := exec.ExecContext(ctx, s, args...)
+	out := make([]reflect.Value, 2)
+	out[0] = reflect.ValueOf(res)
+	out[1] = reflect.ValueOf(err)
+	return out
 }
 
 func (p *fragment) query(in ...reflect.Value) (out []reflect.Value) {
+
+	q, index := p.queryer(in...)
+	if index > -1 {
+		in = p.removeParam(in, index)
+	}
+	ctx, index := p.context(in...)
+	if index > -1 {
+		in = p.removeParam(in, index)
+	}
+	if q == nil {
+		conn, err := p.db.Conn(ctx)
+		if err != nil {
+			return p.error(err)
+		}
+		defer func() {
+			_ = conn.Close()
+		}()
+		q = conn
+	}
+	args := make([]interface{}, len(in))
+	for i, v := range in {
+		args[i] = v.Interface()
+	}
+	s, vars, err := p.parseStatement(args)
+	if err != nil {
+		return p.error(err)
+	}
+	if len(vars) > 0 {
+		args = vars
+	}
+	p.logger.Debugf("[gobatis] [%s args]: %+v", p.id, args)
+	rows, err := q.QueryContext(ctx, s, args...)
+	if err != nil {
+		log.Println("query error:", err)
+		return
+	}
+	fmt.Println(rows.Columns())
+
 	return
 }
 
-func (p *fragment) removeElem(a []reflect.Value, i int) []reflect.Value {
+func (p *fragment) error(err error) []reflect.Value {
+	l := len(p.out)
+	if l > 0 {
+		out := make([]reflect.Value, l)
+		out[l-1] = reflect.ValueOf(err)
+		return out
+	}
+	return []reflect.Value{reflect.ValueOf(err)}
+}
+
+func (p *fragment) removeParam(a []reflect.Value, i int) []reflect.Value {
 	return append(a[:i], a[i+1:]...)
+}
+
+func (p *fragment) context(in ...reflect.Value) (context.Context, int) {
+	for i, v := range in {
+		if v.Kind() == reflect.Ptr && v.Elem().Type().PkgPath() == "context" {
+			return v.Interface().(context.Context), i
+		}
+	}
+	return context.Background(), -1
 }
 
 func (p *fragment) execer(in ...reflect.Value) (execer, int) {
@@ -119,4 +229,286 @@ func (p *fragment) queryer(in ...reflect.Value) (queryer, int) {
 		}
 	}
 	return nil, -1
+}
+
+type psr struct {
+	sql       string
+	cacheable bool
+}
+
+func (p *psr) merge(s ...string) {
+	for _, v := range s {
+		v = strings.TrimSpace(v)
+		if v != "" {
+			if p.sql != "" {
+				p.sql += " " + v
+			} else {
+				p.sql += v
+			}
+		}
+	}
+}
+
+func (p *fragment) parseStatement(args []interface{}) (string, []interface{}, error) {
+	if p.cacheable {
+		p.logger.Debugf("[gobatis] [%s cached sql]: %s", p.id, p.sql)
+		return p.sql, nil, nil
+	}
+	parser := newExprParser(args...)
+	for i, v := range p.in {
+		err := parser.baseParams.alias(v.name, v.kind, i)
+		if err != nil {
+			return "", nil, err
+		}
+	}
+	res := new(psr)
+	err := p.parseBlocks(parser, p.statement, res)
+	if err != nil {
+		return "", nil, err
+	}
+	if res.cacheable {
+		p.cacheable = res.cacheable
+		p.sql = res.sql
+	}
+	p.logger.Debugf("[gobatis] [%s sql]: %s", p.id, res.sql)
+	return res.sql, parser.vars, nil
+}
+
+func (p *fragment) trimPrefixOverride(sql, prefix string) (r string, err error) {
+	reg, err := regexp.Compile(`(?i)^` + prefix)
+	if err != nil {
+		return
+	}
+	r = reg.ReplaceAllString(sql, "")
+	return
+}
+
+func (p *fragment) parseSql(parser *exprParser, node *xmlNode, res *psr) error {
+	chars := []rune(node.Text)
+	begin := false
+	var from int
+	var next int
+	var s string
+	for i := 0; i < len(chars); i++ {
+		if !begin {
+			next = i + 1
+			if chars[i] == 35 && next <= len(chars)-1 && chars[next] == 123 {
+				begin = true
+				i++
+				from = i + 1
+				continue
+			} else {
+				s += string(chars[i])
+			}
+		} else if chars[i] == 125 {
+			r, err := parser.parseExpression(string(chars[from:i]))
+			if err != nil {
+				return err
+			}
+			parser.varIndex++
+			s += fmt.Sprintf("$%d", parser.varIndex)
+			parser.vars = append(parser.vars, r)
+			begin = false
+		}
+	}
+	res.merge(s)
+	return nil
+}
+
+func (p *fragment) parseBlocks(parser *exprParser, node *xmlNode, res *psr) (err error) {
+	for _, child := range node.Nodes {
+		err = p.parseBlock(parser, child, res)
+		if err != nil {
+			return
+		}
+	}
+	return
+}
+
+func (p *fragment) parseBlock(parser *exprParser, node *xmlNode, res *psr) (err error) {
+	if node.textOnly {
+		err = p.parseSql(parser, node, res)
+	} else {
+		switch node.Name {
+		case dtd.IF:
+			_, err = p.parseTest(parser, node, res)
+		case dtd.WHERE:
+			err = p.parseWhere(parser, node, res)
+		case dtd.CHOOSE:
+			err = p.parseChoose(parser, node, res)
+		case dtd.FOREACH:
+			err = p.parseForeach(parser, node, res)
+		case dtd.TRIM:
+			err = p.parseTrim(parser, node, res)
+		case dtd.SET:
+			err = p.parseSet(parser, node, res)
+		}
+	}
+	return
+}
+
+func (p *fragment) parseTest(parser *exprParser, node *xmlNode, res *psr) (bool, error) {
+	v, err := parser.parseExpression(node.GetAttribute(dtd.TEST))
+	if err != nil {
+		return false, err
+	}
+	b, err := cast.ToBoolE(v)
+	if err != nil {
+		return false, err
+	}
+	if !b {
+		return false, nil
+	}
+	return true, p.parseBlocks(parser, node, res)
+}
+
+func (p *fragment) parseWhere(parser *exprParser, node *xmlNode, res *psr) (err error) {
+	return p.trimPrefixOverrides(parser, node, res, dtd.WHERE, "AND |OR ")
+}
+
+func (p *fragment) parseChoose(parser *exprParser, node *xmlNode, res *psr) error {
+	var pass bool
+	for i, child := range node.Nodes {
+		if pass {
+			break
+		}
+		switch child.Name {
+		case dtd.WHEN:
+			var err error
+			pass, err = p.parseTest(parser, child, res)
+			if err != nil {
+				return err
+			}
+		case dtd.OTHERWISE:
+			if i != len(node.Nodes)-1 {
+				return parseError(parser.file, node.ctx, "otherwise should be last element in choose")
+			}
+			return p.parseBlocks(parser, child, res)
+		default:
+			return parseError(parser.file, child.ctx, fmt.Sprintf("unsupported element '%s' element in choose", child.Name))
+		}
+	}
+	return nil
+}
+
+func (p *fragment) parseTrim(parser *exprParser, node *xmlNode, res *psr) (err error) {
+	return p.trimPrefixOverrides(parser, node, res, node.GetAttribute(dtd.PREFIX), node.GetAttribute(dtd.PREFIX_OVERRIDES))
+}
+
+func (p *fragment) trimPrefixOverrides(parser *exprParser, node *xmlNode, res *psr, tag, prefixes string) error {
+	wr := new(psr)
+	err := p.parseBlocks(parser, node, wr)
+	if err != nil {
+		return err
+	}
+	s := strings.TrimSpace(wr.sql)
+	filters := strings.Split(prefixes, "|")
+	for _, v := range filters {
+		s, err = p.trimPrefixOverride(s, v)
+		if err != nil {
+			err = parseError(parser.file, node.ctx, fmt.Sprintf("regexp compile error: %s", err))
+			return err
+		}
+	}
+	if strings.TrimSpace(s) != "" {
+		res.merge(tag, s)
+	}
+	return nil
+}
+
+func (p *fragment) parseSet(parser *exprParser, node *xmlNode, res *psr) (err error) {
+	return p.trimPrefixOverrides(parser, node, res, dtd.SET, ",")
+}
+
+func (p *fragment) parseForeach(parser *exprParser, node *xmlNode, res *psr) error {
+
+	_var := node.GetAttribute(dtd.COLLECTION)
+	collection, ok := parser.baseParams.get(_var)
+	if !ok {
+		return parseError(parser.file, node.ctx, fmt.Sprintf("can't get foreach collection '%s' value", _var))
+	}
+	index := node.GetAttribute(dtd.INDEX)
+	if index == "" {
+		index = dtd.INDEX
+	}
+	item := node.GetAttribute(dtd.ITEM)
+	if item == "" {
+		item = dtd.ITEM
+	}
+	subParams := fmt.Sprintf("%s,%s", index, item)
+	open := node.GetAttribute(dtd.OPEN)
+	_close := node.GetAttribute(dtd.CLOSE)
+	separator := node.GetAttribute(dtd.SEPARATOR)
+
+	parser.foreachParams = newExprParams()
+	parser.paramIndex = 0
+
+	elem := realReflectElem(collection.value)
+	frags := make([]string, 0)
+	switch elem.Kind() {
+	case reflect.Slice, reflect.Array:
+		for i := 0; i < elem.Len(); i++ {
+			parser.foreachParams.set(i, elem.Index(i).Interface())
+			if i == 0 {
+				err := parser.parseParameter(subParams)
+				if err != nil {
+					return err
+				}
+			}
+			err := p.parseForeachChild(parser, node, &frags)
+			if err != nil {
+				return err
+			}
+		}
+	case reflect.Map:
+		for i, v := range elem.MapKeys() {
+			parser.foreachParams.set(v.Interface(), elem.MapIndex(v).Interface())
+			if i == 0 {
+				err := parser.parseParameter(subParams)
+				if err != nil {
+					return err
+				}
+			}
+			err := p.parseForeachChild(parser, node, &frags)
+			if err != nil {
+				return err
+			}
+		}
+	case reflect.Struct:
+		for i := 0; i < elem.NumField(); i++ {
+			parser.foreachParams.set(elem.Field(i).Interface(), elem.Field(i).Elem().Interface())
+			if i == 0 {
+				err := parser.parseParameter(subParams)
+				if err != nil {
+					return err
+				}
+			}
+			err := p.parseForeachChild(parser, node, &frags)
+			if err != nil {
+				return err
+			}
+		}
+	default:
+		return parseError(parser.file, node.ctx,
+			fmt.Sprintf("foreach collection type '%s' can't range", elem.Kind()))
+	}
+	parser.foreachParams = nil
+
+	if len(frags) > 0 {
+		res.merge(open + strings.Join(frags, separator) + _close)
+	}
+
+	return nil
+}
+
+func (p *fragment) parseForeachChild(parser *exprParser, node *xmlNode, frags *[]string) error {
+	for _, child := range node.Nodes {
+		br := new(psr)
+		err := p.parseBlock(parser, child, br)
+		if err != nil {
+			return err
+		}
+		*frags = append(*frags, br.sql)
+	}
+	return nil
 }

@@ -5,22 +5,11 @@
 
 <mapper namespace="test/mapper@UserMapper">
 
-    <select id="SelectTestById" parameterType="id:int, name:string, age:int" resultType="int64">
-        select * from test
-        <where>
-            <if test="id>0">
-                id = #{id}
-            </if>
-            <if test='name!=""'>
-                and name = '#{name}'
-            </if>
-            <if test='age != 0'>
-                and age = #{age+10}
-            </if>
-        </where>
+    <select id="SelectTestById" parameterType="id:int, name:string, age:int" resultType="id:int64">
+        select * from test where id= #{id}
     </select>
 
-    <select id="SelectTestByName" parameterType="id:int, name:string, age:int" resultType="int64">
+    <select id="SelectTestByName" parameterType="id:int, name:string, age:int" resultType="id:int64">
         select * from test
         <choose>
             <when test="id>0">
@@ -35,7 +24,7 @@
         </choose>
     </select>
 
-    <select id="SelectTestForeach" parameterType="names" resultType="int64">
+    <select id="SelectTestForeach" parameterType="names" resultType="id:int64">
         select * from test
         <where>
             name in
