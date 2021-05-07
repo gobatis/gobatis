@@ -77,12 +77,15 @@ func (p *Result) scan() (err error) {
 				err = p.reflectValue(p.selectedMap[v], values[i])
 			}
 		}
-
+		if len(p.selectedList) > 0 && !p.selectedList[0].isArray {
+			break
+		}
 	}
 	return
 }
 
 func (p *Result) reflectValue(index int, value interface{}) error {
+
 	switch p.values[index].Elem().Kind() {
 	case reflect.Int8:
 		v, err := cast.ToInt8E(value)

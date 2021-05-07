@@ -5,7 +5,7 @@
 
 <mapper namespace="test/mapper@UserMapper">
 
-    <select id="SelectTestById" parameterType="id:[]int, name:string, age:int" resultType="name:[]string">
+    <select id="SelectTestById" parameterType="id:[]int, name:string, age:int" resultType="name:string">
         select * from test where id > #{id}
     </select>
 

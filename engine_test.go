@@ -55,10 +55,11 @@ func TestEngine(t *testing.T) {
 		}
 	}()
 
+
 	var names []string
-	err = engine.Call("SelectTestById", 29, "hi", 2).Scan(&names)
+	err = engine.Call("SelectTestById", 29, "hi", 2).Scan( &names)
 	require.NoError(t, err)
-	t.Log("result is:", names)
+	t.Log("result is:",  names)
 
 	//require.True(t, ok)
 
