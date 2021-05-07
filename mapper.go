@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/gobatis/gobatis/cast"
 	"github.com/gobatis/gobatis/dtd"
-	"log"
 	"reflect"
 	"regexp"
 	"strings"
@@ -152,16 +151,22 @@ func (p *fragment) query(in ...reflect.Value) (out []reflect.Value) {
 	if index > -1 {
 		in = p.removeParam(in, index)
 	}
+
+	var err error
+	var conn *sql.Conn
 	if q == nil {
-		conn, err := p.db.Conn(ctx)
+		conn, err = p.db.Conn(ctx)
 		if err != nil {
 			return p.error(err)
 		}
-		defer func() {
-			_ = conn.Close()
-		}()
 		q = conn
 	}
+	defer func() {
+		if conn != nil {
+			_ = conn.Close()
+		}
+	}()
+
 	args := make([]interface{}, len(in))
 	for i, v := range in {
 		args[i] = v.Interface()
@@ -173,15 +178,26 @@ func (p *fragment) query(in ...reflect.Value) (out []reflect.Value) {
 	if len(vars) > 0 {
 		args = vars
 	}
+
 	p.logger.Debugf("[gobatis] [%s args]: %+v", p.id, args)
+
 	rows, err := q.QueryContext(ctx, s, args...)
 	if err != nil {
-		log.Println("query error:", err)
-		return
+		return p.error(err)
 	}
-	fmt.Println(rows.Columns())
+	defer func() {
+		_ = rows.Close()
+	}()
 
-	return
+	return p.parseQueryResult(rows)
+}
+
+func (p *fragment) parseQueryResult(rows *sql.Rows) []reflect.Value {
+
+	fmt.Println(rows.Columns())
+	fmt.Println(p.out)
+
+	return nil
 }
 
 func (p *fragment) error(err error) []reflect.Value {

@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"path/filepath"
+	"reflect"
 )
 
 func NewPostgresql(dsn string) *Engine {
@@ -30,6 +31,26 @@ type Engine struct {
 	slaves          []*DB
 	logger          Logger
 	fragmentManager *fragmentManager
+}
+
+func (p *Engine) Call(name string, args ...interface{}) ([]interface{}, error) {
+	f, ok := p.fragmentManager.get(name)
+	if !ok {
+		return nil, fmt.Errorf("method not exist")
+	}
+	_args := make([]reflect.Value, len(args))
+	for i, v := range args {
+		_args[i] = reflect.ValueOf(v)
+	}
+	r := f.call(_args...)
+	for _, v := range r {
+		fmt.Println(v.Interface())
+	}
+	return nil, nil
+}
+
+func (p *Engine) Master() *DB {
+	return p.master
 }
 
 func (p *Engine) SetBundle(bundle http.FileSystem) {
@@ -195,7 +216,9 @@ func (p *Engine) walkMappers(root string) (files []string, err error) {
 }
 
 func (p *Engine) addFragment(file string, ctx antlr.ParserRuleContext, id string, node *xmlNode) (err error) {
-	m, err := parseFragment(p.master, p.logger, file, id, node.GetAttribute(dtd.PARAMETER_TYPE), node.GetAttribute(dtd.RESULT_TYPE), node)
+	m, err := parseFragment(
+		p.master, p.logger, file, id,
+		node.GetAttribute(dtd.PARAMETER_TYPE), node.GetAttribute(dtd.RESULT_TYPE), node)
 	if err != nil {
 		return
 	}

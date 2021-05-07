@@ -59,14 +59,12 @@ func TestEngine(t *testing.T) {
 	f, ok := engine.fragmentManager.get("SelectTestById")
 	require.True(t, ok)
 
-	for _, v := range f.in {
-		fmt.Println(v.name, v.kind)
-	}
-
 	res := f.call(rv(1), rv("hello"), rv(2))
 	for _, v := range res {
 		fmt.Println(v.Interface())
 	}
+	fmt.Println("done", res)
+
 
 	//var a driver.ExecerContext
 	//fmt.Println("ok:", reflect.TypeOf(engine.master).Implements(reflect.TypeOf(a)))
