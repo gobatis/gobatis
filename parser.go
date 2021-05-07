@@ -500,14 +500,17 @@ func (p *fragmentParser) EnterParamDecl(ctx *expr.ParamDeclContext) {
 	if p.error != nil {
 		return
 	}
-	name := ctx.IDENTIFIER().GetText()
+	var name string
+	if ctx.IDENTIFIER() != nil {
+		name = ctx.IDENTIFIER().GetText()
+		if _builtin.is(name) {
+			p.error = parseError(p.file, ctx, fmt.Sprintf("'%s' conflict with builtin", name))
+			return
+		}
+	}
 	var _type string
 	if ctx.ParamType() != nil {
 		_type = ctx.ParamType().GetText()
-	}
-	if _builtin.is(name) {
-		p.error = parseError(p.file, ctx, fmt.Sprintf("'%s' conflict with builtin", name))
-		return
 	}
 	var err error
 	var kind reflect.Kind
@@ -589,6 +592,10 @@ func (p *fragmentParser) checkIn(ctx antlr.ParserRuleContext, name string, kind 
 	//		fmt.Sprintf("alias '%s' index %d out of func params length", name, p.paramIndex))
 	//}
 
+	if name == "" {
+		return parseError(p.file, ctx, fmt.Sprintf("in param not accept anonymous var"))
+	}
+
 	if p.inMap == nil {
 		p.inMap = map[string]bool{}
 	}
@@ -626,6 +633,9 @@ func (p *fragmentParser) checkOut(ctx antlr.ParserRuleContext, name string, kind
 	}
 
 	if _, ok := p.outMap[name]; ok {
+		if name == "" {
+			name = "anonymous var"
+		}
 		return parseError(p.file, ctx, fmt.Sprintf("duplicated result filed '%s'", name))
 	}
 

@@ -10,6 +10,7 @@ import (
 	"regexp"
 	"strings"
 	"sync"
+	"time"
 )
 
 //type Params = map[string]interface{}
@@ -89,29 +90,63 @@ type fragment struct {
 	out       []param
 }
 
-func (p *fragment) call(in ...reflect.Value) []reflect.Value {
+func (p *fragment) call(in ...interface{}) *caller {
+	return &caller{fragment: p, params: in}
+}
 
-	if len(p.in) != len(in) {
-		return p.error(fmt.Errorf("expected %d params, but pass %d", len(p.in), len(in)))
+type caller struct {
+	fragment *fragment
+	params   []interface{}
+	values   []reflect.Value
+}
+
+func (p *caller) Scan(pointers ...interface{}) (err error) {
+
+	start := time.Now()
+	defer func() {
+		p.fragment.logger.Debugf("[gobatis] [%s cost]: %s", p.fragment.id, time.Since(start))
+	}()
+
+	if len(p.fragment.out) != len(pointers) {
+		err = fmt.Errorf("expected %d result fileds, but pass %d", len(p.fragment.out), len(pointers))
+		return
 	}
 
-	switch p.statement.Name {
+	for _, v := range pointers {
+		rv := reflect.ValueOf(v)
+		if rv.Kind() != reflect.Ptr {
+			err = fmt.Errorf("scan only accept pointer")
+			return
+		}
+		p.values = append(p.values, rv)
+	}
+
+	return p.call()
+}
+
+func (p *caller) call() (err error) {
+
+	if len(p.fragment.in) != len(p.params) {
+		err = fmt.Errorf("expected %d params, but pass %d", len(p.fragment.in), len(p.params))
+		return
+	}
+
+	switch p.fragment.statement.Name {
 	case dtd.SELECT:
-		return p.query(in...)
+		return p.query(p.params...)
 	case dtd.INSERT, dtd.DELETE, dtd.UPDATE:
-		return p.exec(in...)
+		return p.exec(p.params...)
 	default:
-		return p.error(
-			parseError(
-				p.statement.File,
-				p.statement.ctx,
-				fmt.Sprintf("unsupported call method '%s'", p.statement.Name),
-			),
+		err = parseError(
+			p.fragment.statement.File,
+			p.fragment.statement.ctx,
+			fmt.Sprintf("unsupported call method '%s'", p.fragment.statement.Name),
 		)
+		return
 	}
 }
 
-func (p *fragment) exec(in ...reflect.Value) []reflect.Value {
+func (p *caller) exec(in ...interface{}) (err error) {
 
 	exec, index := p.execer(in...)
 	if index > -1 {
@@ -121,27 +156,41 @@ func (p *fragment) exec(in ...reflect.Value) []reflect.Value {
 	if index > -1 {
 		in = p.removeParam(in, index)
 	}
-	args := make([]interface{}, len(in))
-	for i, v := range in {
-		args[i] = v.Interface()
-	}
 
-	s, vars, err := p.parseStatement(args)
+	var conn *sql.Conn
+	if exec == nil {
+		conn, err = p.fragment.db.Conn(ctx)
+		if err != nil {
+			return
+		}
+		exec = conn
+	}
+	defer func() {
+		if conn != nil {
+			_ = conn.Close()
+		}
+	}()
+
+	s, vars, err := p.parseStatement(in)
 	if err != nil {
-		return p.error(err)
+		return
 	}
 	if len(vars) > 0 {
-		args = vars
+		in = vars
 	}
-	p.logger.Debugf("[gobatis] [%s args]: %s", p.id, args)
-	res, err := exec.ExecContext(ctx, s, args...)
-	out := make([]reflect.Value, 2)
-	out[0] = reflect.ValueOf(res)
-	out[1] = reflect.ValueOf(err)
-	return out
+
+	p.fragment.logger.Debugf("[gobatis] [%s args]: %s", p.fragment.id, in)
+
+	res := newResult(result_result)
+	res.result, err = exec.ExecContext(ctx, s, in...)
+	if err != nil {
+		return
+	}
+
+	return
 }
 
-func (p *fragment) query(in ...reflect.Value) (out []reflect.Value) {
+func (p *caller) query(in ...interface{}) (err error) {
 
 	q, index := p.queryer(in...)
 	if index > -1 {
@@ -152,12 +201,11 @@ func (p *fragment) query(in ...reflect.Value) (out []reflect.Value) {
 		in = p.removeParam(in, index)
 	}
 
-	var err error
 	var conn *sql.Conn
 	if q == nil {
-		conn, err = p.db.Conn(ctx)
+		conn, err = p.fragment.db.Conn(ctx)
 		if err != nil {
-			return p.error(err)
+			return
 		}
 		q = conn
 	}
@@ -167,23 +215,19 @@ func (p *fragment) query(in ...reflect.Value) (out []reflect.Value) {
 		}
 	}()
 
-	args := make([]interface{}, len(in))
-	for i, v := range in {
-		args[i] = v.Interface()
-	}
-	s, vars, err := p.parseStatement(args)
+	s, vars, err := p.parseStatement(in)
 	if err != nil {
-		return p.error(err)
+		return
 	}
 	if len(vars) > 0 {
-		args = vars
+		in = vars
 	}
 
-	p.logger.Debugf("[gobatis] [%s args]: %+v", p.id, args)
+	p.fragment.logger.Debugf("[gobatis] [%s args]: %+v", p.fragment.id, in)
 
-	rows, err := q.QueryContext(ctx, s, args...)
+	rows, err := q.QueryContext(ctx, s, in...)
 	if err != nil {
-		return p.error(err)
+		return
 	}
 	defer func() {
 		_ = rows.Close()
@@ -192,55 +236,53 @@ func (p *fragment) query(in ...reflect.Value) (out []reflect.Value) {
 	return p.parseQueryResult(rows)
 }
 
-func (p *fragment) parseQueryResult(rows *sql.Rows) []reflect.Value {
+func (p *caller) parseQueryResult(rows *sql.Rows) (err error) {
 
-	fmt.Println(rows.Columns())
-	fmt.Println(p.out)
-
-	return nil
-}
-
-func (p *fragment) error(err error) []reflect.Value {
-	l := len(p.out)
-	if l > 0 {
-		out := make([]reflect.Value, l)
-		out[l-1] = reflect.ValueOf(err)
-		return out
+	res := newResult(result_rows)
+	res.rows = rows
+	res.setSelected(p.fragment.out)
+	res.setValues(p.values)
+	err = res.scanAll()
+	if err != nil {
+		return
 	}
-	return []reflect.Value{reflect.ValueOf(err)}
+	return
 }
 
-func (p *fragment) removeParam(a []reflect.Value, i int) []reflect.Value {
+func (p *caller) removeParam(a []interface{}, i int) []interface{} {
 	return append(a[:i], a[i+1:]...)
 }
 
-func (p *fragment) context(in ...reflect.Value) (context.Context, int) {
+func (p *caller) context(in ...interface{}) (context.Context, int) {
 	for i, v := range in {
-		if v.Kind() == reflect.Ptr && v.Elem().Type().PkgPath() == "context" {
-			return v.Interface().(context.Context), i
+		rv := reflect.ValueOf(v)
+		if rv.Kind() == reflect.Ptr && rv.Elem().Type().PkgPath() == "context" {
+			return rv.Interface().(context.Context), i
 		}
 	}
 	return context.Background(), -1
 }
 
-func (p *fragment) execer(in ...reflect.Value) (execer, int) {
+func (p *caller) execer(in ...interface{}) (execer, int) {
 	if len(in) > 0 {
 		t := reflect.TypeOf(new(execer)).Elem()
 		for i, v := range in {
-			if v.Type().Implements(t) {
-				return v.Interface().(execer), i
+			rv := reflect.ValueOf(v)
+			if rv.Type().Implements(t) {
+				return rv.Interface().(execer), i
 			}
 		}
 	}
 	return nil, -1
 }
 
-func (p *fragment) queryer(in ...reflect.Value) (queryer, int) {
+func (p *caller) queryer(in ...interface{}) (queryer, int) {
 	if len(in) > 0 {
 		t := reflect.TypeOf(new(queryer)).Elem()
 		for i, v := range in {
-			if v.Type().Implements(t) {
-				return v.Interface().(queryer), i
+			rv := reflect.ValueOf(v)
+			if rv.Type().Implements(t) {
+				return rv.Interface().(queryer), i
 			}
 		}
 	}
@@ -265,32 +307,34 @@ func (p *psr) merge(s ...string) {
 	}
 }
 
-func (p *fragment) parseStatement(args []interface{}) (string, []interface{}, error) {
-	if p.cacheable {
-		p.logger.Debugf("[gobatis] [%s cached sql]: %s", p.id, p.sql)
-		return p.sql, nil, nil
+func (p *caller) parseStatement(args []interface{}) (string, []interface{}, error) {
+	if p.fragment.cacheable {
+		p.fragment.logger.Debugf("[gobatis] [%s cached sql]: %s", p.fragment.id, p.fragment.sql)
+		return p.fragment.sql, nil, nil
 	}
 	parser := newExprParser(args...)
-	for i, v := range p.in {
+	for i, v := range p.fragment.in {
 		err := parser.baseParams.alias(v.name, v.kind, i)
 		if err != nil {
 			return "", nil, err
 		}
 	}
 	res := new(psr)
-	err := p.parseBlocks(parser, p.statement, res)
+	err := p.parseBlocks(parser, p.fragment.statement, res)
 	if err != nil {
 		return "", nil, err
 	}
 	if res.cacheable {
-		p.cacheable = res.cacheable
-		p.sql = res.sql
+		p.fragment.cacheable = res.cacheable
+		p.fragment.sql = res.sql
 	}
-	p.logger.Debugf("[gobatis] [%s sql]: %s", p.id, res.sql)
+
+	p.fragment.logger.Debugf("[gobatis] [%s sql]: %s", p.fragment.id, res.sql)
+
 	return res.sql, parser.vars, nil
 }
 
-func (p *fragment) trimPrefixOverride(sql, prefix string) (r string, err error) {
+func (p *caller) trimPrefixOverride(sql, prefix string) (r string, err error) {
 	reg, err := regexp.Compile(`(?i)^` + prefix)
 	if err != nil {
 		return
@@ -299,7 +343,7 @@ func (p *fragment) trimPrefixOverride(sql, prefix string) (r string, err error) 
 	return
 }
 
-func (p *fragment) parseSql(parser *exprParser, node *xmlNode, res *psr) error {
+func (p *caller) parseSql(parser *exprParser, node *xmlNode, res *psr) error {
 	chars := []rune(node.Text)
 	begin := false
 	var from int
@@ -331,7 +375,7 @@ func (p *fragment) parseSql(parser *exprParser, node *xmlNode, res *psr) error {
 	return nil
 }
 
-func (p *fragment) parseBlocks(parser *exprParser, node *xmlNode, res *psr) (err error) {
+func (p *caller) parseBlocks(parser *exprParser, node *xmlNode, res *psr) (err error) {
 	for _, child := range node.Nodes {
 		err = p.parseBlock(parser, child, res)
 		if err != nil {
@@ -341,7 +385,7 @@ func (p *fragment) parseBlocks(parser *exprParser, node *xmlNode, res *psr) (err
 	return
 }
 
-func (p *fragment) parseBlock(parser *exprParser, node *xmlNode, res *psr) (err error) {
+func (p *caller) parseBlock(parser *exprParser, node *xmlNode, res *psr) (err error) {
 	if node.textOnly {
 		err = p.parseSql(parser, node, res)
 	} else {
@@ -363,7 +407,7 @@ func (p *fragment) parseBlock(parser *exprParser, node *xmlNode, res *psr) (err 
 	return
 }
 
-func (p *fragment) parseTest(parser *exprParser, node *xmlNode, res *psr) (bool, error) {
+func (p *caller) parseTest(parser *exprParser, node *xmlNode, res *psr) (bool, error) {
 	v, err := parser.parseExpression(node.GetAttribute(dtd.TEST))
 	if err != nil {
 		return false, err
@@ -378,11 +422,11 @@ func (p *fragment) parseTest(parser *exprParser, node *xmlNode, res *psr) (bool,
 	return true, p.parseBlocks(parser, node, res)
 }
 
-func (p *fragment) parseWhere(parser *exprParser, node *xmlNode, res *psr) (err error) {
+func (p *caller) parseWhere(parser *exprParser, node *xmlNode, res *psr) (err error) {
 	return p.trimPrefixOverrides(parser, node, res, dtd.WHERE, "AND |OR ")
 }
 
-func (p *fragment) parseChoose(parser *exprParser, node *xmlNode, res *psr) error {
+func (p *caller) parseChoose(parser *exprParser, node *xmlNode, res *psr) error {
 	var pass bool
 	for i, child := range node.Nodes {
 		if pass {
@@ -407,11 +451,11 @@ func (p *fragment) parseChoose(parser *exprParser, node *xmlNode, res *psr) erro
 	return nil
 }
 
-func (p *fragment) parseTrim(parser *exprParser, node *xmlNode, res *psr) (err error) {
+func (p *caller) parseTrim(parser *exprParser, node *xmlNode, res *psr) (err error) {
 	return p.trimPrefixOverrides(parser, node, res, node.GetAttribute(dtd.PREFIX), node.GetAttribute(dtd.PREFIX_OVERRIDES))
 }
 
-func (p *fragment) trimPrefixOverrides(parser *exprParser, node *xmlNode, res *psr, tag, prefixes string) error {
+func (p *caller) trimPrefixOverrides(parser *exprParser, node *xmlNode, res *psr, tag, prefixes string) error {
 	wr := new(psr)
 	err := p.parseBlocks(parser, node, wr)
 	if err != nil {
@@ -432,11 +476,11 @@ func (p *fragment) trimPrefixOverrides(parser *exprParser, node *xmlNode, res *p
 	return nil
 }
 
-func (p *fragment) parseSet(parser *exprParser, node *xmlNode, res *psr) (err error) {
+func (p *caller) parseSet(parser *exprParser, node *xmlNode, res *psr) (err error) {
 	return p.trimPrefixOverrides(parser, node, res, dtd.SET, ",")
 }
 
-func (p *fragment) parseForeach(parser *exprParser, node *xmlNode, res *psr) error {
+func (p *caller) parseForeach(parser *exprParser, node *xmlNode, res *psr) error {
 
 	_var := node.GetAttribute(dtd.COLLECTION)
 	collection, ok := parser.baseParams.get(_var)
@@ -517,7 +561,7 @@ func (p *fragment) parseForeach(parser *exprParser, node *xmlNode, res *psr) err
 	return nil
 }
 
-func (p *fragment) parseForeachChild(parser *exprParser, node *xmlNode, frags *[]string) error {
+func (p *caller) parseForeachChild(parser *exprParser, node *xmlNode, frags *[]string) error {
 	for _, child := range node.Nodes {
 		br := new(psr)
 		err := p.parseBlock(parser, child, br)

@@ -1,7 +1,6 @@
 package gobatis
 
 import (
-	"fmt"
 	"github.com/gobatis/gobatis/bundle"
 	"github.com/stretchr/testify/require"
 	"os"
@@ -56,15 +55,19 @@ func TestEngine(t *testing.T) {
 		}
 	}()
 
-	f, ok := engine.fragmentManager.get("SelectTestById")
-	require.True(t, ok)
+	var id int64
+	var name string
+	err = engine.Call("SelectTestById", 32, "hi", 2).Scan(&id, &name)
+	require.NoError(t, err)
+	t.Log("result is:", id, name)
 
-	res := f.call(rv(1), rv("hello"), rv(2))
-	for _, v := range res {
-		fmt.Println(v.Interface())
-	}
-	fmt.Println("done", res)
+	//require.True(t, ok)
 
+	//res := f.call(rv(1), rv("hello"), rv(2))
+	//for _, v := range res {
+	//	fmt.Println(v.Interface())
+	//}
+	//fmt.Println("done", res)
 
 	//var a driver.ExecerContext
 	//fmt.Println("ok:", reflect.TypeOf(engine.master).Implements(reflect.TypeOf(a)))

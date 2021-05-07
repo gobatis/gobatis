@@ -8,7 +8,7 @@ parameters: paramDecl (paramComma paramDecl)* EOF;
 
 paramComma: COMMA;
 
-paramDecl: IDENTIFIER | (IDENTIFIER COLON paramType);
+paramDecl: IDENTIFIER | (COLON paramType) | (IDENTIFIER COLON paramType);
 
 paramType: IDENTIFIER;
 

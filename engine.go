@@ -9,7 +9,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"path/filepath"
-	"reflect"
 )
 
 func NewPostgresql(dsn string) *Engine {
@@ -33,20 +32,12 @@ type Engine struct {
 	fragmentManager *fragmentManager
 }
 
-func (p *Engine) Call(name string, args ...interface{}) ([]interface{}, error) {
+func (p *Engine) Call(name string, args ...interface{}) *caller {
 	f, ok := p.fragmentManager.get(name)
 	if !ok {
-		return nil, fmt.Errorf("method not exist")
+		panic(fmt.Errorf("method '%s' not exist", name))
 	}
-	_args := make([]reflect.Value, len(args))
-	for i, v := range args {
-		_args[i] = reflect.ValueOf(v)
-	}
-	r := f.call(_args...)
-	for _, v := range r {
-		fmt.Println(v.Interface())
-	}
-	return nil, nil
+	return f.call(args...)
 }
 
 func (p *Engine) Master() *DB {

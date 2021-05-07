@@ -2,8 +2,9 @@ package gobatis
 
 import (
 	"database/sql"
-	"encoding/json"
 	"fmt"
+	"github.com/gobatis/gobatis/cast"
+	"reflect"
 )
 
 const (
@@ -16,9 +17,12 @@ func newResult(typ int) *Result {
 }
 
 type Result struct {
-	typ    int
-	rows   *sql.Rows
-	result sql.Result
+	typ          int
+	rows         *sql.Rows
+	result       sql.Result
+	selectedMap  map[string]int
+	selectedList []param
+	values       []reflect.Value
 }
 
 func (p *Result) Rows() *sql.Rows {
@@ -32,63 +36,95 @@ func (p *Result) Result() sql.Result {
 func (p *Result) Bind(pointer interface{}, column ...string) error {
 	switch p.typ {
 	case result_rows:
-		return p.bindRows(pointer, "")
+		return nil
 	default:
 		return fmt.Errorf("no rows")
 	}
 }
 
-func (p *Result) bindRows(pointer interface{}, column string) (err error) {
-	times := 1
-	index := 0
+func (p *Result) setSelected(fields []param) {
+	for i, v := range fields {
+		if p.selectedMap == nil {
+			p.selectedMap = map[string]int{}
+		}
+		p.selectedMap[v.name] = i
+		p.selectedList = append(p.selectedList, v)
+	}
+}
+
+func (p *Result) isSelected(field string) bool {
+	if p.selectedMap == nil {
+		return false
+	}
+	_, ok := p.selectedMap[field]
+	return ok
+}
+
+func (p *Result) setValues(values []reflect.Value) {
+	p.values = values
+}
+
+func (p *Result) scanAll() (err error) {
 	columns, err := p.rows.Columns()
 	if err != nil {
 		return
 	}
-	values := newResultValues(columns)
-	pointers := make([]interface{}, len(columns))
+	l := len(columns)
 	for p.rows.Next() {
-		if index >= times {
-			break
-		}
-		index++
+		values := make([]interface{}, l)
+		pointers := make([]interface{}, l)
 		for i, _ := range columns {
-			pointers[i] = &values.values[i]
+			pointers[i] = &values[i]
 		}
 		err = p.rows.Scan(pointers...)
 		if err != nil {
 			_ = p.rows.Close()
 			return
 		}
-		fmt.Println(values.String())
+		for i, v := range columns {
+			if p.isSelected(v) {
+				err = p.reflectValue(p.selectedMap[v], values[i])
+			}
+		}
+
 	}
 	return
 }
 
-func newResultValues(columns []string) *resultValues {
-	r := new(resultValues)
-	r.values = make([]interface{}, len(columns))
-	r._map = map[string]int{}
-	for i, v := range columns {
-		r._map[v] = i
+func (p *Result) reflectValue(index int, value interface{}) error {
+
+	switch p.selectedList[index].kind {
+	case reflect.Int8:
+		v, err := cast.ToInt8E(value)
+		if err != nil {
+			return err
+		}
+		p.values[index].Elem().SetInt(int64(v))
+	case reflect.Int16:
+		v, err := cast.ToInt16E(value)
+		if err != nil {
+			return err
+		}
+		p.values[index].Elem().SetInt(int64(v))
+	case reflect.Int32:
+		v, err := cast.ToInt32E(value)
+		if err != nil {
+			return err
+		}
+		p.values[index].Elem().SetInt(int64(v))
+	case reflect.Int64:
+		v, err := cast.ToInt64E(value)
+		if err != nil {
+			return err
+		}
+		p.values[index].Elem().SetInt(v)
+	case reflect.String:
+		v, err := cast.ToStringE(value)
+		if err != nil {
+			return err
+		}
+		p.values[index].Elem().SetString(v)
 	}
-	return r
-}
 
-type resultValues struct {
-	values []interface{}
-	_map   map[string]int
-}
-
-func (p *resultValues) bindPointer(pointer interface{}, column string) {
-
-}
-
-func (p *resultValues) String() string {
-	r := map[string]interface{}{}
-	for k, v := range p._map {
-		r[k] = p.values[v]
-	}
-	d, _ := json.MarshalIndent(r, "", "\t")
-	return string(d)
+	return nil
 }
