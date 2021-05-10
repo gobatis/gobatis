@@ -60,7 +60,7 @@ func parseMapper(engine *Engine, file, content string) error {
 		case dtd.SELECT, dtd.INSERT, dtd.DELETE, dtd.UPDATE, dtd.SQL:
 			id := v.GetAttribute(dtd.ID)
 			if id == "" {
-				return parseError(file, v.ctx, fmt.Sprintf("element: %s miss id", v.Name))
+				return parseError(file, v.ctx, fmt.Sprintf("fragment: %s miss id", v.Name))
 			}
 			err := engine.addFragment(file, v.ctx, id, v)
 			if err != nil {
@@ -90,8 +90,8 @@ func initExprParser(data string) (parser *expr.ExprParser, err error) {
 	return
 }
 
-func parseFragment(db *DB, logger Logger, file string, name, in, out string, _dest *dest, statement *xmlNode) (
-	frag *fragment, err error) {
+func parseFragment(db *DB, logger Logger, file string, name, in, out string,
+	_dest *dest, statement *xmlNode) (frag *fragment, err error) {
 
 	l := newFragmentParser(file)
 	var parser *expr.ExprParser
@@ -530,9 +530,9 @@ func (p *fragmentParser) EnterParamDecl(ctx *expr.ParamDeclContext) {
 	}
 	switch p.step {
 	case 0:
-		err = p.checkIn(ctx, name, kind, isArray)
+		err = p.checkParameter(ctx, name, kind, isArray)
 	case 1:
-		err = p.checkOut(ctx, name, kind, isArray)
+		err = p.checkResult(ctx, name, kind, isArray)
 	}
 	if err != nil {
 		p.error = err
@@ -540,40 +540,6 @@ func (p *fragmentParser) EnterParamDecl(ctx *expr.ParamDeclContext) {
 	}
 	p.index++
 }
-
-//func (p *fragmentParser) checkInjectFields() error {
-//	for i := 0; i < p.f.NumIn(); i++ {
-//		if p.f.In(i).Kind() == reflect.Ptr {
-//			switch p.f.In(i).Elem().PkgPath() {
-//			case "database/sql":
-//				switch p.f.In(i).Elem().Name() {
-//				case "sql.Tx":
-//					if p.txIndex == -1 {
-//						p.txIndex = i
-//					} else {
-//						return fmt.Errorf("func at most accept one *sql.Tx")
-//					}
-//				case "sql.Conn":
-//					if p.connIndex == -1 {
-//						p.connIndex = i
-//					} else {
-//						return fmt.Errorf("func at most accept one *sql.Conn")
-//					}
-//				}
-//			}
-//		}
-//	}
-//	for i := 0; i < p.f.NumOut(); i++ {
-//		if p.f.Out(i).Kind() == reflect.Interface && p.f.Out(i).Name() == "error" {
-//			if p.errIndex == -1 {
-//				p.errIndex = i
-//			} else {
-//				return fmt.Errorf("func result at most accept one error")
-//			}
-//		}
-//	}
-//	return nil
-//}
 
 func (p *fragmentParser) walkMethods(parser *expr.ExprParser) error {
 	antlr.ParseTreeWalkerDefault.Walk(p, parser.Parameters())
@@ -586,7 +552,7 @@ func (p *fragmentParser) walkMethods(parser *expr.ExprParser) error {
 	return nil
 }
 
-func (p *fragmentParser) checkIn(ctx antlr.ParserRuleContext, name string, kind reflect.Kind, isArray bool) error {
+func (p *fragmentParser) checkParameter(ctx antlr.ParserRuleContext, name string, kind reflect.Kind, isArray bool) error {
 
 	if name == "" {
 		return parseError(p.file, ctx, fmt.Sprintf("in param not accept anonymous var"))
@@ -606,7 +572,7 @@ func (p *fragmentParser) checkIn(ctx antlr.ParserRuleContext, name string, kind 
 	return nil
 }
 
-func (p *fragmentParser) checkOut(ctx antlr.ParserRuleContext, name string, kind reflect.Kind, isArray bool) error {
+func (p *fragmentParser) checkResult(ctx antlr.ParserRuleContext, name string, kind reflect.Kind, isArray bool) error {
 
 	if p.outMap == nil {
 		p.outMap = map[string]bool{}

@@ -13,9 +13,11 @@ import (
 	"time"
 )
 
-//type Params = map[string]interface{}
-
 var errorType reflect.Type
+
+func isErrorType(_type reflect.Type) bool {
+	return _type.Implements(reflect.TypeOf((*error)(nil)).Elem())
+}
 
 func init() {
 	errorType = reflect.TypeOf((*error)(nil)).Elem()
@@ -69,7 +71,8 @@ func (p *fragmentManager) get(id string) (m *fragment, ok bool) {
 }
 
 type dest struct {
-	kind reflect.Kind
+	kind    reflect.Kind
+	isArray bool
 }
 
 type param struct {
@@ -112,11 +115,11 @@ type fragment struct {
 
 func (p *fragment) proxy(field reflect.Value) {
 	field.Set(reflect.MakeFunc(field.Type(), func(args []reflect.Value) (results []reflect.Value) {
-		return p.proxyCall(field.Type(), args...)
+		return p.call(field.Type(), args...)
 	}))
 }
 
-func (p *fragment) proxyCall(_type reflect.Type, in ...reflect.Value) []reflect.Value {
+func (p *fragment) call(_type reflect.Type, in ...reflect.Value) []reflect.Value {
 
 	c := &caller{fragment: p, params: in}
 	for i := 0; i < _type.NumOut()-1; i++ {
@@ -143,8 +146,42 @@ func (p *fragment) proxyCall(_type reflect.Type, in ...reflect.Value) []reflect.
 	return c.values
 }
 
-func (p *fragment) call(in ...reflect.Value) *caller {
-	return &caller{fragment: p, params: in}
+func (p *fragment) checkParameter(mapper, field reflect.Type) error {
+	return nil
+}
+
+func (p *fragment) checkResult(mapper, field reflect.Type) error {
+	switch p.statement.Name {
+	case dtd.SELECT:
+		if p.dest != nil {
+			if field.NumOut() > 1 {
+				if p.dest.isArray {
+					if field.Out(0).Kind() != reflect.Slice ||
+						(field.Out(0).Elem().Kind() != reflect.Ptr && field.Out(0).Elem().Kind() != reflect.Struct) ||
+						(field.Out(0).Elem().Kind() == reflect.Ptr && field.Out(0).Elem().Elem().Kind() != reflect.Struct) {
+						return fmt.Errorf("%s.%s out[0] expect []*struct, got: %s",
+							mapper.Name(), field.Name(), field.Out(0).Name())
+					}
+				} else {
+					if (field.Out(0).Kind() != reflect.Ptr && field.Out(0).Kind() != reflect.Struct) ||
+						(field.Out(0).Elem().Kind() == reflect.Ptr && field.Out(0).Elem().Elem().Kind() != reflect.Struct) {
+						return fmt.Errorf("%s.%s out[0] expect *struct, got: %s",
+							mapper.Name(), field.Name(), field.Out(0).Name())
+					}
+				}
+			}
+		}
+	case dtd.INSERT, dtd.UPDATE, dtd.DELETE:
+		if field.NumOut() > 1 {
+			if (field.Out(0).Kind() != reflect.Ptr && field.Out(0).Kind() != reflect.Int64) ||
+				(field.Out(0).Elem().Kind() == reflect.Ptr && field.Out(0).Elem().Elem().Kind() != reflect.Int64) {
+				return fmt.Errorf("%s.%s out[0] expect int64, got: %s",
+					mapper.Name(), field.Name(), field.Out(0).Name())
+			}
+		}
+	}
+
+	return nil
 }
 
 type caller struct {
@@ -154,7 +191,6 @@ type caller struct {
 }
 
 func (p *caller) Scan(pointers ...interface{}) (err error) {
-
 	for _, v := range pointers {
 		rv := reflect.ValueOf(v)
 		if rv.Kind() != reflect.Ptr {
@@ -225,14 +261,12 @@ func (p *caller) exec(in ...reflect.Value) (err error) {
 
 	p.fragment.logger.Debugf("[gobatis] [%s args]: %s", p.fragment.id, vars)
 
-	fmt.Println("exec sql", s)
-	//res := newResult()
-	//res.result, err = exec.ExecContext(ctx, s, in...)
-	//if err != nil {
-	//	return
-	//}
+	res, err := exec.ExecContext(ctx, s, vars...)
+	if err != nil {
+		return
+	}
 
-	return
+	return newExecResult(res).scan()
 }
 
 func (p *caller) parseExecResult() {

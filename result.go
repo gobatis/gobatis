@@ -343,5 +343,17 @@ func newExecResult(res sql.Result) *execResult {
 }
 
 type execResult struct {
-	res sql.Result
+	res    sql.Result
+	values []reflect.Value
+}
+
+func (p *execResult) scan() error {
+	ra, err := p.res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if len(p.values) > 1 {
+		p.values[0].Elem().SetInt(ra)
+	}
+	return nil
 }

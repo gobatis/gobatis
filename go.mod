@@ -20,6 +20,7 @@ require (
 	github.com/pingcap/parser v3.1.2+incompatible // indirect
 	github.com/pingcap/tidb v1.0.9 // indirect
 	github.com/pingcap/tipb v0.0.0-20210204051656-2870a0852037 // indirect
+	github.com/pkg/errors v0.8.1
 	github.com/shopspring/decimal v1.2.0
 	github.com/shurcooL/httpfs v0.0.0-20190707220628-8d4bc4ba7749 // indirect
 	github.com/shurcooL/vfsgen v0.0.0-20200824052919-0d455de96546

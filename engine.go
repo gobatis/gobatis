@@ -6,10 +6,12 @@ import (
 	"github.com/gobatis/gobatis/driver/mysql"
 	"github.com/gobatis/gobatis/driver/postgresql"
 	"github.com/gobatis/gobatis/dtd"
+	"github.com/pkg/errors"
 	"io/ioutil"
 	"net/http"
 	"path/filepath"
 	"reflect"
+	"strings"
 )
 
 func NewPostgresql(dsn string) *Engine {
@@ -33,14 +35,6 @@ type Engine struct {
 	fragmentManager *fragmentManager
 }
 
-func (p *Engine) Call(name string, args ...reflect.Value) *caller {
-	f, ok := p.fragmentManager.get(name)
-	if !ok {
-		panic(fmt.Errorf("method '%s' not exist", name))
-	}
-	return f.call(args...)
-}
-
 func (p *Engine) Master() *DB {
 	return p.master
 }
@@ -62,6 +56,14 @@ func (p *Engine) Init() (err error) {
 	return
 }
 
+func (p *Engine) Call(name string, args ...reflect.Value) *caller {
+	f, ok := p.fragmentManager.get(name)
+	if !ok {
+		panic(fmt.Errorf("method '%s' not exist", name))
+	}
+	return &caller{fragment: f, params: args}
+}
+
 func (p *Engine) parseBundle() (err error) {
 	err = p.parseConfig()
 	if err != nil {
@@ -75,48 +77,11 @@ func (p *Engine) parseBundle() (err error) {
 	return
 }
 
-//func (p *Engine) Call(name string, args ...interface{}) (res []interface{}, err error) {
-//	var ok bool
-//	//sql, ok := p.getSqlCache(name)
-//	//if !ok {
-//	var node *xmlNode
-//	node, ok = p.getStatement(name)
-//	if !ok {
-//		err = fmt.Errorf("not found statement: %s", name)
-//		return
-//	}
-//	var r *psr
-//	var in []interface{}
-//	r, in, err = p.parseStatement(node, args...)
-//	if err != nil {
-//		return
-//	}
-//	p.logger.Debugf("[%s] query: %s", name, r.sql)
-//	p.logger.Debugf("[%s]  args: %+v", name, in)
-//	stmt, err := p.Prepare(r.sql)
-//	if err != nil {
-//		return
-//	}
-//	defer func() {
-//		_ = stmt.Close()
-//	}()
-//	_, err = stmt.Exec(in...)
-//	if err != nil {
-//		return
-//	}
-//	stmt.QueryRow()
-//	//conn, err := p.DB.Conn(context.Background())
-//	//conn.B
-//	//tx ,_:= p.Begin()
-//	//tx.PrepareContext()
-//	return
-//}
-
 func (p *Engine) BindMapper(ptr ...interface{}) (err error) {
 	for _, v := range ptr {
 		err = p.bindMapper(v)
 		if err != nil {
-			return
+			return errors.Wrap(err, "bind mapper:")
 		}
 	}
 	return
@@ -125,7 +90,7 @@ func (p *Engine) BindMapper(ptr ...interface{}) (err error) {
 func (p *Engine) bindMapper(mapper interface{}) (err error) {
 	rv := reflect.ValueOf(mapper)
 	if rv.Kind() != reflect.Ptr || rv.Elem().Kind() != reflect.Struct {
-		return fmt.Errorf("bind mapper: exptect struct porintr, got: %s", rv.Type())
+		return fmt.Errorf("exptect *struct, got: %s", rv.Type())
 	}
 	rv = rv.Elem()
 	rt := rv.Type()
@@ -136,26 +101,23 @@ func (p *Engine) bindMapper(mapper interface{}) (err error) {
 		id := rt.Field(i).Name
 		m, ok := p.fragmentManager.get(id)
 		if !ok {
-			return fmt.Errorf("bind mapper: %s.%s not defined", rt.Name(), id)
+			return fmt.Errorf("%s.%s not defined", rt.Name(), id)
 		}
 		ft := rv.Field(i).Type()
 		if ft.NumOut() == 0 || !isErrorType(ft.Out(ft.NumOut()-1)) {
-			return fmt.Errorf("bind mapper: method out expect error at last")
+			return fmt.Errorf("method out expect error at last")
 		}
-
+		err = m.checkParameter(rt, ft)
+		if err != nil {
+			return err
+		}
+		err = m.checkResult(rt, ft)
+		if err != nil {
+			return
+		}
 		m.proxy(rv.Field(i))
 	}
 	return
-}
-
-func isErrorType(_type reflect.Type) bool {
-	return _type.Implements(reflect.TypeOf((*error)(nil)).Elem())
-}
-
-func (p *Engine) initLogger() {
-	if p.logger == nil {
-		p.logger = newLogger()
-	}
 }
 
 func (p *Engine) parseConfig() (err error) {
@@ -238,12 +200,19 @@ func (p *Engine) makeDest(node *xmlNode) (*dest, error) {
 	}
 
 	v := node.GetAttribute(dtd.RESULT_TYPE)
+
+	isArray := strings.HasPrefix(v, "[]")
+	if isArray {
+		v = strings.TrimSpace(strings.TrimPrefix(v, "[]"))
+	}
+
 	if v == "" {
 		if node.GetAttribute(dtd.RESULT) != "" {
 			return nil, nil
 		} else {
 			return &dest{
-				kind: reflect.Struct,
+				kind:    reflect.Struct,
+				isArray: isArray,
 			}, nil
 		}
 	}
@@ -254,7 +223,8 @@ func (p *Engine) makeDest(node *xmlNode) (*dest, error) {
 	}
 
 	return &dest{
-		kind: kind,
+		kind:    kind,
+		isArray: isArray,
 	}, nil
 }
 

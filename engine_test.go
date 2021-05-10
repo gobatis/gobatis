@@ -26,9 +26,6 @@ func TestEngine(t *testing.T) {
 	//	Duration decimal.Decimal `sql:"duration"`
 	//}
 	//
-	type TestMapper struct {
-		SelectTestById func(id int, name string, age int) (_name string, err error)
-	}
 
 	//var testMapper TestMapper
 
@@ -59,6 +56,10 @@ func TestEngine(t *testing.T) {
 			return
 		}
 	}()
+
+	type TestMapper struct {
+		SelectTestById func(id int, name string, age int) (_name string, err error)
+	}
 
 	testMapper := &TestMapper{}
 	err = engine.BindMapper(testMapper)
