@@ -61,7 +61,6 @@ const (
 	RESULT_MAP        = "resultMap"
 	PARAMETER_MAP     = "parameterMap"
 	PARAMETER         = "parameter"
-	PARAMETER_TYPE    = "parameterType"
 	SQL               = "sql"
 	INSERT            = "insert"
 	UPDATE            = "update"

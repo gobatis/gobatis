@@ -5,11 +5,11 @@
 
 <mapper namespace="test/mapper@UserMapper">
 
-    <select id="SelectTestById" parameterType="id:[]int, name:string, age:int" resultType="name:string">
+    <select id="SelectTestById" parameter="id:int, name:string, age:int" result="name:string">
         select * from test where id > #{id}
     </select>
 
-    <select id="SelectTestByName" parameterType="id:int, name:string, age:int" resultType="id:int64">
+    <select id="SelectTestByName" parameter="id:int, name:string, age:int" result="id:int64">
         select * from test
         <choose>
             <when test="id>0">
@@ -24,7 +24,7 @@
         </choose>
     </select>
 
-    <select id="SelectTestForeach" parameterType="names" resultType="id:int64">
+    <select id="SelectTestForeach" parameter="names" result="id:int64">
         select * from test
         <where>
             name in
@@ -33,6 +33,5 @@
             </foreach>
         </where>
     </select>
-
 
 </mapper>

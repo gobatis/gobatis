@@ -13,6 +13,11 @@ func rv(a interface{}) reflect.Value {
 	return reflect.ValueOf(a)
 }
 
+type Test struct {
+	Id   int    `sql:"id"`
+	Name string `sql:"name"`
+}
+
 func TestEngine(t *testing.T) {
 
 	//type Test struct {
@@ -55,11 +60,13 @@ func TestEngine(t *testing.T) {
 		}
 	}()
 
-
-	var names []string
-	err = engine.Call("SelectTestById", 29, "hi", 2).Scan( &names)
+	//test := new(Test)
+	//var test []Test
+	//var name []string
+	var name string
+	err = engine.Call("SelectTestById", 29, "hi", 2).Scan(&name)
 	require.NoError(t, err)
-	t.Log("result is:",  names)
+	t.Log("result is:", name)
 
 	//require.True(t, ok)
 

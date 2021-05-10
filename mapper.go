@@ -62,6 +62,10 @@ func (p *fragmentManager) get(id string) (m *fragment, ok bool) {
 	return
 }
 
+type dest struct {
+	kind reflect.Kind
+}
+
 type param struct {
 	name    string
 	kind    reflect.Kind
@@ -76,8 +80,16 @@ type queryer interface {
 	QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error)
 }
 
-func newFragment(db *DB, logger Logger, id string, in, out []param, statement *xmlNode) *fragment {
-	return &fragment{db: db, logger: logger, id: id, in: in, out: out, statement: statement}
+func newFragment(db *DB, logger Logger, id string, in, out []param, dest *dest, statement *xmlNode) *fragment {
+	return &fragment{
+		db:        db,
+		logger:    logger,
+		id:        id,
+		in:        in,
+		out:       out,
+		dest:      dest,
+		statement: statement,
+	}
 }
 
 type fragment struct {
@@ -89,6 +101,7 @@ type fragment struct {
 	sql       string
 	in        []param
 	out       []param
+	dest      *dest
 }
 
 func (p *fragment) call(in ...interface{}) *caller {
@@ -108,10 +121,10 @@ func (p *caller) Scan(pointers ...interface{}) (err error) {
 		p.fragment.logger.Debugf("[gobatis] [%s cost]: %s", p.fragment.id, time.Since(start))
 	}()
 
-	if len(p.fragment.out) != len(pointers) {
-		err = fmt.Errorf("expected %d result fileds, but pass %d", len(p.fragment.out), len(pointers))
-		return
-	}
+	//if len(p.fragment.out) != len(pointers) {
+	//	err = fmt.Errorf("expected %d result fileds, but pass %d", len(p.fragment.out), len(pointers))
+	//	return
+	//}
 
 	for _, v := range pointers {
 		rv := reflect.ValueOf(v)
@@ -182,13 +195,18 @@ func (p *caller) exec(in ...interface{}) (err error) {
 
 	p.fragment.logger.Debugf("[gobatis] [%s args]: %s", p.fragment.id, in)
 
-	res := newResult(result_result)
-	res.result, err = exec.ExecContext(ctx, s, in...)
-	if err != nil {
-		return
-	}
+	fmt.Println("exec sql", s)
+	//res := newResult()
+	//res.result, err = exec.ExecContext(ctx, s, in...)
+	//if err != nil {
+	//	return
+	//}
 
 	return
+}
+
+func (p *caller) parseExecResult() {
+
 }
 
 func (p *caller) query(in ...interface{}) (err error) {
@@ -239,10 +257,13 @@ func (p *caller) query(in ...interface{}) (err error) {
 
 func (p *caller) parseQueryResult(rows *sql.Rows) error {
 
-	res := newResult(result_rows)
+	res := queryResult{rows: rows}
 	res.rows = rows
-	res.setSelected(p.fragment.out)
-	res.setValues(p.values)
+
+	err := res.setSelected(p.fragment.dest, p.fragment.out, p.values)
+	if err != nil {
+		return err
+	}
 
 	return res.scan()
 }

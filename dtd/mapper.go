@@ -226,9 +226,10 @@ var Select = &Element{
 	Attributes: map[string]int{
 		ID:              REQUIRED,
 		PARAMETER_MAP:   IMPLIED,
-		PARAMETER_TYPE:  IMPLIED,
+		PARAMETER:       IMPLIED,
 		RESULT_MAP:      IMPLIED,
 		RESULT_TYPE:     IMPLIED,
+		RESULT:          IMPLIED,
 		RESULT_SET_TYPE: IMPLIED,
 		STATEMENT_TYPE:  IMPLIED,
 		FETCH_SIZE:      IMPLIED,
@@ -259,7 +260,7 @@ var Insert = &Element{
 	Attributes: map[string]int{
 		ID:                REQUIRED,
 		PARAMETER_MAP:     IMPLIED,
-		PARAMETER_TYPE:    IMPLIED,
+		PARAMETER:         IMPLIED,
 		TIMEOUT:           IMPLIED,
 		FLUSH_CACHE:       IMPLIED,
 		STATEMENT_TYPE:    IMPLIED,
@@ -311,7 +312,7 @@ var Update = &Element{
 	Attributes: map[string]int{
 		ID:                REQUIRED,
 		PARAMETER_MAP:     IMPLIED,
-		PARAMETER_TYPE:    IMPLIED,
+		PARAMETER:         IMPLIED,
 		TIMEOUT:           IMPLIED,
 		FLUSH_CACHE:       IMPLIED,
 		STATEMENT_TYPE:    IMPLIED,
@@ -339,7 +340,7 @@ var Delete = &Element{
 	Attributes: map[string]int{
 		ID:             REQUIRED,
 		PARAMETER_MAP:  IMPLIED,
-		PARAMETER_TYPE: IMPLIED,
+		PARAMETER:      IMPLIED,
 		TIMEOUT:        IMPLIED,
 		FLUSH_CACHE:    IMPLIED,
 		STATEMENT_TYPE: IMPLIED,

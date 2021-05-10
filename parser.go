@@ -90,7 +90,7 @@ func initExprParser(data string) (parser *expr.ExprParser, err error) {
 	return
 }
 
-func parseFragment(db *DB, logger Logger, file string, name, in, out string, statement *xmlNode) (
+func parseFragment(db *DB, logger Logger, file string, name, in, out string, _dest *dest, statement *xmlNode) (
 	frag *fragment, err error) {
 
 	l := newFragmentParser(file)
@@ -120,7 +120,7 @@ func parseFragment(db *DB, logger Logger, file string, name, in, out string, sta
 		}
 	}
 
-	frag = newFragment(db, logger, name, l.in, l.out, statement)
+	frag = newFragment(db, logger, name, l.in, l.out, _dest, statement)
 
 	return
 }

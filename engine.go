@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"path/filepath"
+	"reflect"
 )
 
 func NewPostgresql(dsn string) *Engine {
@@ -206,10 +207,47 @@ func (p *Engine) walkMappers(root string) (files []string, err error) {
 	return
 }
 
+func (p *Engine) makeDest(node *xmlNode) (*dest, error) {
+
+	if node.Name != dtd.SELECT {
+		return nil, nil
+	}
+
+	v := node.GetAttribute(dtd.RESULT_TYPE)
+	if v == "" {
+		if node.GetAttribute(dtd.RESULT) != "" {
+			return nil, nil
+		} else {
+			return &dest{
+				kind: reflect.Struct,
+			}, nil
+		}
+	}
+
+	kind, err := toReflectKind(v)
+	if err != nil {
+		return nil, err
+	}
+
+	return &dest{
+		kind: kind,
+	}, nil
+}
+
 func (p *Engine) addFragment(file string, ctx antlr.ParserRuleContext, id string, node *xmlNode) (err error) {
+
+	_dest, err := p.makeDest(node)
+	if err != nil {
+		return
+	}
+
 	m, err := parseFragment(
 		p.master, p.logger, file, id,
-		node.GetAttribute(dtd.PARAMETER_TYPE), node.GetAttribute(dtd.RESULT_TYPE), node)
+		node.GetAttribute(dtd.PARAMETER),
+		node.GetAttribute(dtd.RESULT),
+		_dest,
+		node,
+	)
 	if err != nil {
 		return
 	}

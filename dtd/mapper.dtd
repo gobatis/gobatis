@@ -170,8 +170,8 @@
         <!ELEMENT select (#PCDATA | include | trim | where | set | foreach | choose | if | bind)*>
         <!ATTLIST select
                 id CDATA #REQUIRED
-                parameterMap CDATA #IMPLIED
-                parameterType CDATA #IMPLIED
+                parameter CDATA #IMPLIED
+                result CDATA #IMPLIED
                 resultMap CDATA #IMPLIED
                 resultType CDATA #IMPLIED
                 resultSetType (FORWARD_ONLY | SCROLL_INSENSITIVE | SCROLL_SENSITIVE | DEFAULT) #IMPLIED
@@ -189,8 +189,7 @@
         <!ELEMENT insert (#PCDATA | selectKey | include | trim | where | set | foreach | choose | if | bind)*>
         <!ATTLIST insert
                 id CDATA #REQUIRED
-                parameterMap CDATA #IMPLIED
-                parameterType CDATA #IMPLIED
+                parameter CDATA #IMPLIED
                 timeout CDATA #IMPLIED
                 flushCache (true|false) #IMPLIED
                 statementType (STATEMENT|PREPARED|CALLABLE) #IMPLIED
@@ -214,8 +213,7 @@
         <!ELEMENT update (#PCDATA | selectKey | include | trim | where | set | foreach | choose | if | bind)*>
         <!ATTLIST update
                 id CDATA #REQUIRED
-                parameterMap CDATA #IMPLIED
-                parameterType CDATA #IMPLIED
+                parameter CDATA #IMPLIED
                 timeout CDATA #IMPLIED
                 flushCache (true|false) #IMPLIED
                 statementType (STATEMENT|PREPARED|CALLABLE) #IMPLIED
@@ -229,8 +227,7 @@
         <!ELEMENT delete (#PCDATA | include | trim | where | set | foreach | choose | if | bind)*>
         <!ATTLIST delete
                 id CDATA #REQUIRED
-                parameterMap CDATA #IMPLIED
-                parameterType CDATA #IMPLIED
+                parameter CDATA #IMPLIED
                 timeout CDATA #IMPLIED
                 flushCache (true|false) #IMPLIED
                 statementType (STATEMENT|PREPARED|CALLABLE) #IMPLIED
