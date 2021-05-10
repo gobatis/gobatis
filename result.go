@@ -7,6 +7,10 @@ import (
 	"reflect"
 )
 
+func newQueryResult(rows *sql.Rows) *queryResult {
+	return &queryResult{rows: rows}
+}
+
 type queryResult struct {
 	rows     *sql.Rows
 	first    bool
@@ -171,7 +175,6 @@ func (p *queryResult) reflectStruct(r rowMap) error {
 		// test := new(Test)
 		elem = elem.Elem()
 	}
-	//fmt.Println(elem.Kind(), elem.CanSet(), p.values[0].Type().Elem().Elem())
 	_type := elem.Type()
 	for i := 0; i < _type.NumField(); i++ {
 		field := _type.Field(i).Tag.Get(p.Tag())
@@ -187,7 +190,6 @@ func (p *queryResult) reflectStruct(r rowMap) error {
 }
 
 func (p *queryResult) reflectStructs(r rowMap) error {
-
 	// var test []*Test => Test
 	var _type reflect.Type
 	if p.values[0].Type().Elem().Elem().Kind() != reflect.Ptr {
@@ -318,7 +320,6 @@ func (p *queryResult) reflectValue(column string, rv reflect.Value, value interf
 			)
 		}
 	}
-
 	if rv.Kind() == reflect.Slice {
 		rv.Set(reflect.Append(rv, r))
 	} else {
@@ -336,3 +337,11 @@ func newRowMap(columns []string, values []interface{}) rowMap {
 }
 
 type rowMap map[string]interface{}
+
+func newExecResult(res sql.Result) *execResult {
+	return &execResult{res: res}
+}
+
+type execResult struct {
+	res sql.Result
+}

@@ -9,8 +9,8 @@ import (
 	"testing"
 )
 
-func rv(a interface{}) reflect.Value {
-	return reflect.ValueOf(a)
+func rv(v interface{}) reflect.Value {
+	return reflect.ValueOf(v)
 }
 
 type Test struct {
@@ -26,9 +26,9 @@ func TestEngine(t *testing.T) {
 	//	Duration decimal.Decimal `sql:"duration"`
 	//}
 	//
-	//type TestMapper struct {
-	//	SelectTestById func(id int64) (*Test, error)
-	//}
+	type TestMapper struct {
+		SelectTestById func(id int, name string, age int) (_name string, err error)
+	}
 
 	//var testMapper TestMapper
 
@@ -60,13 +60,21 @@ func TestEngine(t *testing.T) {
 		}
 	}()
 
+	testMapper := &TestMapper{}
+	err = engine.BindMapper(testMapper)
+	require.NoError(t, err)
+
+	test, err := testMapper.SelectTestById(35, "hi", 123)
+	require.NoError(t, err)
+	t.Log("query result:", test)
+
 	//test := new(Test)
 	//var test []Test
 	//var name []string
-	var name string
-	err = engine.Call("SelectTestById", 29, "hi", 2).Scan(&name)
-	require.NoError(t, err)
-	t.Log("result is:", name)
+	//var name string
+	//err = engine.Call("SelectTestById", 29, "hi", 2).Scan(&name)
+	//require.NoError(t, err)
+	//t.Log("result is:", name)
 
 	//require.True(t, ok)
 

@@ -15,6 +15,12 @@ import (
 
 //type Params = map[string]interface{}
 
+var errorType reflect.Type
+
+func init() {
+	errorType = reflect.TypeOf((*error)(nil)).Elem()
+}
+
 type fragmentManager struct {
 	mu        sync.RWMutex
 	fragments map[string]*fragment
@@ -104,27 +110,50 @@ type fragment struct {
 	dest      *dest
 }
 
-func (p *fragment) call(in ...interface{}) *caller {
+func (p *fragment) proxy(field reflect.Value) {
+	field.Set(reflect.MakeFunc(field.Type(), func(args []reflect.Value) (results []reflect.Value) {
+		return p.proxyCall(field.Type(), args...)
+	}))
+}
+
+func (p *fragment) proxyCall(_type reflect.Type, in ...reflect.Value) []reflect.Value {
+
+	c := &caller{fragment: p, params: in}
+	for i := 0; i < _type.NumOut()-1; i++ {
+		if _type.Out(i).Kind() == reflect.Ptr {
+			c.values = append(c.values, reflect.New(_type.Out(i).Elem()))
+		} else {
+			c.values = append(c.values, reflect.New(_type.Out(i)))
+		}
+	}
+
+	err := c.call()
+	if err != nil {
+		c.values = append(c.values, reflect.ValueOf(err))
+	} else {
+		c.values = append(c.values, reflect.Zero(errorType))
+	}
+
+	for i := 0; i < _type.NumOut()-1; i++ {
+		if _type.Out(i).Kind() != reflect.Ptr {
+			c.values[i] = c.values[i].Elem()
+		}
+	}
+
+	return c.values
+}
+
+func (p *fragment) call(in ...reflect.Value) *caller {
 	return &caller{fragment: p, params: in}
 }
 
 type caller struct {
 	fragment *fragment
-	params   []interface{}
+	params   []reflect.Value
 	values   []reflect.Value
 }
 
 func (p *caller) Scan(pointers ...interface{}) (err error) {
-
-	start := time.Now()
-	defer func() {
-		p.fragment.logger.Debugf("[gobatis] [%s cost]: %s", p.fragment.id, time.Since(start))
-	}()
-
-	//if len(p.fragment.out) != len(pointers) {
-	//	err = fmt.Errorf("expected %d result fileds, but pass %d", len(p.fragment.out), len(pointers))
-	//	return
-	//}
 
 	for _, v := range pointers {
 		rv := reflect.ValueOf(v)
@@ -139,6 +168,11 @@ func (p *caller) Scan(pointers ...interface{}) (err error) {
 }
 
 func (p *caller) call() (err error) {
+
+	start := time.Now()
+	defer func() {
+		p.fragment.logger.Debugf("[gobatis] [%s cost]: %s", p.fragment.id, time.Since(start))
+	}()
 
 	if len(p.fragment.in) != len(p.params) {
 		err = fmt.Errorf("expected %d params, but pass %d", len(p.fragment.in), len(p.params))
@@ -160,7 +194,7 @@ func (p *caller) call() (err error) {
 	}
 }
 
-func (p *caller) exec(in ...interface{}) (err error) {
+func (p *caller) exec(in ...reflect.Value) (err error) {
 
 	exec, index := p.execer(in...)
 	if index > -1 {
@@ -184,16 +218,12 @@ func (p *caller) exec(in ...interface{}) (err error) {
 			_ = conn.Close()
 		}
 	}()
-
 	s, vars, err := p.parseStatement(in)
 	if err != nil {
 		return
 	}
-	if len(vars) > 0 {
-		in = vars
-	}
 
-	p.fragment.logger.Debugf("[gobatis] [%s args]: %s", p.fragment.id, in)
+	p.fragment.logger.Debugf("[gobatis] [%s args]: %s", p.fragment.id, vars)
 
 	fmt.Println("exec sql", s)
 	//res := newResult()
@@ -209,7 +239,7 @@ func (p *caller) parseExecResult() {
 
 }
 
-func (p *caller) query(in ...interface{}) (err error) {
+func (p *caller) query(in ...reflect.Value) (err error) {
 
 	q, index := p.queryer(in...)
 	if index > -1 {
@@ -238,13 +268,9 @@ func (p *caller) query(in ...interface{}) (err error) {
 	if err != nil {
 		return
 	}
-	if len(vars) > 0 {
-		in = vars
-	}
 
-	p.fragment.logger.Debugf("[gobatis] [%s args]: %+v", p.fragment.id, in)
-
-	rows, err := q.QueryContext(ctx, s, in...)
+	p.fragment.logger.Debugf("[gobatis] [%s args]: %+v", p.fragment.id, vars)
+	rows, err := q.QueryContext(ctx, s, vars...)
 	if err != nil {
 		return
 	}
@@ -268,40 +294,37 @@ func (p *caller) parseQueryResult(rows *sql.Rows) error {
 	return res.scan()
 }
 
-func (p *caller) removeParam(a []interface{}, i int) []interface{} {
+func (p *caller) removeParam(a []reflect.Value, i int) []reflect.Value {
 	return append(a[:i], a[i+1:]...)
 }
 
-func (p *caller) context(in ...interface{}) (context.Context, int) {
+func (p *caller) context(in ...reflect.Value) (context.Context, int) {
 	for i, v := range in {
-		rv := reflect.ValueOf(v)
-		if rv.Kind() == reflect.Ptr && rv.Elem().Type().PkgPath() == "context" {
-			return rv.Interface().(context.Context), i
+		if v.Kind() == reflect.Ptr && v.Elem().Type().PkgPath() == "context" {
+			return v.Interface().(context.Context), i
 		}
 	}
 	return context.Background(), -1
 }
 
-func (p *caller) execer(in ...interface{}) (execer, int) {
+func (p *caller) execer(in ...reflect.Value) (execer, int) {
 	if len(in) > 0 {
 		t := reflect.TypeOf(new(execer)).Elem()
 		for i, v := range in {
-			rv := reflect.ValueOf(v)
-			if rv.Type().Implements(t) {
-				return rv.Interface().(execer), i
+			if v.Type().Implements(t) {
+				return v.Interface().(execer), i
 			}
 		}
 	}
 	return nil, -1
 }
 
-func (p *caller) queryer(in ...interface{}) (queryer, int) {
+func (p *caller) queryer(in ...reflect.Value) (queryer, int) {
 	if len(in) > 0 {
 		t := reflect.TypeOf(new(queryer)).Elem()
 		for i, v := range in {
-			rv := reflect.ValueOf(v)
-			if rv.Type().Implements(t) {
-				return rv.Interface().(queryer), i
+			if v.Type().Implements(t) {
+				return v.Interface().(queryer), i
 			}
 		}
 	}
@@ -326,7 +349,7 @@ func (p *psr) merge(s ...string) {
 	}
 }
 
-func (p *caller) parseStatement(args []interface{}) (string, []interface{}, error) {
+func (p *caller) parseStatement(args []reflect.Value) (string, []interface{}, error) {
 	if p.fragment.cacheable {
 		p.fragment.logger.Debugf("[gobatis] [%s cached sql]: %s", p.fragment.id, p.fragment.sql)
 		return p.fragment.sql, nil, nil
@@ -527,7 +550,7 @@ func (p *caller) parseForeach(parser *exprParser, node *xmlNode, res *psr) error
 	switch elem.Kind() {
 	case reflect.Slice, reflect.Array:
 		for i := 0; i < elem.Len(); i++ {
-			parser.foreachParams.set(i, elem.Index(i).Interface())
+			parser.foreachParams.set(elem.Index(i))
 			if i == 0 {
 				err := parser.parseParameter(subParams)
 				if err != nil {
@@ -541,7 +564,7 @@ func (p *caller) parseForeach(parser *exprParser, node *xmlNode, res *psr) error
 		}
 	case reflect.Map:
 		for i, v := range elem.MapKeys() {
-			parser.foreachParams.set(v.Interface(), elem.MapIndex(v).Interface())
+			parser.foreachParams.set(v, elem.MapIndex(v))
 			if i == 0 {
 				err := parser.parseParameter(subParams)
 				if err != nil {
@@ -555,7 +578,7 @@ func (p *caller) parseForeach(parser *exprParser, node *xmlNode, res *psr) error
 		}
 	case reflect.Struct:
 		for i := 0; i < elem.NumField(); i++ {
-			parser.foreachParams.set(elem.Field(i).Interface(), elem.Field(i).Elem().Interface())
+			parser.foreachParams.set(elem.Field(i), elem.Field(i).Elem())
 			if i == 0 {
 				err := parser.parseParameter(subParams)
 				if err != nil {

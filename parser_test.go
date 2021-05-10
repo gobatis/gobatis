@@ -84,7 +84,7 @@ func TestParseExprExpression(t *testing.T) {
 	//result, err := parser.parseExpression("a, b", "a + b")
 	a := 1
 	b := 2
-	parser := newExprParser(a, b)
+	parser := newExprParser(rv(a), rv(b))
 	err := parser.parseParameter("a,b")
 	require.NoError(t, err)
 	result, err := parser.parseExpression("a + b")
@@ -129,7 +129,7 @@ func TestParseExprExpressionMember(t *testing.T) {
 		},
 	}
 	b := []int{1, 2, 3, 4, 5}
-	parser := newExprParser(a, b)
+	parser := newExprParser(rv(a), rv(b))
 	//result, err := parser.parseExpression("a:struct, b:array", `a.Max(a.Age, int64(b[2]) + a.Map["weight"])`)
 	//result, err := parser.parseExpression("a:struct, b:array", `strings.HasPrefix(a.Name, "go")`)
 	//result, err := parser.parseExpression("a:struct, b:array", `b[0:len(b)]`)

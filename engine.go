@@ -33,7 +33,7 @@ type Engine struct {
 	fragmentManager *fragmentManager
 }
 
-func (p *Engine) Call(name string, args ...interface{}) *caller {
+func (p *Engine) Call(name string, args ...reflect.Value) *caller {
 	f, ok := p.fragmentManager.get(name)
 	if !ok {
 		panic(fmt.Errorf("method '%s' not exist", name))
@@ -112,20 +112,44 @@ func (p *Engine) parseBundle() (err error) {
 //	return
 //}
 
-func (p *Engine) BindMapper(mapper ...interface{}) {
-	//tx := p.db.Begin()
-	//tx.Exec()
-	//tx.Query()
-	//tx.QueryRow()
-	//p.db.QueryRow()
+func (p *Engine) BindMapper(ptr ...interface{}) (err error) {
+	for _, v := range ptr {
+		err = p.bindMapper(v)
+		if err != nil {
+			return
+		}
+	}
+	return
 }
 
-func (p *Engine) BindVar(pointer interface{}, result map[string]interface{}) error {
-	return nil
+func (p *Engine) bindMapper(mapper interface{}) (err error) {
+	rv := reflect.ValueOf(mapper)
+	if rv.Kind() != reflect.Ptr || rv.Elem().Kind() != reflect.Struct {
+		return fmt.Errorf("bind mapper: exptect struct porintr, got: %s", rv.Type())
+	}
+	rv = rv.Elem()
+	rt := rv.Type()
+	for i := 0; i < rt.NumField(); i++ {
+		if rv.Field(i).Kind() != reflect.Func {
+			continue
+		}
+		id := rt.Field(i).Name
+		m, ok := p.fragmentManager.get(id)
+		if !ok {
+			return fmt.Errorf("bind mapper: %s.%s not defined", rt.Name(), id)
+		}
+		ft := rv.Field(i).Type()
+		if ft.NumOut() == 0 || !isErrorType(ft.Out(ft.NumOut()-1)) {
+			return fmt.Errorf("bind mapper: method out expect error at last")
+		}
+
+		m.proxy(rv.Field(i))
+	}
+	return
 }
 
-func (p *Engine) makeMapper() {
-
+func isErrorType(_type reflect.Type) bool {
+	return _type.Implements(reflect.TypeOf((*error)(nil)).Elem())
 }
 
 func (p *Engine) initLogger() {

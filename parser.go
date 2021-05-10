@@ -826,7 +826,7 @@ func (p *exprStack) Empty() bool {
 	return p.list.Len() == 0
 }
 
-func newExprParams(params ...interface{}) *exprParams {
+func newExprParams(params ...reflect.Value) *exprParams {
 	r := &exprParams{}
 	r.set(params...)
 	return r
@@ -854,11 +854,11 @@ func (p *exprParams) get(name string) (val exprValue, ok bool) {
 	return
 }
 
-func (p *exprParams) set(params ...interface{}) {
+func (p *exprParams) set(params ...reflect.Value) {
 	p.values = make([]exprValue, 0)
 	for _, v := range params {
 		p.values = append(p.values, exprValue{
-			value: v,
+			value: v.Interface(),
 		})
 	}
 }
@@ -950,7 +950,7 @@ func (p *exprParams) index(index int) (val exprValue, ok bool) {
 	return
 }
 
-func newExprParser(params ...interface{}) *exprParser {
+func newExprParser(params ...reflect.Value) *exprParser {
 	r := new(exprParser)
 	r.baseParams = newExprParams(params...)
 	r.coverage = newCoverage()
