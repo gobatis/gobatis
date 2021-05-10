@@ -1,5 +1,0 @@
-package demo
-
-func GetUserById() {
-	
-}

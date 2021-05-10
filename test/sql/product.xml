@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "../../../dtd/mapper.dtd">
+
+<mapper>
+    <insert id="CreateProduct" parameter="product:struct">
+        insert into products(name,age,height,price)
+        values(#{product.Name},#{product.Age},#{product.Height},#{product.Price})
+    </insert>
+
+    <select id="GetProductById" parameter="id:int64">
+        select * from products where id = #{ id };
+    </select>
+</mapper>

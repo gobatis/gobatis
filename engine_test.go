@@ -2,6 +2,9 @@ package gobatis
 
 import (
 	"github.com/gobatis/gobatis/bundle"
+	"github.com/gobatis/gobatis/test/entity"
+	"github.com/gobatis/gobatis/test/mapper"
+	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/require"
 	"os"
 	"path/filepath"
@@ -13,21 +16,7 @@ func rv(v interface{}) reflect.Value {
 	return reflect.ValueOf(v)
 }
 
-type Test struct {
-	Id   int    `sql:"id"`
-	Name string `sql:"name"`
-}
-
 func TestEngine(t *testing.T) {
-
-	//type Test struct {
-	//	Id       string          `sql:"id"`
-	//	Name     string          `sql:"name"`
-	//	Duration decimal.Decimal `sql:"duration"`
-	//}
-	//
-
-	//var testMapper TestMapper
 
 	pwd, err := os.Getwd()
 	if err != nil {
@@ -35,70 +24,33 @@ func TestEngine(t *testing.T) {
 		return
 	}
 
-	engine := NewPostgresql("postgresql://postgres:postgres@127.0.0.1:54322/angel?connect_timeout=10&sslmode=disable")
+	engine := NewPostgresql("postgresql://postgres:postgres@127.0.0.1:54322/gobatis?connect_timeout=10&sslmode=disable")
 	engine.SetBundle(bundle.Dir(filepath.Join(pwd, "test")))
-	////engine.BindMapper(&testMapper)
-	//
 	err = engine.Init()
-	if err != nil {
-		t.Error("DB init error:", err)
-		return
-	}
+	require.NoError(t, err)
+
 	err = engine.master.Ping()
-	if err != nil {
-		t.Error("DB ping error:", err)
-		return
-	}
+	require.NoError(t, err)
+
 	defer func() {
 		err = engine.master.Close()
-		if err != nil {
-			t.Error("DB close error:", err)
-			return
-		}
+		require.NoError(t, err)
 	}()
 
-	type TestMapper struct {
-		SelectTestById func(id int, name string, age int) (_name string, err error)
-	}
-
-	testMapper := &TestMapper{}
-	err = engine.BindMapper(testMapper)
+	productMapper := new(mapper.ProductMapper)
+	err = engine.BindMapper(productMapper)
 	require.NoError(t, err)
 
-	test, err := testMapper.SelectTestById(35, "hi", 123)
+	affected, err := productMapper.CreateProduct(&entity.Product{
+		Name:   "gobatis manual",
+		Age:    1,
+		Height: 17.8,
+		Price:  decimal.NewFromFloat(16.8),
+	})
 	require.NoError(t, err)
-	t.Log("query result:", test)
+	require.Equal(t, int64(1), affected)
 
-	//test := new(Test)
-	//var test []Test
-	//var name []string
-	//var name string
-	//err = engine.Call("SelectTestById", 29, "hi", 2).Scan(&name)
-	//require.NoError(t, err)
-	//t.Log("result is:", name)
-
-	//require.True(t, ok)
-
-	//res := f.call(rv(1), rv("hello"), rv(2))
-	//for _, v := range res {
-	//	fmt.Println(v.Interface())
-	//}
-	//fmt.Println("done", res)
-
-	//var a driver.ExecerContext
-	//fmt.Println("ok:", reflect.TypeOf(engine.master).Implements(reflect.TypeOf(a)))
-	//tx, _ := engine.master.Begin()
-	//tx.Query()
-	//smat, _ := engine.master.Prepare()
-	//engine.master.Query()
-	//engine.master.Conn()
-	//test, err := engine.Call("SelectTestById", 0, "gobatis", 10)
-	//test, err := engine.Call("SelectTestByName", 0, "", 10)
-	//test, err := engine.Call("SelectTestForeach", []string{"a", "b", "c"})
-	//if err != nil {
-	//	t.Error("Call SelectTestById error:", err)
-	//	return
-	//}
-	//d, _ := json.Marshal(test)
-	//t.Log("query result:", string(d))
+	item, err := productMapper.GetProductById(24)
+	require.NoError(t, err)
+	require.Equal(t, "gobatis manual", item.Name)
 }

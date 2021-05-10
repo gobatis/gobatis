@@ -129,7 +129,11 @@ func (p *Engine) parseConfig() (err error) {
 	if err != nil {
 		return
 	}
+	p.logger.Infof("[gobatis] register fragment: gobatis.xml")
 	err = parseConfig(p, CONFIG_XML, string(d))
+	if err != nil {
+		return
+	}
 	return
 }
 
@@ -161,7 +165,11 @@ func (p *Engine) parseMappers() (err error) {
 		if err != nil {
 			return
 		}
+		p.logger.Infof("[gobatis] register fragment: %s.xml", v)
 		err = parseMapper(p, v, string(d))
+		if err != nil {
+			return
+		}
 	}
 	return
 }

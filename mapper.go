@@ -174,7 +174,7 @@ func (p *fragment) checkResult(mapper, field reflect.Type) error {
 	case dtd.INSERT, dtd.UPDATE, dtd.DELETE:
 		if field.NumOut() > 1 {
 			if (field.Out(0).Kind() != reflect.Ptr && field.Out(0).Kind() != reflect.Int64) ||
-				(field.Out(0).Elem().Kind() == reflect.Ptr && field.Out(0).Elem().Elem().Kind() != reflect.Int64) {
+				(field.Out(0).Kind() == reflect.Ptr && field.Out(0).Elem().Kind() != reflect.Int64) {
 				return fmt.Errorf("%s.%s out[0] expect int64 with pointer or not, got: %s",
 					mapper.Name(), field.Name(), field.Out(0).Name())
 			}
@@ -207,7 +207,7 @@ func (p *caller) call() (err error) {
 
 	start := time.Now()
 	defer func() {
-		p.fragment.logger.Debugf("[gobatis] [%s cost]: %s", p.fragment.id, time.Since(start))
+		p.fragment.logger.Debugf("[gobatis] [%s] cost: %s", p.fragment.id, time.Since(start))
 	}()
 
 	if len(p.fragment.in) != len(p.params) {
@@ -259,18 +259,22 @@ func (p *caller) exec(in ...reflect.Value) (err error) {
 		return
 	}
 
-	p.fragment.logger.Debugf("[gobatis] [%s args]: %s", p.fragment.id, vars)
+	p.fragment.logger.Debugf("[gobatis] [%s] parameter: %s", p.fragment.id, p.printVars(vars))
 
 	res, err := exec.ExecContext(ctx, s, vars...)
 	if err != nil {
 		return
 	}
 
-	return newExecResult(res).scan()
+	return newExecResult(res, p.values).scan()
 }
 
-func (p *caller) parseExecResult() {
-
+func (*caller) printVars(vars []interface{}) string {
+	r := "\n"
+	for i, v := range vars {
+		r += fmt.Sprintf("    $%d => %s | %+v\n", i+1, reflect.TypeOf(v), v)
+	}
+	return r
 }
 
 func (p *caller) query(in ...reflect.Value) (err error) {
@@ -303,7 +307,7 @@ func (p *caller) query(in ...reflect.Value) (err error) {
 		return
 	}
 
-	p.fragment.logger.Debugf("[gobatis] [%s args]: %+v", p.fragment.id, vars)
+	p.fragment.logger.Debugf("[gobatis] [%s] parameter: %+v", p.fragment.id, p.printVars(vars))
 	rows, err := q.QueryContext(ctx, s, vars...)
 	if err != nil {
 		return
@@ -385,7 +389,7 @@ func (p *psr) merge(s ...string) {
 
 func (p *caller) parseStatement(args []reflect.Value) (string, []interface{}, error) {
 	if p.fragment.cacheable {
-		p.fragment.logger.Debugf("[gobatis] [%s cached sql]: %s", p.fragment.id, p.fragment.sql)
+		p.fragment.logger.Debugf("[gobatis] [%s] cached statement: %s", p.fragment.id, p.fragment.sql)
 		return p.fragment.sql, nil, nil
 	}
 	parser := newExprParser(args...)
@@ -405,7 +409,7 @@ func (p *caller) parseStatement(args []reflect.Value) (string, []interface{}, er
 		p.fragment.sql = res.sql
 	}
 
-	p.fragment.logger.Debugf("[gobatis] [%s sql]: %s", p.fragment.id, res.sql)
+	p.fragment.logger.Debugf("[gobatis] [%s] statement: %s", p.fragment.id, res.sql)
 
 	return res.sql, parser.vars, nil
 }

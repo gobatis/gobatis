@@ -166,13 +166,19 @@ func (p *queryResult) reflectRow(columns []string, row []interface{}) error {
 }
 
 func (p *queryResult) reflectStruct(r rowMap) error {
-	elem := p.values[0].Elem()
-	if elem.Kind() == reflect.Ptr && elem.Elem().Kind() == reflect.Invalid {
-		// var test *Test
-		p.values[0] = reflect.New(p.values[0].Type().Elem().Elem())
-		elem = p.values[0].Elem()
-	} else {
-		// test := new(Test)
+	elem := p.values[0]
+	//fmt.Println(elem.Kind(), elem.Elem().Kind())
+	//if elem.Kind() == reflect.Ptr && elem.Elem().Kind() == reflect.Invalid {
+	//	// var test *Test
+	//	p.values[0] = reflect.New(p.values[0].Type().Elem().Elem())
+	//	elem = p.values[0].Elem()
+	//} else {
+	//	// test := new(Test)
+	//	//elem = elem.Elem()
+	//	fmt.Println(elem.Type())
+	//	p.values[0] = reflect.New(elem.Type())
+	//}
+	if elem.Kind() == reflect.Ptr {
 		elem = elem.Elem()
 	}
 	_type := elem.Type()
@@ -221,9 +227,10 @@ func (p *queryResult) reflectValue(column string, rv reflect.Value, value interf
 	var kind reflect.Kind
 	var r reflect.Value
 
-	if rv.Kind() == reflect.Slice {
+	switch rv.Kind() {
+	case reflect.Slice:
 		kind = rv.Type().Elem().Kind()
-	} else {
+	default:
 		kind = rv.Kind()
 	}
 
@@ -295,19 +302,19 @@ func (p *queryResult) reflectValue(column string, rv reflect.Value, value interf
 		}
 		r = reflect.ValueOf(v)
 	case reflect.Float32:
-		v, err := cast.ToStringE(value)
+		v, err := cast.ToFloat32E(value)
 		if err != nil {
 			return err
 		}
 		r = reflect.ValueOf(v)
 	case reflect.Float64:
-		v, err := cast.ToStringE(value)
+		v, err := cast.ToFloat64E(value)
 		if err != nil {
 			return err
 		}
 		r = reflect.ValueOf(v)
 	default:
-		if rv.Type().Name() == "decimal.Decimal" {
+		if rv.Type().Name() == "Decimal" && rv.Type().PkgPath() == "github.com/shopspring/decimal" {
 			v, err := cast.ToDecimalE(value)
 			if err != nil {
 				return err
@@ -316,7 +323,7 @@ func (p *queryResult) reflectValue(column string, rv reflect.Value, value interf
 		} else if rv.Kind() != reflect.Slice {
 			return fmt.Errorf(
 				"unsupport convert field '%s' type '%s' to '%s'",
-				column, reflect.TypeOf(value).Kind(), rv.Kind(),
+				column, reflect.TypeOf(value), rv.Type(),
 			)
 		}
 	}
@@ -338,8 +345,8 @@ func newRowMap(columns []string, values []interface{}) rowMap {
 
 type rowMap map[string]interface{}
 
-func newExecResult(res sql.Result) *execResult {
-	return &execResult{res: res}
+func newExecResult(res sql.Result, values []reflect.Value) *execResult {
+	return &execResult{res: res, values: values}
 }
 
 type execResult struct {
@@ -352,7 +359,7 @@ func (p *execResult) scan() error {
 	if err != nil {
 		return err
 	}
-	if len(p.values) > 1 {
+	if len(p.values) > 0 {
 		p.values[0].Elem().SetInt(ra)
 	}
 	return nil
