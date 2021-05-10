@@ -159,13 +159,13 @@ func (p *fragment) checkResult(mapper, field reflect.Type) error {
 					if field.Out(0).Kind() != reflect.Slice ||
 						(field.Out(0).Elem().Kind() != reflect.Ptr && field.Out(0).Elem().Kind() != reflect.Struct) ||
 						(field.Out(0).Elem().Kind() == reflect.Ptr && field.Out(0).Elem().Elem().Kind() != reflect.Struct) {
-						return fmt.Errorf("%s.%s out[0] expect []*struct, got: %s",
+						return fmt.Errorf("%s.%s out[0] expect []struct with pointer or not, got: %s",
 							mapper.Name(), field.Name(), field.Out(0).Name())
 					}
 				} else {
 					if (field.Out(0).Kind() != reflect.Ptr && field.Out(0).Kind() != reflect.Struct) ||
 						(field.Out(0).Elem().Kind() == reflect.Ptr && field.Out(0).Elem().Elem().Kind() != reflect.Struct) {
-						return fmt.Errorf("%s.%s out[0] expect *struct, got: %s",
+						return fmt.Errorf("%s.%s out[0] expect struct with pointer or not, got: %s",
 							mapper.Name(), field.Name(), field.Out(0).Name())
 					}
 				}
@@ -175,7 +175,7 @@ func (p *fragment) checkResult(mapper, field reflect.Type) error {
 		if field.NumOut() > 1 {
 			if (field.Out(0).Kind() != reflect.Ptr && field.Out(0).Kind() != reflect.Int64) ||
 				(field.Out(0).Elem().Kind() == reflect.Ptr && field.Out(0).Elem().Elem().Kind() != reflect.Int64) {
-				return fmt.Errorf("%s.%s out[0] expect int64, got: %s",
+				return fmt.Errorf("%s.%s out[0] expect int64 with pointer or not, got: %s",
 					mapper.Name(), field.Name(), field.Out(0).Name())
 			}
 		}
