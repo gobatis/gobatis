@@ -2,6 +2,7 @@ package entity
 
 import (
 	"github.com/shopspring/decimal"
+	"time"
 )
 
 type Product struct {
@@ -10,5 +11,6 @@ type Product struct {
 	Age       int             `sql:"age"`
 	Height    float32         `sql:"height"`
 	Price     decimal.Decimal `sql:"price"`
-	//CreatedAt time.Time      `sql:"created_at"`
+	Price2    *decimal.Decimal `sql:"price"`
+	CreatedAt *time.Time      `sql:"created_at"`
 }

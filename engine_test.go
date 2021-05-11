@@ -53,4 +53,5 @@ func TestEngine(t *testing.T) {
 	item, err := productMapper.GetProductById(24)
 	require.NoError(t, err)
 	require.Equal(t, "gobatis manual", item.Name)
+	require.Equal(t, "16.8", item.Price.String())
 }

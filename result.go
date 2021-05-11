@@ -4,7 +4,9 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/gobatis/gobatis/cast"
+	"github.com/shopspring/decimal"
 	"reflect"
+	"time"
 )
 
 func newQueryResult(rows *sql.Rows) *queryResult {
@@ -166,27 +168,19 @@ func (p *queryResult) reflectRow(columns []string, row []interface{}) error {
 }
 
 func (p *queryResult) reflectStruct(r rowMap) error {
-	elem := p.values[0]
-	//fmt.Println(elem.Kind(), elem.Elem().Kind())
-	//if elem.Kind() == reflect.Ptr && elem.Elem().Kind() == reflect.Invalid {
-	//	// var test *Test
-	//	p.values[0] = reflect.New(p.values[0].Type().Elem().Elem())
-	//	elem = p.values[0].Elem()
-	//} else {
-	//	// test := new(Test)
-	//	//elem = elem.Elem()
-	//	fmt.Println(elem.Type())
-	//	p.values[0] = reflect.New(elem.Type())
-	//}
-	if elem.Kind() == reflect.Ptr {
-		elem = elem.Elem()
+	dv := p.values[0]
+	if dv.Kind() == reflect.Ptr {
+		dv = dv.Elem()
 	}
-	_type := elem.Type()
+	_type := dv.Type()
 	for i := 0; i < _type.NumField(); i++ {
 		field := _type.Field(i).Tag.Get(p.Tag())
 		v, ok := r[field]
 		if ok {
-			err := p.reflectValue(field, elem.Field(i), v)
+			if dv.Field(i).Kind() == reflect.Ptr {
+				dv.Field(i).Set(reflect.New(dv.Field(i).Type().Elem()))
+			}
+			err := p.reflectValue(field, dv.Field(i), v)
 			if err != nil {
 				return err
 			}
@@ -196,18 +190,22 @@ func (p *queryResult) reflectStruct(r rowMap) error {
 }
 
 func (p *queryResult) reflectStructs(r rowMap) error {
-	// var test []*Test => Test
 	var _type reflect.Type
 	if p.values[0].Type().Elem().Elem().Kind() != reflect.Ptr {
-		_type = p.values[0].Elem().Type().Elem()
+		// var test []Test => Test
+		_type = p.values[0].Type().Elem().Elem()
 	} else {
-		_type = p.values[0].Elem().Type().Elem().Elem()
+		// var test []*Test => Test
+		_type = p.values[0].Type().Elem().Elem().Elem()
 	}
 	elem := reflect.New(_type)
 	for i := 0; i < _type.NumField(); i++ {
 		field := _type.Field(i).Tag.Get(p.Tag())
 		v, ok := r[field]
 		if ok {
+			if elem.Elem().Field(i).Kind() == reflect.Ptr {
+				elem.Elem().Field(i).Set(reflect.New(elem.Elem().Field(i).Type().Elem()))
+			}
 			err := p.reflectValue(field, elem.Elem().Field(i), v)
 			if err != nil {
 				return err
@@ -222,115 +220,117 @@ func (p *queryResult) reflectStructs(r rowMap) error {
 	return nil
 }
 
-func (p *queryResult) reflectValue(column string, rv reflect.Value, value interface{}) error {
+func (p *queryResult) reflectValue(column string, dest reflect.Value, value interface{}) error {
 
-	var kind reflect.Kind
-	var r reflect.Value
+	var (
+		isPtr = dest.Kind() == reflect.Ptr
+		dv    = dest
+	)
 
-	switch rv.Kind() {
-	case reflect.Slice:
-		kind = rv.Type().Elem().Kind()
-	default:
-		kind = rv.Kind()
+	if isPtr {
+		dv = dest.Elem()
 	}
-
-	switch kind {
-	case reflect.Int8:
+	switch dv.Interface().(type) {
+	case int8:
 		v, err := cast.ToInt8E(value)
 		if err != nil {
 			return err
 		}
-		r = reflect.ValueOf(v)
-	case reflect.Int16:
+		return p.set(dv, v)
+	case int16:
 		v, err := cast.ToInt16E(value)
 		if err != nil {
 			return err
 		}
-		r = reflect.ValueOf(v)
-	case reflect.Int32:
+		return p.set(dv, v)
+	case int32:
 		v, err := cast.ToInt32E(value)
 		if err != nil {
 			return err
 		}
-		r = reflect.ValueOf(v)
-	case reflect.Int64:
+		return p.set(dv, v)
+	case int64:
 		v, err := cast.ToInt64E(value)
 		if err != nil {
 			return err
 		}
-		r = reflect.ValueOf(v)
-	case reflect.Int:
+		return p.set(dv, v)
+	case int:
 		v, err := cast.ToIntE(value)
 		if err != nil {
 			return err
 		}
-		r = reflect.ValueOf(v)
-	case reflect.Uint8:
+		return p.set(dv, v)
+	case uint8:
 		v, err := cast.ToUint8E(value)
 		if err != nil {
 			return err
 		}
-		r = reflect.ValueOf(v)
-	case reflect.Uint16:
+		return p.set(dv, v)
+	case uint16:
 		v, err := cast.ToUint16E(value)
 		if err != nil {
 			return err
 		}
-		r = reflect.ValueOf(v)
-	case reflect.Uint32:
+		return p.set(dv, v)
+	case uint32:
 		v, err := cast.ToUint32E(value)
 		if err != nil {
 			return err
 		}
-		r = reflect.ValueOf(v)
-	case reflect.Uint64:
+		return p.set(dv, v)
+	case uint64:
 		v, err := cast.ToUint64E(value)
 		if err != nil {
 			return err
 		}
-		r = reflect.ValueOf(v)
-	case reflect.Uint:
+		return p.set(dv, v)
+	case uint:
 		v, err := cast.ToUintE(value)
 		if err != nil {
 			return err
 		}
-		r = reflect.ValueOf(v)
-	case reflect.String:
+		return p.set(dv, v)
+	case string:
 		v, err := cast.ToStringE(value)
 		if err != nil {
 			return err
 		}
-		r = reflect.ValueOf(v)
-	case reflect.Float32:
+		return p.set(dv, v)
+	case float32:
 		v, err := cast.ToFloat32E(value)
 		if err != nil {
 			return err
 		}
-		r = reflect.ValueOf(v)
-	case reflect.Float64:
+		return p.set(dv, v)
+	case float64:
 		v, err := cast.ToFloat64E(value)
 		if err != nil {
 			return err
 		}
-		r = reflect.ValueOf(v)
-	default:
-		if rv.Type().Name() == "Decimal" && rv.Type().PkgPath() == "github.com/shopspring/decimal" {
-			v, err := cast.ToDecimalE(value)
-			if err != nil {
-				return err
-			}
-			r = reflect.ValueOf(v)
-		} else if rv.Kind() != reflect.Slice {
-			return fmt.Errorf(
-				"unsupport convert field '%s' type '%s' to '%s'",
-				column, reflect.TypeOf(value), rv.Type(),
-			)
+		return p.set(dv, v)
+	case time.Time:
+		v, err := cast.ToTimeE(value)
+		if err != nil {
+			return err
 		}
+		return p.set(dv, v)
+	case decimal.Decimal:
+		v, err := cast.ToDecimalE(value)
+		if err != nil {
+			return err
+		}
+		return p.set(dv, v)
 	}
-	if rv.Kind() == reflect.Slice {
-		rv.Set(reflect.Append(rv, r))
+
+	return fmt.Errorf("can't scan field '%s' type '%s' to '%s'", column, reflect.TypeOf(value), dest.Type())
+}
+
+func (p *queryResult) set(dest reflect.Value, r interface{}) error {
+	if dest.Kind() == reflect.Slice {
+		dest.Set(reflect.Append(dest, reflect.ValueOf(r)))
 	} else {
-		rv.Set(r)
+		dest.Set(reflect.ValueOf(r))
 	}
 	return nil
 }
