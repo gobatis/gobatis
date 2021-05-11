@@ -111,7 +111,7 @@ func (p *Engine) bindMapper(mapper interface{}) (err error) {
 		if err != nil {
 			return err
 		}
-		err = m.checkResult(rt, ft)
+		err = m.checkResult(rt, ft, rv.Type().Field(i).Name)
 		if err != nil {
 			return
 		}

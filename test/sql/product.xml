@@ -3,11 +3,15 @@
 
 <mapper>
     <insert id="CreateProduct" parameter="product:struct">
-        insert into products(name,age,height,price)
-        values(#{product.Name},#{product.Age},#{product.Height},#{product.Price})
+        insert into products(name,width,height,price)
+        values(#{product.Name},#{product.Width},#{product.Height},#{product.Price})
     </insert>
 
     <select id="GetProductById" parameter="id:int64">
         select * from products where id = #{ id };
+    </select>
+
+    <select id="GetProductsById" parameter="id:int64" resultType="[]struct">
+        select * from products where id >= #{ id } order by id limit 1;
     </select>
 </mapper>

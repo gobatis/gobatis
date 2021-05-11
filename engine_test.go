@@ -43,15 +43,21 @@ func TestEngine(t *testing.T) {
 
 	affected, err := productMapper.CreateProduct(&entity.Product{
 		Name:   "gobatis manual",
-		Age:    1,
+		Width:  1,
 		Height: 17.8,
 		Price:  decimal.NewFromFloat(16.8),
 	})
 	require.NoError(t, err)
 	require.Equal(t, int64(1), affected)
 
-	item, err := productMapper.GetProductById(24)
+	item, err := productMapper.GetProductById(11)
 	require.NoError(t, err)
 	require.Equal(t, "gobatis manual", item.Name)
 	require.Equal(t, "16.8", item.Price.String())
+
+	items, err := productMapper.GetProductsById(11)
+	require.NoError(t, err)
+	require.Equal(t, 1, len(items))
+	require.Equal(t, item.Id, items[0].Id)
+	require.Equal(t, item.CreatedAt, items[0].CreatedAt)
 }

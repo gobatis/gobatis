@@ -150,33 +150,31 @@ func (p *fragment) checkParameter(mapper, field reflect.Type) error {
 	return nil
 }
 
-func (p *fragment) checkResult(mapper, field reflect.Type) error {
+func (p *fragment) checkResult(mapper, ft reflect.Type, fn string) error {
 	switch p.statement.Name {
 	case dtd.SELECT:
 		if p.dest != nil {
-			if field.NumOut() > 1 {
+			if ft.NumOut() > 1 {
 				if p.dest.isArray {
-					if field.Out(0).Kind() != reflect.Slice ||
-						(field.Out(0).Elem().Kind() != reflect.Ptr && field.Out(0).Elem().Kind() != reflect.Struct) ||
-						(field.Out(0).Elem().Kind() == reflect.Ptr && field.Out(0).Elem().Elem().Kind() != reflect.Struct) {
-						return fmt.Errorf("%s.%s out[0] expect []struct with pointer or not, got: %s",
-							mapper.Name(), field.Name(), field.Out(0).Name())
+					if ft.Out(0).Kind() != reflect.Slice ||
+						(ft.Out(0).Elem().Kind() != reflect.Ptr && ft.Out(0).Elem().Kind() != reflect.Struct) ||
+						(ft.Out(0).Elem().Kind() == reflect.Ptr && ft.Out(0).Elem().Elem().Kind() != reflect.Struct) {
+						return fmt.Errorf("%s.%s out[0] expect [](*)struct, got: %s", mapper.Name(), fn, ft.Out(0))
 					}
 				} else {
-					if (field.Out(0).Kind() != reflect.Ptr && field.Out(0).Kind() != reflect.Struct) ||
-						(field.Out(0).Elem().Kind() == reflect.Ptr && field.Out(0).Elem().Elem().Kind() != reflect.Struct) {
-						return fmt.Errorf("%s.%s out[0] expect struct with pointer or not, got: %s",
-							mapper.Name(), field.Name(), field.Out(0).Name())
+					if (ft.Out(0).Kind() != reflect.Ptr && ft.Out(0).Kind() != reflect.Struct) ||
+						(ft.Out(0).Elem().Kind() == reflect.Ptr && ft.Out(0).Elem().Elem().Kind() != reflect.Struct) {
+						return fmt.Errorf("%s.%s out[0] expect (*)struct, got: %s", mapper.Name(), fn, ft.Out(0))
 					}
 				}
 			}
 		}
 	case dtd.INSERT, dtd.UPDATE, dtd.DELETE:
-		if field.NumOut() > 1 {
-			if (field.Out(0).Kind() != reflect.Ptr && field.Out(0).Kind() != reflect.Int64) ||
-				(field.Out(0).Kind() == reflect.Ptr && field.Out(0).Elem().Kind() != reflect.Int64) {
+		if ft.NumOut() > 1 {
+			if (ft.Out(0).Kind() != reflect.Ptr && ft.Out(0).Kind() != reflect.Int64) ||
+				(ft.Out(0).Kind() == reflect.Ptr && ft.Out(0).Elem().Kind() != reflect.Int64) {
 				return fmt.Errorf("%s.%s out[0] expect int64 with pointer or not, got: %s",
-					mapper.Name(), field.Name(), field.Out(0).Name())
+					mapper.Name(), ft.Name(), ft.Out(0).Name())
 			}
 		}
 	}
