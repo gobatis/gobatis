@@ -2,6 +2,7 @@ package gobatis
 
 import (
 	"github.com/sirupsen/logrus"
+	"github.com/ttacon/chalk"
 	"log"
 )
 
@@ -23,21 +24,20 @@ type logger struct {
 }
 
 func (p logger) Debugf(format string, args ...interface{}) {
-	//p.logger.Debugf(format, args...)
-	log.Printf(format, args...)
+	log.Printf(chalk.Cyan.Color("[DEBUG]")+format, args...)
 }
 
 func (p logger) Infof(format string, args ...interface{}) {
-	//p.logger.Infof(format, args...)
-	log.Printf(format, args...)
+
+	log.Printf(chalk.Green.Color("[INFO]")+format, args...)
 }
 
 func (p logger) Warnf(format string, args ...interface{}) {
-	//p.logger.Warnf(format, args...)
-	log.Printf(format, args...)
+
+	log.Printf(chalk.Yellow.Color("[WARN]")+format, args...)
 }
 
 func (p logger) Errorf(format string, args ...interface{}) {
-	//p.logger.Errorf(format, args...)
-	log.Printf(format, args...)
+
+	log.Printf(chalk.Red.Color("[ERROR]")+format, args...)
 }

@@ -26,6 +26,7 @@ require (
 	github.com/shurcooL/vfsgen v0.0.0-20200824052919-0d455de96546
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.7.0
+	github.com/ttacon/chalk v0.0.0-20160626202418-22c06c80ed31
 	github.com/uniplaces/carbon v0.1.6
 	go.uber.org/atomic v1.7.0
 	go.uber.org/multierr v1.6.0 // indirect

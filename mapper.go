@@ -272,7 +272,7 @@ func (p *caller) exec(in ...reflect.Value) (err error) {
 func (*caller) printVars(vars []interface{}) string {
 	r := "\n"
 	for i, v := range vars {
-		r += fmt.Sprintf("    $%d => %s | %+v\n", i+1, reflect.TypeOf(v), v)
+		r += fmt.Sprintf("   $%d => (%s) %+v\n", i+1, reflect.TypeOf(v), v)
 	}
 	return r
 }
