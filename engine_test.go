@@ -1,6 +1,7 @@
 package gobatis
 
 import (
+	"encoding/json"
 	"github.com/gobatis/gobatis/bundle"
 	"github.com/gobatis/gobatis/test/entity"
 	"github.com/gobatis/gobatis/test/mapper"
@@ -60,4 +61,10 @@ func TestEngine(t *testing.T) {
 	require.Equal(t, 1, len(items))
 	require.Equal(t, item.Id, items[0].Id)
 	require.Equal(t, item.CreatedAt, items[0].CreatedAt)
+
+	item, err = productMapper.GetProductById(142)
+	require.NoError(t, err)
+	d, err := json.MarshalIndent(item, "", "\t")
+	require.NoError(t, err)
+	t.Log(string(d))
 }

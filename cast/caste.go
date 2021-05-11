@@ -28,7 +28,7 @@ func castOverFlowError(from, to string) error {
 // ToTimeE casts an interface to a time.Time type.
 func ToTimeE(i interface{}) (tim time.Time, err error) {
 	i = indirect(i)
-	
+
 	switch v := i.(type) {
 	case time.Time:
 		return v, nil
@@ -54,7 +54,7 @@ func ToTimeE(i interface{}) (tim time.Time, err error) {
 // ToBoolE casts an interface to a bool type.
 func ToBoolE(i interface{}) (bool, error) {
 	i = indirect(i)
-	
+
 	switch b := i.(type) {
 	case bool:
 		return b, nil
@@ -122,7 +122,7 @@ func ToBoolE(i interface{}) (bool, error) {
 // ToInt64E casts an interface to an int64 type.
 func ToInt64E(i interface{}) (int64, error) {
 	i = indirect(i)
-	
+
 	switch s := i.(type) {
 	case int:
 		return int64(s), nil
@@ -158,7 +158,7 @@ func ToInt64E(i interface{}) (int64, error) {
 		v, err := strconv.ParseInt(s, 0, 0)
 		if err != nil {
 			return 0, fmt.Errorf("unable to cast %#v of type %T to int64", i, i)
-			
+
 		}
 		a, err := decimal.NewFromString(s)
 		if err != nil {
@@ -183,7 +183,7 @@ func ToInt64E(i interface{}) (int64, error) {
 // ToInt32E casts an interface to an int32 type.
 func ToInt32E(i interface{}) (int32, error) {
 	i = indirect(i)
-	
+
 	switch s := i.(type) {
 	case int:
 		r := int32(s)
@@ -350,7 +350,7 @@ func ToInt16E(i interface{}) (int16, error) {
 // ToInt8E casts an interface to an int8 type.
 func ToInt8E(i interface{}) (int8, error) {
 	i = indirect(i)
-	
+
 	switch s := i.(type) {
 	case int:
 		r := int8(s)
@@ -451,7 +451,7 @@ func ToInt8E(i interface{}) (int8, error) {
 // ToIntE casts an interface to an int type.
 func ToIntE(i interface{}) (int, error) {
 	i = indirect(i)
-	
+
 	switch s := i.(type) {
 	case int:
 		return s, nil
@@ -536,7 +536,7 @@ func ToIntE(i interface{}) (int, error) {
 // ToUintE casts an interface to a uint type.
 func ToUintE(i interface{}) (uint, error) {
 	i = indirect(i)
-	
+
 	switch s := i.(type) {
 	case string:
 		v, err := strconv.ParseUint(s, 0, 0)
@@ -626,7 +626,7 @@ func ToUintE(i interface{}) (uint, error) {
 // ToUint64E casts an interface to a uint64 type.
 func ToUint64E(i interface{}) (uint64, error) {
 	i = indirect(i)
-	
+
 	switch s := i.(type) {
 	case string:
 		v, err := strconv.ParseUint(s, 0, 64)
@@ -702,7 +702,7 @@ func ToUint64E(i interface{}) (uint64, error) {
 // ToUint32E casts an interface to a uint32 type.
 func ToUint32E(i interface{}) (uint32, error) {
 	i = indirect(i)
-	
+
 	switch s := i.(type) {
 	case string:
 		v, err := strconv.ParseUint(s, 0, 32)
@@ -800,7 +800,7 @@ func ToUint32E(i interface{}) (uint32, error) {
 // ToUint16E casts an interface to a uint16 type.
 func ToUint16E(i interface{}) (uint16, error) {
 	i = indirect(i)
-	
+
 	switch s := i.(type) {
 	case string:
 		v, err := strconv.ParseUint(s, 0, 16)
@@ -911,7 +911,7 @@ func ToUint16E(i interface{}) (uint16, error) {
 // ToUint8E casts an interface to a uint type.
 func ToUint8E(i interface{}) (uint8, error) {
 	i = indirect(i)
-	
+
 	switch s := i.(type) {
 	case string:
 		v, err := strconv.ParseUint(s, 0, 8)
@@ -1032,6 +1032,9 @@ func ToDecimalE(v interface{}) (decimal.Decimal, error) {
 	if err != nil {
 		return decimal.Decimal{}, err
 	}
+	if s == "" {
+		return decimal.Zero, nil
+	}
 	d, err := decimal.NewFromString(s)
 	if err != nil {
 		return decimal.Decimal{}, err
@@ -1067,10 +1070,10 @@ func indirectToStringerOrError(a interface{}) interface{} {
 	if a == nil {
 		return nil
 	}
-	
+
 	var errorType = reflect.TypeOf((*error)(nil)).Elem()
 	var fmtStringerType = reflect.TypeOf((*fmt.Stringer)(nil)).Elem()
-	
+
 	v := reflect.ValueOf(a)
 	for !v.Type().Implements(fmtStringerType) && !v.Type().Implements(errorType) && v.Kind() == reflect.Ptr && !v.IsNil() {
 		v = v.Elem()
@@ -1081,7 +1084,7 @@ func indirectToStringerOrError(a interface{}) interface{} {
 // ToStringE casts an interface to a string type.
 func ToStringE(i interface{}) (string, error) {
 	i = indirectToStringerOrError(i)
-	
+
 	switch s := i.(type) {
 	case string:
 		return s, nil
@@ -1295,6 +1298,8 @@ func ToFloat32E(i interface{}) (float32, error) {
 		if s {
 			return 1, nil
 		}
+		return 0, nil
+	case nil:
 		return 0, nil
 	default:
 		return 0, fmt.Errorf("unable to cast %#v of type %T to float32", i, i)
