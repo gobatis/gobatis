@@ -65,7 +65,7 @@ member: DOT IDENTIFIER;
 literal: basicLit;
 
 basicLit:
-	NIL_LIT
+	nil_
 	| integer
 	| string_
 	| float_
@@ -79,6 +79,8 @@ integer:
 	| HEX_LIT
 	| IMAGINARY_LIT
 	| RUNE_LIT;
+
+nil_: NIL_LIT;
 
 string_: RAW_STRING_LIT | INTERPRETED_STRING_LIT;
 

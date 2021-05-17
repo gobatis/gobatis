@@ -49,6 +49,9 @@ type ExprParserListener interface {
 	// EnterInteger is called when entering the integer production.
 	EnterInteger(c *IntegerContext)
 
+	// EnterNil_ is called when entering the nil_ production.
+	EnterNil_(c *Nil_Context)
+
 	// EnterString_ is called when entering the string_ production.
 	EnterString_(c *String_Context)
 
@@ -108,6 +111,9 @@ type ExprParserListener interface {
 
 	// ExitInteger is called when exiting the integer production.
 	ExitInteger(c *IntegerContext)
+
+	// ExitNil_ is called when exiting the nil_ production.
+	ExitNil_(c *Nil_Context)
 
 	// ExitString_ is called when exiting the string_ production.
 	ExitString_(c *String_Context)

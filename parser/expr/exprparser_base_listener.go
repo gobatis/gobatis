@@ -104,6 +104,12 @@ func (s *BaseExprParserListener) EnterInteger(ctx *IntegerContext) {}
 // ExitInteger is called when production integer is exited.
 func (s *BaseExprParserListener) ExitInteger(ctx *IntegerContext) {}
 
+// EnterNil_ is called when production nil_ is entered.
+func (s *BaseExprParserListener) EnterNil_(ctx *Nil_Context) {}
+
+// ExitNil_ is called when production nil_ is exited.
+func (s *BaseExprParserListener) ExitNil_(ctx *Nil_Context) {}
+
 // EnterString_ is called when production string_ is entered.
 func (s *BaseExprParserListener) EnterString_(ctx *String_Context) {}
 
