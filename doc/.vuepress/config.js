@@ -23,8 +23,8 @@ module.exports = {
         locales: {
             '/': {
                 nav: [
-                    { text: '文档', link: '/getting-started' },
-                    { text: 'External', link: 'https://google.com', target: '_blank' },
+                    {text: '文档', link: '/getting-started'},
+                    {text: 'External', link: 'https://google.com', target: '_blank'},
                 ],
                 sidebar: [
                     {
@@ -38,6 +38,7 @@ module.exports = {
                             ['/configuration', 'XML 配置'],
                             ['/sqlmap-xml', 'XML 映射文件'],
                             ['/dynamic-sql', '动态 SQL'],
+                            ['/expression', '表达式'],
                         ]
                     },
 
@@ -45,8 +46,8 @@ module.exports = {
             },
             '/en/': {
                 nav: [
-                    { text: 'Home', link: '/' },
-                    { text: 'External', link: 'https://google.com', target: '_blank' },
+                    {text: 'Home', link: '/'},
+                    {text: 'External', link: 'https://google.com', target: '_blank'},
                 ],
                 sidebar: [
                     '/',
