@@ -516,7 +516,7 @@ func (p *fragmentParser) EnterParamDecl(ctx *expr.ParamDeclContext) {
 		if isArray {
 			_type = strings.TrimSpace(strings.TrimPrefix(_type, "[]"))
 		}
-		kind, err = toReflectKind(_type)
+		kind, err = varToReflectKind(_type)
 		if err != nil {
 			p.error = parseError(p.file, ctx, err.Error())
 			return
@@ -633,7 +633,7 @@ func (p *exprValue) visitMember(name string) (r *exprValue, err error) {
 	return
 }
 
-func (p *exprValue) visitArrayIndex(index int) (r *exprValue, err error) {
+func (p *exprValue) visitArray(index int) (r *exprValue, err error) {
 	
 	elem := realReflectElem(p.value)
 	if elem.Kind() != reflect.Array && elem.Kind() != reflect.Slice {
@@ -652,7 +652,7 @@ func (p *exprValue) visitArrayIndex(index int) (r *exprValue, err error) {
 	return
 }
 
-func (p *exprValue) visitMapIndex(index reflect.Value) (r *exprValue, err error) {
+func (p *exprValue) visitMap(index reflect.Value) (r *exprValue, err error) {
 	
 	elem := realReflectElem(p.value)
 	if elem.Kind() != reflect.Map {
@@ -853,7 +853,7 @@ func (p *exprParams) alias(name string, expected reflect.Kind, index int) error 
 	return nil
 }
 
-func toReflectKind(t string) (kind reflect.Kind, err error) {
+func varToReflectKind(t string) (kind reflect.Kind, err error) {
 	switch t {
 	case "bool":
 		kind = reflect.Bool
@@ -896,7 +896,7 @@ func toReflectKind(t string) (kind reflect.Kind, err error) {
 	case "struct":
 		kind = reflect.Struct
 	default:
-		err = fmt.Errorf("unsupported alias type '%s'", t)
+		err = fmt.Errorf("unsupported var type '%s'", t)
 	}
 	return
 }
@@ -926,7 +926,6 @@ type exprParser struct {
 	coverage      *coverage
 	baseParams    *exprParams
 	foreachParams *exprParams
-	error         error
 	file          string
 	paramIndex    int
 	vars          []interface{}
@@ -934,26 +933,22 @@ type exprParser struct {
 }
 
 func (p *exprParser) EnterParamDecl(ctx *expr.ParamDeclContext) {
-	if p.error != nil {
-		return
-	}
 	name := ctx.IDENTIFIER().GetText()
 	var expected string
 	if ctx.ParamType() != nil {
 		expected = ctx.ParamType().GetText()
 	}
 	if _builtin.is(name) {
-		p.error = parseError(p.file, ctx,
-			fmt.Sprintf("alias '%s' conflict with built-in functions or objects", name))
-		return
+		throw(p.file, ctx, parameterConflictWithBuiltInErr).format(
+			"parameter '%s' conflict with built-in reserved word", name,
+		)
 	}
 	var err error
 	var ek reflect.Kind
 	if expected != "" {
-		ek, err = toReflectKind(expected)
+		ek, err = varToReflectKind(expected)
 		if err != nil {
-			p.error = err
-			return
+			throw(p.file, ctx, varToReflectKindErr).with(err)
 		}
 	} else {
 		ek = reflect.Interface
@@ -964,8 +959,7 @@ func (p *exprParser) EnterParamDecl(ctx *expr.ParamDeclContext) {
 		err = p.baseParams.alias(name, ek, p.paramIndex)
 	}
 	if err != nil {
-		p.error = parseError(p.file, ctx, err.Error())
-		return
+		throw(p.file, ctx, aliasVarErr).with(err)
 	}
 	p.paramIndex++
 }
@@ -983,21 +977,12 @@ func (p *exprParser) EnterOperand(ctx *expr.OperandContext) {
 }
 
 func (p *exprParser) ExitExpression(ctx *expr.ExpressionContext) {
-	if p.error != nil {
-		return
-	}
-	
 	if ctx.GetUnary_op() != nil {
 		left, err := p.stack.Pop()
 		if err != nil {
-			p.error = parseError(p.file, ctx, err.Error())
-			return
+			throw(p.file, ctx, popStackErr).with(err)
 		}
-		err = p.unaryCalc(left, ctx, ctx.GetUnary_op())
-		if err != nil {
-			p.error = err
-			return
-		}
+		p.unaryCalc(left, ctx, ctx.GetUnary_op())
 		p.coverage.add(ctx)
 	} else if ctx.GetMul_op() != nil ||
 		ctx.GetAdd_op() != nil ||
@@ -1006,52 +991,28 @@ func (p *exprParser) ExitExpression(ctx *expr.ExpressionContext) {
 		ctx.LOGICAL_OR() != nil {
 		left, right, err := p.popBinaryOperands()
 		if err != nil {
-			p.error = parseError(p.file, ctx, err.Error())
-			return
+			throw(p.file, ctx, popBinaryOperandsErr).with(err)
 		}
 		if ctx.GetAdd_op() != nil {
-			err = p.numericStringCalc(left, right, ctx, ctx.GetAdd_op())
-			if err != nil {
-				p.error = err
-				return
-			}
+			p.numericStringCalc(left, right, ctx, ctx.GetAdd_op())
 			p.coverage.add(ctx)
 		} else if ctx.GetMul_op() != nil {
-			err = p.numericStringCalc(left, right, ctx, ctx.GetMul_op())
-			if err != nil {
-				p.error = err
-				return
-			}
+			p.numericStringCalc(left, right, ctx, ctx.GetMul_op())
 			p.coverage.add(ctx)
 		} else if ctx.GetRel_op() != nil {
-			err = p.relationCalc(left, right, ctx, ctx.GetRel_op())
-			if err != nil {
-				p.error = err
-				return
-			}
+			p.relationCalc(left, right, ctx, ctx.GetRel_op())
 			p.coverage.add(ctx)
 		} else if ctx.LOGICAL_AND() != nil {
-			err = p.logicCalc(left, right, ctx, ctx.LOGICAL_AND().GetSymbol())
-			if err != nil {
-				p.error = err
-				return
-			}
+			p.logicCalc(left, right, ctx, ctx.LOGICAL_AND().GetSymbol())
 			p.coverage.add(ctx)
 		} else if ctx.LOGICAL_OR() != nil {
-			err = p.logicCalc(left, right, ctx, ctx.LOGICAL_OR().GetSymbol())
-			if err != nil {
-				p.error = err
-				return
-			}
+			p.logicCalc(left, right, ctx, ctx.LOGICAL_OR().GetSymbol())
 			p.coverage.add(ctx)
 		}
 	}
 }
 
 func (p *exprParser) ExitVar_(ctx *expr.Var_Context) {
-	if p.error != nil {
-		return
-	}
 	alias := ctx.IDENTIFIER().GetText()
 	var val exprValue
 	if _builtin.is(alias) {
@@ -1067,7 +1028,7 @@ func (p *exprParser) ExitVar_(ctx *expr.Var_Context) {
 			val, ok = p.baseParams.get(alias)
 		}
 		if !ok {
-			p.error = parseError(p.file, ctx, fmt.Sprintf("can't find var '%s'", alias))
+			throw(p.file, ctx, parameterNotFoundErr).format("parameter '%s' not found", aliasVarErr)
 			return
 		}
 	}
@@ -1076,20 +1037,15 @@ func (p *exprParser) ExitVar_(ctx *expr.Var_Context) {
 }
 
 func (p *exprParser) ExitMember(ctx *expr.MemberContext) {
-	if p.error != nil {
-		return
-	}
 	name := ctx.IDENTIFIER().GetText()
 	obj, err := p.stack.Pop()
 	if err != nil {
-		p.error = parseError(p.file, ctx, err.Error())
-		return
+		throw(p.file, ctx, popStackErr).with(err)
 	}
 	var mev *exprValue
 	mev, err = obj.visitMember(name)
 	if err != nil {
-		p.error = parseError(p.file, ctx, err.Error())
-		return
+		throw(p.file, ctx, visitMemberErr).with(err)
 	}
 	
 	p.stack.Push(mev)
@@ -1098,87 +1054,67 @@ func (p *exprParser) ExitMember(ctx *expr.MemberContext) {
 
 func (p *exprParser) ExitIndex(ctx *expr.IndexContext) {
 	
-	if p.error != nil {
-		return
-	}
-	
 	index, err := p.stack.Pop()
 	if err != nil {
-		p.error = parseError(p.file, ctx, err.Error())
-		return
+		throw(p.file, ctx, popStackErr).with(err)
 	}
 	
 	object, err := p.stack.Pop()
 	if err != nil {
-		p.error = parseError(p.file, ctx, err.Error())
-		return
+		throw(p.file, ctx, popStackErr).with(err)
 	}
 	objectReflectElem := realReflectElem(object.value)
 	var ev *exprValue
 	if objectReflectElem.Kind() == reflect.Map {
-		ev, err = object.visitMapIndex(realReflectElem(index.value))
+		ev, err = object.visitMap(realReflectElem(index.value))
 		if err != nil {
-			p.error = parseError(p.file, ctx, err.Error())
-			return
+			throw(p.file, ctx, visitMapErr).with(err)
 		}
 	} else if objectReflectElem.Kind() == reflect.Slice || objectReflectElem.Kind() == reflect.Array {
 		var i int
 		i, err = index.int()
 		if err != nil {
-			p.error = parseError(p.file, ctx, fmt.Sprintf("array index error: %s", err))
-			return
+			throw(p.file, ctx, visitArrayErr).format("parse array index error: %s", err)
 		}
 		
-		ev, err = object.visitArrayIndex(i)
+		ev, err = object.visitArray(i)
 		if err != nil {
-			p.error = parseError(p.file, ctx, fmt.Sprintf("array index error: %s", err))
-			return
+			throw(p.file, ctx, visitArrayErr).format("visit array error: %s", err)
 		}
 		
 	} else {
-		p.error = parseError(p.file, ctx, "unsupported index object")
-		return
+		throw(p.file, ctx, indexErr).format("parameter unsupported index")
 	}
 	p.stack.Push(ev)
 	p.coverage.add(ctx)
 }
 
 func (p *exprParser) ExitSlice_(ctx *expr.Slice_Context) {
-	if p.error != nil {
-		return
-	}
 	l := len(ctx.AllExpression())
 	args := make([]int, l)
 	for i := l - 1; i >= 0; i-- {
 		arg, err := p.stack.Pop()
 		if err != nil {
-			p.error = parseError(p.file, ctx, err.Error())
-			return
+			throw(p.file, ctx, popStackErr).with(err)
 		}
 		args[i], err = arg.int()
 		if err != nil {
-			p.error = parseError(p.file, ctx, err.Error())
-			return
+			throw(p.file, ctx, visitArrayErr).with(err)
 		}
 	}
 	target, err := p.stack.Pop()
 	if err != nil {
-		p.error = parseError(p.file, ctx, err.Error())
-		return
+		throw(p.file, ctx, popStackErr).with(err)
 	}
 	r, err := target.visitSlice(ctx.GetText(), args...)
 	if err != nil {
-		p.error = parseError(p.file, ctx, err.Error())
-		return
+		throw(p.file, ctx, visitArrayErr).with(err)
 	}
 	p.stack.Push(r)
 	p.coverage.add(ctx)
 }
 
 func (p *exprParser) ExitCall(ctx *expr.CallContext) {
-	if p.error != nil {
-		return
-	}
 	var l = 0
 	if ctx.ExpressionList() != nil {
 		l = len(ctx.ExpressionList().(*expr.ExpressionListContext).AllExpression())
@@ -1187,34 +1123,26 @@ func (p *exprParser) ExitCall(ctx *expr.CallContext) {
 	for i := l - 1; i >= 0; i-- {
 		arg, err := p.stack.Pop()
 		if err != nil {
-			p.error = parseError(p.file, ctx, err.Error())
-			return
+			throw(p.file, ctx, popStackErr).with(err)
 		}
 		args[i] = realReflectElem(arg.value)
 	}
 	f, err := p.stack.Pop()
 	if err != nil {
-		p.error = parseError(p.file, ctx, err.Error())
-		return
+		throw(p.file, ctx, popStackErr).with(err)
 	}
 	r, err := f.call(ctx.ELLIPSIS() != nil, args)
 	if err != nil {
-		p.error = parseError(p.file, ctx, err.Error())
-		return
+		throw(p.file, ctx, callErr).with(err)
 	}
 	p.stack.Push(r)
 	p.coverage.add(ctx)
-	return
 }
 
 func (p *exprParser) ExitInteger(ctx *expr.IntegerContext) {
-	if p.error != nil {
-		return
-	}
 	v, err := cast.ToIntE(ctx.GetText())
 	if err != nil {
-		p.error = parseError(p.file, ctx, err.Error())
-		return
+		throw(p.file, ctx, parseIntegerErr).with(err)
 	}
 	p.stack.Push(&exprValue{
 		value:  v,
@@ -1224,9 +1152,6 @@ func (p *exprParser) ExitInteger(ctx *expr.IntegerContext) {
 }
 
 func (p *exprParser) ExitString_(ctx *expr.String_Context) {
-	if p.error != nil {
-		return
-	}
 	p.stack.Push(&exprValue{
 		value: trimValueQuote(ctx.GetText()),
 	})
@@ -1234,13 +1159,9 @@ func (p *exprParser) ExitString_(ctx *expr.String_Context) {
 }
 
 func (p *exprParser) ExitFloat_(ctx *expr.Float_Context) {
-	if p.error != nil {
-		return
-	}
 	v, err := cast.ToDecimalE(ctx.GetText())
 	if err != nil {
-		p.error = parseError(p.file, ctx, err.Error())
-		return
+		throw(p.file, ctx, parseDecimalErr).with(err)
 	}
 	p.stack.Push(&exprValue{
 		value:  v,
@@ -1250,9 +1171,6 @@ func (p *exprParser) ExitFloat_(ctx *expr.Float_Context) {
 }
 
 func (p *exprParser) ExitNil_(ctx *expr.Nil_Context) {
-	if p.error != nil {
-		return
-	}
 	p.stack.Push(&exprValue{
 		value: nil,
 	})
@@ -1268,6 +1186,18 @@ func (p *exprParser) parseParameter(params string) (err error) {
 	return
 }
 
+func _recover() error {
+	e := recover()
+	if e != nil {
+		_e, ok := e.(*_error)
+		if ok {
+			return _e
+		}
+		return fmt.Errorf("%v", e)
+	}
+	return nil
+}
+
 func (p *exprParser) parseExpression(expresion string) (result interface{}, err error) {
 	
 	p.stack = newExprStack()
@@ -1278,19 +1208,20 @@ func (p *exprParser) parseExpression(expresion string) (result interface{}, err 
 		return
 	}
 	
+	defer func() {
+		err = _recover()
+	}()
+	
 	antlr.ParseTreeWalkerDefault.Walk(p, parser.Expressions())
 	
-	err = p.error
-	if err != nil {
-		return
-	}
 	if p.stack.Len() != 1 {
-		err = fmt.Errorf("unexpected reslut stack length: %d", p.stack.Len())
-		return
+		throw(p.file, nil, popResultErr).format("expect result stack length: 1, got %d", p.stack.Len())
 	}
 	if !p.coverage.covered() {
-		err = parseError(p.file, nil, fmt.Sprintf("parse expression token not coverd: %d/%d", p.coverage.len(), p.coverage.total))
-		return
+		throw(p.file, nil, parseCoveredErr).format(
+			"parse expression token not covered: %d/%d",
+			p.coverage.len(), p.coverage.total,
+		)
 	}
 	
 	v, err := p.stack.Pop()
@@ -1315,7 +1246,7 @@ func (p *exprParser) popBinaryOperands() (left, right *exprValue, err error) {
 	return
 }
 
-func (p *exprParser) numericStringCalc(left, right *exprValue, ctx antlr.ParserRuleContext, op antlr.Token) error {
+func (p *exprParser) numericStringCalc(left, right *exprValue, ctx antlr.ParserRuleContext, op antlr.Token) {
 	
 	var err error
 	var result interface{}
@@ -1341,16 +1272,16 @@ func (p *exprParser) numericStringCalc(left, right *exprValue, ctx antlr.ParserR
 	case expr.ExprParserBIT_CLEAR:
 		result, err = cast.BitClearAnyE(left.value, right.value)
 	default:
-		return p.unsupportedOpError(ctx)
+		throw(p.file, ctx, unsupportedNumericCalc).format("unsupported numeric calc")
 	}
 	if err != nil {
-		return parseError(p.file, ctx, err.Error())
+		throw(p.file, ctx, numericCalcErr).with(err)
 	}
+	
 	p.stack.Push(&exprValue{value: result})
-	return nil
 }
 
-func (p *exprParser) relationCalc(left, right *exprValue, ctx antlr.ParserRuleContext, op antlr.Token) error {
+func (p *exprParser) relationCalc(left, right *exprValue, ctx antlr.ParserRuleContext, op antlr.Token) {
 	
 	var err error
 	var result bool
@@ -1368,17 +1299,16 @@ func (p *exprParser) relationCalc(left, right *exprValue, ctx antlr.ParserRuleCo
 	case expr.ExprParserGREATER_OR_EQUALS:
 		result, err = cast.GreaterOrEqualAnyE(left.value, right.value)
 	default:
-		return p.unsupportedOpError(ctx)
+		throw(p.file, ctx, unsupportedRelationCalcErr).format("unsupported relation calc")
 	}
 	if err != nil {
-		return parseError(p.file, ctx, err.Error())
+		throw(p.file, ctx, relationCalcError).with(err)
+		
 	}
 	p.stack.Push(&exprValue{value: result})
-	
-	return nil
 }
 
-func (p *exprParser) unaryCalc(left *exprValue, ctx antlr.ParserRuleContext, op antlr.Token) error {
+func (p *exprParser) unaryCalc(left *exprValue, ctx antlr.ParserRuleContext, op antlr.Token) {
 	var err error
 	var result interface{}
 	switch op.GetTokenType() {
@@ -1391,16 +1321,16 @@ func (p *exprParser) unaryCalc(left *exprValue, ctx antlr.ParserRuleContext, op 
 	case expr.ExprParserEXCLAMATION:
 		result, err = cast.UnaryNotAnyE(left.value)
 	default:
-		return p.unsupportedOpError(ctx)
+		throw(p.file, ctx, unsupportedUnaryCalc).format("unsupported %s%v", ctx.GetText(), left.value)
 	}
 	if err != nil {
-		return parseError(p.file, ctx, err.Error())
+		throw(p.file, ctx, unaryCalcError).with(err)
 	}
 	p.stack.Push(&exprValue{value: result})
-	return nil
 }
 
-func (p *exprParser) logicCalc(left, right *exprValue, ctx antlr.ParserRuleContext, op antlr.Token) error {
+func (p *exprParser) logicCalc(left, right *exprValue, ctx antlr.ParserRuleContext, op antlr.Token) {
+	
 	var err error
 	var result interface{}
 	switch op.GetTokenType() {
@@ -1410,11 +1340,9 @@ func (p *exprParser) logicCalc(left, right *exprValue, ctx antlr.ParserRuleConte
 		result, err = cast.LogicOrAnyE(left.value, right.value)
 	}
 	if err != nil {
-		return parseError(p.file, ctx, err.Error())
+		throw(p.file, ctx, logicCalcErr).with(err)
 	}
 	p.stack.Push(&exprValue{value: result})
-	
-	return nil
 }
 
 func (p *exprParser) unsupportedOpError(ctx antlr.ParserRuleContext) error {

@@ -6,23 +6,55 @@ import (
 )
 
 const (
-	UnknownErr = iota
-	ParameterTypeErr
+	unknownErr = iota
+	parameterTypeErr
+	parameterConflictWithBuiltInErr
+	varToReflectKindErr
+	aliasVarErr
+	popStackErr
+	unsupportedRelationCalcErr
+	unsupportedUnaryCalc
+	unsupportedNumericCalc
+	numericCalcErr
+	unaryCalcError
+	relationCalcError
+	popBinaryOperandsErr
+	logicCalcErr
+	parameterNotFoundErr
+	visitMemberErr
+	visitMapErr
+	visitArrayErr
+	indexErr
+	callErr
+	parseIntegerErr
+	parseDecimalErr
+	popResultErr
+	parseCoveredErr
 )
 
-func NewError(code int, file string, ctx antlr.ParserRuleContext, detail error) *Error {
-	return &Error{code: code, file: file, ctx: ctx, detail: detail}
+func throw(file string, ctx antlr.ParserRuleContext, code int) *_error {
+	return &_error{file: file, ctx: ctx, code: code}
 }
 
-type Error struct {
-	code   int
-	file   string
-	ctx    antlr.ParserRuleContext
-	detail error
+type _error struct {
+	code    int
+	file    string
+	ctx     antlr.ParserRuleContext
+	message string
 }
 
-func (p Error) Error() string {
-	msg := fmt.Sprintf("ERROR %d: %s", p.code, p.detail)
+func (p *_error) format(format string, args ...interface{}) {
+	p.message = fmt.Sprintf(format, args...)
+	panic(p)
+}
+
+func (p *_error) with(err error) {
+	p.message = err.Error()
+	panic(p)
+}
+
+func (p *_error) Error() string {
+	msg := fmt.Sprintf("ERROR %d: %s", p.code, p.message)
 	if p.ctx != nil {
 		msg += fmt.Sprintf("\n%s line %d column %d:\n%s",
 			p.file, p.ctx.GetStart().GetLine(), p.ctx.GetStart().GetColumn(), p.ctx.GetText())

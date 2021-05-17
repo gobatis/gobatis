@@ -225,7 +225,7 @@ func (p *Engine) parseDest(node *xmlNode) (*dest, error) {
 		}
 	}
 	
-	kind, err := toReflectKind(v)
+	kind, err := varToReflectKind(v)
 	if err != nil {
 		return nil, err
 	}
