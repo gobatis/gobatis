@@ -9,18 +9,19 @@ const (
 	unknownErr = iota
 	parameterTypeErr
 	parameterConflictWithBuiltInErr
+	parameterNotFoundErr
 	varToReflectKindErr
-	aliasVarErr
+	varToAliasErr
 	popStackErr
+	popBinaryOperandsErr
+	popResultErr
 	unsupportedRelationCalcErr
 	unsupportedUnaryCalc
 	unsupportedNumericCalc
 	numericCalcErr
 	unaryCalcError
 	relationCalcError
-	popBinaryOperandsErr
 	logicCalcErr
-	parameterNotFoundErr
 	visitMemberErr
 	visitMapErr
 	visitArrayErr
@@ -28,7 +29,6 @@ const (
 	callErr
 	parseIntegerErr
 	parseDecimalErr
-	popResultErr
 	parseCoveredErr
 )
 

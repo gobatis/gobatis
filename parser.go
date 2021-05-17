@@ -959,7 +959,7 @@ func (p *exprParser) EnterParamDecl(ctx *expr.ParamDeclContext) {
 		err = p.baseParams.alias(name, ek, p.paramIndex)
 	}
 	if err != nil {
-		throw(p.file, ctx, aliasVarErr).with(err)
+		throw(p.file, ctx, varToAliasErr).with(err)
 	}
 	p.paramIndex++
 }
@@ -1028,7 +1028,7 @@ func (p *exprParser) ExitVar_(ctx *expr.Var_Context) {
 			val, ok = p.baseParams.get(alias)
 		}
 		if !ok {
-			throw(p.file, ctx, parameterNotFoundErr).format("parameter '%s' not found", aliasVarErr)
+			throw(p.file, ctx, parameterNotFoundErr).format("parameter '%s' not found", varToAliasErr)
 			return
 		}
 	}
