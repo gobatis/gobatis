@@ -827,25 +827,26 @@ func (p *exprParams) set(params ...reflect.Value) {
 
 func (p *exprParams) alias(name string, expected reflect.Kind, index int) error {
 	if name == "" {
-		return fmt.Errorf("alias name is empty")
+		return fmt.Errorf("parameter name is empty")
 	}
+	
 	if p.aliases == nil {
 		p.aliases = map[string]int{}
 	} else {
 		_, ok := p.aliases[name]
 		if ok {
-			return fmt.Errorf("duplicated alias '%s'", name)
+			return fmt.Errorf("duplicated parameter '%s'", name)
 		}
 	}
 	vl := len(p.values) - 1
 	if index < 0 || index > vl {
-		return fmt.Errorf("alias '%s' index %d out of params length %d", name, index, vl)
+		return fmt.Errorf("parameter '%s' index %d out of parameters length %d", name, index, vl)
 	}
 	
 	ev := p.values[index]
-	kind := realReflectElem(ev.value).Kind()
-	if !ev.accept(kind, expected) && !ev.convertible(kind, expected) {
-		return fmt.Errorf("param type '%s' is not alias '%s' expteced type '%s'", kind, name, expected)
+	elem := realReflectElem(ev.value)
+	if !ev.accept(elem.Kind(), expected) && !ev.convertible(elem.Kind(), expected) {
+		return fmt.Errorf("parameter '%s' type expected '%s', got '%s'", name, expected, elem.Type())
 	}
 	
 	p.aliases[name] = index

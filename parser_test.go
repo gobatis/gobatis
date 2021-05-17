@@ -62,6 +62,32 @@ const defaultUserMapper = `
 </mapper>
 `
 
+var (
+	u1 testUser
+	u2 testUser
+)
+
+func init() {
+	u1 = testUser{
+		Name:     "foo",
+		Age:      18,
+		Weight:   func() int { return 60 },
+		auth:     true,
+		Children: map[string]int64{"michael": 8},
+		Products: map[int][]int{1: []int{11, 12, 13}},
+	}
+	u2 = testUser{
+		Name:     "foo parent",
+		Age:      20,
+		Weight:   func() int { return 40 },
+		auth:     true,
+		Children: map[string]int64{"alice": 8},
+		Products: map[int][]int{2: []int{21, 22, 23}},
+		Parent:   &u1,
+	}
+	
+}
+
 func TestParseConfig(t *testing.T) {
 	engine := NewEngine(NewDB("nil", "nil"))
 	require.NoError(t, parseConfig(engine, "gobatis.xml", defaultConfigXML))
@@ -92,12 +118,34 @@ type testStruct struct {
 	err       bool
 }
 
+func testParseExprExpression(t *testing.T, tests []testStruct) {
+	for _, test := range tests {
+		vars := make([]reflect.Value, 0)
+		for _, v := range test.in {
+			vars = append(vars, rv(v))
+		}
+		parser := newExprParser(vars...)
+		parser.file = "tmp.xml"
+		err := parser.parseParameter(test.parameter)
+		require.NoError(t, err)
+		result, err := parser.parseExpression(test.expr)
+		if test.err {
+			require.Error(t, err, test)
+		} else {
+			require.NoError(t, err, test)
+			dr, ok := result.(decimal.Decimal)
+			if ok {
+				require.Equal(t, test.result, dr.String(), test)
+			} else {
+				require.Equal(t, test.result, result, test)
+			}
+		}
+	}
+}
+
 func TestCorrectParseExprExpression(t *testing.T) {
 	
-	u1 := testUser{Name: "foo", Age: 18, Weight: func() int { return 60 }, auth: true, Children: map[string]int64{"michael": 8}, Products: map[int][]int{1: []int{11, 12, 13}}}
-	u2 := testUser{Name: "foo parent", Age: 20, Weight: func() int { return 40 }, auth: true, Children: map[string]int64{"alice": 8}, Products: map[int][]int{2: []int{21, 22, 23}}, Parent: &u1}
-	
-	tests := []testStruct{
+	testParseExprExpression(t, []testStruct{
 		{in: []interface{}{2, 4}, parameter: "a,b", expr: "a + b", result: 6},
 		{in: []interface{}{2, 4}, parameter: "a:int, b", expr: "a + b", result: 6},
 		{in: []interface{}{2, 4}, parameter: "a:int, b:int", expr: "a + b", result: 6},
@@ -134,29 +182,15 @@ func TestCorrectParseExprExpression(t *testing.T) {
 		{in: []interface{}{u1, u2}, parameter: "a, b", expr: "nil == a.Parent", result: true},
 		{in: []interface{}{u1, u2}, parameter: "a, b", expr: "nil == a.Parent && nil != b.Parent", result: true},
 		{in: []interface{}{u1, u2}, parameter: "parent1, child2", expr: "child2.Parent.Age + child2.Age", result: 38},
-	}
+	})
+}
+
+func TestErrorParseExprExpression(t *testing.T) {
+	testParseExprExpression(t, []testStruct{
+		{in: []interface{}{2, 4}, parameter: "a:int32, b", expr: "a + b", result: 6, err: true},
+	})
 	
-	for _, test := range tests {
-		vars := make([]reflect.Value, 0)
-		for _, v := range test.in {
-			vars = append(vars, rv(v))
-		}
-		parser := newExprParser(vars...)
-		err := parser.parseParameter(test.parameter)
-		require.NoError(t, err)
-		result, err := parser.parseExpression(test.expr)
-		if test.err {
-			require.Error(t, err, test)
-		} else {
-			require.NoError(t, err, test)
-			dr, ok := result.(decimal.Decimal)
-			if ok {
-				require.Equal(t, test.result, dr.String(), test)
-			} else {
-				require.Equal(t, test.result, result, test)
-			}
-		}
-	}
+	//require.IsType(t, )
 }
 
 func TestBindParser(t *testing.T) {
