@@ -964,10 +964,16 @@ func BitClearAnyE(left, right interface{}) (interface{}, error) {
 }
 
 func EqualAnyE(left, right interface{}) (bool, error) {
+	
 	o1, o2, err := ToBinOperandE(left, right)
 	if err != nil {
 		return false, err
 	}
+	
+	if o1 == nil || o2 == nil {
+		return o1 == o2, nil
+	}
+	
 	switch s := o1.(type) {
 	case int:
 		return o1.(int) == o2.(int), nil
@@ -999,10 +1005,16 @@ func EqualAnyE(left, right interface{}) (bool, error) {
 }
 
 func NotEqualAnyE(left, right interface{}) (bool, error) {
+	
 	o1, o2, err := ToBinOperandE(left, right)
 	if err != nil {
 		return false, err
 	}
+	
+	if o1 == nil || o2 == nil {
+		return o1 != o2, nil
+	}
+	
 	switch s := o1.(type) {
 	case int:
 		return o1.(int) != o2.(int), nil

@@ -6,6 +6,11 @@ import (
 )
 
 func parseError(file string, ctx antlr.ParserRuleContext, msg string) error {
+	
+	if ctx == nil {
+		return fmt.Errorf("%s: parse error: %s", file, msg)
+	}
+	
 	return fmt.Errorf("%s line %d:%d:\n%s\nparse error: %s",
 		file, ctx.GetStart().GetLine(), ctx.GetStart().GetColumn(), ctx.GetText(), msg)
 }

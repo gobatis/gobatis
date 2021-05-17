@@ -977,6 +977,10 @@ func (p *exprParser) ExitMisc(ctx *expr.MiscContext) {
 	p.coverage.add(ctx)
 }
 
+func (p *exprParser) EnterOperand(ctx *expr.OperandContext) {
+	p.coverage.add(ctx)
+}
+
 func (p *exprParser) ExitExpression(ctx *expr.ExpressionContext) {
 	if p.error != nil {
 		return
@@ -1174,7 +1178,10 @@ func (p *exprParser) ExitCall(ctx *expr.CallContext) {
 	if p.error != nil {
 		return
 	}
-	l := len(ctx.ExpressionList().(*expr.ExpressionListContext).AllExpression())
+	var l = 0
+	if ctx.ExpressionList() != nil {
+		l = len(ctx.ExpressionList().(*expr.ExpressionListContext).AllExpression())
+	}
 	args := make([]reflect.Value, l)
 	for i := l - 1; i >= 0; i-- {
 		arg, err := p.stack.Pop()
@@ -1241,6 +1248,16 @@ func (p *exprParser) ExitFloat_(ctx *expr.Float_Context) {
 	p.coverage.add(ctx)
 }
 
+func (p *exprParser) ExitNil_(ctx *expr.Nil_Context) {
+	if p.error != nil {
+		return
+	}
+	p.stack.Push(&exprValue{
+		value: nil,
+	})
+	p.coverage.add(ctx)
+}
+
 func (p *exprParser) parseParameter(params string) (err error) {
 	parser, err := initExprParser(params)
 	if err != nil {
@@ -1271,11 +1288,15 @@ func (p *exprParser) parseExpression(expresion string) (result interface{}, err 
 		return
 	}
 	if !p.coverage.covered() {
-		err = fmt.Errorf("parse expression token not coverd: %d/%d", p.coverage.len(), p.coverage.total)
+		err = parseError(p.file, nil, fmt.Sprintf("parse expression token not coverd: %d/%d", p.coverage.len(), p.coverage.total))
 		return
 	}
 	
-	v, _ := p.stack.Pop()
+	v, err := p.stack.Pop()
+	if err != nil {
+		err = parseError(p.file, nil, err.Error())
+		return
+	}
 	result = v.value
 	
 	return

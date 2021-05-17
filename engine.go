@@ -69,7 +69,7 @@ func (p *Engine) parseBundle() (err error) {
 	if err != nil {
 		return
 	}
-
+	
 	err = p.parseMappers()
 	if err != nil {
 		return
@@ -201,19 +201,19 @@ func (p *Engine) walkMappers(root string) (files []string, err error) {
 	return
 }
 
-func (p *Engine) makeDest(node *xmlNode) (*dest, error) {
-
+func (p *Engine) parseDest(node *xmlNode) (*dest, error) {
+	
 	if node.Name != dtd.SELECT {
 		return nil, nil
 	}
-
+	
 	v := node.GetAttribute(dtd.RESULT_TYPE)
-
+	
 	isArray := strings.HasPrefix(v, "[]")
 	if isArray {
 		v = strings.TrimSpace(strings.TrimPrefix(v, "[]"))
 	}
-
+	
 	if v == "" {
 		if node.GetAttribute(dtd.RESULT) != "" {
 			return nil, nil
@@ -224,12 +224,12 @@ func (p *Engine) makeDest(node *xmlNode) (*dest, error) {
 			}, nil
 		}
 	}
-
+	
 	kind, err := toReflectKind(v)
 	if err != nil {
 		return nil, err
 	}
-
+	
 	return &dest{
 		kind:    kind,
 		isArray: isArray,
@@ -237,12 +237,12 @@ func (p *Engine) makeDest(node *xmlNode) (*dest, error) {
 }
 
 func (p *Engine) addFragment(file string, ctx antlr.ParserRuleContext, id string, node *xmlNode) (err error) {
-
-	_dest, err := p.makeDest(node)
+	
+	_dest, err := p.parseDest(node)
 	if err != nil {
 		return
 	}
-
+	
 	m, err := parseFragment(
 		p.master, p.logger, file, id,
 		node.GetAttribute(dtd.PARAMETER),
@@ -253,6 +253,7 @@ func (p *Engine) addFragment(file string, ctx antlr.ParserRuleContext, id string
 	if err != nil {
 		return
 	}
+	
 	err = p.fragmentManager.add(m)
 	if err != nil {
 		return parseError(file, ctx, err.Error())
