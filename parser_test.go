@@ -99,6 +99,9 @@ func TestCorrectParseExprExpression(t *testing.T) {
 	
 	tests := []testStruct{
 		{in: []interface{}{2, 4}, parameter: "a,b", expr: "a + b", result: 6},
+		{in: []interface{}{2, 4}, parameter: "a:int, b", expr: "a + b", result: 6},
+		{in: []interface{}{2, 4}, parameter: "a:int, b:int", expr: "a + b", result: 6},
+		{in: []interface{}{2, 4}, parameter: "a, b:int", expr: "a + b", result: 6},
 		{in: []interface{}{int8(2), int8(4)}, parameter: "a,b", expr: "a - b", result: -int8(2)},
 		{in: []interface{}{int16(2), int16(4)}, parameter: "a,b", expr: "a * b", result: int16(8)},
 		{in: []interface{}{int32(2), int32(4)}, parameter: "a,b", expr: "a / b ", result: int32(0)},
