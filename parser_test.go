@@ -58,6 +58,13 @@ const defaultCorrectTestMapper = `
     <select id="SelectTestById" parameter="id:int64, name:string">
         select * from test where id = #{ id } and name = '${ name }' and age= #{id+2}
     </select>
+
+	<select id="QueryTestByStatues" parameter="statuses:array">
+		select * from test where status in
+		<foreach item="item" index="index" collection="statuses" open="(" separator="," close=")">
+		        #{item}
+		  </foreach>
+	</select>
 </mapper>
 `
 
@@ -97,12 +104,21 @@ func TestParseMapper(t *testing.T) {
 	engine := NewEngine(&DB{})
 	err := parseMapper(engine, "defaultCorrectTestMapper", defaultCorrectTestMapper)
 	require.NoError(t, err)
-	frag, ok := engine.fragmentManager.get("SelectTestById")
+	
+	//frag, ok := engine.fragmentManager.get("SelectTestById")
+	//require.True(t, ok)
+	//sql, args, err := frag.parseStatement(rv(int64(10)), rv("gobatis"))
+	//require.NoError(t, err)
+	//t.Log("sql => ", sql)
+	//t.Log("args => ", args)
+	
+	frag, ok := engine.fragmentManager.get("QueryTestByStatues")
 	require.True(t, ok)
-	sql, args, err := frag.parseStatement(rv(int64(10)), rv("gobatis"))
+	sql, args, err := frag.parseStatement(rv([]string{"ok", "success"}))
 	require.NoError(t, err)
 	t.Log("sql => ", sql)
 	t.Log("args => ", args)
+	
 }
 
 type testUser struct {

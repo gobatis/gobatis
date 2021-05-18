@@ -1178,6 +1178,10 @@ func (p *exprParser) ExitNil_(ctx *expr.Nil_Context) {
 }
 
 func (p *exprParser) parseParameter(params string) (err error) {
+	defer func() {
+		e := recover()
+		err = castRecoverError(e)
+	}()
 	parser, err := initExprParser(params)
 	if err != nil {
 		return

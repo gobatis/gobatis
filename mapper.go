@@ -415,7 +415,7 @@ func (p *fragment) parseForeach(parser *exprParser, node *xmlNode, res *psr) err
 	switch elem.Kind() {
 	case reflect.Slice, reflect.Array:
 		for i := 0; i < elem.Len(); i++ {
-			parser.foreachParams.set(elem.Index(i))
+			parser.foreachParams.set(reflect.ValueOf(i), elem.Index(i))
 			if i == 0 {
 				err := parser.parseParameter(subParams)
 				if err != nil {
