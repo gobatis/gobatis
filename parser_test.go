@@ -62,7 +62,11 @@ const defaultCorrectTestMapper = `
 	<select id="QueryTestByStatues" parameter="statuses:array">
 		select * from test where status in
 		<foreach item="item" index="index" collection="statuses" open="(" separator="," close=")">
-		        #{item}
+		        '#{item}'
+		  </foreach>
+		and name > 1 and
+		names in <foreach item="item" index="index" collection="statuses" open="(" separator="," close=")">
+		        '#{item}'
 		  </foreach>
 	</select>
 </mapper>
