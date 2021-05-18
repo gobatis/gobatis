@@ -89,6 +89,24 @@ type queryer interface {
 	QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error)
 }
 
+type psr struct {
+	sql       string
+	cacheable bool
+}
+
+func (p *psr) merge(s ...string) {
+	for _, v := range s {
+		v = strings.TrimSpace(v)
+		if v != "" {
+			if p.sql != "" {
+				p.sql += " " + v
+			} else {
+				p.sql += v
+			}
+		}
+	}
+}
+
 func newFragment(db *DB, logger Logger, id string, in, out []param, dest *dest, statement *xmlNode) *fragment {
 	return &fragment{
 		db:        db,
@@ -119,8 +137,12 @@ func (p *fragment) proxy(field reflect.Value) {
 	}))
 }
 
-func (p *fragment) call(_type reflect.Type, in ...reflect.Value) []reflect.Value {
+func (p *fragment) prepare() {
 
+}
+
+func (p *fragment) call(_type reflect.Type, in ...reflect.Value) []reflect.Value {
+	
 	c := &caller{fragment: p, params: in}
 	for i := 0; i < _type.NumOut()-1; i++ {
 		if _type.Out(i).Kind() == reflect.Ptr {
@@ -129,20 +151,20 @@ func (p *fragment) call(_type reflect.Type, in ...reflect.Value) []reflect.Value
 			c.values = append(c.values, reflect.New(_type.Out(i)))
 		}
 	}
-
+	
 	err := c.call()
 	if err != nil {
 		c.values = append(c.values, reflect.ValueOf(err))
 	} else {
 		c.values = append(c.values, reflect.Zero(errorType))
 	}
-
+	
 	for i := 0; i < _type.NumOut()-1; i++ {
 		if _type.Out(i).Kind() != reflect.Ptr {
 			c.values[i] = c.values[i].Elem()
 		}
 	}
-
+	
 	return c.values
 }
 
@@ -178,241 +200,39 @@ func (p *fragment) checkResult(mapper, ft reflect.Type, fn string) error {
 			}
 		}
 	}
-
+	
 	return nil
 }
 
-type caller struct {
-	fragment *fragment
-	params   []reflect.Value
-	values   []reflect.Value
-}
-
-func (p *caller) Scan(pointers ...interface{}) (err error) {
-	for _, v := range pointers {
-		rv := reflect.ValueOf(v)
-		if rv.Kind() != reflect.Ptr {
-			err = fmt.Errorf("scan only accept pointer")
-			return
-		}
-		p.values = append(p.values, rv)
+func (p *fragment) parseStatement(args ...reflect.Value) (string, []interface{}, error) {
+	
+	if len(p.in) != len(args) {
+		return "", nil, fmt.Errorf("expect %d args, got %d", len(p.in), len(args))
 	}
-
-	return p.call()
-}
-
-func (p *caller) call() (err error) {
-
-	start := time.Now()
-	defer func() {
-		p.fragment.logger.Debugf("[gobatis] [%s] cost: %s", p.fragment.id, time.Since(start))
-	}()
-
-	if len(p.fragment.in) != len(p.params) {
-		err = fmt.Errorf("expected %d params, but pass %d", len(p.fragment.in), len(p.params))
-		return
-	}
-
-	switch p.fragment.statement.Name {
-	case dtd.SELECT:
-		return p.query(p.params...)
-	case dtd.INSERT, dtd.DELETE, dtd.UPDATE:
-		return p.exec(p.params...)
-	default:
-		err = parseError(
-			p.fragment.statement.File,
-			p.fragment.statement.ctx,
-			fmt.Sprintf("unsupported call method '%s'", p.fragment.statement.Name),
-		)
-		return
-	}
-}
-
-func (p *caller) exec(in ...reflect.Value) (err error) {
-
-	exec, index := p.execer(in...)
-	if index > -1 {
-		in = p.removeParam(in, index)
-	}
-	ctx, index := p.context(in...)
-	if index > -1 {
-		in = p.removeParam(in, index)
-	}
-
-	var conn *sql.Conn
-	if exec == nil {
-		conn, err = p.fragment.db.Conn(ctx)
-		if err != nil {
-			return
-		}
-		exec = conn
-	}
-	defer func() {
-		if conn != nil {
-			_ = conn.Close()
-		}
-	}()
-	s, vars, err := p.parseStatement(in)
-	if err != nil {
-		return
-	}
-
-	p.fragment.logger.Debugf("[gobatis] [%s] parameter: %s", p.fragment.id, p.printVars(vars))
-
-	res, err := exec.ExecContext(ctx, s, vars...)
-	if err != nil {
-		return
-	}
-
-	return newExecResult(res, p.values).scan()
-}
-
-func (*caller) printVars(vars []interface{}) string {
-	r := "\n"
-	for i, v := range vars {
-		r += fmt.Sprintf("   $%d => (%s) %+v\n", i+1, reflect.TypeOf(v), v)
-	}
-	return r
-}
-
-func (p *caller) query(in ...reflect.Value) (err error) {
-
-	q, index := p.queryer(in...)
-	if index > -1 {
-		in = p.removeParam(in, index)
-	}
-	ctx, index := p.context(in...)
-	if index > -1 {
-		in = p.removeParam(in, index)
-	}
-
-	var conn *sql.Conn
-	if q == nil {
-		conn, err = p.fragment.db.Conn(ctx)
-		if err != nil {
-			return
-		}
-		q = conn
-	}
-	defer func() {
-		if conn != nil {
-			_ = conn.Close()
-		}
-	}()
-
-	s, vars, err := p.parseStatement(in)
-	if err != nil {
-		return
-	}
-
-	p.fragment.logger.Debugf("[gobatis] [%s] parameter: %+v", p.fragment.id, p.printVars(vars))
-	rows, err := q.QueryContext(ctx, s, vars...)
-	if err != nil {
-		return
-	}
-	defer func() {
-		_ = rows.Close()
-	}()
-
-	return p.parseQueryResult(rows)
-}
-
-func (p *caller) parseQueryResult(rows *sql.Rows) error {
-
-	res := queryResult{rows: rows}
-	res.rows = rows
-
-	err := res.setSelected(p.fragment.dest, p.fragment.out, p.values)
-	if err != nil {
-		return err
-	}
-
-	return res.scan()
-}
-
-func (p *caller) removeParam(a []reflect.Value, i int) []reflect.Value {
-	return append(a[:i], a[i+1:]...)
-}
-
-func (p *caller) context(in ...reflect.Value) (context.Context, int) {
-	for i, v := range in {
-		if v.Kind() == reflect.Ptr && v.Elem().Type().PkgPath() == "context" {
-			return v.Interface().(context.Context), i
-		}
-	}
-	return context.Background(), -1
-}
-
-func (p *caller) execer(in ...reflect.Value) (execer, int) {
-	if len(in) > 0 {
-		t := reflect.TypeOf(new(execer)).Elem()
-		for i, v := range in {
-			if v.Type().Implements(t) {
-				return v.Interface().(execer), i
-			}
-		}
-	}
-	return nil, -1
-}
-
-func (p *caller) queryer(in ...reflect.Value) (queryer, int) {
-	if len(in) > 0 {
-		t := reflect.TypeOf(new(queryer)).Elem()
-		for i, v := range in {
-			if v.Type().Implements(t) {
-				return v.Interface().(queryer), i
-			}
-		}
-	}
-	return nil, -1
-}
-
-type psr struct {
-	sql       string
-	cacheable bool
-}
-
-func (p *psr) merge(s ...string) {
-	for _, v := range s {
-		v = strings.TrimSpace(v)
-		if v != "" {
-			if p.sql != "" {
-				p.sql += " " + v
-			} else {
-				p.sql += v
-			}
-		}
-	}
-}
-
-func (p *caller) parseStatement(args []reflect.Value) (string, []interface{}, error) {
-	if p.fragment.cacheable {
-		p.fragment.logger.Debugf("[gobatis] [%s] cached statement: %s", p.fragment.id, p.fragment.sql)
-		return p.fragment.sql, nil, nil
-	}
+	
 	parser := newExprParser(args...)
-	for i, v := range p.fragment.in {
+	for i, v := range p.in {
 		err := parser.baseParams.alias(v.name, v.kind, i)
 		if err != nil {
 			return "", nil, err
 		}
 	}
 	res := new(psr)
-	err := p.parseBlocks(parser, p.fragment.statement, res)
+	err := p.parseBlocks(parser, p.statement, res)
 	if err != nil {
 		return "", nil, err
 	}
 	if res.cacheable {
-		p.fragment.cacheable = res.cacheable
-		p.fragment.sql = res.sql
+		p.cacheable = res.cacheable
+		p.sql = res.sql
 	}
-
-	p.fragment.logger.Debugf("[gobatis] [%s] statement: %s", p.fragment.id, res.sql)
-
+	
+	p.logger.Debugf("[gobatis] [%s] statement: %s", p.id, res.sql)
+	
 	return res.sql, parser.vars, nil
 }
 
-func (p *caller) trimPrefixOverride(sql, prefix string) (r string, err error) {
+func (p *fragment) trimPrefixOverride(sql, prefix string) (r string, err error) {
 	reg, err := regexp.Compile(`(?i)^` + prefix)
 	if err != nil {
 		return
@@ -421,16 +241,20 @@ func (p *caller) trimPrefixOverride(sql, prefix string) (r string, err error) {
 	return
 }
 
-func (p *caller) parseSql(parser *exprParser, node *xmlNode, res *psr) error {
+func (p *fragment) parseSql(parser *exprParser, node *xmlNode, res *psr) error {
 	chars := []rune(node.Text)
 	begin := false
+	inject := false
 	var from int
 	var next int
 	var s string
 	for i := 0; i < len(chars); i++ {
 		if !begin {
 			next = i + 1
-			if chars[i] == 35 && next <= len(chars)-1 && chars[next] == 123 {
+			if (chars[i] == 35 || chars[i] == 36) && next <= len(chars)-1 && chars[next] == 123 {
+				if chars[i] == 36 {
+					inject = true
+				}
 				begin = true
 				i++
 				from = i + 1
@@ -443,17 +267,22 @@ func (p *caller) parseSql(parser *exprParser, node *xmlNode, res *psr) error {
 			if err != nil {
 				return err
 			}
-			parser.varIndex++
-			s += fmt.Sprintf("$%d", parser.varIndex)
-			parser.vars = append(parser.vars, r)
+			if inject {
+				s += fmt.Sprintf("%v", r)
+			} else {
+				parser.varIndex++
+				s += fmt.Sprintf("$%d", parser.varIndex)
+				parser.vars = append(parser.vars, r)
+			}
 			begin = false
+			inject = false
 		}
 	}
 	res.merge(s)
 	return nil
 }
 
-func (p *caller) parseBlocks(parser *exprParser, node *xmlNode, res *psr) (err error) {
+func (p *fragment) parseBlocks(parser *exprParser, node *xmlNode, res *psr) (err error) {
 	for _, child := range node.Nodes {
 		err = p.parseBlock(parser, child, res)
 		if err != nil {
@@ -463,7 +292,7 @@ func (p *caller) parseBlocks(parser *exprParser, node *xmlNode, res *psr) (err e
 	return
 }
 
-func (p *caller) parseBlock(parser *exprParser, node *xmlNode, res *psr) (err error) {
+func (p *fragment) parseBlock(parser *exprParser, node *xmlNode, res *psr) (err error) {
 	if node.textOnly {
 		err = p.parseSql(parser, node, res)
 	} else {
@@ -485,7 +314,7 @@ func (p *caller) parseBlock(parser *exprParser, node *xmlNode, res *psr) (err er
 	return
 }
 
-func (p *caller) parseTest(parser *exprParser, node *xmlNode, res *psr) (bool, error) {
+func (p *fragment) parseTest(parser *exprParser, node *xmlNode, res *psr) (bool, error) {
 	v, err := parser.parseExpression(node.GetAttribute(dtd.TEST))
 	if err != nil {
 		return false, err
@@ -500,11 +329,11 @@ func (p *caller) parseTest(parser *exprParser, node *xmlNode, res *psr) (bool, e
 	return true, p.parseBlocks(parser, node, res)
 }
 
-func (p *caller) parseWhere(parser *exprParser, node *xmlNode, res *psr) (err error) {
+func (p *fragment) parseWhere(parser *exprParser, node *xmlNode, res *psr) (err error) {
 	return p.trimPrefixOverrides(parser, node, res, dtd.WHERE, "AND |OR ")
 }
 
-func (p *caller) parseChoose(parser *exprParser, node *xmlNode, res *psr) error {
+func (p *fragment) parseChoose(parser *exprParser, node *xmlNode, res *psr) error {
 	var pass bool
 	for i, child := range node.Nodes {
 		if pass {
@@ -529,11 +358,11 @@ func (p *caller) parseChoose(parser *exprParser, node *xmlNode, res *psr) error 
 	return nil
 }
 
-func (p *caller) parseTrim(parser *exprParser, node *xmlNode, res *psr) (err error) {
+func (p *fragment) parseTrim(parser *exprParser, node *xmlNode, res *psr) (err error) {
 	return p.trimPrefixOverrides(parser, node, res, node.GetAttribute(dtd.PREFIX), node.GetAttribute(dtd.PREFIX_OVERRIDES))
 }
 
-func (p *caller) trimPrefixOverrides(parser *exprParser, node *xmlNode, res *psr, tag, prefixes string) error {
+func (p *fragment) trimPrefixOverrides(parser *exprParser, node *xmlNode, res *psr, tag, prefixes string) error {
 	wr := new(psr)
 	err := p.parseBlocks(parser, node, wr)
 	if err != nil {
@@ -554,12 +383,12 @@ func (p *caller) trimPrefixOverrides(parser *exprParser, node *xmlNode, res *psr
 	return nil
 }
 
-func (p *caller) parseSet(parser *exprParser, node *xmlNode, res *psr) (err error) {
+func (p *fragment) parseSet(parser *exprParser, node *xmlNode, res *psr) (err error) {
 	return p.trimPrefixOverrides(parser, node, res, dtd.SET, ",")
 }
 
-func (p *caller) parseForeach(parser *exprParser, node *xmlNode, res *psr) error {
-
+func (p *fragment) parseForeach(parser *exprParser, node *xmlNode, res *psr) error {
+	
 	_var := node.GetAttribute(dtd.COLLECTION)
 	collection, ok := parser.baseParams.get(_var)
 	if !ok {
@@ -577,10 +406,10 @@ func (p *caller) parseForeach(parser *exprParser, node *xmlNode, res *psr) error
 	open := node.GetAttribute(dtd.OPEN)
 	_close := node.GetAttribute(dtd.CLOSE)
 	separator := node.GetAttribute(dtd.SEPARATOR)
-
+	
 	parser.foreachParams = newExprParams()
 	parser.paramIndex = 0
-
+	
 	elem := realReflectElem(collection.value)
 	frags := make([]string, 0)
 	switch elem.Kind() {
@@ -631,15 +460,15 @@ func (p *caller) parseForeach(parser *exprParser, node *xmlNode, res *psr) error
 			fmt.Sprintf("foreach collection type '%s' can't range", elem.Kind()))
 	}
 	parser.foreachParams = nil
-
+	
 	if len(frags) > 0 {
 		res.merge(open + strings.Join(frags, separator) + _close)
 	}
-
+	
 	return nil
 }
 
-func (p *caller) parseForeachChild(parser *exprParser, node *xmlNode, frags *[]string) error {
+func (p *fragment) parseForeachChild(parser *exprParser, node *xmlNode, frags *[]string) error {
 	for _, child := range node.Nodes {
 		br := new(psr)
 		err := p.parseBlock(parser, child, br)
@@ -649,4 +478,189 @@ func (p *caller) parseForeachChild(parser *exprParser, node *xmlNode, frags *[]s
 		*frags = append(*frags, br.sql)
 	}
 	return nil
+}
+
+type caller struct {
+	fragment *fragment
+	params   []reflect.Value
+	values   []reflect.Value
+}
+
+func (p *caller) Scan(pointers ...interface{}) (err error) {
+	for _, v := range pointers {
+		rv := reflect.ValueOf(v)
+		if rv.Kind() != reflect.Ptr {
+			err = fmt.Errorf("scan only accept pointer")
+			return
+		}
+		p.values = append(p.values, rv)
+	}
+	
+	return p.call()
+}
+
+func (p *caller) call() (err error) {
+	
+	start := time.Now()
+	defer func() {
+		p.fragment.logger.Debugf("[gobatis] [%s] cost: %s", p.fragment.id, time.Since(start))
+	}()
+	
+	if len(p.fragment.in) != len(p.params) {
+		err = fmt.Errorf("expected %d params, but pass %d", len(p.fragment.in), len(p.params))
+		return
+	}
+	
+	switch p.fragment.statement.Name {
+	case dtd.SELECT:
+		return p.query(p.params...)
+	case dtd.INSERT, dtd.DELETE, dtd.UPDATE:
+		return p.exec(p.params...)
+	default:
+		err = parseError(
+			p.fragment.statement.File,
+			p.fragment.statement.ctx,
+			fmt.Sprintf("unsupported call method '%s'", p.fragment.statement.Name),
+		)
+		return
+	}
+}
+
+func (p *caller) exec(in ...reflect.Value) (err error) {
+	
+	exec, index := p.execer(in...)
+	if index > -1 {
+		in = p.removeParam(in, index)
+	}
+	ctx, index := p.context(in...)
+	if index > -1 {
+		in = p.removeParam(in, index)
+	}
+	
+	var conn *sql.Conn
+	if exec == nil {
+		conn, err = p.fragment.db.Conn(ctx)
+		if err != nil {
+			return
+		}
+		exec = conn
+	}
+	defer func() {
+		if conn != nil {
+			_ = conn.Close()
+		}
+	}()
+	s, vars, err := p.fragment.parseStatement(in...)
+	if err != nil {
+		return
+	}
+	
+	p.fragment.logger.Debugf("[gobatis] [%s] parameter: %s", p.fragment.id, p.printVars(vars))
+	
+	res, err := exec.ExecContext(ctx, s, vars...)
+	if err != nil {
+		return
+	}
+	
+	return newExecResult(res, p.values).scan()
+}
+
+func (*caller) printVars(vars []interface{}) string {
+	r := "\n"
+	for i, v := range vars {
+		r += fmt.Sprintf("   $%d => (%s) %+v\n", i+1, reflect.TypeOf(v), v)
+	}
+	return r
+}
+
+func (p *caller) query(in ...reflect.Value) (err error) {
+	
+	q, index := p.queryer(in...)
+	if index > -1 {
+		in = p.removeParam(in, index)
+	}
+	ctx, index := p.context(in...)
+	if index > -1 {
+		in = p.removeParam(in, index)
+	}
+	
+	var conn *sql.Conn
+	if q == nil {
+		conn, err = p.fragment.db.Conn(ctx)
+		if err != nil {
+			return
+		}
+		q = conn
+	}
+	defer func() {
+		if conn != nil {
+			_ = conn.Close()
+		}
+	}()
+	
+	s, vars, err := p.fragment.parseStatement(in...)
+	if err != nil {
+		return
+	}
+	
+	p.fragment.logger.Debugf("[gobatis] [%s] parameter: %+v", p.fragment.id, p.printVars(vars))
+	rows, err := q.QueryContext(ctx, s, vars...)
+	if err != nil {
+		return
+	}
+	defer func() {
+		_ = rows.Close()
+	}()
+	
+	return p.parseQueryResult(rows)
+}
+
+func (p *caller) parseQueryResult(rows *sql.Rows) error {
+	
+	res := queryResult{rows: rows}
+	res.rows = rows
+	
+	err := res.setSelected(p.fragment.dest, p.fragment.out, p.values)
+	if err != nil {
+		return err
+	}
+	
+	return res.scan()
+}
+
+func (p *caller) removeParam(a []reflect.Value, i int) []reflect.Value {
+	return append(a[:i], a[i+1:]...)
+}
+
+func (p *caller) context(in ...reflect.Value) (context.Context, int) {
+	for i, v := range in {
+		if v.Kind() == reflect.Ptr && v.Elem().Type().PkgPath() == "context" {
+			return v.Interface().(context.Context), i
+		}
+	}
+	return context.Background(), -1
+}
+
+func (p *caller) execer(in ...reflect.Value) (execer, int) {
+	if len(in) > 0 {
+		t := reflect.TypeOf(new(execer)).Elem()
+		for i, v := range in {
+			if v.Type().Implements(t) {
+				return v.Interface().(execer), i
+			}
+		}
+	}
+	return nil, -1
+}
+
+func (p *caller) queryer(in ...reflect.Value) (queryer, int) {
+	if len(in) > 0 {
+		t := reflect.TypeOf(new(queryer)).Elem()
+		for i, v := range in {
+			if v.Type().Implements(t) {
+				return v.Interface().(queryer), i
+			}
+		}
+	}
+	return nil, -1
 }

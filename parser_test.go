@@ -49,15 +49,14 @@ const defaultConfigXML = `
 </configuration>
 `
 
-const defaultUserMapper = `
+const defaultCorrectTestMapper = `
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "../../../dtd/mapper.dtd">
-
 <mapper namespace="test/mapper@UserMapper">
-    <select id="SelectTestById" parameterType="id:int64,name:string,user:struct" resultType="int64">
-        select * from test where id = #{1}
+    <select id="SelectTestById" parameter="id:int64, name:string">
+        select * from test where id = #{ id } and name = '${ name }' and age= #{id+2}
     </select>
 </mapper>
 `
@@ -91,13 +90,19 @@ func init() {
 func TestParseConfig(t *testing.T) {
 	engine := NewEngine(NewDB("nil", "nil"))
 	require.NoError(t, parseConfig(engine, "gobatis.xml", defaultConfigXML))
+	
 }
 
 func TestParseMapper(t *testing.T) {
-	//engine := NewEngine(NewDB("nil", "nil"))
-	//require.NoError(t, parseMapper(engine, "user.Mapper.xml", defaultUserMapper))
-	//d, _ := json.MarshalIndent(engine.statements, "", "\t")
-	//fmt.Println(string(d))
+	engine := NewEngine(&DB{})
+	err := parseMapper(engine, "defaultCorrectTestMapper", defaultCorrectTestMapper)
+	require.NoError(t, err)
+	frag, ok := engine.fragmentManager.get("SelectTestById")
+	require.True(t, ok)
+	sql, args, err := frag.parseStatement(rv(int64(10)), rv("gobatis"))
+	require.NoError(t, err)
+	t.Log("sql => ", sql)
+	t.Log("args => ", args)
 }
 
 type testUser struct {

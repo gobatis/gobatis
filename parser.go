@@ -68,7 +68,6 @@ func parseMapper(engine *Engine, file, content string) error {
 			}
 		}
 	}
-	
 	return nil
 }
 
@@ -838,6 +837,7 @@ func (p *exprParams) alias(name string, expected reflect.Kind, index int) error 
 			return fmt.Errorf("duplicated parameter '%s'", name)
 		}
 	}
+	
 	vl := len(p.values) - 1
 	if index < 0 || index > vl {
 		return fmt.Errorf("parameter '%s' index %d out of parameters length %d", name, index, vl)
@@ -1028,7 +1028,7 @@ func (p *exprParser) ExitVar_(ctx *expr.Var_Context) {
 			val, ok = p.baseParams.get(alias)
 		}
 		if !ok {
-			throw(p.file, ctx, parameterNotFoundErr).format("parameter '%s' not found", varToAliasErr)
+			throw(p.file, ctx, parameterNotFoundErr).format("parameter '%s' not found", alias)
 			return
 		}
 	}
@@ -1186,8 +1186,7 @@ func (p *exprParser) parseParameter(params string) (err error) {
 	return
 }
 
-func _recover() error {
-	e := recover()
+func castRecoverError(e interface{}) error {
 	if e != nil {
 		_e, ok := e.(*_error)
 		if ok {
@@ -1209,7 +1208,8 @@ func (p *exprParser) parseExpression(expresion string) (result interface{}, err 
 	}
 	
 	defer func() {
-		err = _recover()
+		e := recover()
+		err = castRecoverError(e)
 	}()
 	
 	antlr.ParseTreeWalkerDefault.Walk(p, parser.Expressions())
