@@ -78,13 +78,12 @@ func (p *_error) Error() string {
 		line = p.parent.GetStart().GetLine()
 		column = p.parent.GetStart().GetColumn()
 		ctx = getText(p.parent)
+	} else if p.ctx != nil {
+		line = p.ctx.GetStart().GetLine()
+		column = p.ctx.GetStart().GetColumn()
+		ctx = getText(p.ctx)
 	}
 	if p.ctx != nil {
-		line += p.ctx.GetStart().GetLine()
-		column += p.ctx.GetStart().GetColumn()
-		if p.parent == nil {
-			ctx = getText(p.ctx)
-		}
 		msg += fmt.Sprintf("\n[file]: %s near line %d column %d:\n[context]: %s", p.file, line, column+1, ctx)
 	}
 	

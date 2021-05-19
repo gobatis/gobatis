@@ -4,14 +4,13 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/antlr/antlr4/runtime/Go/antlr"
-	"github.com/gobatis/gobatis/parser/expr"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/require"
 	"os"
 	"path/filepath"
 	"reflect"
 	"regexp"
+	"strings"
 	"testing"
 )
 
@@ -175,7 +174,7 @@ func TestErrorParseMapper(t *testing.T) {
 
 func TestCorrectParseExprExpression(t *testing.T) {
 	
-	testParseExprExpression(t, []testExpression{
+	testCorrectParseExprExpression(t, []testExpression{
 		{In: []interface{}{2, 4}, Parameter: "a,b", Expr: "a + b", Result: 6},
 		{In: []interface{}{2, 4}, Parameter: "a:int, b", Expr: "a + b", Result: 6},
 		{In: []interface{}{2, 4}, Parameter: "a:int, b:int", Expr: "a + b", Result: 6},
@@ -216,8 +215,8 @@ func TestCorrectParseExprExpression(t *testing.T) {
 }
 
 func TestErrorParseExprExpression(t *testing.T) {
-	testParseExprExpression(t, []testExpression{
-		{In: []interface{}{2, 4}, Parameter: "a, b", Expr: "a + b", Result: 6, Err: 0},
+	testErrorParseExprParameter(t, []testExpression{
+		{In: []interface{}{2, 4}, Parameter: `a:int64,b`, Expr: "a + b", Result: 6, Err: 1},
 	})
 }
 
@@ -246,10 +245,15 @@ func writeError(t *testing.T, title string, test interface{}, _err error) {
 	require.NoError(t, err)
 	//td, err := json.MarshalIndent(test, "", "")
 	require.NoError(t, err)
-	_, err = f.WriteString(fmt.Sprintf(
-		"**%s**\n\ndata:\n```\n%s```\nerror:\n```\n%s```\n",
-		title, td.String(), _err.Error(),
-	))
+	tds := td.String()
+	if !strings.HasSuffix(tds, "\n") {
+		tds += "\n"
+	}
+	es := _err.Error()
+	if !strings.HasSuffix(es, "\n") {
+		es += "\n"
+	}
+	_, err = f.WriteString(fmt.Sprintf("**%s**\n\ndata:\n```\n%s```\nerror:\n```\n%s```\n", title, tds, es))
 	require.NoError(t, err)
 }
 
@@ -276,14 +280,7 @@ func execTestFragment(t *testing.T, engine *Engine, tests []testFragment) {
 	}
 }
 
-func newTestNodeCtx() antlr.ParserRuleContext {
-	nodeCtx := expr.NewEmptyExpressionContext()
-	nodeCtx.SetStart(antlr.NewCommonToken(&antlr.TokenSourceCharStreamPair{}, 0, 0, 10, 10))
-	return nodeCtx
-}
-
-func testParseExprExpression(t *testing.T, tests []testExpression) {
-	nodeCtx := newTestNodeCtx()
+func testCorrectParseExprExpression(t *testing.T, tests []testExpression) {
 	for i, test := range tests {
 		vars := make([]reflect.Value, 0)
 		for _, v := range test.In {
@@ -291,9 +288,9 @@ func testParseExprExpression(t *testing.T, tests []testExpression) {
 		}
 		parser := newExprParser(vars...)
 		parser.file = "tmp.xml"
-		err := parser.parseParameter(nodeCtx, test.Parameter)
+		err := parser.parseParameter(nil, test.Parameter)
 		require.NoError(t, err)
-		result, err := parser.parseExpression(nodeCtx, test.Expr)
+		result, err := parser.parseExpression(nil, test.Expr)
 		if test.Err > 0 {
 			require.Error(t, err, test)
 			writeError(t, fmt.Sprintf("test parse expression: %d", i), test, err)
@@ -306,5 +303,19 @@ func testParseExprExpression(t *testing.T, tests []testExpression) {
 				require.Equal(t, test.Result, result, test)
 			}
 		}
+	}
+}
+
+func testErrorParseExprParameter(t *testing.T, tests []testExpression) {
+	for i, test := range tests {
+		vars := make([]reflect.Value, 0)
+		for _, v := range test.In {
+			vars = append(vars, rv(v))
+		}
+		parser := newExprParser(vars...)
+		parser.file = "tmp.xml"
+		err := parser.parseParameter(nil, test.Parameter)
+		require.Error(t, err, test)
+		writeError(t, fmt.Sprintf("test error parse parameter: %d", i), test, err)
 	}
 }

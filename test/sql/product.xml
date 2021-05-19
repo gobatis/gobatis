@@ -7,7 +7,7 @@
         values(#{product.Name},#{product.Width},#{product.Height},#{product.Price})
     </insert>
 
-    <select id="GetProductById" parameter="id:int64">
+    <select id="GetProductById" parameter="id:int64" result="name:string">
         select * from products where id = #{ id };
     </select>
 

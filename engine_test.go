@@ -57,7 +57,7 @@ func TestEngine(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, int64(1), affected)
 	
-	item, err := productMapper.GetProductById(11, "")
+	item, err := productMapper.GetProductById(11)
 	require.NoError(t, err)
 	require.Equal(t, "gobatis manual", item.Name)
 	require.Equal(t, "16.8", item.Price.String())
@@ -68,7 +68,7 @@ func TestEngine(t *testing.T) {
 	require.Equal(t, item.Id, items[0].Id)
 	require.Equal(t, item.CreatedAt, items[0].CreatedAt)
 	
-	item, err = productMapper.GetProductById(142, "")
+	item, err = productMapper.GetProductById(142)
 	require.NoError(t, err)
 	d, err := json.MarshalIndent(item, "", "\t")
 	require.NoError(t, err)

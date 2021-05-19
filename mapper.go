@@ -271,7 +271,7 @@ func (p *fragment) parseSql(parser *exprParser, node *xmlNode, res *psr) {
 		} else if chars[i] == 125 {
 			r, err := parser.parseExpression(node.ctx, string(chars[from:i]))
 			if err != nil {
-				throw(p.statement.File, p.statement.ctx, parasFragmentErr).with(err)
+				panic(err)
 			}
 			if inject {
 				s += fmt.Sprintf("%v", r)
