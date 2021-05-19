@@ -9,11 +9,16 @@ import (
 	"github.com/gobatis/gobatis/parser/expr"
 	"github.com/gobatis/gobatis/parser/xml"
 	"reflect"
+	"runtime/debug"
 	"strings"
 	"sync"
 )
 
-func parseConfig(engine *Engine, file, content string) error {
+func parseConfig(engine *Engine, file, content string) (err error) {
+	defer func() {
+		e := recover()
+		err = castRecoverError(e)
+	}()
 	l := &xmlParser{
 		file:          file,
 		stack:         newXMLStack(),
@@ -22,17 +27,19 @@ func parseConfig(engine *Engine, file, content string) error {
 		elementGetter: dtd.ConfigElement,
 	}
 	walkXMLNodes(l, content)
-	if l.error != nil {
-		return l.error
-	}
 	if !l.coverage.covered() {
-		return fmt.Errorf("parse config token not coverd: %d/%d", l.coverage.len(), l.coverage.total)
-		
+		throw(file, nil, parseCoveredErr).
+			format("parse config token not coverd: %d/%d", l.coverage.len(), l.coverage.total)
 	}
-	return nil
+	return
 }
 
-func parseMapper(engine *Engine, file, content string) error {
+func parseMapper(engine *Engine, file, content string) (err error) {
+	
+	defer func() {
+		e := recover()
+		err = castRecoverError(e)
+	}()
 	
 	l := &xmlParser{
 		file:          file,
@@ -42,33 +49,26 @@ func parseMapper(engine *Engine, file, content string) error {
 		elementGetter: dtd.MapperElement,
 	}
 	walkXMLNodes(l, content)
-	if l.error != nil {
-		
-		return l.error
-	}
-	
 	if !l.coverage.covered() {
-		return fmt.Errorf("parse mapper token not coverd: %d/%d", l.coverage.len(), l.coverage.total)
+		throw(file, nil, parseCoveredErr).
+			format("parse mapper token not coverd: %d/%d", l.coverage.len(), l.coverage.total)
 	}
 	
 	if l.rootNode == nil {
 		engine.logger.Warnf("empty mapperCache file: %s", file)
-		return nil
+		return
 	}
 	for _, v := range l.rootNode.Nodes {
 		switch v.Name {
 		case dtd.SELECT, dtd.INSERT, dtd.DELETE, dtd.UPDATE, dtd.SQL:
 			id := v.GetAttribute(dtd.ID)
 			if id == "" {
-				return parseError(file, v.ctx, fmt.Sprintf("fragment: %s miss id", v.Name))
+				throw(file, v.ctx, parseMapperErr).format("fragment: %s miss id", v.Name)
 			}
-			err := engine.addFragment(file, v.ctx, id, v)
-			if err != nil {
-				return err
-			}
+			engine.addFragment(file, v.ctx, id, v)
 		}
 	}
-	return nil
+	return
 }
 
 func walkXMLNodes(listener antlr.ParseTreeListener, content string) {
@@ -136,16 +136,16 @@ func realReflectElem(source interface{}) reflect.Value {
 	}
 }
 
-func realReflectType(source interface{}) reflect.Type {
-	v := reflect.TypeOf(source)
-	for {
-		if v.Kind() == reflect.Ptr {
-			v = v.Elem()
-		} else {
-			return v
-		}
-	}
-}
+//func realReflectType(source interface{}) reflect.Type {
+//	v := reflect.TypeOf(source)
+//	for {
+//		if v.Kind() == reflect.Ptr {
+//			v = v.Elem()
+//		} else {
+//			return v
+//		}
+//	}
+//}
 
 func trimValueQuote(s string) string {
 	if len(s) > 1 {
@@ -320,7 +320,6 @@ type xmlParser struct {
 	file          string
 	content       []byte
 	depth         int
-	error         error
 	stack         *xmlNodeStack
 	rootNode      *xmlNode
 	rootElement   *dtd.Element
@@ -333,8 +332,8 @@ func (p *xmlParser) validateNode(node *xmlNode, elem *dtd.Element) {
 	if elem.Attributes != nil {
 		for k, v := range elem.Attributes {
 			if v == dtd.REQUIRED && !node.HasAttribute(k) {
-				p.setError(fmt.Sprintf("element: %s miss required attribute: %s", node.Name, k), node.ctx)
-				return
+				throw(p.file, node.ctx, validateXMLNodeErr).
+					format("element: %s miss required attribute: %s", node.Name, k)
 			}
 		}
 	}
@@ -347,58 +346,40 @@ func (p *xmlParser) validateNode(node *xmlNode, elem *dtd.Element) {
 		
 		// check not supported node
 		if !elem.HasNode(childNode.Name) {
-			p.setError(
-				fmt.Sprintf("element: %s not support child element: %s", node.Name, childNode.Name),
-				childNode.ctx,
-			)
-			return
+			throw(p.file, childNode.ctx, validateXMLNodeErr).
+				format("element: %s not support child element: %s", node.Name, childNode.Name)
 		}
 		
 		// check at most once node
 		if elem.GetNodeCount(childNode.Name) == dtd.AT_MOST_ONCE && node.countNode(childNode.Name) > 1 {
-			p.setError(
-				fmt.Sprintf("element: %s not support duplicate element: %s", node.Name, childNode.Name),
-				childNode.ctx,
-			)
-			return
+			throw(p.file, childNode.ctx, validateXMLNodeErr).
+				format("element: %s not support duplicate element: %s", node.Name, childNode.Name)
 		}
 		
 		childElem, err := p.elementGetter(childNode.Name)
 		if err != nil {
-			p.setError(err.Error(), childNode.ctx)
-			return
+			throw(p.file, childNode.ctx, validateXMLNodeErr).with(err)
 		}
 		
 		p.validateNode(childNode, childElem)
-		if p.error != nil {
-			return
-		}
 	}
 	
 	// check at least once node
 	if elem.Nodes != nil {
 		for k, v := range elem.Nodes {
 			if v == dtd.AT_LEAST_ONCE && node.countNode(k) == 0 {
-				p.setError(fmt.Sprintf("element %s miss required element %s", node.Name, k), node.ctx)
-				return
+				throw(p.file, node.ctx, validateXMLNodeErr).
+					format("element %s miss required element %s", node.Name, k)
 			}
 		}
 	}
 }
 
-func (p *xmlParser) setError(msg string, ctx antlr.ParserRuleContext) {
-	p.error = parseError(p.file, ctx, msg)
-}
-
 func (p *xmlParser) enterElement(c *xml.ElementContext) {
-	if p.error != nil {
-		return
-	}
 	name := c.Name(0)
 	if p.depth == 0 {
 		if name.GetText() != p.rootElement.Name {
-			p.setError(fmt.Sprintf("first level tag %s unsupported", name.GetText()), c)
-			return
+			throw(p.file, c, parseMapperErr).format("first level tag %s unsupported", name.GetText())
 		}
 	}
 	p.stack.Push(newXMLNode(p.file, name.GetText(), c, name.GetSymbol()))
@@ -406,7 +387,7 @@ func (p *xmlParser) enterElement(c *xml.ElementContext) {
 }
 
 func (p *xmlParser) exitElement(_ *xml.ElementContext) {
-	if p.error != nil || p.stack.Peak() == nil {
+	if p.stack.Peak() == nil {
 		return
 	}
 	p.depth--
@@ -422,7 +403,7 @@ func (p *xmlParser) exitElement(_ *xml.ElementContext) {
 
 func (p *xmlParser) enterAttribute(c *xml.AttributeContext) {
 	// <?xml version="1.0" encoding="UTF-8" ?>
-	if p.error != nil || p.stack.Peak() == nil {
+	if p.stack.Peak() == nil {
 		return
 	}
 	name := strings.TrimSpace(c.Name().GetText())
@@ -436,7 +417,7 @@ func (p *xmlParser) enterAttribute(c *xml.AttributeContext) {
 }
 
 func (p *xmlParser) enterChardata(c *xml.ChardataContext) {
-	if p.error != nil || p.stack.Peak() == nil {
+	if p.stack.Peak() == nil {
 		return
 	}
 	text := strings.TrimSpace(c.GetText())
@@ -481,7 +462,6 @@ func newFragmentParser(file string) *fragmentParser {
 type fragmentParser struct {
 	*expr.BaseExprParserListener
 	coverage *coverage
-	error    error
 	file     string
 	index    int
 	step     int
@@ -492,15 +472,11 @@ type fragmentParser struct {
 }
 
 func (p *fragmentParser) EnterParamDecl(ctx *expr.ParamDeclContext) {
-	if p.error != nil {
-		return
-	}
 	var name string
 	if ctx.IDENTIFIER() != nil {
 		name = ctx.IDENTIFIER().GetText()
 		if _builtin.is(name) {
-			p.error = parseError(p.file, ctx, fmt.Sprintf("'%s' conflict with builtin", name))
-			return
+			throw(p.file, ctx, parameterConflictWithBuiltInErr).format("'%s' conflict with builtin", name)
 		}
 	}
 	var _type string
@@ -517,40 +493,37 @@ func (p *fragmentParser) EnterParamDecl(ctx *expr.ParamDeclContext) {
 		}
 		kind, err = varToReflectKind(_type)
 		if err != nil {
-			p.error = parseError(p.file, ctx, err.Error())
-			return
+			throw(p.file, ctx, varToReflectKindErr).with(err)
 		}
 	} else {
 		kind = reflect.Interface
 	}
 	switch p.step {
 	case 0:
-		err = p.checkParameter(ctx, name, kind, isArray)
+		p.checkParameter(ctx, name, kind, isArray)
 	case 1:
-		err = p.checkResult(ctx, name, kind, isArray)
-	}
-	if err != nil {
-		p.error = err
-		return
+		p.checkResult(ctx, name, kind, isArray)
 	}
 	p.index++
 }
 
-func (p *fragmentParser) walkMethods(parser *expr.ExprParser) error {
+func (p *fragmentParser) walkMethods(parser *expr.ExprParser) (err error) {
+	defer func() {
+		e := recover()
+		err = castRecoverError(e)
+	}()
 	antlr.ParseTreeWalkerDefault.Walk(p, parser.Parameters())
-	if p.error != nil {
-		return p.error
-	}
 	if !p.coverage.covered() {
-		return fmt.Errorf("parse mapper method not coverd: %d/%d", p.coverage.len(), p.coverage.total)
+		throw(p.file, nil, parseCoveredErr).
+			format("parse mapper method not covered: %d/%d", p.coverage.len(), p.coverage.total)
 	}
-	return nil
+	return
 }
 
-func (p *fragmentParser) checkParameter(ctx antlr.ParserRuleContext, name string, kind reflect.Kind, isArray bool) error {
+func (p *fragmentParser) checkParameter(ctx antlr.ParserRuleContext, name string, kind reflect.Kind, isArray bool) {
 	
 	if name == "" {
-		return parseError(p.file, ctx, fmt.Sprintf("in param not accept anonymous var"))
+		throw(p.file, ctx, checkParameterErr).format("parameter not accept anonymous var")
 	}
 	
 	if p.inMap == nil {
@@ -558,16 +531,15 @@ func (p *fragmentParser) checkParameter(ctx antlr.ParserRuleContext, name string
 	}
 	
 	if _, ok := p.inMap[name]; ok {
-		return parseError(p.file, ctx, fmt.Sprintf("duplicated param '%s'", name))
+		throw(p.file, ctx, checkParameterErr).format("duplicated parameter '%s'", name)
 	}
 	
 	p.inMap[name] = true
 	p.in = append(p.in, param{name: name, kind: kind, isArray: isArray})
 	
-	return nil
 }
 
-func (p *fragmentParser) checkResult(ctx antlr.ParserRuleContext, name string, kind reflect.Kind, isArray bool) error {
+func (p *fragmentParser) checkResult(ctx antlr.ParserRuleContext, name string, kind reflect.Kind, isArray bool) {
 	
 	if p.outMap == nil {
 		p.outMap = map[string]bool{}
@@ -577,13 +549,11 @@ func (p *fragmentParser) checkResult(ctx antlr.ParserRuleContext, name string, k
 		if name == "" {
 			name = "anonymous var"
 		}
-		return parseError(p.file, ctx, fmt.Sprintf("duplicated result filed '%s'", name))
+		throw(p.file, ctx, checkResultErr).format("duplicated result param '%s'", name)
 	}
 	
 	p.outMap[name] = true
 	p.out = append(p.out, param{name: name, kind: kind, isArray: isArray})
-	
-	return nil
 }
 
 type exprValue struct {
@@ -1192,11 +1162,15 @@ func (p *exprParser) parseParameter(params string) (err error) {
 
 func castRecoverError(e interface{}) error {
 	if e != nil {
+		debug.PrintStack()
 		_e, ok := e.(*_error)
 		if ok {
 			return _e
 		}
-		return fmt.Errorf("%v", e)
+		return &_error{
+			code:    unknownErr,
+			message: fmt.Sprintf("%v", e),
+		}
 	}
 	return nil
 }
@@ -1218,9 +1192,6 @@ func (p *exprParser) parseExpression(expresion string) (result interface{}, err 
 	
 	antlr.ParseTreeWalkerDefault.Walk(p, parser.Expressions())
 	
-	if p.stack.Len() != 1 {
-		throw(p.file, nil, popResultErr).format("expect result stack length: 1, got %d", p.stack.Len())
-	}
 	if !p.coverage.covered() {
 		throw(p.file, nil, parseCoveredErr).format(
 			"parse expression token not covered: %d/%d",
@@ -1228,10 +1199,12 @@ func (p *exprParser) parseExpression(expresion string) (result interface{}, err 
 		)
 	}
 	
+	if p.stack.Len() != 1 {
+		throw(p.file, nil, popResultErr).format("expect result stack length: 1, got %d", p.stack.Len())
+	}
 	v, err := p.stack.Pop()
 	if err != nil {
-		err = parseError(p.file, nil, err.Error())
-		return
+		throw(p.file, nil, popResultErr).with(err)
 	}
 	result = v.value
 	

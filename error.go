@@ -30,6 +30,12 @@ const (
 	parseIntegerErr
 	parseDecimalErr
 	parseCoveredErr
+	checkParameterErr
+	checkResultErr
+	parseMapperErr
+	validateXMLNodeErr
+	parasFragmentErr
+	callerErr
 )
 
 func throw(file string, ctx antlr.ParserRuleContext, code int) *_error {
@@ -49,8 +55,14 @@ func (p *_error) format(format string, args ...interface{}) {
 }
 
 func (p *_error) with(err error) {
+	// TODO
+	// if err is _error, contact ctx
 	p.message = err.Error()
 	panic(p)
+}
+
+func (p *_error) slient() {
+
 }
 
 func (p *_error) Error() string {
@@ -60,14 +72,4 @@ func (p *_error) Error() string {
 			p.file, p.ctx.GetStart().GetLine(), p.ctx.GetStart().GetColumn(), p.ctx.GetText())
 	}
 	return msg
-}
-
-func parseError(file string, ctx antlr.ParserRuleContext, msg string) error {
-	
-	if ctx == nil {
-		return fmt.Errorf("%s: parse error: %s", file, msg)
-	}
-	
-	return fmt.Errorf("%s line %d:%d parse error:\n%s\n%s",
-		file, ctx.GetStart().GetLine(), ctx.GetStart().GetColumn(), ctx.GetText(), msg)
 }

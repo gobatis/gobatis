@@ -204,32 +204,35 @@ func (p *fragment) checkResult(mapper, ft reflect.Type, fn string) error {
 	return nil
 }
 
-func (p *fragment) parseStatement(args ...reflect.Value) (string, []interface{}, error) {
+func (p *fragment) parseStatement(args ...reflect.Value) (sql string, vars []interface{}, err error) {
+	
+	defer func() {
+		e := recover()
+		err = castRecoverError(e)
+	}()
 	
 	if len(p.in) != len(args) {
-		return "", nil, fmt.Errorf("expect %d args, got %d", len(p.in), len(args))
+		throw(p.statement.File, p.statement.ctx, parasFragmentErr).format("expect %d args, got %d", len(p.in), len(args))
 	}
 	
 	parser := newExprParser(args...)
 	for i, v := range p.in {
-		err := parser.baseParams.alias(v.name, v.kind, i)
+		err = parser.baseParams.alias(v.name, v.kind, i)
 		if err != nil {
-			return "", nil, err
+			throw(p.statement.File, p.statement.ctx, parasFragmentErr).with(err)
 		}
 	}
 	res := new(psr)
-	err := p.parseBlocks(parser, p.statement, res)
-	if err != nil {
-		return "", nil, err
-	}
+	p.parseBlocks(parser, p.statement, res)
 	if res.cacheable {
 		p.cacheable = res.cacheable
 		p.sql = res.sql
 	}
 	
 	p.logger.Debugf("[gobatis] [%s] statement: %s", p.id, res.sql)
-	
-	return res.sql, parser.vars, nil
+	sql = res.sql
+	vars = parser.vars
+	return
 }
 
 func (p *fragment) trimPrefixOverride(sql, prefix string) (r string, err error) {
@@ -241,7 +244,7 @@ func (p *fragment) trimPrefixOverride(sql, prefix string) (r string, err error) 
 	return
 }
 
-func (p *fragment) parseSql(parser *exprParser, node *xmlNode, res *psr) error {
+func (p *fragment) parseSql(parser *exprParser, node *xmlNode, res *psr) {
 	chars := []rune(node.Text)
 	begin := false
 	inject := false
@@ -265,7 +268,7 @@ func (p *fragment) parseSql(parser *exprParser, node *xmlNode, res *psr) error {
 		} else if chars[i] == 125 {
 			r, err := parser.parseExpression(string(chars[from:i]))
 			if err != nil {
-				return err
+				throw(p.statement.File, p.statement.ctx, parasFragmentErr).with(err)
 			}
 			if inject {
 				s += fmt.Sprintf("%v", r)
@@ -279,61 +282,58 @@ func (p *fragment) parseSql(parser *exprParser, node *xmlNode, res *psr) error {
 		}
 	}
 	res.merge(s)
-	return nil
 }
 
-func (p *fragment) parseBlocks(parser *exprParser, node *xmlNode, res *psr) (err error) {
+func (p *fragment) parseBlocks(parser *exprParser, node *xmlNode, res *psr) {
 	for _, child := range node.Nodes {
-		err = p.parseBlock(parser, child, res)
-		if err != nil {
-			return
-		}
+		p.parseBlock(parser, child, res)
 	}
 	return
 }
 
-func (p *fragment) parseBlock(parser *exprParser, node *xmlNode, res *psr) (err error) {
+func (p *fragment) parseBlock(parser *exprParser, node *xmlNode, res *psr) {
 	if node.textOnly {
-		err = p.parseSql(parser, node, res)
+		p.parseSql(parser, node, res)
 	} else {
 		switch node.Name {
 		case dtd.IF:
-			_, err = p.parseTest(parser, node, res)
+			p.parseTest(parser, node, res)
 		case dtd.WHERE:
-			err = p.parseWhere(parser, node, res)
+			p.parseWhere(parser, node, res)
 		case dtd.CHOOSE:
-			err = p.parseChoose(parser, node, res)
+			p.parseChoose(parser, node, res)
 		case dtd.FOREACH:
-			err = p.parseForeach(parser, node, res)
+			p.parseForeach(parser, node, res)
 		case dtd.TRIM:
-			err = p.parseTrim(parser, node, res)
+			p.parseTrim(parser, node, res)
 		case dtd.SET:
-			err = p.parseSet(parser, node, res)
+			p.parseSet(parser, node, res)
 		}
 	}
-	return
 }
 
-func (p *fragment) parseTest(parser *exprParser, node *xmlNode, res *psr) (bool, error) {
+func (p *fragment) parseTest(parser *exprParser, node *xmlNode, res *psr) bool {
 	v, err := parser.parseExpression(node.GetAttribute(dtd.TEST))
 	if err != nil {
-		return false, err
+		throw(p.statement.File, p.statement.ctx, parasFragmentErr).with(err)
 	}
 	b, err := cast.ToBoolE(v)
 	if err != nil {
-		return false, err
+		throw(p.statement.File, p.statement.ctx, parasFragmentErr).with(err)
 	}
 	if !b {
-		return false, nil
+		return false
 	}
-	return true, p.parseBlocks(parser, node, res)
+	p.parseBlocks(parser, node, res)
+	
+	return true
 }
 
-func (p *fragment) parseWhere(parser *exprParser, node *xmlNode, res *psr) (err error) {
-	return p.trimPrefixOverrides(parser, node, res, dtd.WHERE, "AND |OR ")
+func (p *fragment) parseWhere(parser *exprParser, node *xmlNode, res *psr) {
+	p.trimPrefixOverrides(parser, node, res, dtd.WHERE, "AND |OR ")
 }
 
-func (p *fragment) parseChoose(parser *exprParser, node *xmlNode, res *psr) error {
+func (p *fragment) parseChoose(parser *exprParser, node *xmlNode, res *psr) {
 	var pass bool
 	for i, child := range node.Nodes {
 		if pass {
@@ -341,58 +341,52 @@ func (p *fragment) parseChoose(parser *exprParser, node *xmlNode, res *psr) erro
 		}
 		switch child.Name {
 		case dtd.WHEN:
-			var err error
-			pass, err = p.parseTest(parser, child, res)
-			if err != nil {
-				return err
-			}
+			pass = p.parseTest(parser, child, res)
 		case dtd.OTHERWISE:
 			if i != len(node.Nodes)-1 {
-				return parseError(parser.file, node.ctx, "otherwise should be last element in choose")
+				throw(parser.file, child.ctx, parasFragmentErr).format("otherwise should be last element in choose")
 			}
-			return p.parseBlocks(parser, child, res)
+			p.parseBlocks(parser, child, res)
 		default:
-			return parseError(parser.file, child.ctx, fmt.Sprintf("unsupported element '%s' element in choose", child.Name))
+			throw(parser.file, child.ctx, parasFragmentErr).
+				format("unsupported element '%s' element in choose", child.Name)
+			
 		}
 	}
-	return nil
 }
 
-func (p *fragment) parseTrim(parser *exprParser, node *xmlNode, res *psr) (err error) {
-	return p.trimPrefixOverrides(parser, node, res, node.GetAttribute(dtd.PREFIX), node.GetAttribute(dtd.PREFIX_OVERRIDES))
+func (p *fragment) parseTrim(parser *exprParser, node *xmlNode, res *psr) {
+	p.trimPrefixOverrides(parser, node, res, node.GetAttribute(dtd.PREFIX), node.GetAttribute(dtd.PREFIX_OVERRIDES))
 }
 
-func (p *fragment) trimPrefixOverrides(parser *exprParser, node *xmlNode, res *psr, tag, prefixes string) error {
+func (p *fragment) trimPrefixOverrides(parser *exprParser, node *xmlNode, res *psr, tag, prefixes string) {
 	wr := new(psr)
-	err := p.parseBlocks(parser, node, wr)
-	if err != nil {
-		return err
-	}
+	p.parseBlocks(parser, node, wr)
+	var err error
 	s := strings.TrimSpace(wr.sql)
 	filters := strings.Split(prefixes, "|")
 	for _, v := range filters {
 		s, err = p.trimPrefixOverride(s, v)
 		if err != nil {
-			err = parseError(parser.file, node.ctx, fmt.Sprintf("regexp compile error: %s", err))
-			return err
+			throw(p.statement.File, p.statement.ctx, parasFragmentErr).format("regexp compile error: %s", err)
 		}
 	}
 	if strings.TrimSpace(s) != "" {
 		res.merge(tag, s)
 	}
-	return nil
 }
 
-func (p *fragment) parseSet(parser *exprParser, node *xmlNode, res *psr) (err error) {
-	return p.trimPrefixOverrides(parser, node, res, dtd.SET, ",")
+func (p *fragment) parseSet(parser *exprParser, node *xmlNode, res *psr) {
+	p.trimPrefixOverrides(parser, node, res, dtd.SET, ",")
 }
 
-func (p *fragment) parseForeach(parser *exprParser, node *xmlNode, res *psr) error {
+func (p *fragment) parseForeach(parser *exprParser, node *xmlNode, res *psr) {
 	
 	_var := node.GetAttribute(dtd.COLLECTION)
 	collection, ok := parser.baseParams.get(_var)
 	if !ok {
-		return parseError(parser.file, node.ctx, fmt.Sprintf("can't get foreach collection '%s' value", _var))
+		throw(p.statement.File, p.statement.ctx, parasFragmentErr).
+			format("can't get foreach collection '%s' value", _var)
 	}
 	index := node.GetAttribute(dtd.INDEX)
 	if index == "" {
@@ -419,13 +413,10 @@ func (p *fragment) parseForeach(parser *exprParser, node *xmlNode, res *psr) err
 			if i == 0 {
 				err := parser.parseParameter(subParams)
 				if err != nil {
-					return err
+					throw(p.statement.File, p.statement.ctx, parasFragmentErr).with(err)
 				}
 			}
-			err := p.parseForeachChild(parser, node, &frags)
-			if err != nil {
-				return err
-			}
+			p.parseForeachChild(parser, node, &frags)
 		}
 	case reflect.Map:
 		for i, v := range elem.MapKeys() {
@@ -433,13 +424,10 @@ func (p *fragment) parseForeach(parser *exprParser, node *xmlNode, res *psr) err
 			if i == 0 {
 				err := parser.parseParameter(subParams)
 				if err != nil {
-					return err
+					throw(p.statement.File, p.statement.ctx, parasFragmentErr).with(err)
 				}
 			}
-			err := p.parseForeachChild(parser, node, &frags)
-			if err != nil {
-				return err
-			}
+			p.parseForeachChild(parser, node, &frags)
 		}
 	case reflect.Struct:
 		for i := 0; i < elem.NumField(); i++ {
@@ -447,37 +435,27 @@ func (p *fragment) parseForeach(parser *exprParser, node *xmlNode, res *psr) err
 			if i == 0 {
 				err := parser.parseParameter(subParams)
 				if err != nil {
-					return err
+					throw(p.statement.File, p.statement.ctx, parasFragmentErr).with(err)
 				}
 			}
-			err := p.parseForeachChild(parser, node, &frags)
-			if err != nil {
-				return err
-			}
+			p.parseForeachChild(parser, node, &frags)
 		}
 	default:
-		return parseError(parser.file, node.ctx,
-			fmt.Sprintf("foreach collection type '%s' can't range", elem.Kind()))
+		throw(parser.file, node.ctx, parasFragmentErr).format("foreach collection type '%s' can't range", elem.Type())
 	}
 	parser.foreachParams = nil
 	
 	if len(frags) > 0 {
 		res.merge(open + strings.Join(frags, separator) + _close)
 	}
-	
-	return nil
 }
 
-func (p *fragment) parseForeachChild(parser *exprParser, node *xmlNode, frags *[]string) error {
+func (p *fragment) parseForeachChild(parser *exprParser, node *xmlNode, frags *[]string) {
 	for _, child := range node.Nodes {
 		br := new(psr)
-		err := p.parseBlock(parser, child, br)
-		if err != nil {
-			return err
-		}
+		p.parseBlock(parser, child, br)
 		*frags = append(*frags, br.sql)
 	}
-	return nil
 }
 
 type caller struct {
@@ -517,11 +495,8 @@ func (p *caller) call() (err error) {
 	case dtd.INSERT, dtd.DELETE, dtd.UPDATE:
 		return p.exec(p.params...)
 	default:
-		err = parseError(
-			p.fragment.statement.File,
-			p.fragment.statement.ctx,
-			fmt.Sprintf("unsupported call method '%s'", p.fragment.statement.Name),
-		)
+		throw(p.fragment.statement.File, p.fragment.statement.ctx, callerErr).
+			format("unsupported call method '%s'", p.fragment.statement.Name)
 		return
 	}
 }

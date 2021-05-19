@@ -236,13 +236,12 @@ func (p *Engine) parseDest(node *xmlNode) (*dest, error) {
 	}, nil
 }
 
-func (p *Engine) addFragment(file string, ctx antlr.ParserRuleContext, id string, node *xmlNode) (err error) {
+func (p *Engine) addFragment(file string, ctx antlr.ParserRuleContext, id string, node *xmlNode) {
 	
 	_dest, err := p.parseDest(node)
 	if err != nil {
 		return
 	}
-	
 	m, err := parseFragment(
 		p.master, p.logger, file, id,
 		node.GetAttribute(dtd.PARAMETER),
@@ -256,7 +255,7 @@ func (p *Engine) addFragment(file string, ctx antlr.ParserRuleContext, id string
 	
 	err = p.fragmentManager.add(m)
 	if err != nil {
-		return parseError(file, ctx, err.Error())
+		throw(file, ctx, parseMapperErr).with(err)
 	}
 	return
 }
