@@ -1348,7 +1348,3 @@ func (p *exprParser) logicCalc(left, right *exprValue, ctx antlr.ParserRuleConte
 	}
 	p.stack.Push(&exprValue{value: result})
 }
-
-func (p *exprParser) unsupportedOpError(ctx antlr.ParserRuleContext) error {
-	return parseError(p.file, ctx, fmt.Sprintf("unsupported operation"))
-}

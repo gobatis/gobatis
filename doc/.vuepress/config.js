@@ -28,17 +28,37 @@ module.exports = {
                 ],
                 sidebar: [
                     {
-                        title: '',   // 必要的
-                        // path: '/foo/',      // 可选的, 标题的跳转链接，应为绝对路径且必须存在
+                        title: '入门指南',   // 必要的
                         collapsable: false, // 可选的, 默认值是 true,
                         sidebarDepth: 1,    // 可选的, 默认值是 1
                         children: [
                             ['/introduction', '介绍'],
                             ['/getting-started', '快速上手'],
+                        ]
+                    },
+                    {
+                        title: 'SQL',   // 必要的
+                        collapsable: false, // 可选的, 默认值是 true,
+                        sidebarDepth: 1,    // 可选的, 默认值是 1
+                        children: [
                             ['/configuration', 'XML 配置'],
                             ['/sqlmap-xml', 'XML 映射文件'],
                             ['/dynamic-sql', '动态 SQL'],
                             ['/expression', '表达式'],
+                            ['/curd', 'CURD'],
+                        ]
+                    },
+                    {
+                        title: '高级主题',   // 必要的
+                        collapsable: false, // 可选的, 默认值是 true,
+                        sidebarDepth: 1,    // 可选的, 默认值是 1
+                        children: [
+                            ['/engine', 'Engine'],
+                            ['/mapper', 'Mapper'],
+                            ['/mapper', '事务处理'],
+                            ['/mapper', '日志'],
+                            ['/mapper', '连接池'],
+                            ['/mapper', '性能'],
                         ]
                     },
 

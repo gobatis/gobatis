@@ -10,5 +10,5 @@ Gobatis 借鉴了 MyBatis 的 XML 语法，结合 Golang 的语法特点实现�
 
 ## 未来发展
 
-Gobatis 有着自己的发展道路，不一定完全遵循 MyBatis 的特性去研发。
+Gobatis 有着自己的发展路线，不会完全遵循 MyBatis 的特性去研发。
 
