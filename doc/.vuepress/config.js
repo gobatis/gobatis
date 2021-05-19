@@ -59,6 +59,7 @@ module.exports = {
                             ['/mapper', '日志'],
                             ['/mapper', '连接池'],
                             ['/mapper', '性能'],
+                            ['/deploy', '部署'],
                         ]
                     },
 
