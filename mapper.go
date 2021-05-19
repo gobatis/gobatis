@@ -168,11 +168,15 @@ func (p *fragment) call(_type reflect.Type, in ...reflect.Value) []reflect.Value
 	return c.values
 }
 
-func (p *fragment) checkParameter(mapper, field reflect.Type) error {
-	return nil
+func (p *fragment) checkParameter(mapper, ft reflect.Type, fn string) {
+	
+	if len(p.in) != ft.NumIn() {
+		throw(p.statement.File, p.statement.ctx, checkParameterErr).
+			format("%s expected %d bind parameter, got %d", fn, len(p.in), ft.NumIn())
+	}
 }
 
-func (p *fragment) checkResult(mapper, ft reflect.Type, fn string) error {
+func (p *fragment) checkResult(mapper, ft reflect.Type, fn string) {
 	switch p.statement.Name {
 	case dtd.SELECT:
 		if p.dest != nil {
@@ -181,12 +185,14 @@ func (p *fragment) checkResult(mapper, ft reflect.Type, fn string) error {
 					if ft.Out(0).Kind() != reflect.Slice ||
 						(ft.Out(0).Elem().Kind() != reflect.Ptr && ft.Out(0).Elem().Kind() != reflect.Struct) ||
 						(ft.Out(0).Elem().Kind() == reflect.Ptr && ft.Out(0).Elem().Elem().Kind() != reflect.Struct) {
-						return fmt.Errorf("%s.%s out[0] expect [](*)struct, got: %s", mapper.Name(), fn, ft.Out(0))
+						throw(p.statement.File, p.statement.ctx, checkResultErr).
+							format("%s.%s out[0] expect [](*)struct, got: %s", mapper.Name(), fn, ft.Out(0))
 					}
 				} else {
 					if (ft.Out(0).Kind() != reflect.Ptr && ft.Out(0).Kind() != reflect.Struct) ||
 						(ft.Out(0).Elem().Kind() == reflect.Ptr && ft.Out(0).Elem().Elem().Kind() != reflect.Struct) {
-						return fmt.Errorf("%s.%s out[0] expect (*)struct, got: %s", mapper.Name(), fn, ft.Out(0))
+						throw(p.statement.File, p.statement.ctx, checkResultErr).
+							format("%s.%s out[0] expect (*)struct, got: %s", mapper.Name(), fn, ft.Out(0))
 					}
 				}
 			}
@@ -195,13 +201,14 @@ func (p *fragment) checkResult(mapper, ft reflect.Type, fn string) error {
 		if ft.NumOut() > 1 {
 			if (ft.Out(0).Kind() != reflect.Ptr && ft.Out(0).Kind() != reflect.Int64) ||
 				(ft.Out(0).Kind() == reflect.Ptr && ft.Out(0).Elem().Kind() != reflect.Int64) {
-				return fmt.Errorf("%s.%s out[0] expect int64 with pointer or not, got: %s",
-					mapper.Name(), ft.Name(), ft.Out(0).Name())
+				throw(p.statement.File, p.statement.ctx, checkResultErr).
+					format("%s.%s out[0] expect int64 with pointer or not, got: %s",
+						mapper.Name(), ft.Name(), ft.Out(0).Name())
 			}
 		}
 	}
 	
-	return nil
+	return
 }
 
 func (p *fragment) parseStatement(args ...reflect.Value) (sql string, vars []interface{}, err error) {

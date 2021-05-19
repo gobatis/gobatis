@@ -6,7 +6,6 @@ import (
 	"github.com/gobatis/gobatis/driver/mysql"
 	"github.com/gobatis/gobatis/driver/postgresql"
 	"github.com/gobatis/gobatis/dtd"
-	"github.com/pkg/errors"
 	"io/ioutil"
 	"net/http"
 	"path/filepath"
@@ -81,13 +80,18 @@ func (p *Engine) BindMapper(ptr ...interface{}) (err error) {
 	for _, v := range ptr {
 		err = p.bindMapper(v)
 		if err != nil {
-			return errors.Wrap(err, "bind mapper:")
+			return
 		}
 	}
 	return
 }
 
 func (p *Engine) bindMapper(mapper interface{}) (err error) {
+	defer func() {
+		e := recover()
+		err = castRecoverError("", e)
+	}()
+	
 	rv := reflect.ValueOf(mapper)
 	if rv.Kind() != reflect.Ptr || rv.Elem().Kind() != reflect.Struct {
 		return fmt.Errorf("exptect *struct, got: %s", rv.Type())
@@ -107,14 +111,8 @@ func (p *Engine) bindMapper(mapper interface{}) (err error) {
 		if ft.NumOut() == 0 || !isErrorType(ft.Out(ft.NumOut()-1)) {
 			return fmt.Errorf("method out expect error at last")
 		}
-		err = m.checkParameter(rt, ft)
-		if err != nil {
-			return err
-		}
-		err = m.checkResult(rt, ft, rv.Type().Field(i).Name)
-		if err != nil {
-			return
-		}
+		m.checkParameter(rt, ft, rv.Type().Field(i).Name)
+		m.checkResult(rt, ft, rv.Type().Field(i).Name)
 		m.proxy(rv.Field(i))
 	}
 	return

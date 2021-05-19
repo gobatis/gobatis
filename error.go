@@ -3,6 +3,7 @@ package gobatis
 import (
 	"fmt"
 	"github.com/antlr/antlr4/runtime/Go/antlr"
+	"github.com/gobatis/gobatis/parser/xml"
 )
 
 const (
@@ -66,9 +67,28 @@ func (p *_error) Error() string {
 	msg := fmt.Sprintf("ERROR %d: %s", p.code, p.message)
 	if p.ctx != nil {
 		msg += fmt.Sprintf("\n%s line %d column %d:\n%s",
-			p.file, p.ctx.GetStart().GetLine(), p.ctx.GetStart().GetColumn(), p.ctx.GetText())
+			p.file, p.ctx.GetStart().GetLine(), p.ctx.GetStart().GetColumn(), getText(p.ctx))
 	}
+	
 	return msg
+}
+
+func getText(ctx antlr.ParserRuleContext) string {
+	if ctx.GetChildCount() == 0 {
+		return ""
+	}
+	
+	var s string
+	for _, child := range ctx.GetChildren() {
+		_, ok := child.(*xml.AttributeContext)
+		if ok {
+			s += " " + child.(antlr.ParseTree).GetText()
+		} else {
+			s += child.(antlr.ParseTree).GetText()
+		}
+	}
+	
+	return s
 }
 
 func newParserErrorStrategy() *parserErrorStrategy {

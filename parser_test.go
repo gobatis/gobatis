@@ -275,7 +275,7 @@ func execTestFragment(t *testing.T, engine *Engine, tests []testFragment) {
 }
 
 func testParseExprExpression(t *testing.T, tests []testExpression) {
-	for _, test := range tests {
+	for i, test := range tests {
 		vars := make([]reflect.Value, 0)
 		for _, v := range test.In {
 			vars = append(vars, rv(v))
@@ -287,6 +287,7 @@ func testParseExprExpression(t *testing.T, tests []testExpression) {
 		result, err := parser.parseExpression(test.Expr)
 		if test.Err > 0 {
 			require.Error(t, err, test)
+			writeError(t, fmt.Sprintf("test parse expression: %d", i), test, err)
 		} else {
 			require.NoError(t, err, test)
 			dr, ok := result.(decimal.Decimal)
