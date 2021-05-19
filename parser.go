@@ -50,7 +50,7 @@ func parseMapper(engine *Engine, file, content string) (err error) {
 	walkXMLNodes(l, content)
 	if !l.coverage.covered() {
 		throw(file, nil, parseCoveredErr).
-			format("parse mapper token not coverd: %d/%d", l.coverage.len(), l.coverage.total)
+			format("parse mapper token not covered: %d/%d", l.coverage.len(), l.coverage.total)
 	}
 	
 	if l.rootNode == nil {
@@ -72,20 +72,25 @@ func parseMapper(engine *Engine, file, content string) (err error) {
 
 func walkXMLNodes(listener antlr.ParseTreeListener, content string) {
 	lexer := xml.NewXMLLexer(antlr.NewInputStream(strings.TrimSpace(content)))
+	lexer.RemoveErrorListeners()
+	lexer.AddErrorListener(newErrorListener())
 	stream := antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel)
 	parser := xml.NewXMLParser(stream)
 	parser.BuildParseTrees = true
-	parser.AddErrorListener(antlr.NewDiagnosticErrorListener(true))
-	//parser.SetErrorHandler()
+	parser.AddErrorListener(antlr.NewDiagnosticErrorListener(false))
+	parser.SetErrorHandler(newParserErrorStrategy())
 	antlr.ParseTreeWalkerDefault.Walk(listener, parser.Document())
 }
 
 func initExprParser(data string) (parser *expr.ExprParser, err error) {
 	lexer := expr.NewExprLexer(antlr.NewInputStream(data))
+	lexer.RemoveErrorListeners()
+	lexer.AddErrorListener(newErrorListener())
 	stream := antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel)
 	parser = expr.NewExprParser(stream)
 	parser.BuildParseTrees = true
 	parser.AddErrorListener(antlr.NewDiagnosticErrorListener(false))
+	parser.SetErrorHandler(newParserErrorStrategy())
 	return
 }
 
