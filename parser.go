@@ -9,7 +9,6 @@ import (
 	"github.com/gobatis/gobatis/parser/expr"
 	"github.com/gobatis/gobatis/parser/xml"
 	"reflect"
-	"runtime/debug"
 	"strings"
 	"sync"
 )
@@ -379,7 +378,7 @@ func (p *xmlParser) enterElement(c *xml.ElementContext) {
 	name := c.Name(0)
 	if p.depth == 0 {
 		if name.GetText() != p.rootElement.Name {
-			throw(p.file, c, parseMapperErr).format("first level tag %s unsupported", name.GetText())
+			throw(p.file, c, parseMapperErr).format("top level element %s unsupported", name.GetText())
 		}
 	}
 	p.stack.Push(newXMLNode(p.file, name.GetText(), c, name.GetSymbol()))
@@ -1162,7 +1161,7 @@ func (p *exprParser) parseParameter(params string) (err error) {
 
 func castRecoverError(e interface{}) error {
 	if e != nil {
-		debug.PrintStack()
+		//debug.PrintStack()
 		_e, ok := e.(*_error)
 		if ok {
 			return _e
