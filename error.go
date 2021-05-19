@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	unknownErr = iota
+	unknownErr = iota + 1
 	parameterTypeErr
 	parameterConflictWithBuiltInErr
 	parameterNotFoundErr
