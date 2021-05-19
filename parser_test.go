@@ -217,22 +217,20 @@ func TestErrorParseExprExpression(t *testing.T) {
 	testParseExprExpression(t, []testExpression{
 		{In: []interface{}{2, 4}, Parameter: "a:int32, b", Expr: "a + b", Result: 6, Err: 1},
 	})
-	
-	//require.IsType(t, )
 }
 
 func execTestErrorMapper(t *testing.T, engine *Engine, tests []testMapper) {
 	for i, test := range tests {
 		err := parseMapper(engine, test.File, test.Content)
 		require.Error(t, err)
+		writeError(t, fmt.Sprintf("test error mapper: %d", i), test, err)
 		_err, ok := err.(*_error)
 		require.True(t, ok, "expected *_error")
 		require.Equal(t, test.Err, _err.code, err)
-		writeErrorLog(t, fmt.Sprintf("test error mapper: %d", i), test, err)
 	}
 }
 
-func writeErrorLog(t *testing.T, title string, test interface{}, _err error) {
+func writeError(t *testing.T, title string, test interface{}, _err error) {
 	f, err := os.OpenFile(filepath.Join(pwd, errLogFile), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	require.NoError(t, err)
 	defer func() {
@@ -246,8 +244,10 @@ func writeErrorLog(t *testing.T, title string, test interface{}, _err error) {
 	require.NoError(t, err)
 	//td, err := json.MarshalIndent(test, "", "")
 	require.NoError(t, err)
-	_, err = f.WriteString(fmt.Sprintf("**%s**\n\ndata:\n```\n%s```\nerror:\n```\n%s\n```\n",
-		title, td.String(), _err.Error()))
+	_, err = f.WriteString(fmt.Sprintf(
+		"**%s**\n\ndata:\n```\n%s```\nerror:\n```\n%s```\n",
+		title, td.String(), _err.Error(),
+	))
 	require.NoError(t, err)
 }
 

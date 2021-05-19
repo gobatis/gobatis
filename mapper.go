@@ -208,7 +208,7 @@ func (p *fragment) parseStatement(args ...reflect.Value) (sql string, vars []int
 	
 	defer func() {
 		e := recover()
-		err = castRecoverError(e)
+		err = castRecoverError(p.statement.File, e)
 	}()
 	
 	if len(p.in) != len(args) {

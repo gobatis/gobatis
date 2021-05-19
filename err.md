@@ -11,9 +11,8 @@ data:
 error:
 ```
 ERROR 31: syntax error
- line 1 column 0:
-<mapper>...</mapper
-```
+mapper.xml line 1 column 0:
+<mapper>...</mapper```
 **test error mapper: 1**
 
 data:
@@ -26,8 +25,7 @@ data:
 ```
 error:
 ```
-ERROR 31: 词法分析错误
-```
+ERROR 31: 词法分析错误```
 **test error mapper: 2**
 
 data:
@@ -41,8 +39,7 @@ data:
 error:
 ```
 ERROR 31: syntax error
- line 1 column 0:
-
+mapper.xml line 1 column 0:
 ```
 **test error mapper: 3**
 
@@ -57,6 +54,5 @@ data:
 error:
 ```
 ERROR 31: syntax error
- line 1 column 0:
-
+mapper.xml line 1 column 0:
 ```

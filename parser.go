@@ -16,7 +16,7 @@ import (
 func parseConfig(engine *Engine, file, content string) (err error) {
 	defer func() {
 		e := recover()
-		err = castRecoverError(e)
+		err = castRecoverError(file, e)
 	}()
 	l := &xmlParser{
 		file:          file,
@@ -37,7 +37,7 @@ func parseMapper(engine *Engine, file, content string) (err error) {
 	
 	defer func() {
 		e := recover()
-		err = castRecoverError(e)
+		err = castRecoverError(file, e)
 	}()
 	
 	l := &xmlParser{
@@ -503,7 +503,7 @@ func (p *fragmentParser) EnterParamDecl(ctx *expr.ParamDeclContext) {
 func (p *fragmentParser) walkMethods(parser *expr.ExprParser) (err error) {
 	defer func() {
 		e := recover()
-		err = castRecoverError(e)
+		err = castRecoverError(p.file, e)
 	}()
 	antlr.ParseTreeWalkerDefault.Walk(p, parser.Parameters())
 	if !p.coverage.covered() {
@@ -1143,7 +1143,7 @@ func (p *exprParser) ExitNil_(ctx *expr.Nil_Context) {
 func (p *exprParser) parseParameter(params string) (err error) {
 	defer func() {
 		e := recover()
-		err = castRecoverError(e)
+		err = castRecoverError(p.file, e)
 	}()
 	parser, err := initExprParser(params)
 	if err != nil {
@@ -1153,15 +1153,19 @@ func (p *exprParser) parseParameter(params string) (err error) {
 	return
 }
 
-func castRecoverError(e interface{}) error {
+func castRecoverError(file string, e interface{}) error {
 	if e != nil {
 		//debug.PrintStack()
 		_e, ok := e.(*_error)
 		if ok {
+			if _e.file == "" {
+				_e.file = file
+			}
 			return _e
 		}
 		return &_error{
 			code:    unknownErr,
+			file:    file,
 			message: fmt.Sprintf("%v", e),
 		}
 	}
@@ -1180,7 +1184,7 @@ func (p *exprParser) parseExpression(expresion string) (result interface{}, err 
 	
 	defer func() {
 		e := recover()
-		err = castRecoverError(e)
+		err = castRecoverError(p.file, e)
 	}()
 	
 	antlr.ParseTreeWalkerDefault.Walk(p, parser.Expressions())
