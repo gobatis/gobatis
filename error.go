@@ -47,8 +47,14 @@ func throw(file string, ctx antlr.ParserRuleContext, code int) *_error {
 type _error struct {
 	code    int
 	file    string
+	parent  antlr.ParserRuleContext
 	ctx     antlr.ParserRuleContext
 	message string
+}
+
+func (p *_error) setParent(ctx antlr.ParserRuleContext) *_error {
+	p.parent = ctx
+	return p
 }
 
 func (p *_error) format(format string, args ...interface{}) {
@@ -65,12 +71,43 @@ func (p *_error) with(err error) {
 
 func (p *_error) Error() string {
 	msg := fmt.Sprintf("[ERROR %d]: %s", p.code, p.message)
+	line := 0
+	column := 0
+	ctx := ""
+	if p.parent != nil {
+		line = p.parent.GetStart().GetLine()
+		column = p.parent.GetStart().GetColumn()
+		ctx = getText(p.parent)
+	}
 	if p.ctx != nil {
-		msg += fmt.Sprintf("\n[file]: %s line %d column %d:\n[context]: %s",
-			p.file, p.ctx.GetStart().GetLine(), p.ctx.GetStart().GetColumn(), getText(p.ctx))
+		line += p.ctx.GetStart().GetLine()
+		column += p.ctx.GetStart().GetColumn()
+		if p.parent == nil {
+			ctx = getText(p.ctx)
+		}
+		msg += fmt.Sprintf("\n[file]: %s near line %d column %d:\n[context]: %s", p.file, line, column+1, ctx)
 	}
 	
 	return msg
+}
+
+func castRecoverError(file string, e interface{}) error {
+	if e != nil {
+		//debug.PrintStack()
+		_e, ok := e.(*_error)
+		if ok {
+			if _e.file == "" {
+				_e.file = file
+			}
+			return _e
+		}
+		return &_error{
+			code:    unknownErr,
+			file:    file,
+			message: fmt.Sprintf("%v", e),
+		}
+	}
+	return nil
 }
 
 func getText(ctx antlr.ParserRuleContext) string {

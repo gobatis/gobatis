@@ -137,10 +137,6 @@ func (p *fragment) proxy(field reflect.Value) {
 	}))
 }
 
-func (p *fragment) prepare() {
-
-}
-
 func (p *fragment) call(_type reflect.Type, in ...reflect.Value) []reflect.Value {
 	
 	c := &caller{fragment: p, params: in}
@@ -273,7 +269,7 @@ func (p *fragment) parseSql(parser *exprParser, node *xmlNode, res *psr) {
 				s += string(chars[i])
 			}
 		} else if chars[i] == 125 {
-			r, err := parser.parseExpression(string(chars[from:i]))
+			r, err := parser.parseExpression(node.ctx, string(chars[from:i]))
 			if err != nil {
 				throw(p.statement.File, p.statement.ctx, parasFragmentErr).with(err)
 			}
@@ -320,7 +316,7 @@ func (p *fragment) parseBlock(parser *exprParser, node *xmlNode, res *psr) {
 }
 
 func (p *fragment) parseTest(parser *exprParser, node *xmlNode, res *psr) bool {
-	v, err := parser.parseExpression(node.GetAttribute(dtd.TEST))
+	v, err := parser.parseExpression(node.ctx, node.GetAttribute(dtd.TEST))
 	if err != nil {
 		throw(p.statement.File, p.statement.ctx, parasFragmentErr).with(err)
 	}
@@ -418,7 +414,7 @@ func (p *fragment) parseForeach(parser *exprParser, node *xmlNode, res *psr) {
 		for i := 0; i < elem.Len(); i++ {
 			parser.foreachParams.set(reflect.ValueOf(i), elem.Index(i))
 			if i == 0 {
-				err := parser.parseParameter(subParams)
+				err := parser.parseParameter(node.ctx, subParams)
 				if err != nil {
 					throw(p.statement.File, p.statement.ctx, parasFragmentErr).with(err)
 				}
@@ -429,7 +425,7 @@ func (p *fragment) parseForeach(parser *exprParser, node *xmlNode, res *psr) {
 		for i, v := range elem.MapKeys() {
 			parser.foreachParams.set(v, elem.MapIndex(v))
 			if i == 0 {
-				err := parser.parseParameter(subParams)
+				err := parser.parseParameter(node.ctx, subParams)
 				if err != nil {
 					throw(p.statement.File, p.statement.ctx, parasFragmentErr).with(err)
 				}
@@ -440,7 +436,7 @@ func (p *fragment) parseForeach(parser *exprParser, node *xmlNode, res *psr) {
 		for i := 0; i < elem.NumField(); i++ {
 			parser.foreachParams.set(elem.Field(i), elem.Field(i).Elem())
 			if i == 0 {
-				err := parser.parseParameter(subParams)
+				err := parser.parseParameter(node.ctx, subParams)
 				if err != nil {
 					throw(p.statement.File, p.statement.ctx, parasFragmentErr).with(err)
 				}

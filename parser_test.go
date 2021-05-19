@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/antlr/antlr4/runtime/Go/antlr"
+	"github.com/gobatis/gobatis/parser/expr"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/require"
 	"os"
@@ -215,7 +217,7 @@ func TestCorrectParseExprExpression(t *testing.T) {
 
 func TestErrorParseExprExpression(t *testing.T) {
 	testParseExprExpression(t, []testExpression{
-		{In: []interface{}{2, 4}, Parameter: "a:int32, b", Expr: "a + b", Result: 6, Err: 1},
+		{In: []interface{}{2, 4}, Parameter: "a, b", Expr: "a + b", Result: 6, Err: 0},
 	})
 }
 
@@ -274,7 +276,14 @@ func execTestFragment(t *testing.T, engine *Engine, tests []testFragment) {
 	}
 }
 
+func newTestNodeCtx() antlr.ParserRuleContext {
+	nodeCtx := expr.NewEmptyExpressionContext()
+	nodeCtx.SetStart(antlr.NewCommonToken(&antlr.TokenSourceCharStreamPair{}, 0, 0, 10, 10))
+	return nodeCtx
+}
+
 func testParseExprExpression(t *testing.T, tests []testExpression) {
+	nodeCtx := newTestNodeCtx()
 	for i, test := range tests {
 		vars := make([]reflect.Value, 0)
 		for _, v := range test.In {
@@ -282,9 +291,9 @@ func testParseExprExpression(t *testing.T, tests []testExpression) {
 		}
 		parser := newExprParser(vars...)
 		parser.file = "tmp.xml"
-		err := parser.parseParameter(test.Parameter)
+		err := parser.parseParameter(nodeCtx, test.Parameter)
 		require.NoError(t, err)
-		result, err := parser.parseExpression(test.Expr)
+		result, err := parser.parseExpression(nodeCtx, test.Expr)
 		if test.Err > 0 {
 			require.Error(t, err, test)
 			writeError(t, fmt.Sprintf("test parse expression: %d", i), test, err)
