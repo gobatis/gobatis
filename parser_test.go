@@ -1,8 +1,13 @@
 package gobatis
 
 import (
+	"bytes"
+	"encoding/json"
+	"fmt"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/require"
+	"os"
+	"path/filepath"
 	"reflect"
 	"regexp"
 	"testing"
@@ -74,35 +79,35 @@ const defaultCorrectTestMapper = `
 `
 
 type testEntity struct {
-	Name     string
-	Age      int
-	Weight   func() int
+	Name     string           `json:"name"`
+	Age      int              `json:"age"`
+	Weight   func() int       `json:"weight"`
+	Children map[string]int64 `json:"children"`
+	Products map[int][]int    `json:"products"`
+	Parent   *testEntity      `json:"parent"`
 	auth     bool
-	Children map[string]int64
-	Products map[int][]int
-	Parent   *testEntity
 }
 
 type testExpression struct {
-	in        []interface{}
-	parameter string
-	expr      string
-	result    interface{}
-	err       int
+	In        []interface{} `json:"in"`
+	Parameter string        `json:"parameter"`
+	Expr      string        `json:"expr"`
+	Result    interface{}   `json:"result"`
+	Err       int           `json:"err"`
 }
 
 type testMapper struct {
-	file    string
-	content string
-	err     int
+	File    string `json:"file"`
+	Content string `json:"content"`
+	Err     int    `json:"err"`
 }
 
 type testFragment struct {
-	id        string
-	parameter []interface{}
-	sql       string
-	vars      int
-	err       int
+	Id        string        `json:"id"`
+	Parameter []interface{} `json:"parameter"`
+	SQL       string        `json:"sql"`
+	Vars      int           `json:"vars"`
+	Err       int           `json:"err"`
 }
 
 var (
@@ -110,7 +115,18 @@ var (
 	u2 testEntity
 )
 
+const (
+	errLogFile = "err.md"
+)
+
 func init() {
+	
+	logPath := filepath.Join(pwd, errLogFile)
+	_, err := os.Stat(logPath)
+	if !os.IsNotExist(err) {
+		_ = os.Remove(logPath)
+	}
+	
 	u1 = testEntity{
 		Name:     "foo",
 		Age:      18,
@@ -141,99 +157,119 @@ func TestCorrectParseFragment(t *testing.T) {
 	require.NoError(t, err)
 	
 	execTestFragment(t, engine, []testFragment{
-		{id: "QueryTestByStatues", parameter: []interface{}{"ok", "success"}, sql: "", vars: 0},
+		{Id: "QueryTestByStatues", Parameter: []interface{}{"ok", "success"}, SQL: "", Vars: 0},
 	})
 }
 
 func TestErrorParseMapper(t *testing.T) {
 	engine := NewEngine(&DB{})
 	execTestErrorMapper(t, engine, []testMapper{
-		//{err: syntaxErr, file: "mapper.xml", content: `<mapper>...</mapper`},
-		{err: syntaxErr, file: "mapper.xml", content: `<mapper</mapper`},
-		//{err: syntaxErr, file: "mapper.xml", content: `mapper>...</mapper`},
-		//{err: syntaxErr, file: "mapper.xml", content: `mapper>.../mapper>`},
+		{Err: syntaxErr, File: "mapper.xml", Content: `<mapper>...</mapper`},
+		{Err: syntaxErr, File: "mapper.xml", Content: `<mapper</mapper`},
+		{Err: syntaxErr, File: "mapper.xml", Content: `mapper>...</mapper`},
+		{Err: syntaxErr, File: "mapper.xml", Content: `mapper>.../mapper>`},
 	})
 }
 
 func TestCorrectParseExprExpression(t *testing.T) {
 	
 	testParseExprExpression(t, []testExpression{
-		{in: []interface{}{2, 4}, parameter: "a,b", expr: "a + b", result: 6},
-		{in: []interface{}{2, 4}, parameter: "a:int, b", expr: "a + b", result: 6},
-		{in: []interface{}{2, 4}, parameter: "a:int, b:int", expr: "a + b", result: 6},
-		{in: []interface{}{2, 4}, parameter: "a, b:int", expr: "a + b", result: 6},
-		{in: []interface{}{int8(2), int8(4)}, parameter: "a,b", expr: "a - b", result: -int8(2)},
-		{in: []interface{}{int16(2), int16(4)}, parameter: "a,b", expr: "a * b", result: int16(8)},
-		{in: []interface{}{int32(2), int32(4)}, parameter: "a,b", expr: "a / b ", result: int32(0)},
-		{in: []interface{}{int64(2), int64(4)}, parameter: "a,b", expr: "b / a", result: int64(2)},
-		{in: []interface{}{decimal.NewFromFloat(3.12), "2.13"}, parameter: "a,b", expr: "a + b", result: "5.25"},
-		{in: []interface{}{decimal.NewFromFloat(3.12), 2.13}, parameter: "a,b", expr: "a + b", result: "5.25"},
+		{In: []interface{}{2, 4}, Parameter: "a,b", Expr: "a + b", Result: 6},
+		{In: []interface{}{2, 4}, Parameter: "a:int, b", Expr: "a + b", Result: 6},
+		{In: []interface{}{2, 4}, Parameter: "a:int, b:int", Expr: "a + b", Result: 6},
+		{In: []interface{}{2, 4}, Parameter: "a, b:int", Expr: "a + b", Result: 6},
+		{In: []interface{}{int8(2), int8(4)}, Parameter: "a,b", Expr: "a - b", Result: -int8(2)},
+		{In: []interface{}{int16(2), int16(4)}, Parameter: "a,b", Expr: "a * b", Result: int16(8)},
+		{In: []interface{}{int32(2), int32(4)}, Parameter: "a,b", Expr: "a / b ", Result: int32(0)},
+		{In: []interface{}{int64(2), int64(4)}, Parameter: "a,b", Expr: "b / a", Result: int64(2)},
+		{In: []interface{}{decimal.NewFromFloat(3.12), "2.13"}, Parameter: "a,b", Expr: "a + b", Result: "5.25"},
+		{In: []interface{}{decimal.NewFromFloat(3.12), 2.13}, Parameter: "a,b", Expr: "a + b", Result: "5.25"},
 		
-		{in: []interface{}{2, 4}, parameter: "a,b", expr: " a + a * a", result: 6},
-		{in: []interface{}{2, 4}, parameter: "a,b", expr: "  a + a * b", result: 10},
-		{in: []interface{}{2, 4}, parameter: "a,b", expr: " a + b * a ", result: 10},
-		{in: []interface{}{2, 4}, parameter: "a,b", expr: "a + b * b", result: 18},
-		{in: []interface{}{2, 4}, parameter: "a,b", expr: "(a + b) * b", result: 24},
-		{in: []interface{}{2, 4}, parameter: "a,b", expr: "( ( a + b  ) * b)", result: 24},
-		{in: []interface{}{2, 4}, parameter: "a,b", expr: "( ( (  a + b ) ) * b)", result: 24},
-		{in: []interface{}{2, 4}, parameter: "a,b", expr: "( a + b) / b", result: 1},
+		{In: []interface{}{2, 4}, Parameter: "a,b", Expr: " a + a * a", Result: 6},
+		{In: []interface{}{2, 4}, Parameter: "a,b", Expr: "  a + a * b", Result: 10},
+		{In: []interface{}{2, 4}, Parameter: "a,b", Expr: " a + b * a ", Result: 10},
+		{In: []interface{}{2, 4}, Parameter: "a,b", Expr: "a + b * b", Result: 18},
+		{In: []interface{}{2, 4}, Parameter: "a,b", Expr: "(a + b) * b", Result: 24},
+		{In: []interface{}{2, 4}, Parameter: "a,b", Expr: "( ( a + b  ) * b)", Result: 24},
+		{In: []interface{}{2, 4}, Parameter: "a,b", Expr: "( ( (  a + b ) ) * b)", Result: 24},
+		{In: []interface{}{2, 4}, Parameter: "a,b", Expr: "( a + b) / b", Result: 1},
 		
-		{in: []interface{}{2, 4}, parameter: "a,b", expr: "b + b * b", result: 20},
-		{in: []interface{}{2, 4}, parameter: "a,b", expr: "b + b * a ", result: 12},
-		{in: []interface{}{2, 4}, parameter: "a,b", expr: "b + a * b", result: 12},
-		{in: []interface{}{2, 4}, parameter: "a,b", expr: "b + a * a", result: 8},
-		{in: []interface{}{2, 4}, parameter: "a,b", expr: "( b + a ) * a", result: 12},
-		{in: []interface{}{2, 4}, parameter: "a,b", expr: "( ( b+ a ) * a)", result: 12},
-		{in: []interface{}{2, 4}, parameter: "a,b", expr: "( ( ( b + a ) * a ) )", result: 12},
-		{in: []interface{}{2, 4}, parameter: "a,b", expr: "( b + a ) / a", result: 3},
+		{In: []interface{}{2, 4}, Parameter: "a,b", Expr: "b + b * b", Result: 20},
+		{In: []interface{}{2, 4}, Parameter: "a,b", Expr: "b + b * a ", Result: 12},
+		{In: []interface{}{2, 4}, Parameter: "a,b", Expr: "b + a * b", Result: 12},
+		{In: []interface{}{2, 4}, Parameter: "a,b", Expr: "b + a * a", Result: 8},
+		{In: []interface{}{2, 4}, Parameter: "a,b", Expr: "( b + a ) * a", Result: 12},
+		{In: []interface{}{2, 4}, Parameter: "a,b", Expr: "( ( b+ a ) * a)", Result: 12},
+		{In: []interface{}{2, 4}, Parameter: "a,b", Expr: "( ( ( b + a ) * a ) )", Result: 12},
+		{In: []interface{}{2, 4}, Parameter: "a,b", Expr: "( b + a ) / a", Result: 3},
 		
-		{in: []interface{}{u1, u2}, parameter: "a, b", expr: "a.Age + b.Age", result: 38},
-		{in: []interface{}{u1, u2}, parameter: "a, b", expr: "a.Weight() + b.Weight()", result: 100},
-		{in: []interface{}{u1, u2}, parameter: "a, b", expr: "a.Weight() > b.Weight()", result: true},
-		{in: []interface{}{u1, u2}, parameter: "a, b", expr: "a.Parent == nil", result: true},
-		{in: []interface{}{u1, u2}, parameter: "a, b", expr: "nil == a.Parent", result: true},
-		{in: []interface{}{u1, u2}, parameter: "a, b", expr: "nil == a.Parent && nil != b.Parent", result: true},
-		{in: []interface{}{u1, u2}, parameter: "parent1, child2", expr: "child2.Parent.Age + child2.Age", result: 38},
+		{In: []interface{}{u1, u2}, Parameter: "a, b", Expr: "a.Age + b.Age", Result: 38},
+		{In: []interface{}{u1, u2}, Parameter: "a, b", Expr: "a.Weight() + b.Weight()", Result: 100},
+		{In: []interface{}{u1, u2}, Parameter: "a, b", Expr: "a.Weight() > b.Weight()", Result: true},
+		{In: []interface{}{u1, u2}, Parameter: "a, b", Expr: "a.Parent == nil", Result: true},
+		{In: []interface{}{u1, u2}, Parameter: "a, b", Expr: "nil == a.Parent", Result: true},
+		{In: []interface{}{u1, u2}, Parameter: "a, b", Expr: "nil == a.Parent && nil != b.Parent", Result: true},
+		{In: []interface{}{u1, u2}, Parameter: "parent1, child2", Expr: "child2.Parent.Age + child2.Age", Result: 38},
 	})
 }
 
 func TestErrorParseExprExpression(t *testing.T) {
 	testParseExprExpression(t, []testExpression{
-		{in: []interface{}{2, 4}, parameter: "a:int32, b", expr: "a + b", result: 6, err: 1},
+		{In: []interface{}{2, 4}, Parameter: "a:int32, b", Expr: "a + b", Result: 6, Err: 1},
 	})
 	
 	//require.IsType(t, )
 }
 
 func execTestErrorMapper(t *testing.T, engine *Engine, tests []testMapper) {
-	for _, test := range tests {
-		_ = parseMapper(engine, test.file, test.content)
-		//require.Error(t, err)
-		//_err, ok := err.(*_error)
-		//require.True(t, ok, "expected *_error")
-		//require.Equal(t, test.err, _err.code, err)
+	for i, test := range tests {
+		err := parseMapper(engine, test.File, test.Content)
+		require.Error(t, err)
+		_err, ok := err.(*_error)
+		require.True(t, ok, "expected *_error")
+		require.Equal(t, test.Err, _err.code, err)
+		writeErrorLog(t, fmt.Sprintf("test error mapper: %d", i), test, err)
 	}
+}
+
+func writeErrorLog(t *testing.T, title string, test interface{}, _err error) {
+	f, err := os.OpenFile(filepath.Join(pwd, errLogFile), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	require.NoError(t, err)
+	defer func() {
+		_ = f.Close()
+	}()
+	td := bytes.NewBuffer([]byte{})
+	jsonEncoder := json.NewEncoder(td)
+	jsonEncoder.SetEscapeHTML(false)
+	jsonEncoder.SetIndent("", " ")
+	err = jsonEncoder.Encode(test)
+	require.NoError(t, err)
+	//td, err := json.MarshalIndent(test, "", "")
+	require.NoError(t, err)
+	_, err = f.WriteString(fmt.Sprintf("**%s**\n\ndata:\n```\n%s```\nerror:\n```\n%s\n```\n",
+		title, td.String(), _err.Error()))
+	require.NoError(t, err)
 }
 
 func execTestFragment(t *testing.T, engine *Engine, tests []testFragment) {
 	reg := regexp.MustCompile(`\s+`)
 	for _, test := range tests {
 		vars := make([]reflect.Value, 0)
-		for _, v := range test.parameter {
+		for _, v := range test.Parameter {
 			vars = append(vars, rv(v))
 		}
 		
-		frag, ok := engine.fragmentManager.get(test.id)
+		frag, ok := engine.fragmentManager.get(test.Id)
 		require.True(t, ok, test)
 		sql, args, err := frag.parseStatement(vars...)
 		require.NoError(t, err)
 		
-		if test.err > 0 {
+		if test.Err > 0 {
 			require.Error(t, err, test)
 		} else {
 			require.NoError(t, err, test)
-			require.Equal(t, reg.ReplaceAllString(sql, ""), reg.ReplaceAllString(test.sql, ""), test)
-			require.Equal(t, len(args), test.vars, test)
+			require.Equal(t, reg.ReplaceAllString(sql, ""), reg.ReplaceAllString(test.SQL, ""), test)
+			require.Equal(t, len(args), test.Vars, test)
 		}
 	}
 }
@@ -241,23 +277,23 @@ func execTestFragment(t *testing.T, engine *Engine, tests []testFragment) {
 func testParseExprExpression(t *testing.T, tests []testExpression) {
 	for _, test := range tests {
 		vars := make([]reflect.Value, 0)
-		for _, v := range test.in {
+		for _, v := range test.In {
 			vars = append(vars, rv(v))
 		}
 		parser := newExprParser(vars...)
 		parser.file = "tmp.xml"
-		err := parser.parseParameter(test.parameter)
+		err := parser.parseParameter(test.Parameter)
 		require.NoError(t, err)
-		result, err := parser.parseExpression(test.expr)
-		if test.err > 0 {
+		result, err := parser.parseExpression(test.Expr)
+		if test.Err > 0 {
 			require.Error(t, err, test)
 		} else {
 			require.NoError(t, err, test)
 			dr, ok := result.(decimal.Decimal)
 			if ok {
-				require.Equal(t, test.result, dr.String(), test)
+				require.Equal(t, test.Result, dr.String(), test)
 			} else {
-				require.Equal(t, test.result, result, test)
+				require.Equal(t, test.Result, result, test)
 			}
 		}
 	}

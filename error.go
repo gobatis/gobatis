@@ -81,10 +81,10 @@ type parserErrorStrategy struct {
 
 func (p *parserErrorStrategy) Recover(recognizer antlr.Parser, e antlr.RecognitionException) {
 	context := recognizer.GetParserRuleContext()
-	for context != nil {
-		context.SetException(e)
-		context = context.GetParent().(antlr.ParserRuleContext)
-	}
+	//for context != nil {
+	//	context.SetException(e)
+	//	context = context.GetParent().(antlr.ParserRuleContext)
+	//}
 	//panic(NewParseCancellationException()) // TODO we don't emit e properly
 	throw("", context, syntaxErr).format("syntax error")
 }

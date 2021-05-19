@@ -140,17 +140,6 @@ func realReflectElem(source interface{}) reflect.Value {
 	}
 }
 
-//func realReflectType(source interface{}) reflect.Type {
-//	v := reflect.TypeOf(source)
-//	for {
-//		if v.Kind() == reflect.Ptr {
-//			v = v.Elem()
-//		} else {
-//			return v
-//		}
-//	}
-//}
-
 func trimValueQuote(s string) string {
 	if len(s) > 1 {
 		switch s[0] {
