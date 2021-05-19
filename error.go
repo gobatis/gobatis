@@ -64,9 +64,9 @@ func (p *_error) with(err error) {
 }
 
 func (p *_error) Error() string {
-	msg := fmt.Sprintf("ERROR %d: %s", p.code, p.message)
+	msg := fmt.Sprintf("[ERROR %d]: %s", p.code, p.message)
 	if p.ctx != nil {
-		msg += fmt.Sprintf("\n%s line %d column %d:\n%s",
+		msg += fmt.Sprintf("\n[file]: %s line %d column %d:\n[context]: %s",
 			p.file, p.ctx.GetStart().GetLine(), p.ctx.GetStart().GetColumn(), getText(p.ctx))
 	}
 	
@@ -74,6 +74,7 @@ func (p *_error) Error() string {
 }
 
 func getText(ctx antlr.ParserRuleContext) string {
+	
 	if ctx.GetChildCount() == 0 {
 		return ""
 	}
