@@ -254,7 +254,6 @@ func (p *fragment) parseStatement(args ...reflect.Value) (sql string, vars []int
 		p.sql = res.sql
 	}
 	
-	p.logger.Debugf("[gobatis] [%s] statement: %s", p.id, res.sql)
 	sql = res.sql
 	vars = parser.vars
 	return
@@ -418,11 +417,14 @@ func (p *fragment) parseForeach(parser *exprParser, node *xmlNode, res *psr) {
 		index = dtd.INDEX
 	}
 	item := node.GetAttribute(dtd.ITEM)
+	slice := false
 	if item == "" {
 		item = dtd.ITEM
+	} else {
+		item, slice = isSlice(item)
 	}
-	indexParam := &param{name: index, _type: reflect.Interface.String()}
-	itemParam := &param{name: index, _type: reflect.Interface.String()}
+	indexParam := &param{name: index, _type: reflect.Interface.String(), slice: false}
+	itemParam := &param{name: item, _type: reflect.Interface.String(), slice: slice}
 	
 	open := node.GetAttribute(dtd.OPEN)
 	_close := node.GetAttribute(dtd.CLOSE)
@@ -469,6 +471,7 @@ func (p *fragment) parseForeach(parser *exprParser, node *xmlNode, res *psr) {
 }
 
 func (p *fragment) bindForeachParams(parser *exprParser, indexParam, itemParam *param) {
+	parser.foreachParams.check = map[string]int{}
 	err := parser.foreachParams.bind(indexParam, 0)
 	if err != nil {
 		throw(p.statement.File, p.statement.ctx, varBindErr).with(err)
@@ -565,6 +568,7 @@ func (p *caller) exec(in ...reflect.Value) (err error) {
 		return
 	}
 	
+	p.fragment.logger.Debugf("[gobatis] [%s] statement: %s", p.fragment.id, s)
 	p.fragment.logger.Debugf("[gobatis] [%s] parameter: %s", p.fragment.id, p.printVars(vars))
 	
 	res, err := exec.ExecContext(ctx, s, vars...)
@@ -613,7 +617,7 @@ func (p *caller) query(in ...reflect.Value) (err error) {
 	if err != nil {
 		return
 	}
-	
+	p.fragment.logger.Debugf("[gobatis] [%s] statement: %s", p.fragment.id, s)
 	p.fragment.logger.Debugf("[gobatis] [%s] parameter: %+v", p.fragment.id, p.printVars(vars))
 	rows, err := q.QueryContext(ctx, s, vars...)
 	if err != nil {

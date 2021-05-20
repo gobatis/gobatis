@@ -158,7 +158,7 @@ func TestCorrectParseFragment(t *testing.T) {
 	require.NoError(t, err)
 	
 	execTestFragment(t, engine, []testFragment{
-		{Id: "QueryTestByStatues", Parameter: []interface{}{"ok", "success"}, SQL: "", Vars: 0},
+		{Id: "QueryTestByStatues", Parameter: []interface{}{[]string{"ok", "success"}}, SQL: "select * from test where status in('$1','$2') and name > 1 and names in('$3','$4')", Vars: 4},
 	})
 }
 
@@ -274,7 +274,7 @@ func execTestFragment(t *testing.T, engine *Engine, tests []testFragment) {
 			require.Error(t, err, test)
 		} else {
 			require.NoError(t, err, test)
-			require.Equal(t, reg.ReplaceAllString(sql, ""), reg.ReplaceAllString(test.SQL, ""), test)
+			require.Equal(t, reg.ReplaceAllString(test.SQL, ""), reg.ReplaceAllString(sql, ""), test)
 			require.Equal(t, len(args), test.Vars, test)
 		}
 	}
@@ -330,6 +330,6 @@ func testParseParams(tokens string) (params []*param, err error) {
 		e := recover()
 		err = castRecoverError("", e)
 	}()
-	params = (&fragment{}).parseParams(nil, tokens)
+	params = (&fragment{statement: new(xmlNode)}).parseParams(nil, tokens)
 	return
 }

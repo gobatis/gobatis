@@ -64,8 +64,6 @@ func (p *_error) format(format string, args ...interface{}) {
 }
 
 func (p *_error) with(err error) {
-	// TODO
-	// if err is _error, contact ctx
 	p.message = err.Error()
 	panic(p)
 }
