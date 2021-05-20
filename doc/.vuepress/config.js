@@ -1,22 +1,20 @@
 module.exports = {
-    title: 'Gobatis',
-    description: '适用于 golang 的数据库操作库',
     locales: {
         // 键名是该语言所属的子路径
         // 作为特例，默认语言可以使用 '/' 作为其路径。
         '/': {
             lang: 'zh-CN',
-            title: 'VuePress',
-            description: 'Vue 驱动的静态网站生成器'
+            title: 'Gobatis',
+            description: 'Golang 持久层框架'
         },
         '/en/': {
             lang: 'en-US', // 将会被设置为 <html> 的 lang 属性
-            title: 'VuePress',
-            description: 'Vue-powered Static Site Generator'
+            title: 'Gobatis',
+            description: 'Golang database ORM'
         },
     },
     themeConfig: {
-        logo: '/assets/img/logo.png',
+        // logo: '/assets/img/logo.png',
         search: false,
         searchMaxSuggestions: 10,
         smoothScroll: true,

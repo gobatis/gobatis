@@ -27,6 +27,7 @@ func init() {
 			"uint64":  _uint64,
 			"decimal": _decimal,
 			"bool":    _bool,
+			"string":  _string,
 			"strings": _strings{},
 		},
 	}
@@ -145,6 +146,14 @@ func _decimal(v interface{}) decimal.Decimal {
 
 func _bool(v interface{}) bool {
 	r, err := cast.ToBoolE(v)
+	if err != nil {
+		panic(err)
+	}
+	return r
+}
+
+func _string(v interface{}) string {
+	r, err := cast.ToStringE(v)
 	if err != nil {
 		panic(err)
 	}
