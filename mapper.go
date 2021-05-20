@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"github.com/antlr/antlr4/runtime/Go/antlr"
 	"github.com/gobatis/gobatis/cast"
 	"github.com/gobatis/gobatis/dtd"
 	"reflect"
@@ -70,17 +71,6 @@ func (p *fragmentManager) get(id string) (m *fragment, ok bool) {
 	return
 }
 
-type dest struct {
-	kind    reflect.Kind
-	isArray bool
-}
-
-type param struct {
-	name    string
-	kind    reflect.Kind
-	isArray bool
-}
-
 type execer interface {
 	ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
 }
@@ -107,28 +97,23 @@ func (p *psr) merge(s ...string) {
 	}
 }
 
-func newFragment(db *DB, logger Logger, id string, in, out []param, dest *dest, statement *xmlNode) *fragment {
-	return &fragment{
-		db:        db,
-		logger:    logger,
-		id:        id,
-		in:        in,
-		out:       out,
-		dest:      dest,
-		statement: statement,
-	}
-}
+const (
+	fragment_result_type = iota + 1
+	fragment_result_map
+	fragment_result
+)
 
 type fragment struct {
-	db        *DB
-	logger    Logger
-	id        string
-	statement *xmlNode
-	cacheable bool
-	sql       string
-	in        []param
-	out       []param
-	dest      *dest
+	db         *DB
+	logger     Logger
+	id         string
+	statement  *xmlNode
+	cacheable  bool
+	sql        string
+	in         []*param
+	out        []*param
+	resultType *resultType
+	resultAttr int
 }
 
 func (p *fragment) proxy(field reflect.Value) {
@@ -164,7 +149,34 @@ func (p *fragment) call(_type reflect.Type, in ...reflect.Value) []reflect.Value
 	return c.values
 }
 
-func (p *fragment) checkParameter(mapper, ft reflect.Type, fn string) {
+func (p *fragment) setResultAttribute() {
+	
+	if p.statement.Name != dtd.SELECT &&
+		p.statement.Name != dtd.INSERT &&
+		p.statement.Name != dtd.UPDATE &&
+		p.statement.Name != dtd.DELETE {
+		return
+	}
+	
+	if p.statement.HasAttribute(dtd.RESULT_TYPE) {
+		p.resultAttr = fragment_result_type
+		_type, slice := isSlice(p.statement.GetAttribute(dtd.RESULT_TYPE))
+		kind, err := varToReflectKind(_type)
+		if err != nil {
+			throw(p.statement.File, p.statement.ctx, varToReflectKindErr).with(err)
+		}
+		p.resultType = &resultType{
+			kind:  kind,
+			slice: slice,
+		}
+	} else if p.statement.HasAttribute(dtd.RESULT_MAP) {
+		p.resultAttr = fragment_result_map
+	} else if p.statement.HasAttribute(dtd.RESULT) {
+		p.resultAttr = fragment_result
+	}
+}
+
+func (p *fragment) checkParameter(ft reflect.Type, mn, fn string) {
 	
 	if len(p.in) != ft.NumIn() {
 		throw(p.statement.File, p.statement.ctx, checkParameterErr).
@@ -172,24 +184,35 @@ func (p *fragment) checkParameter(mapper, ft reflect.Type, fn string) {
 	}
 }
 
-func (p *fragment) checkResult(mapper, ft reflect.Type, fn string) {
+func (p *fragment) checkResult(ft reflect.Type, mn, fn string) {
+	
+	// ft.out[last] expected err
+	
 	switch p.statement.Name {
 	case dtd.SELECT:
-		if p.dest != nil {
+		switch p.resultAttr {
+		case fragment_result_type:
 			if ft.NumOut() > 1 {
-				if p.dest.isArray {
+				if p.resultType.slice {
 					if ft.Out(0).Kind() != reflect.Slice ||
 						(ft.Out(0).Elem().Kind() != reflect.Ptr && ft.Out(0).Elem().Kind() != reflect.Struct) ||
 						(ft.Out(0).Elem().Kind() == reflect.Ptr && ft.Out(0).Elem().Elem().Kind() != reflect.Struct) {
 						throw(p.statement.File, p.statement.ctx, checkResultErr).
-							format("%s.%s out[0] expect [](*)struct, got: %s", mapper.Name(), fn, ft.Out(0))
+							format("%s.%s out[0] expect [](*)struct, got: %s", mn, fn, ft.Out(0))
 					}
 				} else {
 					if (ft.Out(0).Kind() != reflect.Ptr && ft.Out(0).Kind() != reflect.Struct) ||
 						(ft.Out(0).Elem().Kind() == reflect.Ptr && ft.Out(0).Elem().Elem().Kind() != reflect.Struct) {
 						throw(p.statement.File, p.statement.ctx, checkResultErr).
-							format("%s.%s out[0] expect (*)struct, got: %s", mapper.Name(), fn, ft.Out(0))
+							format("%s.%s out[0] expect (*)struct, got: %s", mn, fn, ft.Out(0))
 					}
+				}
+			}
+		case fragment_result:
+			for i, v := range p.out {
+				if !v.expected(ft.Out(i)) {
+					throw(p.statement.File, p.statement.ctx, varBindErr).
+						format("%s.%s bind result '%s' expect '%s', got '%s'", mn, fn, v.name, v.Type(), ft.Out(i))
 				}
 			}
 		}
@@ -198,8 +221,7 @@ func (p *fragment) checkResult(mapper, ft reflect.Type, fn string) {
 			if (ft.Out(0).Kind() != reflect.Ptr && ft.Out(0).Kind() != reflect.Int64) ||
 				(ft.Out(0).Kind() == reflect.Ptr && ft.Out(0).Elem().Kind() != reflect.Int64) {
 				throw(p.statement.File, p.statement.ctx, checkResultErr).
-					format("%s.%s out[0] expect int64 with pointer or not, got: %s",
-						mapper.Name(), ft.Name(), ft.Out(0).Name())
+					format("%s.%s out[0] expect (*)int64, got: %s", mn, ft.Name(), ft.Out(0).Name())
 			}
 		}
 	}
@@ -220,7 +242,7 @@ func (p *fragment) parseStatement(args ...reflect.Value) (sql string, vars []int
 	
 	parser := newExprParser(args...)
 	for i, v := range p.in {
-		err = parser.baseParams.alias(v.name, v.kind, i)
+		err = parser.baseParams.bind(v, i)
 		if err != nil {
 			throw(p.statement.File, p.statement.ctx, parasFragmentErr).with(err)
 		}
@@ -399,7 +421,9 @@ func (p *fragment) parseForeach(parser *exprParser, node *xmlNode, res *psr) {
 	if item == "" {
 		item = dtd.ITEM
 	}
-	subParams := fmt.Sprintf("%s,%s", index, item)
+	indexParam := &param{name: index, _type: reflect.Interface.String()}
+	itemParam := &param{name: index, _type: reflect.Interface.String()}
+	
 	open := node.GetAttribute(dtd.OPEN)
 	_close := node.GetAttribute(dtd.CLOSE)
 	separator := node.GetAttribute(dtd.SEPARATOR)
@@ -407,39 +431,30 @@ func (p *fragment) parseForeach(parser *exprParser, node *xmlNode, res *psr) {
 	parser.foreachParams = newExprParams()
 	parser.paramIndex = 0
 	
-	elem := realReflectElem(collection.value)
+	elem := reflectValueElem(collection.value)
 	frags := make([]string, 0)
 	switch elem.Kind() {
 	case reflect.Slice, reflect.Array:
 		for i := 0; i < elem.Len(); i++ {
-			parser.foreachParams.set(reflect.ValueOf(i), elem.Index(i))
+			parser.foreachParams.set(elem.Index(i), reflect.ValueOf(i))
 			if i == 0 {
-				err := parser.parseParameter(node.ctx, subParams)
-				if err != nil {
-					throw(p.statement.File, p.statement.ctx, parasFragmentErr).with(err)
-				}
+				p.bindForeachParams(parser, indexParam, itemParam)
 			}
 			p.parseForeachChild(parser, node, &frags)
 		}
 	case reflect.Map:
 		for i, v := range elem.MapKeys() {
-			parser.foreachParams.set(v, elem.MapIndex(v))
+			parser.foreachParams.set(elem.MapIndex(v), v)
 			if i == 0 {
-				err := parser.parseParameter(node.ctx, subParams)
-				if err != nil {
-					throw(p.statement.File, p.statement.ctx, parasFragmentErr).with(err)
-				}
+				p.bindForeachParams(parser, indexParam, itemParam)
 			}
 			p.parseForeachChild(parser, node, &frags)
 		}
 	case reflect.Struct:
 		for i := 0; i < elem.NumField(); i++ {
-			parser.foreachParams.set(elem.Field(i), elem.Field(i).Elem())
+			parser.foreachParams.set(elem.Field(i).Elem(), elem.Field(i))
 			if i == 0 {
-				err := parser.parseParameter(node.ctx, subParams)
-				if err != nil {
-					throw(p.statement.File, p.statement.ctx, parasFragmentErr).with(err)
-				}
+				p.bindForeachParams(parser, indexParam, itemParam)
 			}
 			p.parseForeachChild(parser, node, &frags)
 		}
@@ -451,6 +466,23 @@ func (p *fragment) parseForeach(parser *exprParser, node *xmlNode, res *psr) {
 	if len(frags) > 0 {
 		res.merge(open + strings.Join(frags, separator) + _close)
 	}
+}
+
+func (p *fragment) bindForeachParams(parser *exprParser, indexParam, itemParam *param) {
+	err := parser.foreachParams.bind(indexParam, 0)
+	if err != nil {
+		throw(p.statement.File, p.statement.ctx, varBindErr).with(err)
+	}
+	err = parser.foreachParams.bind(itemParam, 1)
+	if err != nil {
+		throw(p.statement.File, p.statement.ctx, varBindErr).with(err)
+	}
+}
+
+func (p *fragment) parseParams(nodeCtx antlr.ParserRuleContext, tokens string) []*param {
+	parser := newParamParser(p.statement.File)
+	parser.walkMethods(initExprParser(tokens))
+	return parser.params
 }
 
 func (p *fragment) parseForeachChild(parser *exprParser, node *xmlNode, frags *[]string) {
@@ -553,11 +585,12 @@ func (*caller) printVars(vars []interface{}) string {
 
 func (p *caller) query(in ...reflect.Value) (err error) {
 	
-	q, index := p.queryer(in...)
+	ctx, index := p.context(in...)
 	if index > -1 {
 		in = p.removeParam(in, index)
 	}
-	ctx, index := p.context(in...)
+	
+	q, index := p.queryer(in...)
 	if index > -1 {
 		in = p.removeParam(in, index)
 	}
@@ -598,7 +631,7 @@ func (p *caller) parseQueryResult(rows *sql.Rows) error {
 	res := queryResult{rows: rows}
 	res.rows = rows
 	
-	err := res.setSelected(p.fragment.dest, p.fragment.out, p.values)
+	err := res.setSelected(p.fragment.resultType, p.fragment.out, p.values)
 	if err != nil {
 		return err
 	}

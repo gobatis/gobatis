@@ -5,12 +5,10 @@ import (
 	"github.com/antlr/antlr4/runtime/Go/antlr"
 	"github.com/gobatis/gobatis/driver/mysql"
 	"github.com/gobatis/gobatis/driver/postgresql"
-	"github.com/gobatis/gobatis/dtd"
 	"io/ioutil"
 	"net/http"
 	"path/filepath"
 	"reflect"
-	"strings"
 )
 
 func NewPostgresql(dsn string) *Engine {
@@ -111,8 +109,8 @@ func (p *Engine) bindMapper(mapper interface{}) (err error) {
 		if ft.NumOut() == 0 || !isErrorType(ft.Out(ft.NumOut()-1)) {
 			return fmt.Errorf("method out expect error at last")
 		}
-		m.checkParameter(rt, ft, rv.Type().Field(i).Name)
-		m.checkResult(rt, ft, rv.Type().Field(i).Name)
+		m.checkParameter(ft, rt.Name(), rv.Type().Field(i).Name)
+		m.checkResult(ft, rt.Name(), rv.Type().Field(i).Name)
 		m.proxy(rv.Field(i))
 	}
 	return
@@ -199,54 +197,8 @@ func (p *Engine) walkMappers(root string) (files []string, err error) {
 	return
 }
 
-func (p *Engine) parseDest(node *xmlNode) (*dest, error) {
-	
-	if node.Name != dtd.SELECT {
-		return nil, nil
-	}
-	
-	v := node.GetAttribute(dtd.RESULT_TYPE)
-	
-	isArray := strings.HasPrefix(v, "[]")
-	if isArray {
-		v = strings.TrimSpace(strings.TrimPrefix(v, "[]"))
-	}
-	
-	if v == "" {
-		if node.GetAttribute(dtd.RESULT) != "" {
-			return nil, nil
-		} else {
-			return &dest{
-				kind:    reflect.Struct,
-				isArray: isArray,
-			}, nil
-		}
-	}
-	
-	kind, err := varToReflectKind(v)
-	if err != nil {
-		return nil, err
-	}
-	
-	return &dest{
-		kind:    kind,
-		isArray: isArray,
-	}, nil
-}
-
 func (p *Engine) addFragment(file string, ctx antlr.ParserRuleContext, id string, node *xmlNode) {
-	
-	_dest, err := p.parseDest(node)
-	if err != nil {
-		return
-	}
-	m, err := parseFragment(
-		p.master, p.logger, file, id,
-		node.GetAttribute(dtd.PARAMETER),
-		node.GetAttribute(dtd.RESULT),
-		_dest,
-		node,
-	)
+	m, err := parseFragment(p.master, p.logger, file, id, node)
 	if err != nil {
 		return
 	}

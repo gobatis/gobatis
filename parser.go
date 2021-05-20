@@ -70,8 +70,8 @@ func parseMapper(engine *Engine, file, content string) (err error) {
 	return
 }
 
-func walkXMLNodes(listener antlr.ParseTreeListener, content string) {
-	lexer := xml.NewXMLLexer(antlr.NewInputStream(strings.TrimSpace(content)))
+func walkXMLNodes(listener antlr.ParseTreeListener, tokens string) {
+	lexer := xml.NewXMLLexer(antlr.NewInputStream(strings.TrimSpace(tokens)))
 	lexer.RemoveErrorListeners()
 	lexer.AddErrorListener(newErrorListener())
 	stream := antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel)
@@ -82,8 +82,8 @@ func walkXMLNodes(listener antlr.ParseTreeListener, content string) {
 	antlr.ParseTreeWalkerDefault.Walk(listener, parser.Document())
 }
 
-func initExprParser(data string) (parser *expr.ExprParser) {
-	lexer := expr.NewExprLexer(antlr.NewInputStream(data))
+func initExprParser(tokens string) (parser *expr.ExprParser) {
+	lexer := expr.NewExprLexer(antlr.NewInputStream(tokens))
 	lexer.RemoveErrorListeners()
 	lexer.AddErrorListener(newErrorListener())
 	stream := antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel)
@@ -94,36 +94,33 @@ func initExprParser(data string) (parser *expr.ExprParser) {
 	return
 }
 
-func parseFragment(db *DB, logger Logger, file string, name, in, out string,
-	_dest *dest, statement *xmlNode) (frag *fragment, err error) {
+func parseFragment(db *DB, logger Logger, file, id string, node *xmlNode) (frag *fragment, err error) {
 	
-	l := newFragmentParser(file)
-	var parser *expr.ExprParser
-	if in != "" {
-		l.step = 0
-		l.index = 0
-		parser = initExprParser(in)
-		err = l.walkMethods(parser)
-		if err != nil {
-			return
-		}
-	}
-	if out != "" {
-		l.step = 1
-		l.index = 0
-		parser = initExprParser(out)
-		err = l.walkMethods(parser)
-		if err != nil {
-			return
-		}
+	defer func() {
+		e := recover()
+		err = castRecoverError(file, e)
+	}()
+	
+	frag = &fragment{
+		db:        db,
+		logger:    logger,
+		id:        id,
+		statement: node,
 	}
 	
-	frag = newFragment(db, logger, name, l.in, l.out, _dest, statement)
+	frag.setResultAttribute()
+	
+	if node.HasAttribute(dtd.PARAMETER) {
+		frag.in = frag.parseParams(node.ctx, node.GetAttribute(dtd.PARAMETER))
+	}
+	if node.HasAttribute(dtd.RESULT) {
+		frag.out = frag.parseParams(node.ctx, node.GetAttribute(dtd.RESULT))
+	}
 	
 	return
 }
 
-func realReflectElem(source interface{}) reflect.Value {
+func reflectValueElem(source interface{}) reflect.Value {
 	v := reflect.ValueOf(source)
 	for {
 		if v.Kind() == reflect.Ptr {
@@ -325,6 +322,11 @@ func (p *xmlParser) validateNode(node *xmlNode, elem *dtd.Element) {
 		}
 	}
 	
+	switch node.Name {
+	case dtd.SELECT, dtd.INSERT, dtd.UPDATE, dtd.DELETE:
+		p.checkResultConflict(node)
+	}
+	
 	for _, childNode := range node.Nodes {
 		
 		if childNode.textOnly {
@@ -359,6 +361,27 @@ func (p *xmlParser) validateNode(node *xmlNode, elem *dtd.Element) {
 					format("element %s miss required element %s", node.Name, k)
 			}
 		}
+	}
+}
+
+func (p *xmlParser) checkResultConflict(node *xmlNode) {
+	l := map[string]bool{}
+	if node.HasAttribute(dtd.RESULT) {
+		l[dtd.RESULT] = true
+	}
+	if node.HasAttribute(dtd.RESULT_TYPE) {
+		l[dtd.RESULT_TYPE] = true
+	}
+	if node.HasAttribute(dtd.RESULT_MAP) {
+		l[dtd.RESULT_MAP] = true
+	}
+	if len(l) > 1 {
+		attrs := ""
+		for k := range l {
+			attrs += k + ", "
+		}
+		attrs = strings.TrimSuffix(attrs, ", ")
+		throw(p.file, node.ctx, resultAttributeConflictErr).format("%s attribute conflict", attrs)
 	}
 }
 
@@ -439,26 +462,68 @@ func (p *xmlParser) ExitEveryRule(ctx antlr.ParserRuleContext) {
 	}
 }
 
-func newFragmentParser(file string) *fragmentParser {
-	r := new(fragmentParser)
+type resultType struct {
+	kind  reflect.Kind
+	slice bool
+}
+
+type param struct {
+	name  string
+	_type string
+	slice bool
+}
+
+func (p param) Type() string {
+	if p.slice {
+		return fmt.Sprintf("[]%s", p._type)
+	}
+	return p._type
+}
+
+func (p param) expected(vt reflect.Type) bool {
+	for {
+		if vt.Kind() != reflect.Ptr {
+			break
+		}
+		vt = vt.Elem()
+	}
+	if p.slice {
+		if vt.Kind() != reflect.Slice || vt.Kind() != reflect.Array {
+			return false
+		}
+		vt = vt.Elem()
+	}
+	if vt.String() != p._type {
+		return false
+	}
+	return true
+}
+
+func isSlice(_type string) (string, bool) {
+	slice := strings.HasPrefix(_type, "[]")
+	if slice {
+		return strings.TrimSpace(strings.TrimPrefix(_type, "[]")), true
+	}
+	return _type, false
+}
+
+func newParamParser(file string) *paramParser {
+	r := new(paramParser)
 	r.coverage = newCoverage()
 	r.file = file
 	return r
 }
 
-type fragmentParser struct {
+type paramParser struct {
 	*expr.BaseExprParserListener
 	coverage *coverage
 	file     string
 	index    int
-	step     int
-	in       []param
-	out      []param
-	inMap    map[string]bool
-	outMap   map[string]bool
+	params   []*param
+	check    map[string]bool
 }
 
-func (p *fragmentParser) EnterParamDecl(ctx *expr.ParamDeclContext) {
+func (p *paramParser) EnterParamDecl(ctx *expr.ParamDeclContext) {
 	var name string
 	if ctx.IDENTIFIER() != nil {
 		name = ctx.IDENTIFIER().GetText()
@@ -470,77 +535,33 @@ func (p *fragmentParser) EnterParamDecl(ctx *expr.ParamDeclContext) {
 	if ctx.ParamType() != nil {
 		_type = ctx.ParamType().GetText()
 	}
-	var err error
-	var kind reflect.Kind
-	var isArray bool
-	if _type != "" {
-		isArray = strings.HasPrefix(_type, "[]")
-		if isArray {
-			_type = strings.TrimSpace(strings.TrimPrefix(_type, "[]"))
-		}
-		kind, err = varToReflectKind(_type)
-		if err != nil {
-			throw(p.file, ctx, varToReflectKindErr).with(err)
-		}
+	slice := false
+	if _type == "" {
+		_type = reflect.Interface.String()
 	} else {
-		kind = reflect.Interface
+		_type, slice = isSlice(_type)
 	}
-	switch p.step {
-	case 0:
-		p.checkParameter(ctx, name, kind, isArray)
-	case 1:
-		p.checkResult(ctx, name, kind, isArray)
-	}
+	p.addParam(ctx, name, _type, slice)
 	p.index++
 }
 
-func (p *fragmentParser) walkMethods(parser *expr.ExprParser) (err error) {
-	defer func() {
-		e := recover()
-		err = castRecoverError(p.file, e)
-	}()
+func (p *paramParser) walkMethods(parser *expr.ExprParser) {
 	antlr.ParseTreeWalkerDefault.Walk(p, parser.Parameters())
 	if !p.coverage.covered() {
 		throw(p.file, nil, parseCoveredErr).
 			format("parse mapper method not covered: %d/%d", p.coverage.len(), p.coverage.total)
 	}
-	return
 }
 
-func (p *fragmentParser) checkParameter(ctx antlr.ParserRuleContext, name string, kind reflect.Kind, isArray bool) {
-	
-	if name == "" {
-		throw(p.file, ctx, checkParameterErr).format("parameter not accept anonymous var")
+func (p *paramParser) addParam(ctx antlr.ParserRuleContext, name, _type string, slice bool) {
+	if p.check == nil {
+		p.check = map[string]bool{}
 	}
-	
-	if p.inMap == nil {
-		p.inMap = map[string]bool{}
-	}
-	
-	if _, ok := p.inMap[name]; ok {
+	if _, ok := p.check[name]; ok {
 		throw(p.file, ctx, checkParameterErr).format("duplicated parameter '%s'", name)
 	}
-	
-	p.inMap[name] = true
-	p.in = append(p.in, param{name: name, kind: kind, isArray: isArray})
-	
-}
-
-func (p *fragmentParser) checkResult(ctx antlr.ParserRuleContext, name string, kind reflect.Kind, isArray bool) {
-	
-	if p.outMap == nil {
-		p.outMap = map[string]bool{}
-	}
-	
-	if _, ok := p.outMap[name]; ok {
-		if name == "" {
-			name = "anonymous var"
-		}
-		throw(p.file, ctx, checkResultErr).format("duplicated result param '%s'", name)
-	}
-	
-	p.outMap[name] = true
-	p.out = append(p.out, param{name: name, kind: kind, isArray: isArray})
+	p.check[name] = true
+	p.params = append(p.params, &param{name: name, _type: _type, slice: slice})
 }
 
 type exprValue struct {
@@ -567,7 +588,7 @@ func (p *exprValue) int() (v int, err error) {
 
 func (p *exprValue) visitMember(name string) (r *exprValue, err error) {
 	
-	elem := realReflectElem(p.value)
+	elem := reflectValueElem(p.value)
 	if elem.Kind() != reflect.Struct {
 		err = fmt.Errorf("visit '%s.%s' is not struct", p.alias, name)
 		return
@@ -591,7 +612,7 @@ func (p *exprValue) visitMember(name string) (r *exprValue, err error) {
 
 func (p *exprValue) visitArray(index int) (r *exprValue, err error) {
 	
-	elem := realReflectElem(p.value)
+	elem := reflectValueElem(p.value)
 	if elem.Kind() != reflect.Array && elem.Kind() != reflect.Slice {
 		err = fmt.Errorf("visit var is not array or slice")
 		return
@@ -610,7 +631,7 @@ func (p *exprValue) visitArray(index int) (r *exprValue, err error) {
 
 func (p *exprValue) visitMap(index reflect.Value) (r *exprValue, err error) {
 	
-	elem := realReflectElem(p.value)
+	elem := reflectValueElem(p.value)
 	if elem.Kind() != reflect.Map {
 		err = fmt.Errorf("visit '%s' is not map", elem.Kind())
 		return
@@ -629,7 +650,7 @@ func (p *exprValue) visitMap(index reflect.Value) (r *exprValue, err error) {
 
 func (p *exprValue) call(ellipsis bool, params []reflect.Value) (r *exprValue, err error) {
 	
-	elem := realReflectElem(p.value)
+	elem := reflectValueElem(p.value)
 	if elem.Kind() != reflect.Func {
 		err = fmt.Errorf("visit '%s' is not func", elem.Kind())
 		return
@@ -678,9 +699,9 @@ func (p *exprValue) visitSlice(format string, indexes ...int) (r *exprValue, err
 	var v reflect.Value
 	switch len(indexes) {
 	case 2:
-		v = realReflectElem(p.value).Slice(indexes[0], indexes[1])
+		v = reflectValueElem(p.value).Slice(indexes[0], indexes[1])
 	case 3:
-		v = realReflectElem(p.value).Slice3(indexes[0], indexes[1], indexes[2])
+		v = reflectValueElem(p.value).Slice3(indexes[0], indexes[1], indexes[2])
 	default:
 		err = fmt.Errorf("unsuppoted slice range index '%s'", format)
 		return
@@ -751,16 +772,16 @@ func newExprParams(params ...reflect.Value) *exprParams {
 }
 
 type exprParams struct {
-	values  []exprValue
-	aliases map[string]int
+	values []exprValue
+	check  map[string]int
 }
 
 // return exprValue not *exprValue to protect params
 func (p *exprParams) get(name string) (val exprValue, ok bool) {
-	if p.aliases == nil {
+	if p.check == nil {
 		return
 	}
-	index, ok := p.aliases[name]
+	index, ok := p.check[name]
 	if !ok {
 		return
 	}
@@ -781,32 +802,32 @@ func (p *exprParams) set(params ...reflect.Value) {
 	}
 }
 
-func (p *exprParams) alias(name string, expected reflect.Kind, index int) error {
-	if name == "" {
+func (p *exprParams) bind(expected *param, index int) error {
+	if expected.name == "" {
 		return fmt.Errorf("parameter name is empty")
 	}
 	
-	if p.aliases == nil {
-		p.aliases = map[string]int{}
+	if p.check == nil {
+		p.check = map[string]int{}
 	} else {
-		_, ok := p.aliases[name]
+		_, ok := p.check[expected.name]
 		if ok {
-			return fmt.Errorf("duplicated parameter '%s'", name)
+			return fmt.Errorf("duplicated parameter '%s'", expected.name)
 		}
 	}
 	
 	vl := len(p.values) - 1
 	if index < 0 || index > vl {
-		return fmt.Errorf("parameter '%s' index %d out of parameters length %d", name, index, vl)
+		return fmt.Errorf("parameter '%s' index %d out of parameters length %d", expected.name, index, vl)
 	}
 	
 	ev := p.values[index]
-	elem := realReflectElem(ev.value)
-	if !ev.accept(elem.Kind(), expected) && !ev.convertible(elem.Kind(), expected) {
-		return fmt.Errorf("parameter '%s' type expected '%s', got '%s'", name, expected, elem.Type())
+	elem := reflectValueElem(ev.value)
+	if expected.expected(reflect.TypeOf(ev)) {
+		return fmt.Errorf("parameter '%s' expected '%s', got '%s'", expected.name, expected.Type(), elem.Type())
 	}
 	
-	p.aliases[name] = index
+	p.check[expected.name] = index
 	return nil
 }
 
@@ -859,7 +880,7 @@ func varToReflectKind(t string) (kind reflect.Kind, err error) {
 }
 
 func (p *exprParams) index(index int) (val exprValue, ok bool) {
-	if p.aliases == nil {
+	if p.check == nil {
 		return
 	}
 	if index > len(p.values)-1 {
@@ -888,38 +909,6 @@ type exprParser struct {
 	paramIndex    int
 	vars          []interface{}
 	varIndex      int
-}
-
-func (p *exprParser) EnterParamDecl(ctx *expr.ParamDeclContext) {
-	name := ctx.IDENTIFIER().GetText()
-	var expected string
-	if ctx.ParamType() != nil {
-		expected = ctx.ParamType().GetText()
-	}
-	if _builtin.is(name) {
-		p.throw(ctx, parameterConflictWithBuiltInErr).format(
-			"parameter '%s' conflict with built-in reserved word", name,
-		)
-	}
-	var err error
-	var ek reflect.Kind
-	if expected != "" {
-		ek, err = varToReflectKind(expected)
-		if err != nil {
-			p.throw(ctx, varToReflectKindErr).with(err)
-		}
-	} else {
-		ek = reflect.Interface
-	}
-	if p.foreachParams != nil {
-		err = p.foreachParams.alias(name, ek, p.paramIndex)
-	} else {
-		err = p.baseParams.alias(name, ek, p.paramIndex)
-	}
-	if err != nil {
-		p.throw(ctx, varToAliasErr).with(err)
-	}
-	p.paramIndex++
 }
 
 func (p *exprParser) EnterExpressions(ctx *expr.ExpressionsContext) {
@@ -1021,10 +1010,10 @@ func (p *exprParser) ExitIndex(ctx *expr.IndexContext) {
 	if err != nil {
 		p.throw(ctx, popStackErr).with(err)
 	}
-	objectReflectElem := realReflectElem(object.value)
+	objectReflectElem := reflectValueElem(object.value)
 	var ev *exprValue
 	if objectReflectElem.Kind() == reflect.Map {
-		ev, err = object.visitMap(realReflectElem(index.value))
+		ev, err = object.visitMap(reflectValueElem(index.value))
 		if err != nil {
 			p.throw(ctx, visitMapErr).with(err)
 		}
@@ -1083,7 +1072,7 @@ func (p *exprParser) ExitCall(ctx *expr.CallContext) {
 		if err != nil {
 			p.throw(ctx, popStackErr).with(err)
 		}
-		args[i] = realReflectElem(arg.value)
+		args[i] = reflectValueElem(arg.value)
 	}
 	f, err := p.stack.Pop()
 	if err != nil {
@@ -1133,17 +1122,6 @@ func (p *exprParser) ExitNil_(ctx *expr.Nil_Context) {
 		value: nil,
 	})
 	p.coverage.add(ctx)
-}
-
-func (p *exprParser) parseParameter(nodeCtx antlr.ParserRuleContext, params string) (err error) {
-	defer func() {
-		e := recover()
-		err = castRecoverError(p.file, e)
-	}()
-	p.nodeCtx = nodeCtx
-	parser := initExprParser(params)
-	antlr.ParseTreeWalkerDefault.Walk(p, parser.Parameters())
-	return
 }
 
 func (p *exprParser) parseExpression(nodeCtx antlr.ParserRuleContext, expresion string) (result interface{}, err error) {

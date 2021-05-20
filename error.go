@@ -12,7 +12,7 @@ const (
 	parameterConflictWithBuiltInErr
 	parameterNotFoundErr
 	varToReflectKindErr
-	varToAliasErr
+	varBindErr
 	popStackErr
 	popBinaryOperandsErr
 	popResultErr
@@ -38,6 +38,7 @@ const (
 	parasFragmentErr
 	callerErr
 	syntaxErr
+	resultAttributeConflictErr
 )
 
 func throw(file string, ctx antlr.ParserRuleContext, code int) *_error {

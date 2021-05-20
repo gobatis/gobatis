@@ -9,17 +9,13 @@ import (
 	"time"
 )
 
-func newQueryResult(rows *sql.Rows) *queryResult {
-	return &queryResult{rows: rows}
-}
-
 type queryResult struct {
-	rows     *sql.Rows
-	first    bool
-	tag      string
-	dest     *dest
-	selected map[string]int
-	values   []reflect.Value
+	rows       *sql.Rows
+	first      bool
+	tag        string
+	resultType *resultType
+	selected   map[string]int
+	values     []reflect.Value
 }
 
 func (p *queryResult) Tag() string {
@@ -33,64 +29,54 @@ func (p *queryResult) Rows() *sql.Rows {
 	return p.rows
 }
 
-func (p *queryResult) setSelected(_dest *dest, params []param, values []reflect.Value) error {
-
-	p.dest = _dest
+func (p *queryResult) setSelected(_dest *resultType, params []*param, values []reflect.Value) error {
+	
+	p.resultType = _dest
 	p.values = values
-
+	
 	var el int
-	if p.dest != nil {
+	if p.resultType != nil {
 		return nil
 	}
-
-	if p.dest != nil {
+	
+	if p.resultType != nil {
 		el = 1
 	} else {
 		el = len(params)
 	}
-
+	
 	if el != len(values) {
 		return fmt.Errorf("expected to receive %d result filed(s), got %d (except error)", el, len(values))
 	}
-
+	
 	err := p.checkResultType()
 	if err != nil {
 		return err
 	}
-
-	if p.dest != nil {
+	
+	if p.resultType != nil {
 		return nil
 	}
-
+	
 	p.first = true
 	for i, v := range params {
 		err = p.addSelected(i, v.name)
 		if err != nil {
 			return err
 		}
-		if v.isArray {
+		if v.slice {
 			p.first = false
 		}
 	}
-
+	
 	return nil
 }
 
 func (p *queryResult) checkResultType() (err error) {
-	if p.dest != nil && p.values[0].Elem().Kind() != reflect.Struct {
-		return fmt.Errorf("bind value is not struct")
+	if p.resultType != nil && p.values[0].Elem().Kind() != reflect.Struct {
+		return fmt.Errorf("bind value is not struct or map")
 	}
 	return
-}
-
-func (p *queryResult) reflectElem(v reflect.Value) reflect.Value {
-	for {
-		if v.Kind() == reflect.Ptr {
-			v = v.Elem()
-		} else {
-			return v
-		}
-	}
 }
 
 func (p *queryResult) addSelected(index int, name string) error {
@@ -146,8 +132,7 @@ func (p *queryResult) scan() (err error) {
 }
 
 func (p *queryResult) reflectRow(columns []string, row []interface{}) error {
-	if p.dest != nil {
-		//fmt.Println(p.values[0].Elem().Kind())
+	if p.resultType != nil {
 		if p.values[0].Elem().Kind() == reflect.Slice {
 			return p.reflectStructs(newRowMap(columns, row))
 		} else {
@@ -221,12 +206,12 @@ func (p *queryResult) reflectStructs(r rowMap) error {
 }
 
 func (p *queryResult) reflectValue(column string, dest reflect.Value, value interface{}) error {
-
+	
 	var (
 		isPtr = dest.Kind() == reflect.Ptr
 		dv    = dest
 	)
-
+	
 	if isPtr {
 		dv = dest.Elem()
 	}
@@ -322,7 +307,7 @@ func (p *queryResult) reflectValue(column string, dest reflect.Value, value inte
 		}
 		return p.set(dv, v)
 	}
-
+	
 	return fmt.Errorf("can't scan field '%s' type '%s' to '%s'", column, reflect.TypeOf(value), dest.Type())
 }
 

@@ -286,11 +286,18 @@ func testCorrectParseExprExpression(t *testing.T, tests []testExpression) {
 		for _, v := range test.In {
 			vars = append(vars, rv(v))
 		}
-		parser := newExprParser(vars...)
-		parser.file = "tmp.xml"
-		err := parser.parseParameter(nil, test.Parameter)
-		require.NoError(t, err)
-		result, err := parser.parseExpression(nil, test.Expr)
+		_expr := newExprParser(vars...)
+		_expr.file = "tmp.xml"
+		
+		params, err := testParseParams(test.Parameter)
+		require.NoError(t, err, test)
+		
+		for ii, vv := range params {
+			err = _expr.baseParams.bind(vv, ii)
+			require.NoError(t, err, test, ii, vv)
+		}
+		
+		result, err := _expr.parseExpression(nil, test.Expr)
 		if test.Err > 0 {
 			require.Error(t, err, test)
 			writeError(t, fmt.Sprintf("test parse expression: %d", i), test, err)
@@ -312,10 +319,17 @@ func testErrorParseExprParameter(t *testing.T, tests []testExpression) {
 		for _, v := range test.In {
 			vars = append(vars, rv(v))
 		}
-		parser := newExprParser(vars...)
-		parser.file = "tmp.xml"
-		err := parser.parseParameter(nil, test.Parameter)
+		_, err := testParseParams(test.Parameter)
 		require.Error(t, err, test)
 		writeError(t, fmt.Sprintf("test error parse parameter: %d", i), test, err)
 	}
+}
+
+func testParseParams(tokens string) (params []*param, err error) {
+	defer func() {
+		e := recover()
+		err = castRecoverError("", e)
+	}()
+	params = (&fragment{}).parseParams(nil, tokens)
+	return
 }
