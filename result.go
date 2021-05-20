@@ -124,10 +124,13 @@ func (p *queryResult) scan() (err error) {
 			break
 		}
 	}
-	if rc == 0 {
+	
+	// TODO Debug p.values
+	if len(p.values) > 0 && rc == 0 {
 		err = sql.ErrNoRows
 		return
 	}
+	
 	return
 }
 
@@ -215,7 +218,13 @@ func (p *queryResult) reflectValue(column string, dest reflect.Value, value inte
 	if isPtr {
 		dv = dest.Elem()
 	}
-	switch dv.Interface().(type) {
+	switch tv := dv.Interface().(type) {
+	case sql.Scanner:
+		// TODO debug scanner
+		err := tv.Scan(value)
+		if err != nil {
+			return err
+		}
 	case int8:
 		v, err := cast.ToInt8E(value)
 		if err != nil {

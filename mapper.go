@@ -298,7 +298,7 @@ func (p *fragment) parseSql(parser *exprParser, node *xmlNode, res *psr) {
 			} else {
 				parser.varIndex++
 				s += fmt.Sprintf("$%d", parser.varIndex)
-				parser.vars = append(parser.vars, r)
+				parser.addVar(r)
 			}
 			begin = false
 			inject = false

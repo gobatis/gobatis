@@ -38,11 +38,11 @@
             #{ entity.Money },
             #{ entity.Char },
             #{ entity.Text },
-            #{ entity.TimestampWithoutTimeZone.String() },
-            #{ entity.TimestampWithTimeZone.String() },
+            #{ entity.TimestampWithoutTimeZone },
+            #{ entity.TimestampWithTimeZone },
             #{ entity.Date },
-            #{ entity.TimeWithoutTimeZone.String() },
-            #{ entity.TimeWithTimeZone.String() },
+            #{ entity.TimeWithoutTimeZone },
+            #{ entity.TimeWithTimeZone },
             #{ entity.Interval },
             #{ entity.Boolean }
         ) returning id;
