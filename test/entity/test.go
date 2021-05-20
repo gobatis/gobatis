@@ -17,9 +17,9 @@ type TestEntity struct {
 	SmallSerial              int             `sql:"t_small_serial"`
 	Serial                   int             `sql:"t_serial"`
 	BigSerial                int             `sql:"t_big_serial"`
-	Money                    int             `sql:"t_money"`
-	Char                     int             `sql:"t_char"`
-	Text                     int             `sql:"t_text"`
+	Money                    string          `sql:"t_money"`
+	Char                     string          `sql:"t_char"`
+	Text                     string          `sql:"t_text"`
 	TimestampWithoutTimeZone time.Time       `sql:"t_timestamp_without_time_zone"`
 	TimestampWithTimeZone    time.Time       `sql:"t_timestamp_with_time_zone"`
 	Date                     time.Time       `sql:"t_date"`

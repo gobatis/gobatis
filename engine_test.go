@@ -2,6 +2,7 @@ package gobatis
 
 import (
 	"github.com/gobatis/gobatis/bundle"
+	"github.com/gobatis/gobatis/test/entity"
 	"github.com/gobatis/gobatis/test/mapper"
 	"github.com/stretchr/testify/require"
 	"os"
@@ -26,8 +27,6 @@ func rv(v interface{}) reflect.Value {
 	return reflect.ValueOf(v)
 }
 
-
-
 func TestEngine(t *testing.T) {
 	
 	engine := NewPostgresql("postgresql://postgres:postgres@127.0.0.1:54322/gobatis?connect_timeout=10&sslmode=disable")
@@ -43,18 +42,17 @@ func TestEngine(t *testing.T) {
 		require.NoError(t, err)
 	}()
 	
-	productMapper := new(mapper.TestMapper)
-	err = engine.BindMapper(productMapper)
+	_testMapper := new(mapper.TestMapper)
+	err = engine.BindMapper(_testMapper)
 	require.NoError(t, err)
 	
-	//affected, err := productMapper.CreateProduct(&entity.Product{
-	//	Name:   "gobatis manual",
-	//	Width:  1,
-	//	Height: 17.8,
-	//	Price:  decimal.NewFromFloat(16.8),
-	//})
-	//require.NoError(t, err)
-	//require.Equal(t, int64(1), affected)
+	a := entity.TestEntity{
+		Int8: 11,
+		Interval: 1,
+	}
+	err = _testMapper.SelectInsert(a)
+	
+	require.NoError(t, err)
 	//
 	//item, err := productMapper.GetProductById(11)
 	//require.NoError(t, err)

@@ -177,7 +177,6 @@ func (p *fragment) setResultAttribute() {
 }
 
 func (p *fragment) checkParameter(ft reflect.Type, mn, fn string) {
-	
 	if len(p.in) != ft.NumIn() {
 		throw(p.statement.File, p.statement.ctx, checkParameterErr).
 			format("%s expected %d bind parameter, got %d", fn, len(p.in), ft.NumIn())
@@ -619,8 +618,10 @@ func (p *caller) query(in ...reflect.Value) (err error) {
 	}
 	p.fragment.logger.Debugf("[gobatis] [%s] statement: %s", p.fragment.id, s)
 	p.fragment.logger.Debugf("[gobatis] [%s] parameter: %+v", p.fragment.id, p.printVars(vars))
+	
 	rows, err := q.QueryContext(ctx, s, vars...)
 	if err != nil {
+		p.fragment.logger.Debugf("[gobatis] [%s] exec query error: %v", p.fragment.id, err)
 		return
 	}
 	defer func() {

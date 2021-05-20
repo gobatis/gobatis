@@ -198,11 +198,11 @@ func (p *Engine) walkMappers(root string) (files []string, err error) {
 }
 
 func (p *Engine) addFragment(file string, ctx antlr.ParserRuleContext, id string, node *xmlNode) {
+	
 	m, err := parseFragment(p.master, p.logger, file, id, node)
 	if err != nil {
 		return
 	}
-	
 	err = p.fragmentManager.add(m)
 	if err != nil {
 		throw(file, ctx, parseMapperErr).with(err)

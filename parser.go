@@ -116,7 +116,6 @@ func parseFragment(db *DB, logger Logger, file, id string, node *xmlNode) (frag 
 	if node.HasAttribute(dtd.RESULT) {
 		frag.out = frag.parseParams(node.ctx, node.GetAttribute(dtd.RESULT))
 	}
-	
 	return
 }
 
