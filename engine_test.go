@@ -1,11 +1,8 @@
 package gobatis
 
 import (
-	"encoding/json"
 	"github.com/gobatis/gobatis/bundle"
-	"github.com/gobatis/gobatis/test/entity"
 	"github.com/gobatis/gobatis/test/mapper"
-	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/require"
 	"os"
 	"path/filepath"
@@ -29,6 +26,8 @@ func rv(v interface{}) reflect.Value {
 	return reflect.ValueOf(v)
 }
 
+
+
 func TestEngine(t *testing.T) {
 	
 	engine := NewPostgresql("postgresql://postgres:postgres@127.0.0.1:54322/gobatis?connect_timeout=10&sslmode=disable")
@@ -44,35 +43,35 @@ func TestEngine(t *testing.T) {
 		require.NoError(t, err)
 	}()
 	
-	productMapper := new(mapper.ProductMapper)
+	productMapper := new(mapper.TestMapper)
 	err = engine.BindMapper(productMapper)
 	require.NoError(t, err)
 	
-	affected, err := productMapper.CreateProduct(&entity.Product{
-		Name:   "gobatis manual",
-		Width:  1,
-		Height: 17.8,
-		Price:  decimal.NewFromFloat(16.8),
-	})
-	require.NoError(t, err)
-	require.Equal(t, int64(1), affected)
+	//affected, err := productMapper.CreateProduct(&entity.Product{
+	//	Name:   "gobatis manual",
+	//	Width:  1,
+	//	Height: 17.8,
+	//	Price:  decimal.NewFromFloat(16.8),
+	//})
+	//require.NoError(t, err)
+	//require.Equal(t, int64(1), affected)
+	//
+	//item, err := productMapper.GetProductById(11)
+	//require.NoError(t, err)
+	//require.Equal(t, "gobatis manual", item.Name)
+	//require.Equal(t, "16.8", item.Price.String())
+	//
+	//items, err := productMapper.GetProductsById(11)
+	//require.NoError(t, err)
+	//require.Equal(t, 1, len(items))
+	//require.Equal(t, item.Id, items[0].Id)
+	//require.Equal(t, item.CreatedAt, items[0].CreatedAt)
 	
-	item, err := productMapper.GetProductById(11)
-	require.NoError(t, err)
-	require.Equal(t, "gobatis manual", item.Name)
-	require.Equal(t, "16.8", item.Price.String())
-	
-	items, err := productMapper.GetProductsById(11)
-	require.NoError(t, err)
-	require.Equal(t, 1, len(items))
-	require.Equal(t, item.Id, items[0].Id)
-	require.Equal(t, item.CreatedAt, items[0].CreatedAt)
-	
-	item, err = productMapper.GetProductById(142)
-	require.NoError(t, err)
-	d, err := json.MarshalIndent(item, "", "\t")
-	require.NoError(t, err)
-	t.Log(string(d))
+	//item, err = productMapper.GetProductById(142)
+	//require.NoError(t, err)
+	//d, err := json.MarshalIndent(item, "", "\t")
+	//require.NoError(t, err)
+	//t.Log(string(d))
 }
 
 func TestExpression(t *testing.T) {

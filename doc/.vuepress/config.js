@@ -65,17 +65,17 @@ module.exports = {
 
                 ],
             },
-            '/en/': {
-                nav: [
-                    {text: 'Home', link: '/'},
-                    {text: 'External', link: 'https://google.com', target: '_blank'},
-                ],
-                sidebar: [
-                    '/',
-                    '/page-a',
-                    ['/page-b', 'Explicit link text']
-                ],
-            }
+            // '/en/': {
+            //     nav: [
+            //         {text: 'Home', link: '/'},
+            //         {text: 'External', link: 'https://google.com', target: '_blank'},
+            //     ],
+            //     sidebar: [
+            //         '/',
+            //         '/page-a',
+            //         ['/page-b', 'Explicit link text']
+            //     ],
+            // }
         }
     }
 }
