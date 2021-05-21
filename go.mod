@@ -3,6 +3,7 @@ module github.com/gobatis/gobatis
 go 1.13
 
 require (
+	github.com/AlekSi/pointer v1.1.0
 	github.com/antlr/antlr4 v0.0.0-20210412152734-e404d26f6142
 	github.com/beevik/etree v1.1.0 // indirect
 	github.com/blastrain/vitess-sqlparser v0.0.0-20201030050434-a139afbb1aba

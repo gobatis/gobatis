@@ -1186,7 +1186,7 @@ func GreaterOrEqualAnyE(left, right interface{}) (bool, error) {
 }
 
 func UnaryPlusAnyE(v interface{}) (interface{}, error) {
-	v = indirect(v)
+	v = Indirect(v)
 	switch s := v.(type) {
 	case int:
 		return +v.(int), nil
@@ -1221,7 +1221,7 @@ func UnaryPlusAnyE(v interface{}) (interface{}, error) {
 }
 
 func UnaryMinusAnyE(v interface{}) (interface{}, error) {
-	v = indirect(v)
+	v = Indirect(v)
 	switch s := v.(type) {
 	case int:
 		return -v.(int), nil
@@ -1258,7 +1258,7 @@ func UnaryMinusAnyE(v interface{}) (interface{}, error) {
 }
 
 func UnaryCaretAnyE(v interface{}) (interface{}, error) {
-	v = indirect(v)
+	v = Indirect(v)
 	switch s := v.(type) {
 	case int:
 		return ^v.(int), nil
@@ -1286,7 +1286,7 @@ func UnaryCaretAnyE(v interface{}) (interface{}, error) {
 }
 
 func UnaryNotAnyE(v interface{}) (interface{}, error) {
-	v = indirect(v)
+	v = Indirect(v)
 	switch s := v.(type) {
 	case bool:
 		return !v.(bool), nil

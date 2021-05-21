@@ -27,7 +27,7 @@ func castOverFlowError(from, to string) error {
 
 // ToTimeE casts an interface to a time.Time type.
 func ToTimeE(i interface{}) (tim time.Time, err error) {
-	i = indirect(i)
+	i = Indirect(i)
 	
 	switch v := i.(type) {
 	case time.Time:
@@ -53,7 +53,7 @@ func ToTimeE(i interface{}) (tim time.Time, err error) {
 
 // ToBoolE casts an interface to a bool type.
 func ToBoolE(i interface{}) (bool, error) {
-	i = indirect(i)
+	i = Indirect(i)
 	
 	switch b := i.(type) {
 	case bool:
@@ -121,7 +121,7 @@ func ToBoolE(i interface{}) (bool, error) {
 
 // ToInt64E casts an interface to an int64 type.
 func ToInt64E(i interface{}) (int64, error) {
-	i = indirect(i)
+	i = Indirect(i)
 	
 	switch s := i.(type) {
 	case int:
@@ -182,7 +182,7 @@ func ToInt64E(i interface{}) (int64, error) {
 
 // ToInt32E casts an interface to an int32 type.
 func ToInt32E(i interface{}) (int32, error) {
-	i = indirect(i)
+	i = Indirect(i)
 	
 	switch s := i.(type) {
 	case int:
@@ -257,7 +257,7 @@ func ToInt32E(i interface{}) (int32, error) {
 
 // ToInt16E casts an interface to an int16 type.
 func ToInt16E(i interface{}) (int16, error) {
-	i = indirect(i)
+	i = Indirect(i)
 	switch s := i.(type) {
 	case int:
 		r := int16(s)
@@ -349,7 +349,7 @@ func ToInt16E(i interface{}) (int16, error) {
 
 // ToInt8E casts an interface to an int8 type.
 func ToInt8E(i interface{}) (int8, error) {
-	i = indirect(i)
+	i = Indirect(i)
 	
 	switch s := i.(type) {
 	case int:
@@ -450,7 +450,7 @@ func ToInt8E(i interface{}) (int8, error) {
 
 // ToIntE casts an interface to an int type.
 func ToIntE(i interface{}) (int, error) {
-	i = indirect(i)
+	i = Indirect(i)
 	
 	switch s := i.(type) {
 	case int:
@@ -535,7 +535,7 @@ func ToIntE(i interface{}) (int, error) {
 
 // ToUintE casts an interface to a uint type.
 func ToUintE(i interface{}) (uint, error) {
-	i = indirect(i)
+	i = Indirect(i)
 	
 	switch s := i.(type) {
 	case string:
@@ -625,7 +625,7 @@ func ToUintE(i interface{}) (uint, error) {
 
 // ToUint64E casts an interface to a uint64 type.
 func ToUint64E(i interface{}) (uint64, error) {
-	i = indirect(i)
+	i = Indirect(i)
 	
 	switch s := i.(type) {
 	case string:
@@ -701,7 +701,7 @@ func ToUint64E(i interface{}) (uint64, error) {
 
 // ToUint32E casts an interface to a uint32 type.
 func ToUint32E(i interface{}) (uint32, error) {
-	i = indirect(i)
+	i = Indirect(i)
 	
 	switch s := i.(type) {
 	case string:
@@ -799,7 +799,7 @@ func ToUint32E(i interface{}) (uint32, error) {
 
 // ToUint16E casts an interface to a uint16 type.
 func ToUint16E(i interface{}) (uint16, error) {
-	i = indirect(i)
+	i = Indirect(i)
 	
 	switch s := i.(type) {
 	case string:
@@ -910,7 +910,7 @@ func ToUint16E(i interface{}) (uint16, error) {
 
 // ToUint8E casts an interface to a uint type.
 func ToUint8E(i interface{}) (uint8, error) {
-	i = indirect(i)
+	i = Indirect(i)
 	
 	switch s := i.(type) {
 	case string:
@@ -1042,11 +1042,11 @@ func ToDecimalE(v interface{}) (decimal.Decimal, error) {
 	return d, nil
 }
 
-// From html/template/content.go
+// Indirect From html/template/content.go
 // Copyright 2011 The Go Authors. All rights reserved.
-// indirect returns the value, after dereferencing as many times
+// Indirect returns the value, after dereferencing as many times
 // as necessary to reach the base type (or nil).
-func indirect(a interface{}) interface{} {
+func Indirect(a interface{}) interface{} {
 	if a == nil {
 		return nil
 	}
@@ -1195,13 +1195,13 @@ func ToBinOperandE(left, right interface{}) (o1, o2 interface{}, err error) {
 	if IsNil(left) {
 		_nil = true
 	} else {
-		o1 = indirect(left)
+		o1 = Indirect(left)
 	}
 	
 	if IsNil(right) {
 		_nil = true
 	} else {
-		o2 = indirect(right)
+		o2 = Indirect(right)
 	}
 	
 	if _nil {
@@ -1245,7 +1245,7 @@ func ToBinOperandE(left, right interface{}) (o1, o2 interface{}, err error) {
 
 // ToFloat64E casts an interface to a float64 type.
 func ToFloat64E(i interface{}) (float64, error) {
-	i = indirect(i)
+	i = Indirect(i)
 	
 	switch s := i.(type) {
 	case float64:
@@ -1290,7 +1290,7 @@ func ToFloat64E(i interface{}) (float64, error) {
 
 // ToFloat32E casts an interface to a float32 type.
 func ToFloat32E(i interface{}) (float32, error) {
-	i = indirect(i)
+	i = Indirect(i)
 	
 	switch s := i.(type) {
 	case float64:

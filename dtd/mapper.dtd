@@ -171,7 +171,6 @@
         <!ATTLIST select
                 id CDATA #REQUIRED
                 parameter CDATA #IMPLIED
-                parameterType CDATA #IMPLIED
                 result CDATA #IMPLIED
                 resultMap CDATA #IMPLIED
                 resultType CDATA #IMPLIED
@@ -191,7 +190,6 @@
         <!ATTLIST insert
                 id CDATA #REQUIRED
                 parameter CDATA #IMPLIED
-                parameterType CDATA #IMPLIED
                 timeout CDATA #IMPLIED
                 flushCache (true|false) #IMPLIED
                 statementType (STATEMENT|PREPARED|CALLABLE) #IMPLIED
@@ -216,7 +214,6 @@
         <!ATTLIST update
                 id CDATA #REQUIRED
                 parameter CDATA #IMPLIED
-                parameterType CDATA #IMPLIED
                 timeout CDATA #IMPLIED
                 flushCache (true|false) #IMPLIED
                 statementType (STATEMENT|PREPARED|CALLABLE) #IMPLIED
@@ -231,7 +228,6 @@
         <!ATTLIST delete
                 id CDATA #REQUIRED
                 parameter CDATA #IMPLIED
-                parameterType CDATA #IMPLIED
                 timeout CDATA #IMPLIED
                 flushCache (true|false) #IMPLIED
                 statementType (STATEMENT|PREPARED|CALLABLE) #IMPLIED

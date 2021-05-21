@@ -53,6 +53,15 @@ func (p *Engine) Init() (err error) {
 	return
 }
 
+func (p *Engine) Close() {
+	if p.master != nil {
+		_ = p.master.Close()
+	}
+	for _, v := range p.slaves {
+		_ = v.Close()
+	}
+}
+
 func (p *Engine) Call(name string, args ...reflect.Value) *caller {
 	f, ok := p.fragmentManager.get(name)
 	if !ok {

@@ -1,4 +1,5 @@
 module.exports = {
+    plugins: ['@vuepress/nprogress', '@vuepress/back-to-top'],
     locales: {
         // 键名是该语言所属的子路径
         // 作为特例，默认语言可以使用 '/' 作为其路径。
@@ -21,8 +22,8 @@ module.exports = {
         locales: {
             '/': {
                 nav: [
-                    {text: '文档', link: '/getting-started'},
-                    {text: 'External', link: 'https://google.com', target: '_blank'},
+                    { text: '文档', link: '/getting-started' },
+                    { text: 'External', link: 'https://google.com', target: '_blank' },
                 ],
                 sidebar: [
                     {

@@ -1185,6 +1185,7 @@ func (p *exprParser) parseExpression(nodeCtx antlr.ParserRuleContext, expresion 
 }
 
 func (p *exprParser) addVar(_var interface{}) {
+	_var = cast.Indirect(_var)
 	switch v := _var.(type) {
 	case time.Time:
 		p.vars = append(p.vars, v.String())
