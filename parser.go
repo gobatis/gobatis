@@ -541,10 +541,28 @@ func (p param) expected(vt reflect.Type) bool {
 		}
 		vt = vt.Elem()
 	}
-	if p._type != reflect.Interface.String() && vt.String() != p._type {
+	
+	switch p._type {
+	case reflect.Interface.String():
+		return true
+	case reflect.Struct.String():
+		if vt.Kind() == reflect.Struct {
+			return true
+		} else {
+			return false
+		}
+	case reflect.Slice.String(), reflect.Array.String():
+		if vt.Kind() == reflect.Slice || vt.Kind() == reflect.Array {
+			return true
+		} else {
+			return false
+		}
+	default:
+		if vt.String() == p._type {
+			return true
+		}
 		return false
 	}
-	return true
 }
 
 func isSlice(_type string) (string, bool) {
@@ -859,7 +877,7 @@ func (p *exprParams) bind(expected *param, index int) error {
 	
 	ev := p.values[index]
 	elem := reflectValueElem(ev.value)
-	if expected.expected(reflect.TypeOf(ev)) {
+	if !expected.expected(elem.Type()) {
 		return fmt.Errorf("parameter '%s' expected '%s', got '%s'", expected.name, expected.Type(), elem.Type())
 	}
 	

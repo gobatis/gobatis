@@ -424,17 +424,17 @@ func (p *fragment) parseForeach(parser *exprParser, node *xmlNode, res *psr) {
 	}
 	indexParam := &param{name: index, _type: reflect.Interface.String(), slice: false}
 	itemParam := &param{name: item, _type: reflect.Interface.String(), slice: slice}
-	
 	open := node.GetAttribute(dtd.OPEN)
 	_close := node.GetAttribute(dtd.CLOSE)
 	separator := node.GetAttribute(dtd.SEPARATOR)
-	//parser.paramIndex = 0
+	
+	parser.paramsStack.push(newExprParams())
 	elem := reflectValueElem(collection.value)
 	frags := make([]string, 0)
 	switch elem.Kind() {
 	case reflect.Slice, reflect.Array:
 		for i := 0; i < elem.Len(); i++ {
-			parser.paramsStack.push(newExprParams(elem.Index(i), reflect.ValueOf(i)))
+			parser.paramsStack.peak().values = []exprValue{{value: i}, {value: elem.Index(i).Interface()}}
 			if i == 0 {
 				p.bindForeachParams(parser, indexParam, itemParam)
 			}
@@ -442,7 +442,7 @@ func (p *fragment) parseForeach(parser *exprParser, node *xmlNode, res *psr) {
 		}
 	case reflect.Map:
 		for i, v := range elem.MapKeys() {
-			parser.paramsStack.push(newExprParams(elem.MapIndex(v), v))
+			parser.paramsStack.peak().values = []exprValue{{value: v.Interface()}, {value: elem.MapIndex(v).Interface()}}
 			if i == 0 {
 				p.bindForeachParams(parser, indexParam, itemParam)
 			}
@@ -450,7 +450,7 @@ func (p *fragment) parseForeach(parser *exprParser, node *xmlNode, res *psr) {
 		}
 	case reflect.Struct:
 		for i := 0; i < elem.NumField(); i++ {
-			parser.paramsStack.push(newExprParams(elem.Field(i).Elem(), elem.Field(i)))
+			parser.paramsStack.peak().values = []exprValue{{value: elem.Field(i).Type().Name()}, {value: elem.Field(i).Interface()}}
 			if i == 0 {
 				p.bindForeachParams(parser, indexParam, itemParam)
 			}

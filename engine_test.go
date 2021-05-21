@@ -51,6 +51,7 @@ func TestEngine(t *testing.T) {
 	
 	testSelectInsert(t, _testMapper)
 	testSelectInsertPointer(t, _testMapper)
+	testSelectInsertForeachSlice(t, _testMapper)
 }
 
 func testSelectInsert(t *testing.T, _testMapper *mapper.TestMapper) {
@@ -86,7 +87,7 @@ func testSelectInsertPointer(t *testing.T, _testMapper *mapper.TestMapper) {
 	now := time.Now()
 	interval := 100 * time.Second
 	
-	id2, err := _testMapper.SelectInsertPointer(&entity.TestEntityPointer{
+	id, err := _testMapper.SelectInsertPointer(&entity.TestEntityPointer{
 		Int8:                     pointer.ToInt8(1),
 		BigInt:                   pointer.ToInt64(2),
 		Int:                      pointer.ToInt(3),
@@ -110,5 +111,13 @@ func testSelectInsertPointer(t *testing.T, _testMapper *mapper.TestMapper) {
 	})
 	
 	require.NoError(t, err)
-	require.Greater(t, id2, int32(0), "returning id should greater 0")
+	require.Greater(t, id, int32(0), "returning id should greater 0")
+}
+
+func testSelectInsertForeachSlice(t *testing.T, _testMapper *mapper.TestMapper) {
+	id, err := _testMapper.SelectInsertForeachSlice(entity.TestEntity{
+		Int8: 1,
+	}, []string{"tom", "alice"})
+	require.NoError(t, err)
+	require.Greater(t, id, 0, "returning id should greater 0")
 }

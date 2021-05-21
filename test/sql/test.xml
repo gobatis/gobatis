@@ -93,4 +93,19 @@
         #{ entity.Boolean }
         ) returning id;
     </select>
+
+    <select id="SelectInsertForeachSlice" parameter="entity:struct, enums:array" result="id">
+        insert into test_entities(
+        t_int8,
+        t_text
+        )
+        values(
+        #{ entity.Int8 },
+        <foreach collection="enums" separator="," open="'" close="'">
+            #{ index }-#{item}
+        </foreach>
+        ) returning id;
+    </select>
+
+
 </mapper>
