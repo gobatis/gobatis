@@ -443,6 +443,28 @@ func (p *xmlParser) enterElement(c *xml.ElementContext) {
 	p.depth++
 }
 
+func (p *xmlParser) enterReference(c *xml.ReferenceContext) {
+	if c.EntityRef() != nil {
+		v := ""
+		switch c.EntityRef().GetText() {
+		case "&lt;":
+			v = "<"
+		case "&gt":
+			v = ">"
+		case "&amp;":
+			v = "&"
+		case "&apos;":
+			v = "'"
+		case "&quot;":
+			v = "\""
+		}
+		if v != "" {
+			p.stack.Peak().AddNode(&xmlNode{File: p.file, Text: v, ctx: c, start: c.GetStart(), textOnly: true})
+			p.coverage.add(c)
+		}
+	}
+}
+
 func (p *xmlParser) exitElement(_ *xml.ElementContext) {
 	if p.stack.Peak() == nil {
 		return
@@ -477,16 +499,15 @@ func (p *xmlParser) enterChardata(c *xml.ChardataContext) {
 	if p.stack.Peak() == nil {
 		return
 	}
-	text := strings.TrimSpace(c.GetText())
-	if text != "" {
-		p.stack.Peak().AddNode(&xmlNode{File: p.file, Text: text, ctx: c, start: c.GetStart(), textOnly: true})
-	}
+	p.stack.Peak().AddNode(&xmlNode{File: p.file, Text: c.GetText(), ctx: c, start: c.GetStart(), textOnly: true})
 }
 
 func (p *xmlParser) EnterEveryRule(ctx antlr.ParserRuleContext) {
 	switch ctx.GetRuleIndex() {
 	case xml.XMLParserRULE_document:
 		p.coverage.setTotal(ctx.GetStop().GetTokenIndex() + 1)
+	case xml.XMLParserRULE_reference:
+		p.enterReference(ctx.(*xml.ReferenceContext))
 	case xml.XMLParserRULE_element:
 		p.enterElement(ctx.(*xml.ElementContext))
 		p.coverage.add(ctx)

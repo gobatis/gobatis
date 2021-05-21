@@ -488,11 +488,14 @@ func (p *fragment) parseParams(nodeCtx antlr.ParserRuleContext, tokens string) [
 }
 
 func (p *fragment) parseForeachChild(parser *exprParser, node *xmlNode, frags *[]string) {
+	r := ""
 	for _, child := range node.Nodes {
 		br := new(psr)
 		p.parseBlock(parser, child, br)
-		*frags = append(*frags, br.sql)
+		r+= br.sql
 	}
+	*frags = append(*frags, r)
+	fmt.Println("br.sql", r)
 }
 
 type caller struct {

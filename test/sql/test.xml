@@ -116,7 +116,7 @@
         #{ entity.Int8 },
         <foreach index="index1" item="item1" collection="enums" separator="," open="'" close="'">
             <foreach index="index2" item="item2" collection="item1" separator="," open="[" close="]">
-                ${index1}:${index2}:${item2}
+                ${index1}a a &lt; b${index2}:${item2}
             </foreach>
         </foreach>
         ) returning id;
