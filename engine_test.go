@@ -52,6 +52,7 @@ func TestEngine(t *testing.T) {
 	testSelectInsert(t, _testMapper)
 	testSelectInsertPointer(t, _testMapper)
 	testSelectInsertForeachSlice(t, _testMapper)
+	testSelectInsertForeachSlicePointer(t, _testMapper)
 }
 
 func testSelectInsert(t *testing.T, _testMapper *mapper.TestMapper) {
@@ -119,5 +120,17 @@ func testSelectInsertForeachSlice(t *testing.T, _testMapper *mapper.TestMapper) 
 		Int8: 1,
 	}, []string{"tom", "alice"})
 	require.NoError(t, err)
-	require.Greater(t, id, 0, "returning id should greater 0")
+	require.Greater(t, id, int16(0), "returning id should greater 0")
+}
+
+func testSelectInsertForeachSlicePointer(t *testing.T, _testMapper *mapper.TestMapper) {
+	enums := [][]*string{
+		{pointer.ToString("tom1"), pointer.ToString("alice1")},
+		{pointer.ToString("tom2"), pointer.ToString("alice2")},
+	}
+	id, err := _testMapper.SelectInsertForeachSlicePointer(&entity.TestEntityPointer{
+		Int8: pointer.ToInt8(1),
+	}, &enums)
+	require.NoError(t, err)
+	require.Greater(t, id, uint16(0), "returning id should greater 0")
 }
