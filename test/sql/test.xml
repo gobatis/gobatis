@@ -2,101 +2,95 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "../../../dtd/mapper.dtd">
 
 <mapper>
-    <select id="SelectInsert" parameter="entity:struct" useGeneratedKeys="true" keyProperty="id">
+    <select id="SelectInsert" parameter="entity:struct" result="id">
         insert into test_entities(
-            t_int8,
-            t_bigint,
-            t_int,
-            t_decimal,
-            t_numeric,
-            t_real,
-            t_double_precision,
-            t_small_serial,
-            t_serial,
-            t_big_serial,
-            t_money,
-            t_char,
-            t_text,
-            t_timestamp_without_time_zone,
-            t_timestamp_with_time_zone,
-            t_date,
-            t_time_without_time_zone,
-            t_time_with_time_zone,
-            t_interval,
-            t_boolean
+        t_int8,
+        t_bigint,
+        t_int,
+        t_decimal,
+        t_numeric,
+        t_real,
+        t_double_precision,
+        t_small_serial,
+        t_serial,
+        t_big_serial,
+        t_money,
+        t_char,
+        t_text,
+        <!--            t_timestamp_without_time_zone,-->
+        <!--            t_timestamp_with_time_zone,-->
+        <!--            t_date,-->
+        <!--            t_time_without_time_zone,-->
+        <!--            t_time_with_time_zone,-->
+        t_interval,
+        t_boolean
         ) values(
-            #{ entity.Int8 },
-            #{ entity.BigInt },
-            #{ entity.Int },
-            #{ entity.Decimal },
-            #{ entity.Numeric },
-            #{ entity.Real },
-            #{ entity.DoublePrecision },
-            #{ entity.SmallSerial },
-            #{ entity.Serial },
-            #{ entity.BigSerial },
-            #{ entity.Money },
-            #{ entity.Char },
-            #{ entity.Text },
-            #{ entity.TimestampWithoutTimeZone },
-            #{ entity.TimestampWithTimeZone },
-            #{ entity.Date },
-            #{ entity.TimeWithoutTimeZone },
-            #{ entity.TimeWithTimeZone },
-            #{ entity.Interval },
-            #{ entity.Boolean }
+        #{ entity.Int8 },
+        #{ entity.BigInt },
+        #{ entity.Int },
+        #{ entity.Decimal },
+        #{ entity.Numeric },
+        #{ entity.Real },
+        #{ entity.DoublePrecision },
+        #{ entity.SmallSerial },
+        #{ entity.Serial },
+        #{ entity.BigSerial },
+        #{ entity.Money },
+        #{ entity.Char },
+        #{ entity.Text },
+        <!--            #{ entity.TimestampWithoutTimeZone },-->
+        <!--            #{ entity.TimestampWithTimeZone },-->
+        <!--            #{ entity.Date },-->
+        <!--            #{ entity.TimeWithoutTimeZone },-->
+        <!--            #{ entity.TimeWithTimeZone },-->
+        #{ entity.Interval },
+        #{ entity.Boolean }
         ) returning id;
     </select>
 
-    <select id="SelectInsertPointer" parameterType="struct" useGeneratedKeys="true" keyProperty="id">
+    <select id="SelectInsertPointer" parameterType="struct" result="id">
         insert into test_entities(
-            t_int8,
-            t_bigint,
-            t_int,
-            t_decimal,
-            t_numeric,
-            t_real,
-            t_double_precision,
-            t_small_serial,
-            t_serial,
-            t_big_serial,
-            t_money,
-            t_char,
-            t_text,
-            t_timestamp_without_time_zone,
-            t_timestamp_with_time_zone,
-            t_date,
-            t_time_without_time_zone,
-            t_time_with_time_zone,
-            t_interval,
-            t_boolean
+        t_int8,
+        t_bigint,
+        t_int,
+        t_decimal,
+        t_numeric,
+        t_real,
+        t_double_precision,
+        t_small_serial,
+        t_serial,
+        t_big_serial,
+        t_money,
+        t_char,
+        t_text,
+        t_timestamp_without_time_zone,
+        t_timestamp_with_time_zone,
+        t_date,
+        t_time_without_time_zone,
+        t_time_with_time_zone,
+        t_interval,
+        t_boolean
         ) values(
-            #{ Int8 / 3600 * 3600 },
-            #{ BigInt },
-            #{ Int },
-            #{ Decimal },
-            #{ Numeric },
-            #{ Real },
-            #{ DoublePrecision },
-            #{ SmallSerial },
-            #{ Serial },
-            #{ BigSerial },
-            #{ Money },
-            #{ Char },
-            #{ Text },
-            #{ TimestampWithoutTimeZone },
-            #{ TimestampWithTimeZone },
-            #{ Date },
-            #{ TimeWithoutTimeZone },
-            #{ TimeWithTimeZone },
-            #{ Interval },
-            #{ Boolean }
+        #{ Int8 / 3600 * 3600 },
+        #{ BigInt },
+        #{ Int },
+        #{ Decimal },
+        #{ Numeric },
+        #{ Real },
+        #{ DoublePrecision },
+        #{ SmallSerial },
+        #{ Serial },
+        #{ BigSerial },
+        #{ Money },
+        #{ Char },
+        #{ Text },
+        #{ TimestampWithoutTimeZone },
+        #{ TimestampWithTimeZone },
+        #{ Date },
+        #{ TimeWithoutTimeZone },
+        #{ TimeWithTimeZone },
+        #{ Interval },
+        #{ Boolean }
         ) returning id;
-
-
-
-
-
-
     </select>
 </mapper>

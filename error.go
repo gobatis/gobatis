@@ -13,7 +13,8 @@ const (
 	parameterNotFoundErr
 	varToReflectKindErr
 	varBindErr
-	popStackErr
+	popValueStackErr
+	popParamsStackErr
 	popBinaryOperandsErr
 	popResultErr
 	unsupportedRelationCalcErr

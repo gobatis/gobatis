@@ -176,8 +176,6 @@
                 resultMap CDATA #IMPLIED
                 resultType CDATA #IMPLIED
                 resultSetType (FORWARD_ONLY | SCROLL_INSENSITIVE | SCROLL_SENSITIVE | DEFAULT) #IMPLIED
-                keyProperty CDATA #IMPLIED
-                useGeneratedKeys (true|false) #IMPLIED
                 statementType (STATEMENT|PREPARED|CALLABLE) #IMPLIED
                 fetchSize CDATA #IMPLIED
                 timeout CDATA #IMPLIED

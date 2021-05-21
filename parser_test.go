@@ -283,7 +283,7 @@ func testCorrectParseExprExpression(t *testing.T, tests []testExpression) {
 		require.NoError(t, err, test)
 		
 		for ii, vv := range params {
-			err = _expr.baseParams.bind(vv, ii)
+			err = _expr.paramsStack.list.Front().Next().Value.(*exprParams).bind(vv, ii)
 			require.NoError(t, err, test, ii, vv)
 		}
 		

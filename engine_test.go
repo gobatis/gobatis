@@ -4,6 +4,7 @@ import (
 	"github.com/gobatis/gobatis/bundle"
 	"github.com/gobatis/gobatis/test/entity"
 	"github.com/gobatis/gobatis/test/mapper"
+	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/require"
 	"os"
 	"path/filepath"
@@ -46,13 +47,31 @@ func TestEngine(t *testing.T) {
 	err = engine.BindMapper(_testMapper)
 	require.NoError(t, err)
 	
-	a := entity.TestEntity{
-		Int8: 11,
-		Interval: 1,
-	}
-	err = _testMapper.SelectInsert(a)
+	id, err := _testMapper.SelectInsert(entity.TestEntity{
+		Int8:            1,
+		BigInt:          2,
+		Int:             3,
+		Decimal:         decimal.NewFromFloat(3.14),
+		Numeric:         decimal.NewFromFloat(3.14156),
+		Real:            4,
+		DoublePrecision: 5.1,
+		SmallSerial:     6,
+		Serial:          7,
+		BigSerial:       8,
+		Money:           "1.1",
+		Char:            "hello",
+		Text:            "world",
+		//TimestampWithoutTimeZone: time.Now(),
+		//TimestampWithTimeZone:    time.Now(),
+		//Date:                     time.Now(),
+		//TimeWithoutTimeZone:      time.Now(),
+		//TimeWithTimeZone:         time.Now(),
+		//Interval:                 100 * time.Second,
+		Boolean: true,
+	})
 	
 	require.NoError(t, err)
+	require.Greaterf(t, id, 0, "id should greater 0")
 	//
 	//item, err := productMapper.GetProductById(11)
 	//require.NoError(t, err)

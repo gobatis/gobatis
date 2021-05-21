@@ -141,6 +141,54 @@ func trimValueQuote(s string) string {
 	return s
 }
 
+func varToReflectKind(t string) (kind reflect.Kind, err error) {
+	switch t {
+	case "bool":
+		kind = reflect.Bool
+	case "int":
+		kind = reflect.Int
+	case "int8":
+		kind = reflect.Int8
+	case "int16":
+		kind = reflect.Int16
+	case "int32":
+		kind = reflect.Int32
+	case "int64":
+		kind = reflect.Int64
+	case "uint":
+		kind = reflect.Uint
+	case "uint8":
+		kind = reflect.Uint8
+	case "uint16":
+		kind = reflect.Uint16
+	case "uint32":
+		kind = reflect.Uint32
+	case "uint64":
+		kind = reflect.Uint64
+	case "float32":
+		kind = reflect.Float32
+	case "float64":
+		kind = reflect.Float64
+	case "complex64":
+		kind = reflect.Complex64
+	case "complex128":
+		kind = reflect.Complex128
+	case "array":
+		kind = reflect.Array
+	case "auto":
+		kind = reflect.Interface
+	case "map":
+		kind = reflect.Map
+	case "string":
+		kind = reflect.String
+	case "struct":
+		kind = reflect.Struct
+	default:
+		err = fmt.Errorf("unsupported var type '%s'", t)
+	}
+	return
+}
+
 func newCoverage() *coverage {
 	return &coverage{
 		scan: map[int]bool{},
@@ -481,6 +529,7 @@ func (p param) Type() string {
 }
 
 func (p param) expected(vt reflect.Type) bool {
+	
 	for {
 		if vt.Kind() != reflect.Ptr {
 			break
@@ -493,7 +542,7 @@ func (p param) expected(vt reflect.Type) bool {
 		}
 		vt = vt.Elem()
 	}
-	if vt.String() != p._type {
+	if p._type != reflect.Interface.String() && vt.String() != p._type {
 		return false
 	}
 	return true
@@ -710,26 +759,20 @@ func (p *exprValue) visitSlice(format string, indexes ...int) (r *exprValue, err
 	return
 }
 
-type exprStack struct {
+type valueStack struct {
 	list *list.List
-	lock *sync.RWMutex
 }
 
-func newExprStack() *exprStack {
+func newValueStack() *valueStack {
 	l := list.New()
-	lock := &sync.RWMutex{}
-	return &exprStack{l, lock}
+	return &valueStack{l}
 }
 
-func (p *exprStack) Push(value *exprValue) {
-	p.lock.Lock()
-	defer p.lock.Unlock()
+func (p *valueStack) push(value *exprValue) {
 	p.list.PushBack(value)
 }
 
-func (p *exprStack) Pop() (val *exprValue, err error) {
-	p.lock.Lock()
-	defer p.lock.Unlock()
+func (p *valueStack) pop() (val *exprValue, err error) {
 	if p.list.Len() < 1 {
 		err = fmt.Errorf("stack is empty unable to pop")
 		return
@@ -743,9 +786,7 @@ func (p *exprStack) Pop() (val *exprValue, err error) {
 	return
 }
 
-func (p *exprStack) Peak() *exprValue {
-	p.lock.RLock()
-	defer p.lock.Unlock()
+func (p *valueStack) peak() *exprValue {
 	e := p.list.Back()
 	if e != nil {
 		return e.Value.(*exprValue)
@@ -753,15 +794,11 @@ func (p *exprStack) Peak() *exprValue {
 	return nil
 }
 
-func (p *exprStack) Len() int {
-	p.lock.RLock()
-	defer p.lock.RUnlock()
+func (p *valueStack) len() int {
 	return p.list.Len()
 }
 
-func (p *exprStack) Empty() bool {
-	p.lock.RLock()
-	defer p.lock.RUnlock()
+func (p *valueStack) empty() bool {
 	return p.list.Len() == 0
 }
 
@@ -776,7 +813,6 @@ type exprParams struct {
 	check  map[string]int
 }
 
-// return exprValue not *exprValue to protect params
 func (p *exprParams) get(name string) (val exprValue, ok bool) {
 	if p.check == nil {
 		return
@@ -803,6 +839,7 @@ func (p *exprParams) set(params ...reflect.Value) {
 }
 
 func (p *exprParams) bind(expected *param, index int) error {
+	
 	if expected.name == "" {
 		return fmt.Errorf("parameter name is empty")
 	}
@@ -831,84 +868,81 @@ func (p *exprParams) bind(expected *param, index int) error {
 	return nil
 }
 
-func varToReflectKind(t string) (kind reflect.Kind, err error) {
-	switch t {
-	case "bool":
-		kind = reflect.Bool
-	case "int":
-		kind = reflect.Int
-	case "int8":
-		kind = reflect.Int8
-	case "int16":
-		kind = reflect.Int16
-	case "int32":
-		kind = reflect.Int32
-	case "int64":
-		kind = reflect.Int64
-	case "uint":
-		kind = reflect.Uint
-	case "uint8":
-		kind = reflect.Uint8
-	case "uint16":
-		kind = reflect.Uint16
-	case "uint32":
-		kind = reflect.Uint32
-	case "uint64":
-		kind = reflect.Uint64
-	case "float32":
-		kind = reflect.Float32
-	case "float64":
-		kind = reflect.Float64
-	case "complex64":
-		kind = reflect.Complex64
-	case "complex128":
-		kind = reflect.Complex128
-	case "array":
-		kind = reflect.Array
-	case "auto":
-		kind = reflect.Interface
-	case "map":
-		kind = reflect.Map
-	case "string":
-		kind = reflect.String
-	case "struct":
-		kind = reflect.Struct
-	default:
-		err = fmt.Errorf("unsupported var type '%s'", t)
+type paramsStack struct {
+	list *list.List
+}
+
+func newParamsStack() *paramsStack {
+	l := list.New()
+	return &paramsStack{l}
+}
+
+func (p *paramsStack) push(value *exprParams) {
+	p.list.PushBack(value)
+}
+
+func (p *paramsStack) pop() (val *exprParams, err error) {
+	if p.list.Len() < 1 {
+		err = fmt.Errorf("stack is empty unable to pop")
+		return
+	}
+	e := p.list.Back()
+	if e != nil {
+		p.list.Remove(e)
+		val = e.Value.(*exprParams)
+		return
 	}
 	return
 }
 
-func (p *exprParams) index(index int) (val exprValue, ok bool) {
-	if p.check == nil {
-		return
+func (p *paramsStack) peak() *exprParams {
+	e := p.list.Back()
+	if e != nil {
+		return e.Value.(*exprParams)
 	}
-	if index > len(p.values)-1 {
-		return
+	return nil
+}
+
+func (p *paramsStack) len() int {
+	return p.list.Len()
+}
+
+func (p *paramsStack) empty() bool {
+	return p.list.Len() == 0
+}
+
+func (p *paramsStack) getVar(name string) (exprValue, bool) {
+	for i := p.list.Back(); i != nil; i = i.Prev() {
+		v := i.Value.(*exprParams)
+		if r, ok := v.get(name); ok {
+			return r, true
+		}
 	}
-	ok = true
-	val = p.values[index]
-	return
+	return exprValue{}, false
 }
 
 func newExprParser(params ...reflect.Value) *exprParser {
 	r := new(exprParser)
-	r.baseParams = newExprParams(params...)
-	r.coverage = newCoverage()
+	r.paramsStack = newParamsStack()
+	r.paramsStack.push(r.builtParams())
+	r.paramsStack.push(newExprParams(params...))
 	return r
 }
 
 type exprParser struct {
 	*expr.BaseExprParserListener
-	nodeCtx       antlr.ParserRuleContext
-	stack         *exprStack
-	coverage      *coverage
-	baseParams    *exprParams
-	foreachParams *exprParams
-	file          string
-	paramIndex    int
-	vars          []interface{}
-	varIndex      int
+	nodeCtx     antlr.ParserRuleContext
+	valueStack  *valueStack
+	paramsStack *paramsStack
+	coverage    *coverage
+	file        string
+	//paramIndex  int
+	vars     []interface{}
+	varIndex int
+}
+
+func (p *exprParser) builtParams() *exprParams {
+	return newExprParams()
 }
 
 func (p *exprParser) EnterExpressions(ctx *expr.ExpressionsContext) {
@@ -925,9 +959,9 @@ func (p *exprParser) EnterOperand(ctx *expr.OperandContext) {
 
 func (p *exprParser) ExitExpression(ctx *expr.ExpressionContext) {
 	if ctx.GetUnary_op() != nil {
-		left, err := p.stack.Pop()
+		left, err := p.valueStack.pop()
 		if err != nil {
-			p.throw(ctx, popStackErr).with(err)
+			p.throw(ctx, popValueStackErr).with(err)
 		}
 		p.unaryCalc(left, ctx, ctx.GetUnary_op())
 		p.coverage.add(ctx)
@@ -966,28 +1000,21 @@ func (p *exprParser) ExitVar_(ctx *expr.Var_Context) {
 		val = exprValue{value: _builtin.get(alias), alias: alias}
 	} else {
 		var ok bool
-		if p.foreachParams != nil {
-			val, ok = p.foreachParams.get(alias)
-			if !ok {
-				val, ok = p.baseParams.get(alias)
-			}
-		} else {
-			val, ok = p.baseParams.get(alias)
-		}
+		val, ok = p.paramsStack.getVar(alias)
 		if !ok {
-			p.throw(ctx, parameterNotFoundErr).format("parameter '%s' not found", alias)
+			p.throw(ctx, parameterNotFoundErr).format("var '%s' not found", alias)
 			return
 		}
 	}
-	p.stack.Push(&val)
+	p.valueStack.push(&val)
 	p.coverage.add(ctx)
 }
 
 func (p *exprParser) ExitMember(ctx *expr.MemberContext) {
 	name := ctx.IDENTIFIER().GetText()
-	obj, err := p.stack.Pop()
+	obj, err := p.valueStack.pop()
 	if err != nil {
-		p.throw(ctx, popStackErr).with(err)
+		p.throw(ctx, popValueStackErr).with(err)
 	}
 	var mev *exprValue
 	mev, err = obj.visitMember(name)
@@ -995,20 +1022,20 @@ func (p *exprParser) ExitMember(ctx *expr.MemberContext) {
 		p.throw(ctx, visitMemberErr).with(err)
 	}
 	
-	p.stack.Push(mev)
+	p.valueStack.push(mev)
 	p.coverage.add(ctx)
 }
 
 func (p *exprParser) ExitIndex(ctx *expr.IndexContext) {
 	
-	index, err := p.stack.Pop()
+	index, err := p.valueStack.pop()
 	if err != nil {
-		p.throw(ctx, popStackErr).with(err)
+		p.throw(ctx, popValueStackErr).with(err)
 	}
 	
-	object, err := p.stack.Pop()
+	object, err := p.valueStack.pop()
 	if err != nil {
-		p.throw(ctx, popStackErr).with(err)
+		p.throw(ctx, popValueStackErr).with(err)
 	}
 	objectReflectElem := reflectValueElem(object.value)
 	var ev *exprValue
@@ -1032,7 +1059,7 @@ func (p *exprParser) ExitIndex(ctx *expr.IndexContext) {
 	} else {
 		p.throw(ctx, indexErr).format("parameter unsupported index")
 	}
-	p.stack.Push(ev)
+	p.valueStack.push(ev)
 	p.coverage.add(ctx)
 }
 
@@ -1040,24 +1067,24 @@ func (p *exprParser) ExitSlice_(ctx *expr.Slice_Context) {
 	l := len(ctx.AllExpression())
 	args := make([]int, l)
 	for i := l - 1; i >= 0; i-- {
-		arg, err := p.stack.Pop()
+		arg, err := p.valueStack.pop()
 		if err != nil {
-			p.throw(ctx, popStackErr).with(err)
+			p.throw(ctx, popValueStackErr).with(err)
 		}
 		args[i], err = arg.int()
 		if err != nil {
 			p.throw(ctx, visitArrayErr).with(err)
 		}
 	}
-	target, err := p.stack.Pop()
+	target, err := p.valueStack.pop()
 	if err != nil {
-		p.throw(ctx, popStackErr).with(err)
+		p.throw(ctx, popValueStackErr).with(err)
 	}
 	r, err := target.visitSlice(ctx.GetText(), args...)
 	if err != nil {
 		p.throw(ctx, visitArrayErr).with(err)
 	}
-	p.stack.Push(r)
+	p.valueStack.push(r)
 	p.coverage.add(ctx)
 }
 
@@ -1068,21 +1095,21 @@ func (p *exprParser) ExitCall(ctx *expr.CallContext) {
 	}
 	args := make([]reflect.Value, l)
 	for i := l - 1; i >= 0; i-- {
-		arg, err := p.stack.Pop()
+		arg, err := p.valueStack.pop()
 		if err != nil {
-			p.throw(ctx, popStackErr).with(err)
+			p.throw(ctx, popValueStackErr).with(err)
 		}
 		args[i] = reflectValueElem(arg.value)
 	}
-	f, err := p.stack.Pop()
+	f, err := p.valueStack.pop()
 	if err != nil {
-		p.throw(ctx, popStackErr).with(err)
+		p.throw(ctx, popValueStackErr).with(err)
 	}
 	r, err := f.call(ctx.ELLIPSIS() != nil, args)
 	if err != nil {
 		p.throw(ctx, callErr).with(err)
 	}
-	p.stack.Push(r)
+	p.valueStack.push(r)
 	p.coverage.add(ctx)
 }
 
@@ -1091,7 +1118,7 @@ func (p *exprParser) ExitInteger(ctx *expr.IntegerContext) {
 	if err != nil {
 		p.throw(ctx, parseIntegerErr).with(err)
 	}
-	p.stack.Push(&exprValue{
+	p.valueStack.push(&exprValue{
 		value:  v,
 		source: ctx.GetText(),
 	})
@@ -1099,7 +1126,7 @@ func (p *exprParser) ExitInteger(ctx *expr.IntegerContext) {
 }
 
 func (p *exprParser) ExitString_(ctx *expr.String_Context) {
-	p.stack.Push(&exprValue{
+	p.valueStack.push(&exprValue{
 		value: trimValueQuote(ctx.GetText()),
 	})
 	p.coverage.add(ctx)
@@ -1110,7 +1137,7 @@ func (p *exprParser) ExitFloat_(ctx *expr.Float_Context) {
 	if err != nil {
 		p.throw(ctx, parseDecimalErr).with(err)
 	}
-	p.stack.Push(&exprValue{
+	p.valueStack.push(&exprValue{
 		value:  v,
 		source: ctx.GetText(),
 	})
@@ -1118,7 +1145,7 @@ func (p *exprParser) ExitFloat_(ctx *expr.Float_Context) {
 }
 
 func (p *exprParser) ExitNil_(ctx *expr.Nil_Context) {
-	p.stack.Push(&exprValue{
+	p.valueStack.push(&exprValue{
 		value: nil,
 	})
 	p.coverage.add(ctx)
@@ -1132,7 +1159,7 @@ func (p *exprParser) parseExpression(nodeCtx antlr.ParserRuleContext, expresion 
 	}()
 	
 	p.nodeCtx = nodeCtx
-	p.stack = newExprStack()
+	p.valueStack = newValueStack()
 	p.coverage = newCoverage()
 	
 	parser := initExprParser(expresion)
@@ -1145,10 +1172,10 @@ func (p *exprParser) parseExpression(nodeCtx antlr.ParserRuleContext, expresion 
 		)
 	}
 	
-	if p.stack.Len() != 1 {
-		p.throw(nil, popResultErr).format("expect result stack length: 1, got %d", p.stack.Len())
+	if p.valueStack.len() != 1 {
+		p.throw(nil, popResultErr).format("expect result stack length: 1, got %d", p.valueStack.len())
 	}
-	v, err := p.stack.Pop()
+	v, err := p.valueStack.pop()
 	if err != nil {
 		p.throw(nil, popResultErr).with(err)
 	}
@@ -1173,11 +1200,11 @@ func (p *exprParser) throw(ctx antlr.ParserRuleContext, code int) *_error {
 }
 
 func (p *exprParser) popBinaryOperands() (left, right *exprValue, err error) {
-	right, err = p.stack.Pop()
+	right, err = p.valueStack.pop()
 	if err != nil {
 		return
 	}
-	left, err = p.stack.Pop()
+	left, err = p.valueStack.pop()
 	if err != nil {
 		return
 	}
@@ -1216,7 +1243,7 @@ func (p *exprParser) numericStringCalc(left, right *exprValue, ctx antlr.ParserR
 		p.throw(ctx, numericCalcErr).with(err)
 	}
 	
-	p.stack.Push(&exprValue{value: result})
+	p.valueStack.push(&exprValue{value: result})
 }
 
 func (p *exprParser) relationCalc(left, right *exprValue, ctx antlr.ParserRuleContext, op antlr.Token) {
@@ -1243,7 +1270,7 @@ func (p *exprParser) relationCalc(left, right *exprValue, ctx antlr.ParserRuleCo
 		p.throw(ctx, relationCalcError).with(err)
 		
 	}
-	p.stack.Push(&exprValue{value: result})
+	p.valueStack.push(&exprValue{value: result})
 }
 
 func (p *exprParser) unaryCalc(left *exprValue, ctx antlr.ParserRuleContext, op antlr.Token) {
@@ -1264,7 +1291,7 @@ func (p *exprParser) unaryCalc(left *exprValue, ctx antlr.ParserRuleContext, op 
 	if err != nil {
 		p.throw(ctx, unaryCalcError).with(err)
 	}
-	p.stack.Push(&exprValue{value: result})
+	p.valueStack.push(&exprValue{value: result})
 }
 
 func (p *exprParser) logicCalc(left, right *exprValue, ctx antlr.ParserRuleContext, op antlr.Token) {
@@ -1280,5 +1307,5 @@ func (p *exprParser) logicCalc(left, right *exprValue, ctx antlr.ParserRuleConte
 	if err != nil {
 		p.throw(ctx, logicCalcErr).with(err)
 	}
-	p.stack.Push(&exprValue{value: result})
+	p.valueStack.push(&exprValue{value: result})
 }

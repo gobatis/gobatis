@@ -5,7 +5,7 @@ import (
 )
 
 type TestMapper struct {
-	SelectInsert func(entity entity.TestEntity) (err error)
+	SelectInsert func(entity entity.TestEntity) (id int, err error)
 	//SelectInsertPointer              func(entity *entity.TestEntity) (rows int8, err error)
 	//SelectInsertForeachSlice         func(testEntity entity.TestEntity, enums []string) (rows int16, err error)
 	//SelectInsertForeachSlicePointer  func(testEntity *entity.TestEntity, enums *[]string) (rows int32, err error)

@@ -241,7 +241,7 @@ func (p *fragment) parseStatement(args ...reflect.Value) (sql string, vars []int
 	
 	parser := newExprParser(args...)
 	for i, v := range p.in {
-		err = parser.baseParams.bind(v, i)
+		err = parser.paramsStack.list.Front().Next().Value.(*exprParams).bind(v, i)
 		if err != nil {
 			throw(p.statement.File, p.statement.ctx, parasFragmentErr).with(err)
 		}
@@ -406,7 +406,7 @@ func (p *fragment) parseSet(parser *exprParser, node *xmlNode, res *psr) {
 func (p *fragment) parseForeach(parser *exprParser, node *xmlNode, res *psr) {
 	
 	_var := node.GetAttribute(dtd.COLLECTION)
-	collection, ok := parser.baseParams.get(_var)
+	collection, ok := parser.paramsStack.getVar(_var)
 	if !ok {
 		throw(p.statement.File, p.statement.ctx, parasFragmentErr).
 			format("can't get foreach collection '%s' value", _var)
@@ -428,16 +428,13 @@ func (p *fragment) parseForeach(parser *exprParser, node *xmlNode, res *psr) {
 	open := node.GetAttribute(dtd.OPEN)
 	_close := node.GetAttribute(dtd.CLOSE)
 	separator := node.GetAttribute(dtd.SEPARATOR)
-	
-	parser.foreachParams = newExprParams()
-	parser.paramIndex = 0
-	
+	//parser.paramIndex = 0
 	elem := reflectValueElem(collection.value)
 	frags := make([]string, 0)
 	switch elem.Kind() {
 	case reflect.Slice, reflect.Array:
 		for i := 0; i < elem.Len(); i++ {
-			parser.foreachParams.set(elem.Index(i), reflect.ValueOf(i))
+			parser.paramsStack.push(newExprParams(elem.Index(i), reflect.ValueOf(i)))
 			if i == 0 {
 				p.bindForeachParams(parser, indexParam, itemParam)
 			}
@@ -445,7 +442,7 @@ func (p *fragment) parseForeach(parser *exprParser, node *xmlNode, res *psr) {
 		}
 	case reflect.Map:
 		for i, v := range elem.MapKeys() {
-			parser.foreachParams.set(elem.MapIndex(v), v)
+			parser.paramsStack.push(newExprParams(elem.MapIndex(v), v))
 			if i == 0 {
 				p.bindForeachParams(parser, indexParam, itemParam)
 			}
@@ -453,7 +450,7 @@ func (p *fragment) parseForeach(parser *exprParser, node *xmlNode, res *psr) {
 		}
 	case reflect.Struct:
 		for i := 0; i < elem.NumField(); i++ {
-			parser.foreachParams.set(elem.Field(i).Elem(), elem.Field(i))
+			parser.paramsStack.push(newExprParams(elem.Field(i).Elem(), elem.Field(i)))
 			if i == 0 {
 				p.bindForeachParams(parser, indexParam, itemParam)
 			}
@@ -462,20 +459,22 @@ func (p *fragment) parseForeach(parser *exprParser, node *xmlNode, res *psr) {
 	default:
 		throw(parser.file, node.ctx, parasFragmentErr).format("foreach collection type '%s' can't range", elem.Type())
 	}
-	parser.foreachParams = nil
-	
+	_, err := parser.paramsStack.pop()
+	if err != nil {
+		throw(parser.file, node.ctx, popParamsStackErr).with(err)
+	}
 	if len(frags) > 0 {
 		res.merge(open + strings.Join(frags, separator) + _close)
 	}
 }
 
 func (p *fragment) bindForeachParams(parser *exprParser, indexParam, itemParam *param) {
-	parser.foreachParams.check = map[string]int{}
-	err := parser.foreachParams.bind(indexParam, 0)
+	parser.paramsStack.peak().check = map[string]int{}
+	err := parser.paramsStack.peak().bind(indexParam, 0)
 	if err != nil {
 		throw(p.statement.File, p.statement.ctx, varBindErr).with(err)
 	}
-	err = parser.foreachParams.bind(itemParam, 1)
+	err = parser.paramsStack.peak().bind(itemParam, 1)
 	if err != nil {
 		throw(p.statement.File, p.statement.ctx, varBindErr).with(err)
 	}
@@ -516,15 +515,15 @@ func (p *caller) Scan(pointers ...interface{}) (err error) {
 
 func (p *caller) call() (err error) {
 	
-	start := time.Now()
-	defer func() {
-		p.fragment.logger.Debugf("[gobatis] [%s] cost: %s", p.fragment.id, time.Since(start))
-	}()
-	
 	if len(p.fragment.in) != len(p.params) {
 		err = fmt.Errorf("expected %d params, but pass %d", len(p.fragment.in), len(p.params))
 		return
 	}
+	
+	start := time.Now()
+	defer func() {
+		p.fragment.logger.Debugf("[gobatis] [%s] cost: %s", p.fragment.id, time.Since(start))
+	}()
 	
 	switch p.fragment.statement.Name {
 	case dtd.SELECT:
@@ -567,11 +566,12 @@ func (p *caller) exec(in ...reflect.Value) (err error) {
 		return
 	}
 	
-	p.fragment.logger.Debugf("[gobatis] [%s] statement: %s", p.fragment.id, s)
-	p.fragment.logger.Debugf("[gobatis] [%s] parameter: %s", p.fragment.id, p.printVars(vars))
+	p.fragment.logger.Debugf("[gobatis] [%s] exec statement: %s", p.fragment.id, s)
+	p.fragment.logger.Debugf("[gobatis] [%s] exec parameter: %s", p.fragment.id, p.printVars(vars))
 	
 	res, err := exec.ExecContext(ctx, s, vars...)
 	if err != nil {
+		p.fragment.logger.Debugf("[gobatis] [%s] exec error: %v", p.fragment.id, err)
 		return
 	}
 	
@@ -616,12 +616,12 @@ func (p *caller) query(in ...reflect.Value) (err error) {
 	if err != nil {
 		return
 	}
-	p.fragment.logger.Debugf("[gobatis] [%s] statement: %s", p.fragment.id, s)
-	p.fragment.logger.Debugf("[gobatis] [%s] parameter: %+v", p.fragment.id, p.printVars(vars))
+	p.fragment.logger.Debugf("[gobatis] [%s] query statement: %s", p.fragment.id, s)
+	p.fragment.logger.Debugf("[gobatis] [%s] query parameter: %+v", p.fragment.id, p.printVars(vars))
 	
-	rows, err := q.QueryContext(ctx, s, vars...)
+	rows, err := conn.QueryContext(ctx, s, vars...)
 	if err != nil {
-		p.fragment.logger.Debugf("[gobatis] [%s] exec query error: %v", p.fragment.id, err)
+		p.fragment.logger.Debugf("[gobatis] [%s] query error: %v", p.fragment.id, err)
 		return
 	}
 	defer func() {
