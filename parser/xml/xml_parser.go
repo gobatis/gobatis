@@ -15,47 +15,48 @@ var _ = reflect.Copy
 var _ = strconv.Itoa
 
 var parserATN = []uint16{
-	3, 24715, 42794, 33075, 47597, 16764, 15335, 30598, 22884, 3, 20, 98, 4,
+	3, 24715, 42794, 33075, 47597, 16764, 15335, 30598, 22884, 3, 20, 99, 4,
 	2, 9, 2, 4, 3, 9, 3, 4, 4, 9, 4, 4, 5, 9, 5, 4, 6, 9, 6, 4, 7, 9, 7, 4,
 	8, 9, 8, 4, 9, 9, 9, 3, 2, 5, 2, 20, 10, 2, 3, 2, 7, 2, 23, 10, 2, 12,
 	2, 14, 2, 26, 11, 2, 3, 2, 3, 2, 7, 2, 30, 10, 2, 12, 2, 14, 2, 33, 11,
 	2, 3, 3, 3, 3, 7, 3, 37, 10, 3, 12, 3, 14, 3, 40, 11, 3, 3, 3, 3, 3, 3,
-	4, 5, 4, 45, 10, 4, 3, 4, 3, 4, 3, 4, 3, 4, 3, 4, 5, 4, 52, 10, 4, 3, 4,
-	5, 4, 55, 10, 4, 7, 4, 57, 10, 4, 12, 4, 14, 4, 60, 11, 4, 3, 5, 3, 5,
-	3, 5, 7, 5, 65, 10, 5, 12, 5, 14, 5, 68, 11, 5, 3, 5, 3, 5, 3, 5, 3, 5,
-	3, 5, 3, 5, 3, 5, 3, 5, 3, 5, 3, 5, 7, 5, 80, 10, 5, 12, 5, 14, 5, 83,
-	11, 5, 3, 5, 5, 5, 86, 10, 5, 3, 6, 3, 6, 3, 7, 3, 7, 3, 7, 3, 7, 3, 8,
-	3, 8, 3, 9, 3, 9, 3, 9, 2, 2, 10, 2, 4, 6, 8, 10, 12, 14, 16, 2, 5, 3,
-	2, 6, 7, 4, 2, 8, 8, 11, 11, 5, 2, 3, 3, 8, 8, 20, 20, 2, 103, 2, 19, 3,
-	2, 2, 2, 4, 34, 3, 2, 2, 2, 6, 44, 3, 2, 2, 2, 8, 85, 3, 2, 2, 2, 10, 87,
-	3, 2, 2, 2, 12, 89, 3, 2, 2, 2, 14, 93, 3, 2, 2, 2, 16, 95, 3, 2, 2, 2,
-	18, 20, 5, 4, 3, 2, 19, 18, 3, 2, 2, 2, 19, 20, 3, 2, 2, 2, 20, 24, 3,
-	2, 2, 2, 21, 23, 5, 16, 9, 2, 22, 21, 3, 2, 2, 2, 23, 26, 3, 2, 2, 2, 24,
-	22, 3, 2, 2, 2, 24, 25, 3, 2, 2, 2, 25, 27, 3, 2, 2, 2, 26, 24, 3, 2, 2,
-	2, 27, 31, 5, 8, 5, 2, 28, 30, 5, 16, 9, 2, 29, 28, 3, 2, 2, 2, 30, 33,
-	3, 2, 2, 2, 31, 29, 3, 2, 2, 2, 31, 32, 3, 2, 2, 2, 32, 3, 3, 2, 2, 2,
-	33, 31, 3, 2, 2, 2, 34, 38, 7, 10, 2, 2, 35, 37, 5, 12, 7, 2, 36, 35, 3,
-	2, 2, 2, 37, 40, 3, 2, 2, 2, 38, 36, 3, 2, 2, 2, 38, 39, 3, 2, 2, 2, 39,
-	41, 3, 2, 2, 2, 40, 38, 3, 2, 2, 2, 41, 42, 7, 13, 2, 2, 42, 5, 3, 2, 2,
-	2, 43, 45, 5, 14, 8, 2, 44, 43, 3, 2, 2, 2, 44, 45, 3, 2, 2, 2, 45, 58,
-	3, 2, 2, 2, 46, 52, 5, 8, 5, 2, 47, 52, 5, 10, 6, 2, 48, 52, 7, 4, 2, 2,
-	49, 52, 7, 20, 2, 2, 50, 52, 7, 3, 2, 2, 51, 46, 3, 2, 2, 2, 51, 47, 3,
-	2, 2, 2, 51, 48, 3, 2, 2, 2, 51, 49, 3, 2, 2, 2, 51, 50, 3, 2, 2, 2, 52,
-	54, 3, 2, 2, 2, 53, 55, 5, 14, 8, 2, 54, 53, 3, 2, 2, 2, 54, 55, 3, 2,
-	2, 2, 55, 57, 3, 2, 2, 2, 56, 51, 3, 2, 2, 2, 57, 60, 3, 2, 2, 2, 58, 56,
-	3, 2, 2, 2, 58, 59, 3, 2, 2, 2, 59, 7, 3, 2, 2, 2, 60, 58, 3, 2, 2, 2,
-	61, 62, 7, 9, 2, 2, 62, 66, 7, 18, 2, 2, 63, 65, 5, 12, 7, 2, 64, 63, 3,
-	2, 2, 2, 65, 68, 3, 2, 2, 2, 66, 64, 3, 2, 2, 2, 66, 67, 3, 2, 2, 2, 67,
-	69, 3, 2, 2, 2, 68, 66, 3, 2, 2, 2, 69, 70, 7, 12, 2, 2, 70, 71, 5, 6,
-	4, 2, 71, 72, 7, 9, 2, 2, 72, 73, 7, 15, 2, 2, 73, 74, 7, 18, 2, 2, 74,
-	75, 7, 12, 2, 2, 75, 86, 3, 2, 2, 2, 76, 77, 7, 9, 2, 2, 77, 81, 7, 18,
-	2, 2, 78, 80, 5, 12, 7, 2, 79, 78, 3, 2, 2, 2, 80, 83, 3, 2, 2, 2, 81,
-	79, 3, 2, 2, 2, 81, 82, 3, 2, 2, 2, 82, 84, 3, 2, 2, 2, 83, 81, 3, 2, 2,
-	2, 84, 86, 7, 14, 2, 2, 85, 61, 3, 2, 2, 2, 85, 76, 3, 2, 2, 2, 86, 9,
-	3, 2, 2, 2, 87, 88, 9, 2, 2, 2, 88, 11, 3, 2, 2, 2, 89, 90, 7, 18, 2, 2,
-	90, 91, 7, 16, 2, 2, 91, 92, 7, 17, 2, 2, 92, 13, 3, 2, 2, 2, 93, 94, 9,
-	3, 2, 2, 94, 15, 3, 2, 2, 2, 95, 96, 9, 4, 2, 2, 96, 17, 3, 2, 2, 2, 13,
-	19, 24, 31, 38, 44, 51, 54, 58, 66, 81, 85,
+	4, 5, 4, 45, 10, 4, 3, 4, 3, 4, 3, 4, 3, 4, 3, 4, 3, 4, 5, 4, 53, 10, 4,
+	3, 4, 5, 4, 56, 10, 4, 7, 4, 58, 10, 4, 12, 4, 14, 4, 61, 11, 4, 3, 5,
+	3, 5, 3, 5, 7, 5, 66, 10, 5, 12, 5, 14, 5, 69, 11, 5, 3, 5, 3, 5, 3, 5,
+	3, 5, 3, 5, 3, 5, 3, 5, 3, 5, 3, 5, 3, 5, 7, 5, 81, 10, 5, 12, 5, 14, 5,
+	84, 11, 5, 3, 5, 5, 5, 87, 10, 5, 3, 6, 3, 6, 3, 7, 3, 7, 3, 7, 3, 7, 3,
+	8, 3, 8, 3, 9, 3, 9, 3, 9, 2, 2, 10, 2, 4, 6, 8, 10, 12, 14, 16, 2, 5,
+	3, 2, 6, 7, 4, 2, 8, 8, 11, 11, 5, 2, 3, 3, 8, 8, 20, 20, 2, 105, 2, 19,
+	3, 2, 2, 2, 4, 34, 3, 2, 2, 2, 6, 44, 3, 2, 2, 2, 8, 86, 3, 2, 2, 2, 10,
+	88, 3, 2, 2, 2, 12, 90, 3, 2, 2, 2, 14, 94, 3, 2, 2, 2, 16, 96, 3, 2, 2,
+	2, 18, 20, 5, 4, 3, 2, 19, 18, 3, 2, 2, 2, 19, 20, 3, 2, 2, 2, 20, 24,
+	3, 2, 2, 2, 21, 23, 5, 16, 9, 2, 22, 21, 3, 2, 2, 2, 23, 26, 3, 2, 2, 2,
+	24, 22, 3, 2, 2, 2, 24, 25, 3, 2, 2, 2, 25, 27, 3, 2, 2, 2, 26, 24, 3,
+	2, 2, 2, 27, 31, 5, 8, 5, 2, 28, 30, 5, 16, 9, 2, 29, 28, 3, 2, 2, 2, 30,
+	33, 3, 2, 2, 2, 31, 29, 3, 2, 2, 2, 31, 32, 3, 2, 2, 2, 32, 3, 3, 2, 2,
+	2, 33, 31, 3, 2, 2, 2, 34, 38, 7, 10, 2, 2, 35, 37, 5, 12, 7, 2, 36, 35,
+	3, 2, 2, 2, 37, 40, 3, 2, 2, 2, 38, 36, 3, 2, 2, 2, 38, 39, 3, 2, 2, 2,
+	39, 41, 3, 2, 2, 2, 40, 38, 3, 2, 2, 2, 41, 42, 7, 13, 2, 2, 42, 5, 3,
+	2, 2, 2, 43, 45, 5, 14, 8, 2, 44, 43, 3, 2, 2, 2, 44, 45, 3, 2, 2, 2, 45,
+	59, 3, 2, 2, 2, 46, 53, 7, 9, 2, 2, 47, 53, 5, 8, 5, 2, 48, 53, 5, 10,
+	6, 2, 49, 53, 7, 4, 2, 2, 50, 53, 7, 20, 2, 2, 51, 53, 7, 3, 2, 2, 52,
+	46, 3, 2, 2, 2, 52, 47, 3, 2, 2, 2, 52, 48, 3, 2, 2, 2, 52, 49, 3, 2, 2,
+	2, 52, 50, 3, 2, 2, 2, 52, 51, 3, 2, 2, 2, 53, 55, 3, 2, 2, 2, 54, 56,
+	5, 14, 8, 2, 55, 54, 3, 2, 2, 2, 55, 56, 3, 2, 2, 2, 56, 58, 3, 2, 2, 2,
+	57, 52, 3, 2, 2, 2, 58, 61, 3, 2, 2, 2, 59, 57, 3, 2, 2, 2, 59, 60, 3,
+	2, 2, 2, 60, 7, 3, 2, 2, 2, 61, 59, 3, 2, 2, 2, 62, 63, 7, 9, 2, 2, 63,
+	67, 7, 18, 2, 2, 64, 66, 5, 12, 7, 2, 65, 64, 3, 2, 2, 2, 66, 69, 3, 2,
+	2, 2, 67, 65, 3, 2, 2, 2, 67, 68, 3, 2, 2, 2, 68, 70, 3, 2, 2, 2, 69, 67,
+	3, 2, 2, 2, 70, 71, 7, 12, 2, 2, 71, 72, 5, 6, 4, 2, 72, 73, 7, 9, 2, 2,
+	73, 74, 7, 15, 2, 2, 74, 75, 7, 18, 2, 2, 75, 76, 7, 12, 2, 2, 76, 87,
+	3, 2, 2, 2, 77, 78, 7, 9, 2, 2, 78, 82, 7, 18, 2, 2, 79, 81, 5, 12, 7,
+	2, 80, 79, 3, 2, 2, 2, 81, 84, 3, 2, 2, 2, 82, 80, 3, 2, 2, 2, 82, 83,
+	3, 2, 2, 2, 83, 85, 3, 2, 2, 2, 84, 82, 3, 2, 2, 2, 85, 87, 7, 14, 2, 2,
+	86, 62, 3, 2, 2, 2, 86, 77, 3, 2, 2, 2, 87, 9, 3, 2, 2, 2, 88, 89, 9, 2,
+	2, 2, 89, 11, 3, 2, 2, 2, 90, 91, 7, 18, 2, 2, 91, 92, 7, 16, 2, 2, 92,
+	93, 7, 17, 2, 2, 93, 13, 3, 2, 2, 2, 94, 95, 9, 3, 2, 2, 95, 15, 3, 2,
+	2, 2, 96, 97, 9, 4, 2, 2, 97, 17, 3, 2, 2, 2, 13, 19, 24, 31, 38, 44, 52,
+	55, 59, 67, 82, 86,
 }
 var literalNames = []string{
 	"", "", "", "", "", "", "", "'<'", "", "", "'>'", "", "'/>'", "'/'", "'='",
@@ -479,6 +480,14 @@ func (s *ContentContext) Chardata(i int) IChardataContext {
 	return t.(IChardataContext)
 }
 
+func (s *ContentContext) AllOPEN() []antlr.TerminalNode {
+	return s.GetTokens(XMLParserOPEN)
+}
+
+func (s *ContentContext) OPEN(i int) antlr.TerminalNode {
+	return s.GetToken(XMLParserOPEN, i)
+}
+
 func (s *ContentContext) AllElement() []IElementContext {
 	var ts = s.GetTypedRuleContexts(reflect.TypeOf((*IElementContext)(nil)).Elem())
 	var tst = make([]IElementContext, len(ts))
@@ -592,63 +601,66 @@ func (p *XMLParser) Content() (localctx IContentContext) {
 		}
 
 	}
-	p.SetState(56)
+	p.SetState(57)
 	p.GetErrorHandler().Sync(p)
 	_alt = p.GetInterpreter().AdaptivePredict(p.GetTokenStream(), 7, p.GetParserRuleContext())
 
 	for _alt != 2 && _alt != antlr.ATNInvalidAltNumber {
 		if _alt == 1 {
-			p.SetState(49)
+			p.SetState(50)
 			p.GetErrorHandler().Sync(p)
-
-			switch p.GetTokenStream().LA(1) {
-			case XMLParserOPEN:
+			switch p.GetInterpreter().AdaptivePredict(p.GetTokenStream(), 5, p.GetParserRuleContext()) {
+			case 1:
 				{
 					p.SetState(44)
+					p.Match(XMLParserOPEN)
+				}
+
+			case 2:
+				{
+					p.SetState(45)
 					p.Element()
 				}
 
-			case XMLParserEntityRef, XMLParserCharRef:
+			case 3:
 				{
-					p.SetState(45)
+					p.SetState(46)
 					p.Reference()
 				}
 
-			case XMLParserCDATA:
+			case 4:
 				{
-					p.SetState(46)
+					p.SetState(47)
 					p.Match(XMLParserCDATA)
 				}
 
-			case XMLParserPI:
+			case 5:
 				{
-					p.SetState(47)
+					p.SetState(48)
 					p.Match(XMLParserPI)
 				}
 
-			case XMLParserCOMMENT:
+			case 6:
 				{
-					p.SetState(48)
+					p.SetState(49)
 					p.Match(XMLParserCOMMENT)
 				}
 
-			default:
-				panic(antlr.NewNoViableAltException(p, nil, nil, nil, nil, nil))
 			}
-			p.SetState(52)
+			p.SetState(53)
 			p.GetErrorHandler().Sync(p)
 			_la = p.GetTokenStream().LA(1)
 
 			if _la == XMLParserSEA_WS || _la == XMLParserTEXT {
 				{
-					p.SetState(51)
+					p.SetState(52)
 					p.Chardata()
 				}
 
 			}
 
 		}
-		p.SetState(58)
+		p.SetState(59)
 		p.GetErrorHandler().Sync(p)
 		_alt = p.GetInterpreter().AdaptivePredict(p.GetTokenStream(), 7, p.GetParserRuleContext())
 	}
@@ -788,84 +800,84 @@ func (p *XMLParser) Element() (localctx IElementContext) {
 		}
 	}()
 
-	p.SetState(83)
+	p.SetState(84)
 	p.GetErrorHandler().Sync(p)
 	switch p.GetInterpreter().AdaptivePredict(p.GetTokenStream(), 10, p.GetParserRuleContext()) {
 	case 1:
 		p.EnterOuterAlt(localctx, 1)
 		{
-			p.SetState(59)
+			p.SetState(60)
 			p.Match(XMLParserOPEN)
 		}
 		{
-			p.SetState(60)
+			p.SetState(61)
 			p.Match(XMLParserName)
 		}
-		p.SetState(64)
+		p.SetState(65)
 		p.GetErrorHandler().Sync(p)
 		_la = p.GetTokenStream().LA(1)
 
 		for _la == XMLParserName {
 			{
-				p.SetState(61)
+				p.SetState(62)
 				p.Attribute()
 			}
 
-			p.SetState(66)
+			p.SetState(67)
 			p.GetErrorHandler().Sync(p)
 			_la = p.GetTokenStream().LA(1)
 		}
 		{
-			p.SetState(67)
+			p.SetState(68)
 			p.Match(XMLParserCLOSE)
 		}
 		{
-			p.SetState(68)
+			p.SetState(69)
 			p.Content()
 		}
 		{
-			p.SetState(69)
+			p.SetState(70)
 			p.Match(XMLParserOPEN)
 		}
 		{
-			p.SetState(70)
+			p.SetState(71)
 			p.Match(XMLParserSLASH)
 		}
 		{
-			p.SetState(71)
+			p.SetState(72)
 			p.Match(XMLParserName)
 		}
 		{
-			p.SetState(72)
+			p.SetState(73)
 			p.Match(XMLParserCLOSE)
 		}
 
 	case 2:
 		p.EnterOuterAlt(localctx, 2)
 		{
-			p.SetState(74)
+			p.SetState(75)
 			p.Match(XMLParserOPEN)
 		}
 		{
-			p.SetState(75)
+			p.SetState(76)
 			p.Match(XMLParserName)
 		}
-		p.SetState(79)
+		p.SetState(80)
 		p.GetErrorHandler().Sync(p)
 		_la = p.GetTokenStream().LA(1)
 
 		for _la == XMLParserName {
 			{
-				p.SetState(76)
+				p.SetState(77)
 				p.Attribute()
 			}
 
-			p.SetState(81)
+			p.SetState(82)
 			p.GetErrorHandler().Sync(p)
 			_la = p.GetTokenStream().LA(1)
 		}
 		{
-			p.SetState(82)
+			p.SetState(83)
 			p.Match(XMLParserSLASH_CLOSE)
 		}
 
@@ -951,7 +963,7 @@ func (p *XMLParser) Reference() (localctx IReferenceContext) {
 
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(85)
+		p.SetState(86)
 		_la = p.GetTokenStream().LA(1)
 
 		if !(_la == XMLParserEntityRef || _la == XMLParserCharRef) {
@@ -1045,15 +1057,15 @@ func (p *XMLParser) Attribute() (localctx IAttributeContext) {
 
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(87)
+		p.SetState(88)
 		p.Match(XMLParserName)
 	}
 	{
-		p.SetState(88)
+		p.SetState(89)
 		p.Match(XMLParserEQUALS)
 	}
 	{
-		p.SetState(89)
+		p.SetState(90)
 		p.Match(XMLParserSTRING)
 	}
 
@@ -1137,7 +1149,7 @@ func (p *XMLParser) Chardata() (localctx IChardataContext) {
 
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(91)
+		p.SetState(92)
 		_la = p.GetTokenStream().LA(1)
 
 		if !(_la == XMLParserSEA_WS || _la == XMLParserTEXT) {
@@ -1232,7 +1244,7 @@ func (p *XMLParser) Misc() (localctx IMiscContext) {
 
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(93)
+		p.SetState(94)
 		_la = p.GetTokenStream().LA(1)
 
 		if !(((_la)&-(0x1f+1)) == 0 && ((1<<uint(_la))&((1<<XMLParserCOMMENT)|(1<<XMLParserSEA_WS)|(1<<XMLParserPI))) != 0) {
