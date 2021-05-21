@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"testing"
+	"time"
 )
 
 var (
@@ -54,26 +55,26 @@ func TestEngine(t *testing.T) {
 
 func testSelectInsert(t *testing.T, _testMapper *mapper.TestMapper) {
 	id, err := _testMapper.SelectInsert(entity.TestEntity{
-		Int8:            1,
-		BigInt:          2,
-		Int:             3,
-		Decimal:         decimal.NewFromFloat(3.14),
-		Numeric:         decimal.NewFromFloat(3.14156),
-		Real:            4,
-		DoublePrecision: 5.1,
-		SmallSerial:     6,
-		Serial:          7,
-		BigSerial:       8,
-		Money:           "1.1",
-		Char:            "hello",
-		Text:            "world",
-		//TimestampWithoutTimeZone: time.Now(),
-		//TimestampWithTimeZone:    time.Now(),
-		//Date:                     time.Now(),
-		//TimeWithoutTimeZone:      time.Now(),
-		//TimeWithTimeZone:         time.Now(),
-		//Interval:                 100 * time.Second,
-		Boolean: true,
+		Int8:                     1,
+		BigInt:                   2,
+		Int:                      3,
+		Decimal:                  decimal.NewFromFloat(3.14),
+		Numeric:                  decimal.NewFromFloat(3.14156),
+		Real:                     4,
+		DoublePrecision:          5.1,
+		SmallSerial:              6,
+		Serial:                   7,
+		BigSerial:                8,
+		Money:                    "1.1",
+		Char:                     "hello",
+		Text:                     "world",
+		TimestampWithoutTimeZone: time.Now(),
+		TimestampWithTimeZone:    time.Now(),
+		Date:                     time.Now(),
+		TimeWithoutTimeZone:      time.Now(),
+		TimeWithTimeZone:         time.Now(),
+		Interval:                 100 * time.Second,
+		Boolean:                  true,
 	})
 	
 	require.NoError(t, err)
@@ -82,28 +83,30 @@ func testSelectInsert(t *testing.T, _testMapper *mapper.TestMapper) {
 
 func testSelectInsertPointer(t *testing.T, _testMapper *mapper.TestMapper) {
 	dec := decimal.NewFromFloat(3.14)
+	now := time.Now()
+	interval := 100 * time.Second
 	
 	id2, err := _testMapper.SelectInsertPointer(&entity.TestEntityPointer{
-		Int8:            pointer.ToInt8(1),
-		BigInt:          pointer.ToInt64(2),
-		Int:             pointer.ToInt(3),
-		Decimal:         &dec,
-		Numeric:         &dec,
-		Real:            pointer.ToFloat64(4),
-		DoublePrecision: pointer.ToFloat64(5.1),
-		SmallSerial:     pointer.ToInt(6),
-		Serial:          pointer.ToInt(7),
-		BigSerial:       pointer.ToInt(8),
-		Money:           pointer.ToString("1.1"),
-		Char:            pointer.ToString("hello"),
-		Text:            pointer.ToString("world"),
-		//TimestampWithoutTimeZone: time.Now(),
-		//TimestampWithTimeZone:    time.Now(),
-		//Date:                     time.Now(),
-		//TimeWithoutTimeZone:      time.Now(),
-		//TimeWithTimeZone:         time.Now(),
-		//Interval:                 100 * time.Second,
-		Boolean: pointer.ToBool(true),
+		Int8:                     pointer.ToInt8(1),
+		BigInt:                   pointer.ToInt64(2),
+		Int:                      pointer.ToInt(3),
+		Decimal:                  &dec,
+		Numeric:                  &dec,
+		Real:                     pointer.ToFloat64(4),
+		DoublePrecision:          pointer.ToFloat64(5.1),
+		SmallSerial:              pointer.ToInt(6),
+		Serial:                   pointer.ToInt(7),
+		BigSerial:                pointer.ToInt(8),
+		Money:                    pointer.ToString("1.1"),
+		Char:                     pointer.ToString("hello"),
+		Text:                     pointer.ToString("world"),
+		TimestampWithoutTimeZone: &now,
+		TimestampWithTimeZone:    &now,
+		Date:                     &now,
+		TimeWithoutTimeZone:      &now,
+		TimeWithTimeZone:         &now,
+		Interval:                 &interval,
+		Boolean:                  pointer.ToBool(true),
 	})
 	
 	require.NoError(t, err)

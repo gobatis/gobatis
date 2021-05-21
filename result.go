@@ -103,9 +103,9 @@ func (p *queryResult) scan() (err error) {
 		return
 	}
 	l := len(columns)
-	rc := 0
+	c := 0
 	for p.rows.Next() {
-		rc++
+		c++
 		row := make([]interface{}, l)
 		pointers := make([]interface{}, l)
 		for i, _ := range columns {
@@ -124,9 +124,7 @@ func (p *queryResult) scan() (err error) {
 			break
 		}
 	}
-	
-	// TODO Debug p.values
-	if len(p.values) > 0 && rc == 0 {
+	if len(p.values) > 0 && c == 0 {
 		err = sql.ErrNoRows
 		return
 	}

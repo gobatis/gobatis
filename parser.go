@@ -11,7 +11,6 @@ import (
 	"reflect"
 	"strings"
 	"sync"
-	"time"
 )
 
 func parseConfig(engine *Engine, file, content string) (err error) {
@@ -1186,14 +1185,7 @@ func (p *exprParser) parseExpression(nodeCtx antlr.ParserRuleContext, expresion 
 
 func (p *exprParser) addVar(_var interface{}) {
 	_var = cast.Indirect(_var)
-	switch v := _var.(type) {
-	case time.Time:
-		p.vars = append(p.vars, v.String())
-	case time.Duration:
-		p.vars = append(p.vars, v.String())
-	default:
-		p.vars = append(p.vars, _var)
-	}
+	p.vars = append(p.vars, _var)
 }
 
 func (p *exprParser) throw(ctx antlr.ParserRuleContext, code int) *_error {

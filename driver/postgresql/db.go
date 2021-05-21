@@ -3,7 +3,7 @@ package postgresql
 import (
 	"database/sql"
 	"fmt"
-	_ "github.com/jackc/pgx/stdlib"
+	_ "github.com/jackc/pgx/v4/stdlib"
 )
 
 const PGX = "pgx"

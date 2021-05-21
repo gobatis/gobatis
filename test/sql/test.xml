@@ -17,11 +17,11 @@
         t_money,
         t_char,
         t_text,
-        <!--            t_timestamp_without_time_zone,-->
-        <!--            t_timestamp_with_time_zone,-->
-        <!--            t_date,-->
-        <!--            t_time_without_time_zone,-->
-        <!--            t_time_with_time_zone,-->
+        t_timestamp_without_time_zone,
+        t_timestamp_with_time_zone,
+        t_date,
+        t_time_without_time_zone,
+        t_time_with_time_zone,
         t_interval,
         t_boolean
         ) values(
@@ -38,11 +38,11 @@
         #{ entity.Money },
         #{ entity.Char },
         #{ entity.Text },
-        <!--            #{ entity.TimestampWithoutTimeZone },-->
-        <!--            #{ entity.TimestampWithTimeZone },-->
-        <!--            #{ entity.Date },-->
-        <!--            #{ entity.TimeWithoutTimeZone },-->
-        <!--            #{ entity.TimeWithTimeZone },-->
+        #{ entity.TimestampWithoutTimeZone },
+        #{ entity.TimestampWithTimeZone },
+        #{ entity.Date },
+        #{ entity.TimeWithoutTimeZone },
+        #{ entity.TimeWithTimeZone },
         #{ entity.Interval },
         #{ entity.Boolean }
         ) returning id;
@@ -63,11 +63,11 @@
         t_money,
         t_char,
         t_text,
-        <!--        t_timestamp_without_time_zone,-->
-        <!--        t_timestamp_with_time_zone,-->
-        <!--        t_date,-->
-        <!--        t_time_without_time_zone,-->
-        <!--        t_time_with_time_zone,-->
+        t_timestamp_without_time_zone,
+        t_timestamp_with_time_zone,
+        t_date,
+        t_time_without_time_zone,
+        t_time_with_time_zone,
         t_interval,
         t_boolean
         ) values(
@@ -84,11 +84,11 @@
         #{ entity.Money },
         #{ entity.Char },
         #{ entity.Text },
-        <!--        #{ entity.TimestampWithoutTimeZone },-->
-        <!--        #{ entity.TimestampWithTimeZone },-->
-        <!--        #{ entity.Date },-->
-        <!--        #{ entity.TimeWithoutTimeZone },-->
-        <!--        #{ entity.TimeWithTimeZone },-->
+        #{ entity.TimestampWithoutTimeZone },
+        #{ entity.TimestampWithTimeZone },
+        #{ entity.Date },
+        #{ entity.TimeWithoutTimeZone },
+        #{ entity.TimeWithTimeZone },
         #{ entity.Interval },
         #{ entity.Boolean }
         ) returning id;
