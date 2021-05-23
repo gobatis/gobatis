@@ -86,14 +86,8 @@ type psr struct {
 
 func (p *psr) merge(s ...string) {
 	for _, v := range s {
-		v = strings.TrimSpace(v)
-		if v != "" {
-			if p.sql != "" {
-				p.sql += " " + v
-			} else {
-				p.sql += v
-			}
-		}
+		p.sql += strings.TrimSpace(v)
+		//p.sql += strings.ReplaceAll(v, "\n", "")
 	}
 }
 
@@ -321,7 +315,10 @@ func (p *fragment) parseBlock(parser *exprParser, node *xmlNode, res *psr) {
 	} else {
 		switch node.Name {
 		case dtd.IF:
-			p.parseTest(parser, node, res)
+			r := new(psr)
+			if p.parseTest(parser, node, r) {
+				res.merge(r.sql)
+			}
 		case dtd.WHERE:
 			p.parseWhere(parser, node, res)
 		case dtd.CHOOSE:
@@ -359,23 +356,35 @@ func (p *fragment) parseWhere(parser *exprParser, node *xmlNode, res *psr) {
 
 func (p *fragment) parseChoose(parser *exprParser, node *xmlNode, res *psr) {
 	var pass bool
-	for i, child := range node.Nodes {
+	var oc int
+	for _, child := range node.Nodes {
 		if pass {
 			break
 		}
 		switch child.Name {
 		case dtd.WHEN:
-			pass = p.parseTest(parser, child, res)
-		case dtd.OTHERWISE:
-			if i != len(node.Nodes)-1 {
-				throw(parser.file, child.ctx, parasFragmentErr).format("otherwise should be last element in choose")
+			r := new(psr)
+			if p.parseTest(parser, child, r) {
+				res.merge(r.sql)
+				return
 			}
+		case dtd.OTHERWISE:
+			oc++
 			p.parseBlocks(parser, child, res)
+			return
 		default:
+			if child.textOnly {
+				if strings.TrimSpace(child.Text) == "" {
+					continue
+				}
+				child.Name = "TEXT"
+			}
 			throw(parser.file, child.ctx, parasFragmentErr).
 				format("unsupported element '%s' element in choose", child.Name)
-			
 		}
+	}
+	if oc != 1 {
+		throw(parser.file, node.ctx, parasFragmentErr).format("choose except 1 otherwise, got %d", oc)
 	}
 }
 
@@ -395,9 +404,7 @@ func (p *fragment) trimPrefixOverrides(parser *exprParser, node *xmlNode, res *p
 			throw(p.statement.File, p.statement.ctx, parasFragmentErr).format("regexp compile error: %s", err)
 		}
 	}
-	if strings.TrimSpace(s) != "" {
-		res.merge(tag, s)
-	}
+	res.merge(tag, s)
 }
 
 func (p *fragment) parseSet(parser *exprParser, node *xmlNode, res *psr) {
@@ -451,7 +458,7 @@ func (p *fragment) parseForeach(parser *exprParser, node *xmlNode, res *psr) {
 		}
 	case reflect.Struct:
 		for i := 0; i < elem.NumField(); i++ {
-			parser.paramsStack.peak().values = []exprValue{{value: elem.Field(i).Type().Name()}, {value: elem.Field(i).Interface()}}
+			parser.paramsStack.peak().values = []exprValue{{value: elem.Type().Field(i).Name}, {value: elem.Field(i).Interface()}}
 			if i == 0 {
 				p.bindForeachParams(parser, indexParam, itemParam)
 			}
@@ -492,10 +499,9 @@ func (p *fragment) parseForeachChild(parser *exprParser, node *xmlNode, frags *[
 	for _, child := range node.Nodes {
 		br := new(psr)
 		p.parseBlock(parser, child, br)
-		r+= br.sql
+		r += br.sql
 	}
 	*frags = append(*frags, r)
-	fmt.Println("br.sql", r)
 }
 
 type caller struct {

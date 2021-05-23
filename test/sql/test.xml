@@ -115,6 +115,7 @@
         values(
         #{ entity.Int8 },
         <foreach index="index1" item="item1" collection="enums" separator="," open="'" close="'">
+            ${index1}-ok
             <foreach index="index2" item="item2" collection="item1" separator="," open="[" close="]">
                 ${index1}a a &lt; b${index2}:${item2}
             </foreach>
@@ -123,4 +124,67 @@
     </select>
 
 
+    <select id="SelectInsertForeachMap" parameter="entity:struct, enums:map" result="id">
+        insert into test_entities(t_char,t_text) values('SelectInsertForeachMap',
+        '
+        <foreach index="index" item="item" collection="enums">
+            ${index}:
+            <foreach index="index" item="item" collection="item">
+                ${index} - &lt; - ${ item }
+            </foreach>
+        </foreach>
+        ') returning id;
+    </select>
+
+    <select id="SelectInsertForeachMapPointer" parameter="entity:struct, enums:map" result="id">
+        insert into test_entities(t_char,t_text) values(
+        'SelectInsertForeachMapPointer',
+        '
+        <foreach index="index" item="item" collection="enums">
+            ${index}:
+            <foreach index="index" item="item" collection="item">
+                ${index} - &lt; - ${ item }
+            </foreach>
+        </foreach>
+        ')
+        returning id;
+    </select>
+
+    <select id="SelectInsertForeachStruct" parameter="entity:struct" result="id">
+        insert into test_entities(t_char,t_text) values(
+        'SelectInsertForeachStruct',
+        <foreach index="index" item="item" collection="entity" separator="," open="'" close="'">
+            <choose>
+                <when test="index == 'Char'">
+                    ${index}-${item}
+                </when>
+                <otherwise>
+                    ${index}
+                </otherwise>
+            </choose>
+        </foreach>
+        )
+        returning id;
+    </select>
+
+    <select id="SelectInsertForeachStructPointer" parameter="entity:struct" result="id">
+        insert into test_entities(t_char,t_text) values(
+        'SelectInsertForeachStructPointer',
+        <foreach index="index" item="item" collection="entity" separator="," open="'" close="'">
+            <choose>
+                <when test="index == 'Char'">
+                    ${index}-${item}
+                </when>
+                <otherwise>
+                    ${index}
+                </otherwise>
+            </choose>
+        </foreach>
+        )
+        returning id;
+    </select>
+
+    <select id="SelectInsertContextTx" parameter="entity:struct" result="id">
+
+    </select>
 </mapper>

@@ -572,6 +572,12 @@ func (p param) expected(vt reflect.Type) bool {
 		} else {
 			return false
 		}
+	case reflect.Map.String():
+		if vt.Kind() == reflect.Map {
+			return true
+		} else {
+			return false
+		}
 	case reflect.Slice.String(), reflect.Array.String():
 		if vt.Kind() == reflect.Slice || vt.Kind() == reflect.Array {
 			return true
@@ -897,9 +903,13 @@ func (p *exprParams) bind(expected *param, index int) error {
 	}
 	
 	ev := p.values[index]
-	elem := reflectValueElem(ev.value)
-	if !expected.expected(elem.Type()) {
-		return fmt.Errorf("parameter '%s' expected '%s', got '%s'", expected.name, expected.Type(), elem.Type())
+	
+	//TODO 处理值为 nil 的逻辑
+	if !cast.IsNil(ev.value) {
+		elem := reflectValueElem(ev.value)
+		if !expected.expected(elem.Type()) {
+			return fmt.Errorf("parameter '%s' expected '%s', got '%s'", expected.name, expected.Type(), elem.Type())
+		}
 	}
 	
 	p.check[expected.name] = index
