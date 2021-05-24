@@ -25,5 +25,4 @@ type TestMapper struct {
 	SelectStructPointer              func(id int) (entity *entity.TestEntity, err error)
 	SelectStructs                    func(id int) (entity []entity.TestEntity, err error)
 	SelectStructsPointer             func(id int) (entity []*entity.TestEntity, err error)
-	//SelectStructsPointer2             func(id int) (entity *[]*entity.TestEntity, err error)
 }
