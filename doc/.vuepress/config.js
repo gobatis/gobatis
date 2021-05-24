@@ -22,8 +22,8 @@ module.exports = {
         locales: {
             '/': {
                 nav: [
-                    { text: '文档', link: '/getting-started' },
-                    { text: 'External', link: 'https://google.com', target: '_blank' },
+                    {text: '文档', link: '/getting-started'},
+                    {text: 'External', link: 'https://google.com', target: '_blank'},
                 ],
                 sidebar: [
                     {
@@ -54,6 +54,7 @@ module.exports = {
                         children: [
                             ['/engine', 'Engine'],
                             ['/mapper', 'Mapper'],
+                            ['/entity', 'Entity'],
                             ['/mapper', '事务处理'],
                             ['/mapper', '日志'],
                             ['/mapper', '连接池'],

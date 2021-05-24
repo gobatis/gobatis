@@ -1,5 +1,9 @@
 # 简介
 
+::: warning 提示
+ Gobatis 还处于开发自测阶段，生产环境谨慎使用。
+:::
+
 ## 什么是 GoBatis？
 
 [MyBatis](https://mybatis.org/mybatis-3) 是一款优秀的持久层框架，致敬！
@@ -26,4 +30,5 @@ XML 语句映射相关的文档从 MyBatis 官网派生而来，为了描述的�
 ## 未来发展
 
 Gobatis 有着自己的发展路线，不会完全遵循 MyBatis 的特性去研发。
+
 

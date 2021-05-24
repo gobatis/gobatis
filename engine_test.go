@@ -1,6 +1,7 @@
 package gobatis
 
 import (
+	"context"
 	"fmt"
 	"github.com/AlekSi/pointer"
 	"github.com/gobatis/gobatis/bundle"
@@ -58,6 +59,7 @@ func TestEngine(t *testing.T) {
 	//testSelectInsertForeachMapPointer(t, _testMapper)
 	//testSelectInsertForeachStruct(t, _testMapper)
 	testSelectInsertForeachStructPointer(t, _testMapper)
+	testSelectInsertContextTx(t, engine, _testMapper)
 }
 
 func testSelectInsert(t *testing.T, _testMapper *mapper.TestMapper) {
@@ -197,12 +199,17 @@ func testSelectInsertForeachStructPointer(t *testing.T, _testMapper *mapper.Test
 	}
 }
 
-func testSelectInsertContextTx(t *testing.T, _testMapper *mapper.TestMapper) {
-	//id, err := _testMapper.SelectInsertContextTx(&entity.TestEntityPointer{
-	//	Char: pointer.ToString("Hello"),
-	//})
-	//require.NoError(t, err)
-	//if id <= 0 {
-	//	require.Error(t, fmt.Errorf("returning id should greater 0"))
-	//}
+func testSelectInsertContextTx(t *testing.T, engine *Engine, _testMapper *mapper.TestMapper) {
+	ctx := context.WithValue(context.Background(), "name", "gobatis")
+	tx, err := engine.Master().Begin()
+	require.NoError(t, err)
+	id, err := _testMapper.SelectInsertContextTx(ctx, tx, entity.TestEntity{
+		Char: "hello",
+	})
+	require.NoError(t, err)
+	err = tx.Commit()
+	require.NoError(t, err)
+	if id <= 0 {
+		require.Error(t, fmt.Errorf("returning id should greater 0"))
+	}
 }

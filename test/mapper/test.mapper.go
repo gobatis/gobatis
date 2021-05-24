@@ -1,6 +1,8 @@
 package mapper
 
 import (
+	"context"
+	"database/sql"
 	"github.com/gobatis/gobatis/test/entity"
 )
 
@@ -13,7 +15,7 @@ type TestMapper struct {
 	SelectInsertForeachMapPointer    func(testEntity *entity.TestEntityPointer, enums *map[string][]*string) (id uint32, err error)
 	SelectInsertForeachStruct        func(testEntity entity.TestEntity) (id uint64, err error)
 	SelectInsertForeachStructPointer func(testEntity *entity.TestEntityPointer) (id int64, err error)
-	//SelectInsertContextTx            func(ctx context.Context, tx *sql.Tx, testEntity entity.TestEntity) (int uint64, err error)
+	SelectInsertContextTx            func(ctx context.Context, tx *sql.Tx, testEntity entity.TestEntity) (int uint64, err error)
 	//SelectInsertContextTxPointer       func(ctx *context.Context, testEntity *entity.TestEntity) (rows uint64, err error)
 	//InsertPointer                    func(entity *entity.TestEntity) (rows int8, err error)
 	//InsertForeachSlice               func(testEntity entity.TestEntity, enums []string) (rows int16, err error)

@@ -17,6 +17,11 @@ func NewDB(driver, dsn string) *DB {
 	}
 }
 
+type (
+	Master DB
+	Slave  DB
+)
+
 type DB struct {
 	driver string
 	dsn    string

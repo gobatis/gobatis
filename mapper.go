@@ -171,9 +171,16 @@ func (p *fragment) setResultAttribute() {
 }
 
 func (p *fragment) checkParameter(ft reflect.Type, mn, fn string) {
-	if len(p.in) != ft.NumIn() {
+	ac := 0
+	for i := 0; i < ft.NumIn(); i++ {
+		if isContext(ft.In(i)) || isTx(ft.In(i)) {
+			continue
+		}
+		ac++
+	}
+	if len(p.in) != ac {
 		throw(p.statement.File, p.statement.ctx, checkParameterErr).
-			format("%s expected %d bind parameter, got %d", fn, len(p.in), ft.NumIn())
+			format("%s.%s expected %d bind parameter, got %d", mn, fn, len(p.in), ac)
 	}
 }
 
@@ -525,10 +532,11 @@ func (p *caller) Scan(pointers ...interface{}) (err error) {
 
 func (p *caller) call() (err error) {
 	
-	if len(p.fragment.in) != len(p.params) {
-		err = fmt.Errorf("expected %d params, but pass %d", len(p.fragment.in), len(p.params))
-		return
-	}
+	//TODO check if delete
+	//if len(p.fragment.in) != len(p.params) {
+	//	err = fmt.Errorf("expected %d params, but pass %d", len(p.fragment.in), len(p.params))
+	//	return
+	//}
 	
 	start := time.Now()
 	defer func() {
@@ -549,11 +557,11 @@ func (p *caller) call() (err error) {
 
 func (p *caller) exec(in ...reflect.Value) (err error) {
 	
-	exec, index := p.execer(in...)
+	exec, index := p.execer(in)
 	if index > -1 {
 		in = p.removeParam(in, index)
 	}
-	ctx, index := p.context(in...)
+	ctx, index := p.context(in)
 	if index > -1 {
 		in = p.removeParam(in, index)
 	}
@@ -598,12 +606,12 @@ func (*caller) printVars(vars []interface{}) string {
 
 func (p *caller) query(in ...reflect.Value) (err error) {
 	
-	ctx, index := p.context(in...)
+	ctx, index := p.context(in)
 	if index > -1 {
 		in = p.removeParam(in, index)
 	}
 	
-	q, index := p.queryer(in...)
+	q, index := p.queryer(in)
 	if index > -1 {
 		in = p.removeParam(in, index)
 	}
@@ -628,8 +636,7 @@ func (p *caller) query(in ...reflect.Value) (err error) {
 	}
 	p.fragment.logger.Debugf("[gobatis] [%s] query statement: %s", p.fragment.id, s)
 	p.fragment.logger.Debugf("[gobatis] [%s] query parameter: %+v", p.fragment.id, p.printVars(vars))
-	
-	rows, err := conn.QueryContext(ctx, s, vars...)
+	rows, err := q.QueryContext(ctx, s, vars...)
 	if err != nil {
 		p.fragment.logger.Debugf("[gobatis] [%s] query error: %v", p.fragment.id, err)
 		return
@@ -658,16 +665,30 @@ func (p *caller) removeParam(a []reflect.Value, i int) []reflect.Value {
 	return append(a[:i], a[i+1:]...)
 }
 
-func (p *caller) context(in ...reflect.Value) (context.Context, int) {
+func (p *caller) context(in []reflect.Value) (context.Context, int) {
 	for i, v := range in {
-		if v.Kind() == reflect.Ptr && v.Elem().Type().PkgPath() == "context" {
+		if isContext(v.Type()) {
 			return v.Interface().(context.Context), i
 		}
 	}
 	return context.Background(), -1
 }
 
-func (p *caller) execer(in ...reflect.Value) (execer, int) {
+func isContext(v reflect.Type) bool {
+	if v.Name() == "Context" && v.PkgPath() == "context" {
+		return true
+	}
+	return false
+}
+
+func isTx(v reflect.Type) bool {
+	if v.Kind() == reflect.Ptr && v.Elem().Name() == "Tx" && v.Elem().PkgPath() == "database/sql" {
+		return true
+	}
+	return false
+}
+
+func (p *caller) execer(in []reflect.Value) (execer, int) {
 	if len(in) > 0 {
 		t := reflect.TypeOf(new(execer)).Elem()
 		for i, v := range in {
@@ -679,7 +700,7 @@ func (p *caller) execer(in ...reflect.Value) (execer, int) {
 	return nil, -1
 }
 
-func (p *caller) queryer(in ...reflect.Value) (queryer, int) {
+func (p *caller) queryer(in []reflect.Value) (queryer, int) {
 	if len(in) > 0 {
 		t := reflect.TypeOf(new(queryer)).Elem()
 		for i, v := range in {

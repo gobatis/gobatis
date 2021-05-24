@@ -185,6 +185,7 @@
     </select>
 
     <select id="SelectInsertContextTx" parameter="entity:struct" result="id">
-
+        insert into test_entities(t_char,t_text) values('SelectInsertContextTx', #{entity.Char})
+        returning id;
     </select>
 </mapper>
