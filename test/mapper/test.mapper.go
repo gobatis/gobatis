@@ -21,6 +21,9 @@ type TestMapper struct {
 	SelectRowPointer                 func(id *int) (t_char, t_text *string, err error)
 	SelectRows                       func(start, end int) (t_char []string, t_text []sql.NullString, err error)
 	SelectRowsPointer                func(start, end *int) (t_char, t_text []*string, err error)
-	SelectStruct                     func(id int) (entity *entity.TestEntity, err error)
-	//SelectStructPointers             func() (tInt *int, tChar *string, tDecimal *decimal.Decimal, tTime *time.Time, tInterval *time.Duration, err error)
+	SelectStruct                     func(id int) (entity entity.TestEntity, err error)
+	SelectStructPointer              func(id int) (entity *entity.TestEntity, err error)
+	SelectStructs                    func(id int) (entity []entity.TestEntity, err error)
+	SelectStructsPointer             func(id int) (entity []*entity.TestEntity, err error)
+	//SelectStructsPointer2             func(id int) (entity *[]*entity.TestEntity, err error)
 }

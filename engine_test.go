@@ -64,9 +64,10 @@ func TestEngine(t *testing.T) {
 	//testInsert(t, _testMapper)
 	//testSelectRow(t, _testMapper)
 	//testSelectRowPointer(t, _testMapper)
-	testSelectRows(t, _testMapper)
+	//testSelectRows(t, _testMapper)
 	//testSelectRowsPointer(t, _testMapper)
-	testSelectStruct(t, _testMapper)
+	//testSelectStruct(t, _testMapper)
+	testSelectStructs(t, _testMapper)
 }
 
 func testSelectInsert(t *testing.T, _testMapper *mapper.TestMapper) {
@@ -271,6 +272,26 @@ func testSelectStruct(t *testing.T, _testMapper *mapper.TestMapper) {
 	item, err := _testMapper.SelectStruct(47)
 	require.NoError(t, err)
 	d, err := json.MarshalIndent(item, "", "\t")
+	require.NoError(t, err)
+	fmt.Println(string(d))
+	
+	item2, err := _testMapper.SelectStructPointer(47)
+	require.NoError(t, err)
+	d, err = json.MarshalIndent(item2, "", "\t")
+	require.NoError(t, err)
+	fmt.Println(string(d))
+}
+
+func testSelectStructs(t *testing.T, _testMapper *mapper.TestMapper) {
+	item, err := _testMapper.SelectStructs(47)
+	require.NoError(t, err)
+	d, err := json.MarshalIndent(item, "", "\t")
+	require.NoError(t, err)
+	fmt.Println(string(d))
+	
+	item2, err := _testMapper.SelectStructsPointer(47)
+	require.NoError(t, err)
+	d, err = json.MarshalIndent(item2, "", "\t")
 	require.NoError(t, err)
 	fmt.Println(string(d))
 }

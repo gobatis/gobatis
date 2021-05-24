@@ -218,4 +218,16 @@
         select * from test_entities where id = #{id};
     </select>
 
+    <select id="SelectStructPointer" parameter="id:int" resultType="struct">
+        select * from test_entities where id = #{id};
+    </select>
+
+    <select id="SelectStructs" parameter="id:int" resultType="[]struct">
+        select * from test_entities where id > #{id} and id &lt; 50;
+    </select>
+
+    <select id="SelectStructsPointer" parameter="id:int" resultType="[]struct">
+        select * from test_entities where id > #{id} and id &lt; 50;
+    </select>
+
 </mapper>

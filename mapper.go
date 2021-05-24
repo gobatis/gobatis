@@ -194,7 +194,7 @@ func (p *fragment) checkResult(ft reflect.Type, mn, fn string) {
 					}
 				} else {
 					if (ft.Out(0).Kind() != reflect.Ptr && ft.Out(0).Kind() != reflect.Struct) ||
-						(ft.Out(0).Elem().Kind() == reflect.Ptr && ft.Out(0).Elem().Elem().Kind() != reflect.Struct) {
+						(ft.Out(0).Kind() == reflect.Ptr && ft.Out(0).Elem().Kind() != reflect.Struct) {
 						throw(p.node.File, p.node.ctx, checkResultErr).
 							format("%s.%s out[0] expect struct, got: %s", mn, fn, ft.Out(0))
 					}
