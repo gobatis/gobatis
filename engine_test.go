@@ -58,8 +58,9 @@ func TestEngine(t *testing.T) {
 	//testSelectInsertForeachMap(t, _testMapper)
 	//testSelectInsertForeachMapPointer(t, _testMapper)
 	//testSelectInsertForeachStruct(t, _testMapper)
-	testSelectInsertForeachStructPointer(t, _testMapper)
-	testSelectInsertContextTx(t, engine, _testMapper)
+	//testSelectInsertForeachStructPointer(t, _testMapper)
+	//testSelectInsertContextTx(t, engine, _testMapper)
+	testInsert(t, _testMapper)
 }
 
 func testSelectInsert(t *testing.T, _testMapper *mapper.TestMapper) {
@@ -211,5 +212,13 @@ func testSelectInsertContextTx(t *testing.T, engine *Engine, _testMapper *mapper
 	require.NoError(t, err)
 	if id <= 0 {
 		require.Error(t, fmt.Errorf("returning id should greater 0"))
+	}
+}
+
+func testInsert(t *testing.T, _testMapper *mapper.TestMapper) {
+	rows, err := _testMapper.Insert("Insert", "red", "yellow", "blue")
+	require.NoError(t, err)
+	if rows != 1 {
+		require.Error(t, fmt.Errorf("rows expected 1"))
 	}
 }

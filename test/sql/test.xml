@@ -188,4 +188,12 @@
         insert into test_entities(t_char,t_text) values('SelectInsertContextTx', #{entity.Char})
         returning id;
     </select>
+
+    <insert id="Insert" parameter="name:string, tags:[]string">
+        insert into test_entities(t_char,t_text) values(#{name},
+        <foreach collection="tags" open="'" close="'" separator=",">
+            ${item}
+        </foreach>
+        )
+    </insert>
 </mapper>

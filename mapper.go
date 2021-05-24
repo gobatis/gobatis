@@ -199,13 +199,13 @@ func (p *fragment) checkResult(ft reflect.Type, mn, fn string) {
 						(ft.Out(0).Elem().Kind() != reflect.Ptr && ft.Out(0).Elem().Kind() != reflect.Struct) ||
 						(ft.Out(0).Elem().Kind() == reflect.Ptr && ft.Out(0).Elem().Elem().Kind() != reflect.Struct) {
 						throw(p.statement.File, p.statement.ctx, checkResultErr).
-							format("%s.%s out[0] expect [](*)struct, got: %s", mn, fn, ft.Out(0))
+							format("%s.%s out[0] expect []struct, got: %s", mn, fn, ft.Out(0))
 					}
 				} else {
 					if (ft.Out(0).Kind() != reflect.Ptr && ft.Out(0).Kind() != reflect.Struct) ||
 						(ft.Out(0).Elem().Kind() == reflect.Ptr && ft.Out(0).Elem().Elem().Kind() != reflect.Struct) {
 						throw(p.statement.File, p.statement.ctx, checkResultErr).
-							format("%s.%s out[0] expect (*)struct, got: %s", mn, fn, ft.Out(0))
+							format("%s.%s out[0] expect struct, got: %s", mn, fn, ft.Out(0))
 					}
 				}
 			}
@@ -222,7 +222,7 @@ func (p *fragment) checkResult(ft reflect.Type, mn, fn string) {
 			if (ft.Out(0).Kind() != reflect.Ptr && ft.Out(0).Kind() != reflect.Int64) ||
 				(ft.Out(0).Kind() == reflect.Ptr && ft.Out(0).Elem().Kind() != reflect.Int64) {
 				throw(p.statement.File, p.statement.ctx, checkResultErr).
-					format("%s.%s out[0] expect (*)int64, got: %s", mn, ft.Name(), ft.Out(0).Name())
+					format("%s.%s out[0] expect int64, got: %s", mn, fn, ft.Out(0).Name())
 			}
 		}
 	}

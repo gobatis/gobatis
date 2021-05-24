@@ -549,7 +549,6 @@ func (p param) Type() string {
 }
 
 func (p param) expected(vt reflect.Type) bool {
-	
 	for {
 		if vt.Kind() != reflect.Ptr {
 			break
@@ -557,7 +556,7 @@ func (p param) expected(vt reflect.Type) bool {
 		vt = vt.Elem()
 	}
 	if p.slice {
-		if vt.Kind() != reflect.Slice || vt.Kind() != reflect.Array {
+		if vt.Kind() != reflect.Slice && vt.Kind() != reflect.Array {
 			return false
 		}
 		vt = vt.Elem()

@@ -16,7 +16,7 @@ type TestMapper struct {
 	SelectInsertForeachStruct        func(testEntity entity.TestEntity) (id uint32, err error)
 	SelectInsertForeachStructPointer func(testEntity *entity.TestEntityPointer) (id uint64, err error)
 	SelectInsertContextTx            func(ctx context.Context, tx *sql.Tx, testEntity entity.TestEntity) (int int, err error)
-	//InsertPointer                    func(entity *entity.TestEntity) (rows int8, err error)
+	Insert                           func(name string, tags ...string) (rows int64, err error)
 	//InsertForeachSlice               func(testEntity entity.TestEntity, enums []string) (rows int16, err error)
 	//InsertForeachSlicePointer        func(testEntity entity.TestEntity, enums *[]string) (rows int32, err error)
 	//InsertForeachMap                 func(testEntity entity.TestEntity, enums map[string]string) (rows int64, err error)
