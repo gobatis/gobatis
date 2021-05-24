@@ -1364,6 +1364,8 @@ func StringToDate(s string) (time.Time, error) {
 		time.StampMilli,
 		time.StampMicro,
 		time.StampNano,
+		"15:04:05",    // time without T
+		"15:04:05+00", // TODO test time with T
 	})
 }
 

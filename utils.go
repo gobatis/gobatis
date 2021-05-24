@@ -1,11 +1,16 @@
 package gobatis
 
-import "reflect"
+import (
+	"database/sql"
+	"reflect"
+)
 
 var errorType reflect.Type
+var scannerType reflect.Type
 
 func init() {
 	errorType = reflect.TypeOf((*error)(nil)).Elem()
+	scannerType = reflect.TypeOf((*sql.Scanner)(nil)).Elem()
 }
 
 func isContext(v reflect.Type) bool {

@@ -2,6 +2,7 @@ package gobatis
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/AlekSi/pointer"
 	"github.com/gobatis/gobatis/bundle"
@@ -64,7 +65,8 @@ func TestEngine(t *testing.T) {
 	//testSelectRow(t, _testMapper)
 	//testSelectRowPointer(t, _testMapper)
 	testSelectRows(t, _testMapper)
-	testSelectRowsPointer(t, _testMapper)
+	//testSelectRowsPointer(t, _testMapper)
+	testSelectStruct(t, _testMapper)
 }
 
 func testSelectInsert(t *testing.T, _testMapper *mapper.TestMapper) {
@@ -242,13 +244,15 @@ func testSelectRowPointer(t *testing.T, _testMapper *mapper.TestMapper) {
 }
 
 func testSelectRows(t *testing.T, _testMapper *mapper.TestMapper) {
-	tChar, tText, err := _testMapper.SelectRows(47, 50)
+	tChar, tText, err := _testMapper.SelectRows(363, 364)
 	require.NoError(t, err)
 	for _, v := range tChar {
-		require.Equal(t, v, "hello")
+		//require.Equal(t, v, "hello")
+		fmt.Println(v)
 	}
 	for _, v := range tText {
-		require.Equal(t, v, "world")
+		//require.Equal(t, v, "world")
+		fmt.Printf("scanner: %+v\n", v)
 	}
 }
 
@@ -261,4 +265,12 @@ func testSelectRowsPointer(t *testing.T, _testMapper *mapper.TestMapper) {
 	for _, v := range tText {
 		require.Equal(t, *v, "world")
 	}
+}
+
+func testSelectStruct(t *testing.T, _testMapper *mapper.TestMapper) {
+	item, err := _testMapper.SelectStruct(47)
+	require.NoError(t, err)
+	d, err := json.MarshalIndent(item, "", "\t")
+	require.NoError(t, err)
+	fmt.Println(string(d))
 }

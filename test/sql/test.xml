@@ -201,16 +201,21 @@
         select t_char,t_text from test_entities where id = #{id};
     </select>
 
+
     <select id="SelectRowPointer" parameter="id:int" result="t_char:string, t_text:string">
         select t_char,t_text from test_entities where id = #{id};
     </select>
 
-    <select id="SelectRows" parameter="start:int, end:int" result="t_char:[]string, t_text:[]string">
+    <select id="SelectRows" parameter="start:int, end:int" result="t_char:[]string, t_text:[]struct">
         select t_char,t_text from test_entities where id > #{start} and id &lt;= #{end};
     </select>
 
     <select id="SelectRowsPointer" parameter="start:int, end:int" result="t_char:[]string, t_text:[]string">
         select t_char,t_text from test_entities where id > #{start} and id &lt;= #{end};
+    </select>
+
+    <select id="SelectStruct" parameter="id:int" resultType="struct">
+        select * from test_entities where id = #{id};
     </select>
 
 </mapper>

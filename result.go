@@ -4,7 +4,9 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/gobatis/gobatis/cast"
+	"github.com/shopspring/decimal"
 	"reflect"
+	"time"
 )
 
 type queryResult struct {
@@ -206,120 +208,127 @@ func (p *queryResult) reflectStructs(r rowMap) error {
 
 func (p *queryResult) reflectValue(column string, dest reflect.Value, value interface{}) error {
 	
-	var (
-		isPtr   = dest.Kind() == reflect.Ptr
-		isSlice = dest.Kind() == reflect.Slice || dest.Kind() == reflect.Array
-		dv      = dest
-		dt      = dest.Type()
-	)
-	
-	if isPtr {
-		dv = reflectValueElem(dest)
-		dt = dv.Type()
-	}
-	
-	if isSlice {
+	var err error
+	dv := reflectValueElem(dest)
+	dt := reflectTypeElem(dest.Type())
+	if dt.Kind() == reflect.Slice {
 		dt = reflectTypeElem(dt.Elem())
 	}
-	
-	switch dt.Name() {
-	//case sql.Scanner:
-	//	// TODO debug scanner
-	//	fmt.Println("scanner:", dv.Type())
-	//	err := s.Scan(value)
-	//	if err != nil {
-	//		return err
-	//	}
-	case "int8":
-		v, err := cast.ToInt8E(value)
-		if err != nil {
-			return err
+	dtv := reflect.New(dt)
+	if dtv.Type().Implements(scannerType) {
+		errs := dtv.MethodByName("Scan").Call([]reflect.Value{reflect.ValueOf(value)})
+		if len(errs) > 0 && errs[0].Interface() != nil {
+			err = errs[0].Interface().(error)
 		}
-		return p.set(dv, v)
-	case "int16":
-		v, err := cast.ToInt16E(value)
-		if err != nil {
-			return err
+		return p.set(dv, dtv.Elem().Interface())
+	} else {
+		switch dt.Name() {
+		case "int8":
+			var v int8
+			v, err = cast.ToInt8E(value)
+			if err == nil {
+				return p.set(dv, v)
+			}
+		case "int16":
+			var v int16
+			v, err = cast.ToInt16E(value)
+			if err == nil {
+				return p.set(dv, v)
+			}
+		case "int32":
+			var v int32
+			v, err = cast.ToInt32E(value)
+			if err == nil {
+				return p.set(dv, v)
+			}
+		case "int64":
+			var v int64
+			v, err = cast.ToInt64E(value)
+			if err == nil {
+				return p.set(dv, v)
+			}
+		case "int":
+			var v int
+			v, err = cast.ToIntE(value)
+			if err == nil {
+				return p.set(dv, v)
+			}
+		case "uint8":
+			var v uint8
+			v, err = cast.ToUint8E(value)
+			if err == nil {
+				return p.set(dv, v)
+			}
+		case "uint16":
+			var v uint16
+			v, err = cast.ToUint16E(value)
+			if err == nil {
+				return p.set(dv, v)
+			}
+		case "uint32":
+			var v uint32
+			v, err = cast.ToUint32E(value)
+			if err == nil {
+				return p.set(dv, v)
+			}
+		case "uint64":
+			var v uint64
+			v, err = cast.ToUint64E(value)
+			if err == nil {
+				return p.set(dv, v)
+			}
+		case "uint":
+			var v uint
+			v, err = cast.ToUintE(value)
+			if err == nil {
+				return p.set(dv, v)
+			}
+		case "string":
+			var v string
+			v, err = cast.ToStringE(value)
+			if err == nil {
+				return p.set(dv, v)
+			}
+		case "float32":
+			var v float32
+			v, err = cast.ToFloat32E(value)
+			if err == nil {
+				return p.set(dv, v)
+			}
+		case "float64":
+			var v float64
+			v, err = cast.ToFloat64E(value)
+			if err == nil {
+				return p.set(dv, v)
+			}
+		case "bool":
+			var v bool
+			v, err = cast.ToBoolE(value)
+			if err == nil {
+				return p.set(dv, v)
+			}
+		case "Time":
+			var v time.Time
+			v, err = cast.ToTimeE(value)
+			if err == nil {
+				return p.set(dv, v)
+			}
+		case "Duration":
+			var t time.Time
+			t, err = cast.ToTimeE(value)
+			if err == nil {
+				return p.set(dv, time.Duration(t.Second())*time.Second)
+			}
+		case "Decimal":
+			var v decimal.Decimal
+			v, err = cast.ToDecimalE(value)
+			if err == nil {
+				return p.set(dv, v)
+			}
 		}
-		return p.set(dv, v)
-	case "int32":
-		v, err := cast.ToInt32E(value)
-		if err != nil {
-			return err
-		}
-		return p.set(dv, v)
-	case "int64":
-		v, err := cast.ToInt64E(value)
-		if err != nil {
-			return err
-		}
-		return p.set(dv, v)
-	case "int":
-		v, err := cast.ToIntE(value)
-		if err != nil {
-			return err
-		}
-		return p.set(dv, v)
-	case "uint8":
-		v, err := cast.ToUint8E(value)
-		if err != nil {
-			return err
-		}
-		return p.set(dv, v)
-	case "uint16":
-		v, err := cast.ToUint16E(value)
-		if err != nil {
-			return err
-		}
-		return p.set(dv, v)
-	case "uint32":
-		v, err := cast.ToUint32E(value)
-		if err != nil {
-			return err
-		}
-		return p.set(dv, v)
-	case "uint64":
-		v, err := cast.ToUint64E(value)
-		if err != nil {
-			return err
-		}
-		return p.set(dv, v)
-	case "uint":
-		v, err := cast.ToUintE(value)
-		if err != nil {
-			return err
-		}
-		return p.set(dv, v)
-	case "string":
-		v, err := cast.ToStringE(value)
-		if err != nil {
-			return err
-		}
-		return p.set(dv, v)
-	case "float32":
-		v, err := cast.ToFloat32E(value)
-		if err != nil {
-			return err
-		}
-		return p.set(dv, v)
-	case "float64":
-		v, err := cast.ToFloat64E(value)
-		if err != nil {
-			return err
-		}
-		return p.set(dv, v)
-	case "time.Time":
-		v, err := cast.ToTimeE(value)
-		if err != nil {
-			return err
-		}
-		return p.set(dv, v)
-	case "decimal.Decimal":
-		v, err := cast.ToDecimalE(value)
-		if err != nil {
-			return err
-		}
-		return p.set(dv, v)
+	}
+	if err != nil {
+		return fmt.Errorf("scan field %s error: %s", column, err.Error())
 	}
 	
 	return fmt.Errorf("can't scan field '%s' type '%s' to '%s'", column, reflect.TypeOf(value), dest.Type())

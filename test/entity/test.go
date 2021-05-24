@@ -1,12 +1,13 @@
 package entity
 
 import (
+	"database/sql"
 	"github.com/shopspring/decimal"
 	"time"
 )
 
 type TestEntity struct {
-	Id                       int64
+	Id                       int64           `sql:"id"`
 	Int8                     int8            `sql:"t_int8"`
 	BigInt                   int64           `sql:"t_bigint"`
 	Int                      int             `sql:"t_int"`
@@ -19,6 +20,7 @@ type TestEntity struct {
 	BigSerial                int             `sql:"t_big_serial"`
 	Money                    string          `sql:"t_money"`
 	Char                     string          `sql:"t_char"`
+	NullChar                 sql.NullString  `sql:"t_char"`
 	Text                     string          `sql:"t_text"`
 	TimestampWithoutTimeZone time.Time       `sql:"t_timestamp_without_time_zone"`
 	TimestampWithTimeZone    time.Time       `sql:"t_timestamp_with_time_zone"`
