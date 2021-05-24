@@ -1182,7 +1182,7 @@ func IsNil(val interface{}) bool {
 	}
 	rv := reflect.ValueOf(val)
 	switch rv.Kind() {
-	case reflect.Ptr, reflect.Map, reflect.Slice, reflect.Array:
+	case reflect.Ptr, reflect.Func, reflect.Map, reflect.Slice, reflect.Interface:
 		return rv.IsNil()
 	}
 	return false

@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"github.com/antlr/antlr4/runtime/Go/antlr"
 	"github.com/gobatis/gobatis/cast"
 	"github.com/gobatis/gobatis/dtd"
 	"github.com/ttacon/chalk"
@@ -14,16 +13,6 @@ import (
 	"sync"
 	"time"
 )
-
-var errorType reflect.Type
-
-func isErrorType(_type reflect.Type) bool {
-	return _type.Implements(reflect.TypeOf((*error)(nil)).Elem())
-}
-
-func init() {
-	errorType = reflect.TypeOf((*error)(nil)).Elem()
-}
 
 type fragmentManager struct {
 	mu        sync.RWMutex
@@ -88,7 +77,6 @@ type psr struct {
 func (p *psr) merge(s ...string) {
 	for _, v := range s {
 		p.sql += strings.TrimSpace(v)
-		//p.sql += strings.ReplaceAll(v, "\n", "")
 	}
 }
 
@@ -102,7 +90,7 @@ type fragment struct {
 	db         *DB
 	logger     Logger
 	id         string
-	statement  *xmlNode
+	node       *xmlNode
 	cacheable  bool
 	sql        string
 	in         []*param
@@ -146,27 +134,27 @@ func (p *fragment) call(_type reflect.Type, in ...reflect.Value) []reflect.Value
 
 func (p *fragment) setResultAttribute() {
 	
-	if p.statement.Name != dtd.SELECT &&
-		p.statement.Name != dtd.INSERT &&
-		p.statement.Name != dtd.UPDATE &&
-		p.statement.Name != dtd.DELETE {
+	if p.node.Name != dtd.SELECT &&
+		p.node.Name != dtd.INSERT &&
+		p.node.Name != dtd.UPDATE &&
+		p.node.Name != dtd.DELETE {
 		return
 	}
 	
-	if p.statement.HasAttribute(dtd.RESULT_TYPE) {
+	if p.node.HasAttribute(dtd.RESULT_TYPE) {
 		p.resultAttr = fragment_result_type
-		_type, slice := isSlice(p.statement.GetAttribute(dtd.RESULT_TYPE))
+		_type, slice := handleSlice(p.node.GetAttribute(dtd.RESULT_TYPE))
 		kind, err := varToReflectKind(_type)
 		if err != nil {
-			throw(p.statement.File, p.statement.ctx, varToReflectKindErr).with(err)
+			throw(p.node.File, p.node.ctx, varToReflectKindErr).with(err)
 		}
 		p.resultType = &resultType{
 			kind:  kind,
 			slice: slice,
 		}
-	} else if p.statement.HasAttribute(dtd.RESULT_MAP) {
+	} else if p.node.HasAttribute(dtd.RESULT_MAP) {
 		p.resultAttr = fragment_result_map
-	} else if p.statement.HasAttribute(dtd.RESULT) {
+	} else if p.node.HasAttribute(dtd.RESULT) {
 		p.resultAttr = fragment_result
 	}
 }
@@ -180,16 +168,19 @@ func (p *fragment) checkParameter(ft reflect.Type, mn, fn string) {
 		ac++
 	}
 	if len(p.in) != ac {
-		throw(p.statement.File, p.statement.ctx, checkParameterErr).
+		throw(p.node.File, p.node.ctx, checkParameterErr).
 			format("%s.%s expected %d bind parameter, got %d", mn, fn, len(p.in), ac)
 	}
 }
 
 func (p *fragment) checkResult(ft reflect.Type, mn, fn string) {
 	
-	// ft.out[last] expected err
+	if ft.NumOut() == 0 || !isErrorType(ft.Out(ft.NumOut()-1)) {
+		throw(p.node.File, p.node.ctx, checkResultErr).
+			format("out expect error at last, got %s", ft.Out(ft.NumOut()-1).String())
+	}
 	
-	switch p.statement.Name {
+	switch p.node.Name {
 	case dtd.SELECT:
 		switch p.resultAttr {
 		case fragment_result_type:
@@ -198,13 +189,13 @@ func (p *fragment) checkResult(ft reflect.Type, mn, fn string) {
 					if ft.Out(0).Kind() != reflect.Slice ||
 						(ft.Out(0).Elem().Kind() != reflect.Ptr && ft.Out(0).Elem().Kind() != reflect.Struct) ||
 						(ft.Out(0).Elem().Kind() == reflect.Ptr && ft.Out(0).Elem().Elem().Kind() != reflect.Struct) {
-						throw(p.statement.File, p.statement.ctx, checkResultErr).
+						throw(p.node.File, p.node.ctx, checkResultErr).
 							format("%s.%s out[0] expect []struct, got: %s", mn, fn, ft.Out(0))
 					}
 				} else {
 					if (ft.Out(0).Kind() != reflect.Ptr && ft.Out(0).Kind() != reflect.Struct) ||
 						(ft.Out(0).Elem().Kind() == reflect.Ptr && ft.Out(0).Elem().Elem().Kind() != reflect.Struct) {
-						throw(p.statement.File, p.statement.ctx, checkResultErr).
+						throw(p.node.File, p.node.ctx, checkResultErr).
 							format("%s.%s out[0] expect struct, got: %s", mn, fn, ft.Out(0))
 					}
 				}
@@ -212,44 +203,57 @@ func (p *fragment) checkResult(ft reflect.Type, mn, fn string) {
 		case fragment_result:
 			for i, v := range p.out {
 				if !v.expected(ft.Out(i)) {
-					throw(p.statement.File, p.statement.ctx, varBindErr).
+					throw(p.node.File, p.node.ctx, varBindErr).
 						format("%s.%s bind result '%s' expect '%s', got '%s'", mn, fn, v.name, v.Type(), ft.Out(i))
 				}
 			}
 		}
 	case dtd.INSERT, dtd.UPDATE, dtd.DELETE:
 		if ft.NumOut() > 1 {
-			if (ft.Out(0).Kind() != reflect.Ptr && ft.Out(0).Kind() != reflect.Int64) ||
-				(ft.Out(0).Kind() == reflect.Ptr && ft.Out(0).Elem().Kind() != reflect.Int64) {
-				throw(p.statement.File, p.statement.ctx, checkResultErr).
-					format("%s.%s out[0] expect int64, got: %s", mn, fn, ft.Out(0).Name())
+			elem := ft.Out(0)
+			if elem.Kind() == reflect.Ptr {
+				elem = elem.Elem()
+			}
+			switch elem.Kind() {
+			case reflect.Int,
+				reflect.Int8,
+				reflect.Int16,
+				reflect.Int32,
+				reflect.Int64,
+				reflect.Uint,
+				reflect.Uint8,
+				reflect.Uint16,
+				reflect.Uint32,
+				reflect.Uint64:
+				return
+			default:
+				throw(p.node.File, p.node.ctx, checkResultErr).
+					format("%s.%s out[0] expect integer, got: %s", mn, fn, ft.Out(0).Name())
 			}
 		}
 	}
-	
-	return
 }
 
 func (p *fragment) parseStatement(args ...reflect.Value) (sql string, vars []interface{}, err error) {
 	
 	defer func() {
 		e := recover()
-		err = castRecoverError(p.statement.File, e)
+		err = castRecoverError(p.node.File, e)
 	}()
 	
 	if len(p.in) != len(args) {
-		throw(p.statement.File, p.statement.ctx, parasFragmentErr).format("expect %d args, got %d", len(p.in), len(args))
+		throw(p.node.File, p.node.ctx, parasFragmentErr).format("expect %d args, got %d", len(p.in), len(args))
 	}
 	
 	parser := newExprParser(args...)
 	for i, v := range p.in {
 		err = parser.paramsStack.list.Front().Next().Value.(*exprParams).bind(v, i)
 		if err != nil {
-			throw(p.statement.File, p.statement.ctx, parasFragmentErr).with(err)
+			throw(p.node.File, p.node.ctx, parasFragmentErr).with(err)
 		}
 	}
 	res := new(psr)
-	p.parseBlocks(parser, p.statement, res)
+	p.parseBlocks(parser, p.node, res)
 	if res.cacheable {
 		p.cacheable = res.cacheable
 		p.sql = res.sql
@@ -295,7 +299,6 @@ func (p *fragment) parseSql(parser *exprParser, node *xmlNode, res *psr) {
 			if err != nil {
 				panic(err)
 			}
-			// TODO 优化类型准换
 			if inject {
 				s += fmt.Sprintf("%v", cast.Indirect(r))
 			} else {
@@ -344,11 +347,11 @@ func (p *fragment) parseBlock(parser *exprParser, node *xmlNode, res *psr) {
 func (p *fragment) parseTest(parser *exprParser, node *xmlNode, res *psr) bool {
 	v, err := parser.parseExpression(node.ctx, node.GetAttribute(dtd.TEST))
 	if err != nil {
-		throw(p.statement.File, p.statement.ctx, parasFragmentErr).with(err)
+		throw(p.node.File, p.node.ctx, parasFragmentErr).with(err)
 	}
 	b, err := cast.ToBoolE(v)
 	if err != nil {
-		throw(p.statement.File, p.statement.ctx, parasFragmentErr).with(err)
+		throw(p.node.File, p.node.ctx, parasFragmentErr).with(err)
 	}
 	if !b {
 		return false
@@ -409,7 +412,7 @@ func (p *fragment) trimPrefixOverrides(parser *exprParser, node *xmlNode, res *p
 	for _, v := range filters {
 		s, err = p.trimPrefixOverride(s, v)
 		if err != nil {
-			throw(p.statement.File, p.statement.ctx, parasFragmentErr).format("regexp compile error: %s", err)
+			throw(p.node.File, p.node.ctx, parasFragmentErr).format("regexp compile error: %s", err)
 		}
 	}
 	res.merge(tag, s)
@@ -424,7 +427,7 @@ func (p *fragment) parseForeach(parser *exprParser, node *xmlNode, res *psr) {
 	_var := node.GetAttribute(dtd.COLLECTION)
 	collection, ok := parser.paramsStack.getVar(_var)
 	if !ok {
-		throw(p.statement.File, p.statement.ctx, parasFragmentErr).
+		throw(p.node.File, p.node.ctx, parasFragmentErr).
 			format("can't get foreach collection '%s' value", _var)
 	}
 	index := node.GetAttribute(dtd.INDEX)
@@ -436,7 +439,7 @@ func (p *fragment) parseForeach(parser *exprParser, node *xmlNode, res *psr) {
 	if item == "" {
 		item = dtd.ITEM
 	} else {
-		item, slice = isSlice(item)
+		item, slice = handleSlice(item)
 	}
 	indexParam := &param{name: index, _type: reflect.Interface.String(), slice: false}
 	itemParam := &param{name: item, _type: reflect.Interface.String(), slice: slice}
@@ -445,7 +448,7 @@ func (p *fragment) parseForeach(parser *exprParser, node *xmlNode, res *psr) {
 	separator := node.GetAttribute(dtd.SEPARATOR)
 	
 	parser.paramsStack.push(newExprParams())
-	elem := reflectValueElem(collection.value)
+	elem := toReflectValueElem(collection.value)
 	frags := make([]string, 0)
 	switch elem.Kind() {
 	case reflect.Slice, reflect.Array:
@@ -488,16 +491,16 @@ func (p *fragment) bindForeachParams(parser *exprParser, indexParam, itemParam *
 	parser.paramsStack.peak().check = map[string]int{}
 	err := parser.paramsStack.peak().bind(indexParam, 0)
 	if err != nil {
-		throw(p.statement.File, p.statement.ctx, varBindErr).with(err)
+		throw(p.node.File, p.node.ctx, varBindErr).with(err)
 	}
 	err = parser.paramsStack.peak().bind(itemParam, 1)
 	if err != nil {
-		throw(p.statement.File, p.statement.ctx, varBindErr).with(err)
+		throw(p.node.File, p.node.ctx, varBindErr).with(err)
 	}
 }
 
-func (p *fragment) parseParams(nodeCtx antlr.ParserRuleContext, tokens string) []*param {
-	parser := newParamParser(p.statement.File)
+func (p *fragment) parseParams(tokens string) []*param {
+	parser := newParamParser(p.node.File)
 	parser.walkMethods(initExprParser(tokens))
 	return parser.params
 }
@@ -533,25 +536,19 @@ func (p *caller) Scan(pointers ...interface{}) (err error) {
 
 func (p *caller) call() (err error) {
 	
-	//TODO check if delete
-	//if len(p.fragment.in) != len(p.params) {
-	//	err = fmt.Errorf("expected %d params, but pass %d", len(p.fragment.in), len(p.params))
-	//	return
-	//}
-	
 	start := time.Now()
 	defer func() {
 		p.fragment.logger.Debugf("[gobatis] [%s] cost: %s", p.fragment.id, time.Since(start))
 	}()
 	
-	switch p.fragment.statement.Name {
+	switch p.fragment.node.Name {
 	case dtd.SELECT:
 		return p.query(p.params...)
 	case dtd.INSERT, dtd.DELETE, dtd.UPDATE:
 		return p.exec(p.params...)
 	default:
-		throw(p.fragment.statement.File, p.fragment.statement.ctx, callerErr).
-			format("unsupported call method '%s'", p.fragment.statement.Name)
+		throw(p.fragment.node.File, p.fragment.node.ctx, callerErr).
+			format("unsupported call method '%s'", p.fragment.node.Name)
 		return
 	}
 }
@@ -677,20 +674,6 @@ func (p *caller) context(in []reflect.Value) (context.Context, int) {
 		}
 	}
 	return context.Background(), -1
-}
-
-func isContext(v reflect.Type) bool {
-	if v.Name() == "Context" && v.PkgPath() == "context" {
-		return true
-	}
-	return false
-}
-
-func isTx(v reflect.Type) bool {
-	if v.Kind() == reflect.Ptr && v.Elem().Name() == "Tx" && v.Elem().PkgPath() == "database/sql" {
-		return true
-	}
-	return false
 }
 
 func (p *caller) execer(in []reflect.Value) (execer, int) {

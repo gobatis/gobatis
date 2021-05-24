@@ -102,24 +102,24 @@ func parseFragment(db *DB, logger Logger, file, id string, node *xmlNode) (frag 
 	}()
 	
 	frag = &fragment{
-		db:        db,
-		logger:    logger,
-		id:        id,
-		statement: node,
+		db:     db,
+		logger: logger,
+		id:     id,
+		node:   node,
 	}
 	
 	frag.setResultAttribute()
 	
 	if node.HasAttribute(dtd.PARAMETER) {
-		frag.in = frag.parseParams(node.ctx, node.GetAttribute(dtd.PARAMETER))
+		frag.in = frag.parseParams(node.GetAttribute(dtd.PARAMETER))
 	}
 	if node.HasAttribute(dtd.RESULT) {
-		frag.out = frag.parseParams(node.ctx, node.GetAttribute(dtd.RESULT))
+		frag.out = frag.parseParams(node.GetAttribute(dtd.RESULT))
 	}
 	return
 }
 
-func reflectValueElem(source interface{}) reflect.Value {
+func toReflectValueElem(source interface{}) reflect.Value {
 	v := reflect.ValueOf(source)
 	for {
 		if v.Kind() == reflect.Ptr {
@@ -549,18 +549,15 @@ func (p param) Type() string {
 }
 
 func (p param) expected(vt reflect.Type) bool {
-	for {
-		if vt.Kind() != reflect.Ptr {
-			break
-		}
-		vt = vt.Elem()
-	}
+	
+	vt = reflectTypeElem(vt)
 	if p.slice {
 		if vt.Kind() != reflect.Slice && vt.Kind() != reflect.Array {
 			return false
 		}
 		vt = vt.Elem()
 	}
+	vt = reflectTypeElem(vt)
 	
 	switch p._type {
 	case reflect.Interface.String():
@@ -591,7 +588,7 @@ func (p param) expected(vt reflect.Type) bool {
 	}
 }
 
-func isSlice(_type string) (string, bool) {
+func handleSlice(_type string) (string, bool) {
 	slice := strings.HasPrefix(_type, "[]")
 	if slice {
 		return strings.TrimSpace(strings.TrimPrefix(_type, "[]")), true
@@ -631,7 +628,7 @@ func (p *paramParser) EnterParamDecl(ctx *expr.ParamDeclContext) {
 	if _type == "" {
 		_type = reflect.Interface.String()
 	} else {
-		_type, slice = isSlice(_type)
+		_type, slice = handleSlice(_type)
 	}
 	p.addParam(ctx, name, _type, slice)
 	p.index++
@@ -680,7 +677,7 @@ func (p *exprValue) int() (v int, err error) {
 
 func (p *exprValue) visitMember(name string) (r *exprValue, err error) {
 	
-	elem := reflectValueElem(p.value)
+	elem := toReflectValueElem(p.value)
 	if elem.Kind() != reflect.Struct {
 		err = fmt.Errorf("visit '%s.%s' is not struct", p.alias, name)
 		return
@@ -704,7 +701,7 @@ func (p *exprValue) visitMember(name string) (r *exprValue, err error) {
 
 func (p *exprValue) visitArray(index int) (r *exprValue, err error) {
 	
-	elem := reflectValueElem(p.value)
+	elem := toReflectValueElem(p.value)
 	if elem.Kind() != reflect.Array && elem.Kind() != reflect.Slice {
 		err = fmt.Errorf("visit var is not array or slice")
 		return
@@ -723,7 +720,7 @@ func (p *exprValue) visitArray(index int) (r *exprValue, err error) {
 
 func (p *exprValue) visitMap(index reflect.Value) (r *exprValue, err error) {
 	
-	elem := reflectValueElem(p.value)
+	elem := toReflectValueElem(p.value)
 	if elem.Kind() != reflect.Map {
 		err = fmt.Errorf("visit '%s' is not map", elem.Kind())
 		return
@@ -742,7 +739,7 @@ func (p *exprValue) visitMap(index reflect.Value) (r *exprValue, err error) {
 
 func (p *exprValue) call(ellipsis bool, params []reflect.Value) (r *exprValue, err error) {
 	
-	elem := reflectValueElem(p.value)
+	elem := toReflectValueElem(p.value)
 	if elem.Kind() != reflect.Func {
 		err = fmt.Errorf("visit '%s' is not func", elem.Kind())
 		return
@@ -791,9 +788,9 @@ func (p *exprValue) visitSlice(format string, indexes ...int) (r *exprValue, err
 	var v reflect.Value
 	switch len(indexes) {
 	case 2:
-		v = reflectValueElem(p.value).Slice(indexes[0], indexes[1])
+		v = toReflectValueElem(p.value).Slice(indexes[0], indexes[1])
 	case 3:
-		v = reflectValueElem(p.value).Slice3(indexes[0], indexes[1], indexes[2])
+		v = toReflectValueElem(p.value).Slice3(indexes[0], indexes[1], indexes[2])
 	default:
 		err = fmt.Errorf("unsuppoted slice range index '%s'", format)
 		return
@@ -902,16 +899,17 @@ func (p *exprParams) bind(expected *param, index int) error {
 	}
 	
 	ev := p.values[index]
+	p.check[expected.name] = index
 	
-	//TODO 处理值为 nil 的逻辑
-	if !cast.IsNil(ev.value) {
-		elem := reflectValueElem(ev.value)
-		if !expected.expected(elem.Type()) {
-			return fmt.Errorf("parameter '%s' expected '%s', got '%s'", expected.name, expected.Type(), elem.Type())
-		}
+	if cast.IsNil(ev.value) {
+		return nil
 	}
 	
-	p.check[expected.name] = index
+	elem := toReflectValueElem(ev.value)
+	if !expected.expected(elem.Type()) {
+		return fmt.Errorf("parameter '%s' expected '%s', got '%s'", expected.name, expected.Type(), elem.Type())
+	}
+	
 	return nil
 }
 
@@ -1084,10 +1082,10 @@ func (p *exprParser) ExitIndex(ctx *expr.IndexContext) {
 	if err != nil {
 		p.throw(ctx, popValueStackErr).with(err)
 	}
-	objectReflectElem := reflectValueElem(object.value)
+	objectReflectElem := toReflectValueElem(object.value)
 	var ev *exprValue
 	if objectReflectElem.Kind() == reflect.Map {
-		ev, err = object.visitMap(reflectValueElem(index.value))
+		ev, err = object.visitMap(toReflectValueElem(index.value))
 		if err != nil {
 			p.throw(ctx, visitMapErr).with(err)
 		}
@@ -1146,7 +1144,7 @@ func (p *exprParser) ExitCall(ctx *expr.CallContext) {
 		if err != nil {
 			p.throw(ctx, popValueStackErr).with(err)
 		}
-		args[i] = reflectValueElem(arg.value)
+		args[i] = toReflectValueElem(arg.value)
 	}
 	f, err := p.valueStack.pop()
 	if err != nil {

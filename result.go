@@ -4,9 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/gobatis/gobatis/cast"
-	"github.com/shopspring/decimal"
 	"reflect"
-	"time"
 )
 
 type queryResult struct {
@@ -209,105 +207,114 @@ func (p *queryResult) reflectStructs(r rowMap) error {
 func (p *queryResult) reflectValue(column string, dest reflect.Value, value interface{}) error {
 	
 	var (
-		isPtr = dest.Kind() == reflect.Ptr
-		dv    = dest
+		isPtr   = dest.Kind() == reflect.Ptr
+		isSlice = dest.Kind() == reflect.Slice || dest.Kind() == reflect.Array
+		dv      = dest
+		dt      = dest.Type()
 	)
 	
 	if isPtr {
-		dv = dest.Elem()
+		dv = reflectValueElem(dest)
+		dt = dv.Type()
 	}
-	switch tv := dv.Interface().(type) {
-	case sql.Scanner:
-		// TODO debug scanner
-		err := tv.Scan(value)
-		if err != nil {
-			return err
-		}
-	case int8:
+	
+	if isSlice {
+		dt = reflectTypeElem(dt.Elem())
+	}
+	
+	switch dt.Name() {
+	//case sql.Scanner:
+	//	// TODO debug scanner
+	//	fmt.Println("scanner:", dv.Type())
+	//	err := s.Scan(value)
+	//	if err != nil {
+	//		return err
+	//	}
+	case "int8":
 		v, err := cast.ToInt8E(value)
 		if err != nil {
 			return err
 		}
 		return p.set(dv, v)
-	case int16:
+	case "int16":
 		v, err := cast.ToInt16E(value)
 		if err != nil {
 			return err
 		}
 		return p.set(dv, v)
-	case int32:
+	case "int32":
 		v, err := cast.ToInt32E(value)
 		if err != nil {
 			return err
 		}
 		return p.set(dv, v)
-	case int64:
+	case "int64":
 		v, err := cast.ToInt64E(value)
 		if err != nil {
 			return err
 		}
 		return p.set(dv, v)
-	case int:
+	case "int":
 		v, err := cast.ToIntE(value)
 		if err != nil {
 			return err
 		}
 		return p.set(dv, v)
-	case uint8:
+	case "uint8":
 		v, err := cast.ToUint8E(value)
 		if err != nil {
 			return err
 		}
 		return p.set(dv, v)
-	case uint16:
+	case "uint16":
 		v, err := cast.ToUint16E(value)
 		if err != nil {
 			return err
 		}
 		return p.set(dv, v)
-	case uint32:
+	case "uint32":
 		v, err := cast.ToUint32E(value)
 		if err != nil {
 			return err
 		}
 		return p.set(dv, v)
-	case uint64:
+	case "uint64":
 		v, err := cast.ToUint64E(value)
 		if err != nil {
 			return err
 		}
 		return p.set(dv, v)
-	case uint:
+	case "uint":
 		v, err := cast.ToUintE(value)
 		if err != nil {
 			return err
 		}
 		return p.set(dv, v)
-	case string:
+	case "string":
 		v, err := cast.ToStringE(value)
 		if err != nil {
 			return err
 		}
 		return p.set(dv, v)
-	case float32:
+	case "float32":
 		v, err := cast.ToFloat32E(value)
 		if err != nil {
 			return err
 		}
 		return p.set(dv, v)
-	case float64:
+	case "float64":
 		v, err := cast.ToFloat64E(value)
 		if err != nil {
 			return err
 		}
 		return p.set(dv, v)
-	case time.Time:
+	case "time.Time":
 		v, err := cast.ToTimeE(value)
 		if err != nil {
 			return err
 		}
 		return p.set(dv, v)
-	case decimal.Decimal:
+	case "decimal.Decimal":
 		v, err := cast.ToDecimalE(value)
 		if err != nil {
 			return err
@@ -320,7 +327,13 @@ func (p *queryResult) reflectValue(column string, dest reflect.Value, value inte
 
 func (p *queryResult) set(dest reflect.Value, r interface{}) error {
 	if dest.Kind() == reflect.Slice {
-		dest.Set(reflect.Append(dest, reflect.ValueOf(r)))
+		if dest.Type().Elem().Kind() == reflect.Ptr {
+			v := reflect.New(dest.Type().Elem().Elem())
+			v.Elem().Set(reflect.ValueOf(r))
+			dest.Set(reflect.Append(dest, v))
+		} else {
+			dest.Set(reflect.Append(dest, reflect.ValueOf(r)))
+		}
 	} else {
 		dest.Set(reflect.ValueOf(r))
 	}
@@ -352,7 +365,65 @@ func (p *execResult) scan() error {
 		return err
 	}
 	if len(p.values) > 0 {
-		p.values[0].Elem().SetInt(ra)
+		switch p.values[0].Kind() {
+		case reflect.Int:
+			r, e := cast.ToIntE(ra)
+			if e != nil {
+				return e
+			}
+			p.values[0].Elem().SetInt(int64(r))
+		case reflect.Int8:
+			r, e := cast.ToInt8E(ra)
+			if e != nil {
+				return e
+			}
+			p.values[0].Elem().SetInt(int64(r))
+		case reflect.Int16:
+			r, e := cast.ToInt16E(ra)
+			if e != nil {
+				return e
+			}
+			p.values[0].Elem().SetInt(int64(r))
+		case reflect.Int32:
+			r, e := cast.ToInt32E(ra)
+			if e != nil {
+				return e
+			}
+			p.values[0].Elem().SetInt(int64(r))
+		case reflect.Int64:
+			p.values[0].Elem().SetInt(ra)
+		case reflect.Uint:
+			r, e := cast.ToUintE(ra)
+			if e != nil {
+				return e
+			}
+			p.values[0].Elem().SetUint(uint64(r))
+		case reflect.Uint8:
+			r, e := cast.ToUint8E(ra)
+			if e != nil {
+				return e
+			}
+			p.values[0].Elem().SetUint(uint64(r))
+		case reflect.Uint16:
+			r, e := cast.ToUint16E(ra)
+			if e != nil {
+				return e
+			}
+			p.values[0].Elem().SetUint(uint64(r))
+		case reflect.Uint32:
+			r, e := cast.ToUint32E(ra)
+			if e != nil {
+				return e
+			}
+			p.values[0].Elem().SetUint(uint64(r))
+		case reflect.Uint64:
+			r, e := cast.ToUint64E(ra)
+			if e != nil {
+				return e
+			}
+			p.values[0].Elem().SetUint(r)
+		}
+		
 	}
 	return nil
 }

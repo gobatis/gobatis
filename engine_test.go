@@ -60,7 +60,11 @@ func TestEngine(t *testing.T) {
 	//testSelectInsertForeachStruct(t, _testMapper)
 	//testSelectInsertForeachStructPointer(t, _testMapper)
 	//testSelectInsertContextTx(t, engine, _testMapper)
-	testInsert(t, _testMapper)
+	//testInsert(t, _testMapper)
+	//testSelectRow(t, _testMapper)
+	//testSelectRowPointer(t, _testMapper)
+	testSelectRows(t, _testMapper)
+	testSelectRowsPointer(t, _testMapper)
 }
 
 func testSelectInsert(t *testing.T, _testMapper *mapper.TestMapper) {
@@ -220,5 +224,41 @@ func testInsert(t *testing.T, _testMapper *mapper.TestMapper) {
 	require.NoError(t, err)
 	if rows != 1 {
 		require.Error(t, fmt.Errorf("rows expected 1"))
+	}
+}
+
+func testSelectRow(t *testing.T, _testMapper *mapper.TestMapper) {
+	tChar, tText, err := _testMapper.SelectRow(47)
+	require.NoError(t, err)
+	require.Equal(t, tChar, "hello")
+	require.Equal(t, tText, "world")
+}
+
+func testSelectRowPointer(t *testing.T, _testMapper *mapper.TestMapper) {
+	tChar, tText, err := _testMapper.SelectRowPointer(pointer.ToInt(47))
+	require.NoError(t, err)
+	require.Equal(t, *tChar, "hello")
+	require.Equal(t, *tText, "world")
+}
+
+func testSelectRows(t *testing.T, _testMapper *mapper.TestMapper) {
+	tChar, tText, err := _testMapper.SelectRows(47, 50)
+	require.NoError(t, err)
+	for _, v := range tChar {
+		require.Equal(t, v, "hello")
+	}
+	for _, v := range tText {
+		require.Equal(t, v, "world")
+	}
+}
+
+func testSelectRowsPointer(t *testing.T, _testMapper *mapper.TestMapper) {
+	tChar, tText, err := _testMapper.SelectRowsPointer(pointer.ToInt(47), pointer.ToInt(50))
+	require.NoError(t, err)
+	for _, v := range tChar {
+		require.Equal(t, *v, "hello")
+	}
+	for _, v := range tText {
+		require.Equal(t, *v, "world")
 	}
 }

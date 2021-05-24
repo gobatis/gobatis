@@ -41,13 +41,13 @@ func (p *Engine) SetBundle(bundle http.FileSystem) {
 }
 
 func (p *Engine) Init() (err error) {
+	err = p.parseBundle()
+	if err != nil {
+		return
+	}
 	err = p.master.initDB()
 	if err != nil {
 		err = fmt.Errorf("init master db error: %s", err)
-		return
-	}
-	err = p.parseBundle()
-	if err != nil {
 		return
 	}
 	return
@@ -115,9 +115,6 @@ func (p *Engine) bindMapper(mapper interface{}) (err error) {
 			return fmt.Errorf("%s.%s not defined", rt.Name(), id)
 		}
 		ft := rv.Field(i).Type()
-		if ft.NumOut() == 0 || !isErrorType(ft.Out(ft.NumOut()-1)) {
-			return fmt.Errorf("method out expect error at last")
-		}
 		m.checkParameter(ft, rt.Name(), rv.Type().Field(i).Name)
 		m.checkResult(ft, rt.Name(), rv.Type().Field(i).Name)
 		m.proxy(rv.Field(i))

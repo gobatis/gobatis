@@ -196,4 +196,21 @@
         </foreach>
         )
     </insert>
+
+    <select id="SelectRow" parameter="id:int" result="t_char:string, t_text:string">
+        select t_char,t_text from test_entities where id = #{id};
+    </select>
+
+    <select id="SelectRowPointer" parameter="id:int" result="t_char:string, t_text:string">
+        select t_char,t_text from test_entities where id = #{id};
+    </select>
+
+    <select id="SelectRows" parameter="start:int, end:int" result="t_char:[]string, t_text:[]string">
+        select t_char,t_text from test_entities where id > #{start} and id &lt;= #{end};
+    </select>
+
+    <select id="SelectRowsPointer" parameter="start:int, end:int" result="t_char:[]string, t_text:[]string">
+        select t_char,t_text from test_entities where id > #{start} and id &lt;= #{end};
+    </select>
+
 </mapper>

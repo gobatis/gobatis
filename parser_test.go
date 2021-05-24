@@ -320,6 +320,6 @@ func testParseParams(tokens string) (params []*param, err error) {
 		e := recover()
 		err = castRecoverError("", e)
 	}()
-	params = (&fragment{statement: new(xmlNode)}).parseParams(nil, tokens)
+	params = (&fragment{node: new(xmlNode)}).parseParams(tokens)
 	return
 }
