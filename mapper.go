@@ -7,6 +7,7 @@ import (
 	"github.com/antlr/antlr4/runtime/Go/antlr"
 	"github.com/gobatis/gobatis/cast"
 	"github.com/gobatis/gobatis/dtd"
+	"github.com/ttacon/chalk"
 	"reflect"
 	"regexp"
 	"strings"
@@ -597,9 +598,13 @@ func (p *caller) exec(in ...reflect.Value) (err error) {
 }
 
 func (*caller) printVars(vars []interface{}) string {
+	if len(vars) == 0 {
+		return ""
+	}
 	r := "\n"
 	for i, v := range vars {
-		r += fmt.Sprintf("   $%d => (%s) %+v\n", i+1, reflect.TypeOf(v), v)
+		r += fmt.Sprintf("   $%d %s (%s) %+v\n",
+			i+1, chalk.Green.Color("=>"), chalk.Yellow.Color(reflect.TypeOf(v).String()), v)
 	}
 	return r
 }
@@ -635,7 +640,7 @@ func (p *caller) query(in ...reflect.Value) (err error) {
 		return
 	}
 	p.fragment.logger.Debugf("[gobatis] [%s] query statement: %s", p.fragment.id, s)
-	p.fragment.logger.Debugf("[gobatis] [%s] query parameter: %+v", p.fragment.id, p.printVars(vars))
+	p.fragment.logger.Debugf("[gobatis] [%s] query parameter: [%+v]", p.fragment.id, p.printVars(vars))
 	rows, err := q.QueryContext(ctx, s, vars...)
 	if err != nil {
 		p.fragment.logger.Debugf("[gobatis] [%s] query error: %v", p.fragment.id, err)

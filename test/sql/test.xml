@@ -48,7 +48,7 @@
         ) returning id;
     </select>
 
-    <select id="SelectInsertPointer" parameter="entity:struct" result="id:int32">
+    <select id="SelectInsertPointer" parameter="entity:struct" result="id">
         insert into test_entities(
         t_int8,
         t_bigint,
