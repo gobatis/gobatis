@@ -77,7 +77,7 @@ type UserMapper struct{
 ``` xml
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE configuration
-        PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+        PUBLIC "-//gobatis.co//DTD Config 1.0//EN"
         "gobatis.co/dtd/config.dtd">
 
 <configuration>
@@ -89,7 +89,7 @@ type UserMapper struct{
 
 ``` xml
 <?xml version="1.0" encoding="UTF-8" ?>
-<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "../../../dtd/mapper.dtd">
+<!DOCTYPE mapper PUBLIC "-//gobatis.co//DTD Mapper 1.0//EN" "gobatis.co/dtd/mapper.dtd">
 
 <mapper>
     <insert id="CreateProduct" parameter="product:struct">
