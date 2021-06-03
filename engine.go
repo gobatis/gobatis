@@ -35,7 +35,7 @@ func (p *Engine) Master() *DB {
 	return p.master
 }
 
-func (p *Engine) SetBundle(bundle http.FileSystem) {
+func (p *Engine) BindSQL(bundle http.FileSystem) {
 	p.bundle = bundle
 }
 

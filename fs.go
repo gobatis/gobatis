@@ -1,4 +1,4 @@
-package bundle
+package gobatis
 
 import (
 	"errors"
@@ -11,7 +11,7 @@ import (
 
 const suffix = ".xml"
 
-type Dir string
+type fsDir string
 
 // mapDirOpenError maps the provided non-nil error from opening name
 // to a possibly better non-nil error. In particular, it turns OS-specific errors
@@ -39,7 +39,7 @@ func mapDirOpenError(originalErr error, name string) error {
 
 // Open implements FileSystem using os.Open, opening files for reading rooted
 // and relative to the directory d.
-func (p Dir) Open(name string) (http.File, error) {
+func (p fsDir) Open(name string) (http.File, error) {
 	if filepath.Separator != '/' && strings.ContainsRune(name, filepath.Separator) {
 		return nil, errors.New("http: invalid character in file path")
 	}
@@ -52,26 +52,26 @@ func (p Dir) Open(name string) (http.File, error) {
 	if err != nil {
 		return nil, mapDirOpenError(err, fullName)
 	}
-	return &File{f: f}, nil
+	return &fsFile{f: f}, nil
 }
 
-type File struct {
+type fsFile struct {
 	f http.File
 }
 
-func (p File) Close() error {
+func (p fsFile) Close() error {
 	return p.f.Close()
 }
 
-func (p File) Read(len []byte) (int, error) {
+func (p fsFile) Read(len []byte) (int, error) {
 	return p.f.Read(len)
 }
 
-func (p File) Seek(offset int64, whence int) (int64, error) {
+func (p fsFile) Seek(offset int64, whence int) (int64, error) {
 	return p.f.Seek(offset, whence)
 }
 
-func (p File) Readdir(count int) ([]os.FileInfo, error) {
+func (p fsFile) Readdir(count int) ([]os.FileInfo, error) {
 	infos, err := p.f.Readdir(count)
 	if err != nil {
 		return infos, err
@@ -85,6 +85,6 @@ func (p File) Readdir(count int) ([]os.FileInfo, error) {
 	return res, nil
 }
 
-func (p File) Stat() (os.FileInfo, error) {
+func (p fsFile) Stat() (os.FileInfo, error) {
 	return p.f.Stat()
 }

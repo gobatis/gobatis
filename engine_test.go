@@ -5,13 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/AlekSi/pointer"
-	"github.com/gobatis/gobatis/bundle"
 	"github.com/gobatis/gobatis/test/entity"
 	"github.com/gobatis/gobatis/test/mapper"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/require"
 	"os"
-	"path/filepath"
 	"reflect"
 	"testing"
 	"time"
@@ -36,7 +34,7 @@ func rv(v interface{}) reflect.Value {
 func TestEngine(t *testing.T) {
 	
 	engine := NewPostgresql("postgresql://postgres:postgres@127.0.0.1:54322/gobatis?connect_timeout=10&sslmode=disable")
-	engine.SetBundle(bundle.Dir(filepath.Join(pwd, "test")))
+	engine.BindSQL(NewBundle("test"))
 	err := engine.Init()
 	require.NoError(t, err)
 	
