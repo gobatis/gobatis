@@ -9,20 +9,20 @@ import (
 	"time"
 )
 
+var (
+	reflect_tag = "sql"
+)
+
 type queryResult struct {
 	rows       *sql.Rows
 	first      bool
-	tag        string
 	resultType *resultType
 	selected   map[string]int
 	values     []reflect.Value
 }
 
 func (p *queryResult) Tag() string {
-	if p.tag != "" {
-		return p.tag
-	}
-	return "sql"
+	return reflect_tag
 }
 
 func (p *queryResult) Rows() *sql.Rows {

@@ -6,6 +6,19 @@ import (
 	"log"
 )
 
+var (
+	log_level = Debug
+)
+
+type LogLevel = int
+
+const (
+	Debug = iota
+	Info
+	Warn
+	Error
+)
+
 type Logger interface {
 	Debugf(format string, args ...interface{})
 	Infof(format string, args ...interface{})
@@ -24,20 +37,23 @@ type logger struct {
 }
 
 func (p logger) Debugf(format string, args ...interface{}) {
-	log.Printf(chalk.Cyan.Color("[DEBUG]")+format, args...)
+	if log_level == Debug {
+		log.Printf(chalk.Cyan.Color("[DEBUG]")+format, args...)
+	}
 }
 
 func (p logger) Infof(format string, args ...interface{}) {
-
-	log.Printf(chalk.Green.Color("[INFO]")+format, args...)
+	if log_level <= Info {
+		log.Printf(chalk.Green.Color("[INFO]")+format, args...)
+	}
 }
 
 func (p logger) Warnf(format string, args ...interface{}) {
-
-	log.Printf(chalk.Yellow.Color("[WARN]")+format, args...)
+	if log_level <= Warn {
+		log.Printf(chalk.Yellow.Color("[WARN]")+format, args...)
+	}
 }
 
 func (p logger) Errorf(format string, args ...interface{}) {
-
 	log.Printf(chalk.Red.Color("[ERROR]")+format, args...)
 }

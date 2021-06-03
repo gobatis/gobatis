@@ -40,6 +40,14 @@ func (p *Engine) SetBundle(bundle http.FileSystem) {
 	p.bundle = bundle
 }
 
+func (p *Engine) SetTag(tag string) {
+	reflect_tag = tag
+}
+
+func (p *Engine) SetLogLevel(level LogLevel) {
+	log_level = level
+}
+
 func (p *Engine) Init() (err error) {
 	err = p.parseBundle()
 	if err != nil {
