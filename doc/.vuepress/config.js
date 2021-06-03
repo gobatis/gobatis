@@ -44,7 +44,6 @@ module.exports = {
                             ['/sqlmap-xml', 'XML 映射文件'],
                             ['/dynamic-sql', '动态 SQL'],
                             ['/expression', '表达式'],
-                            ['/curd', 'CURD'],
                         ]
                     },
                     {
@@ -55,11 +54,11 @@ module.exports = {
                             ['/engine', 'Engine'],
                             ['/mapper', 'Mapper'],
                             ['/entity', 'Entity'],
-                            ['/mapper', '事务'],
-                            ['/mapper', '日志'],
-                            ['/mapper', '连接池'],
+                            ['/tx', '事务'],
+                            ['/log', '日志'],
+                            ['/pool', '连接池'],
                             ['/deploy', '部署'],
-                            ['/mapper', '性能'],
+                            ['/performance', '性能'],
                         ]
                     },
 
