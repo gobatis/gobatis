@@ -3,7 +3,11 @@
 ## 安装
 
 ``` sh
-$ go get -v github.com/gobatis/gobatis
+# 引入库
+go get -v github.com/gobatis/gobatis
+
+# 安装 XML 规范文件
+sh -c "$(curl -fsSL https://gobatis.co/dtd/dtd.sh)"
 ```
 
 ## 目录结构
