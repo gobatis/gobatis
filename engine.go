@@ -35,10 +35,6 @@ func (p *Engine) Master() *DB {
 	return p.master
 }
 
-func (p *Engine) BindSQL(bundle http.FileSystem) {
-	p.bundle = bundle
-}
-
 func (p *Engine) SetTag(tag string) {
 	reflect_tag = tag
 }
@@ -51,7 +47,8 @@ func (p *Engine) SetLogger(logger Logger) {
 	_logger = logger
 }
 
-func (p *Engine) Init() (err error) {
+func (p *Engine) Init(bundle Bundle) (err error) {
+	p.bundle = bundle
 	err = p.parseBundle()
 	if err != nil {
 		return
@@ -235,3 +232,5 @@ func (p *Engine) addFragment(file string, ctx antlr.ParserRuleContext, id string
 	}
 	return
 }
+
+

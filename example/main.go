@@ -10,24 +10,29 @@ import (
 )
 
 func main() {
-	engine := gobatis.NewPostgresql("postgresql://postgres:postgres@127.0.0.1:54322/gobatis?connect_timeout=10&sslmode=disable")
-	engine.BindSQL(gobatis.NewBundle("./sql"))
-	if err := engine.Init(); err != nil {
-		log.Panicln("init error:", err)
+	engine := gobatis.NewPostgresql("postgresql://postgres:postgres@127.0.0.1:5432/gobatis?connect_timeout=10&sslmode=disable")
+	err := engine.Init(gobatis.NewBundle("./sql"))
+	if err != nil {
+		log.Panicln("Init error:", err)
 	}
-	
-	if err := engine.Master().Ping(); err != nil {
-		log.Panicln("ping error:", err)
-	}
-	err := engine.BindMapper(
+	err = engine.BindMapper(
+		mapper.Migration,
 		mapper.User,
 	)
 	if err != nil {
-		log.Panicln("init error:", err)
+		log.Panicln("Bind mapper error:", err)
+	}
+	if err = engine.Master().Ping(); err != nil {
+		log.Panicln("Ping error:", err)
 	}
 	defer func() {
 		engine.Close()
 	}()
+	
+	err = engine.Master().Migrate(mapper.Migration)
+	if err != nil {
+		log.Panicf("exec migration error: %v", err)
+	}
 	
 	// AddUser
 	rows, err := mapper.User.AddUser(&entity.User{
@@ -45,12 +50,21 @@ func main() {
 		Name: "Tom",
 		Age:  18,
 		From: "venus",
-		Vip:  true,
+		Vip:  false,
 	})
 	if err != nil {
 		log.Panicf("Call AddUserReturnId error: %v", err)
 	}
 	fmt.Printf("id:%d, createdAt:%v", id, createdAt)
+	
+	rows, err = mapper.User.UpdateUser(id, true)
+	if err != nil {
+		log.Panicf("Call UpdateUser error: %v", err)
+		return
+	}
+	if rows != 1 {
+		log.Panicf("Call UpdateUser expect: rows=1, got:%d", rows)
+	}
 	
 	// GetUserById
 	name, age, err := mapper.User.GetUserById(int64(id))
@@ -86,6 +100,15 @@ func main() {
 	}
 	fmt.Println("Call QueryUsers:")
 	printJson(users)
+	
+	rows, err = mapper.User.DeleteUsers(id)
+	if err != nil {
+		log.Panicf("Call DeleteUser error: %v", err)
+		return
+	}
+	if rows <= 1 {
+		log.Panicf("Call DeleteUser expect: rows>1, got:%d", rows)
+	}
 }
 
 func printJson(val interface{}) {

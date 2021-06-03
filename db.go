@@ -5,8 +5,10 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"fmt"
+	"github.com/gobatis/gobatis/cast"
 	"github.com/gobatis/gobatis/driver/mysql"
 	"github.com/gobatis/gobatis/driver/postgresql"
+	"reflect"
 	"time"
 )
 
@@ -119,4 +121,36 @@ func (p *DB) Driver() driver.Driver {
 
 func (p *DB) Conn(ctx context.Context) (conn *sql.Conn, err error) {
 	return p.db.Conn(ctx)
+}
+
+func (p *DB) Migrate(mapper interface{}) error {
+	
+	mt := reflect.ValueOf(mapper)
+	mt = reflectValueElem(mt)
+	pv := reflect.ValueOf(p)
+	
+	if mt.Kind() != reflect.Struct {
+		return fmt.Errorf("migrate error: expect struct, pass: %s", mt.Type())
+	}
+	
+	for i := 0; i < mt.NumField(); i++ {
+		field := mt.Field(i)
+		if field.Kind() == reflect.Func &&
+			field.Type().NumIn() == 1 &&
+			pv.Type().ConvertibleTo(field.Type().In(0)) &&
+			field.Type().NumOut() == 1 &&
+			field.Type().Out(0).Implements(errorType) {
+			if cast.IsNil(field.Interface()) {
+				return fmt.Errorf("field '%s' is nil", mt.Type().Field(i).Name)
+			}
+			err := field.Call([]reflect.Value{reflect.ValueOf(p)})[0].Interface()
+			if err != nil {
+				Errorf("exec %s error: %v", mt.Type().Field(i).Name, err)
+				return err.(error)
+			}
+			Errorf("exec %s success", mt.Type().Field(i).Name)
+		}
+	}
+	
+	return nil
 }

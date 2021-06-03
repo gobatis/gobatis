@@ -151,7 +151,7 @@ func (p *fragment) setResultAttribute() {
 func (p *fragment) checkParameter(ft reflect.Type, mn, fn string) {
 	ac := 0
 	for i := 0; i < ft.NumIn(); i++ {
-		if isContext(ft.In(i)) || isTx(ft.In(i)) {
+		if isContext(ft.In(i)) || isTx(ft.In(i)) || isDB(ft.In(i)) {
 			continue
 		}
 		ac++

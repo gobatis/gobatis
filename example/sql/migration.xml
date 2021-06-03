@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//gobatis.co//DTD Mapper 1.0//EN" "gobatis.co/dtd/mapper.dtd">
+
+<mapper>
+    <insert id="CreateTable">
+        create schema if not exists public;
+
+        create table if not exists users(
+        id serial constraint users_pk primary key,
+        name varchar,
+        age int,
+        "from" varchar,
+        vip bool,
+        created_at timestamp default current_timestamp
+        );
+    </insert>
+</mapper>

@@ -27,6 +27,13 @@ func isTx(v reflect.Type) bool {
 	return false
 }
 
+func isDB(v reflect.Type) bool {
+	if v.Kind() == reflect.Ptr && v.Elem().Name() == "DB" && v.Elem().PkgPath() == "github.com/gobatis/gobatis" {
+		return true
+	}
+	return false
+}
+
 func isErrorType(_type reflect.Type) bool {
 	return _type.Implements(reflect.TypeOf((*error)(nil)).Elem())
 }

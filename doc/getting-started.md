@@ -10,33 +10,35 @@ go get -v github.com/gobatis/gobatis
 sh -c "$(curl -fsSL https://gobatis.co/dtd/dtd.sh)"
 ```
 
-## 项目示例
+示例地址：[https://github.com/gobatis/gobatis/tree/master/example](https://github.com/gobatis/gobatis/tree/master/example)
 
-::: tip 示例地址
-[http]()
-:::
 
-### 目录结构
+## 目录结构
 
 ```
 project
 ├── entity
-│   └── user.go   // 存放实体类
+│   └── user.go        // 存放实体类
 ├── mapper
-│   ├── mapper.go // 定义 mapper
+│   ├── mapper.go      // 定义 mapper
 └── sql
-│   └── user.xml  // sql 文件    
-├── main.go       // 程序入口    
+│   └── migration.xml  // 迁移语句    
+│   └── user.xml       // users 表操作语句    
+├── main.go            // 程序入口    
+├── table.sql          // 示例数据表    
 ```
 
-### Main
+## Main
 
-> project/main.go
+::: tip 文件路径
+project/main.go
+:::
 
 ``` go
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/gobatis/gobatis"
 	"github.com/gobatis/gobatis/example/entity"
@@ -45,40 +47,51 @@ import (
 )
 
 func main() {
-	engine := gobatis.NewPostgresql("postgresql://postgres:postgres@127.0.0.1:54322/gobatis?connect_timeout=10&sslmode=disable")
-	engine.BindSQL(gobatis.NewBundle("./sql"))
-	if err := engine.Init(); err != nil {
-		log.Panicln("init error:", err)
+	engine := gobatis.NewPostgresql("postgresql://postgres:postgres@127.0.0.1:5432/gobatis?connect_timeout=10&sslmode=disable")
+	err := engine.Init(gobatis.NewBundle("./sql"))
+	if err != nil {
+		log.Panicln("Init error:", err)
 	}
-	err := engine.BindMapper(
+	err = engine.BindMapper(
+		mapper.Migration,
 		mapper.User,
 	)
 	if err != nil {
-		log.Panicln("init error:", err)
+		log.Panicln("Bind mapper error:", err)
+	}
+	if err = engine.Master().Ping(); err != nil {
+		log.Panicln("Ping error:", err)
 	}
 	defer func() {
 		engine.Close()
 	}()
 	
-	// AddUserReturnId
-	id, createdAt, err := mapper.User.AddUserReturnId(&entity.User{
+	err = engine.Master().Migrate(mapper.Migration)
+	if err != nil {
+		log.Panicf("exec migration error: %v", err)
+	}
+	
+	// AddUser
+	rows, err := mapper.User.AddUser(&entity.User{
 		Name: "Tom",
 		Age:  18,
 		From: "venus",
 		Vip:  true,
 	})
-	if err != nil {
-		log.Panicf("Call AddUserReturnId error: %v", err)
+	if err != nil || rows != 1 {
+		log.Panicf("Call AddUser error: <%v, %d>", err, rows)
 	}
-	fmt.Printf("id:%d, createdAt:%v", id, createdAt)
 	
-	// ...
+    // ...
 }
+
 ```
 
 ## Entity
 
-> project/entity/user.go
+::: tip 文件路径
+project/entity/user.go
+:::
 
 ```go
 package entity
@@ -97,33 +110,70 @@ type User struct {
 
 ## Mapper
 
-> project/mapper/mapper.go
+::: tip 文件路径
+project/mapper/mapper.go
+:::
 
 ``` go 
 package mapper
 
 import (
+	"github.com/gobatis/gobatis"
 	"github.com/gobatis/gobatis/example/entity"
 	"time"
 )
 
 var (
-	User = &userMapper{}
+	User      = &userMapper{}
+	Migration = &migrationMapper{}
 )
+
+type migrationMapper struct {
+	CreateTable func(db *gobatis.DB) error
+}
 
 type userMapper struct {
 	AddUser         func(user *entity.User) (rows int, err error)
 	AddUserReturnId func(user *entity.User) (id int, createdAt time.Time, err error)
+	UpdateUser      func(id int, vip bool) (rows int, err error)
 	GetUserById     func(id int64) (name string, age int, err error)
 	GetUserByName   func(name string) (user *entity.User, err error)
 	GetUserByFrom   func(places []string) ([]*entity.User, error)
 	QueryUsers      func(m map[string]interface{}) ([]*entity.User, error)
+	DeleteUsers     func(id int) (rows int, err error)
 }
 ```
 
 ## SQL
 
-> project/sql/user.xml
+::: tip 文件路径
+project/sql/migration.xml
+:::
+
+```xml
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//gobatis.co//DTD Mapper 1.0//EN" "gobatis.co/dtd/mapper.dtd">
+
+<mapper>
+    <insert id="CreateTable">
+        create schema if not exists public;
+
+        create table if not exists users(
+        id serial constraint users_pk primary key,
+        name varchar,
+        age int,
+        "from" varchar,
+        vip bool,
+        created_at timestamp default current_timestamp
+        );
+    </insert>
+</mapper>
+```
+
+
+::: tip 文件路径
+project/sql/user.xml
+:::
 
 ``` xml
 <?xml version="1.0" encoding="UTF-8" ?>
@@ -133,6 +183,15 @@ type userMapper struct {
     <insert id="AddUser" parameter="user:struct">
         insert into users( name, age, "from", vip ) values( #{user.Name}, #{user.Age}, #{user.From}, ${user.Vip})
     </insert>
+
+    <update id="UpdateUser" parameter="id,vip">
+        update users set vip = #{vip} where id = #{ id };
+    </update>
+
+    <!--  &lt; 转义小于符号  -->
+    <delete id="DeleteUsers" parameter="id">
+        delete from users where id &lt;= #{id};
+    </delete>
 
     <select id="AddUserReturnId" parameter="user" result="id,created_at">
         insert into users(name,age,"from",vip ) values(#{user.Name},#{user.Age},#{user.From},${user.Vip} )

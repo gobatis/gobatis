@@ -34,8 +34,7 @@ func rv(v interface{}) reflect.Value {
 func TestEngine(t *testing.T) {
 	
 	engine := NewPostgresql("postgresql://postgres:postgres@127.0.0.1:54322/gobatis?connect_timeout=10&sslmode=disable")
-	engine.BindSQL(NewBundle("test"))
-	err := engine.Init()
+	err := engine.Init(NewBundle("test"))
 	require.NoError(t, err)
 	
 	err = engine.master.Ping()

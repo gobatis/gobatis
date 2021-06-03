@@ -6,6 +6,15 @@
         insert into users( name, age, "from", vip ) values( #{user.Name}, #{user.Age}, #{user.From}, ${user.Vip})
     </insert>
 
+    <update id="UpdateUser" parameter="id,vip">
+        update users set vip = #{vip} where id = #{ id };
+    </update>
+
+    <!--  &lt; 转义小于符号  -->
+    <delete id="DeleteUsers" parameter="id">
+        delete from users where id &lt;= #{id};
+    </delete>
+
     <select id="AddUserReturnId" parameter="user" result="id,created_at">
         insert into users(name,age,"from",vip ) values(#{user.Name},#{user.Age},#{user.From},${user.Vip} )
         returning id,created_at;
