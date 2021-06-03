@@ -138,28 +138,37 @@ func (p *Engine) parseConfig() (err error) {
 		err = fmt.Errorf("no bundle")
 		return
 	}
-	d, err := p.readBundleFile(config_xml)
+	
+	f, err := p.bundle.Open(config_xml)
+	if err != nil {
+		err = nil
+		return
+	}
+	_ = f.Close()
+	
+	bs, err := p.readBundleFile(config_xml)
 	if err != nil {
 		return
 	}
 	Infof("[gobatis] register fragment: gobatis.xml")
-	err = parseConfig(p, config_xml, string(d))
+	err = parseConfig(p, config_xml, string(bs))
 	if err != nil {
 		return
 	}
 	return
 }
 
-func (p *Engine) readBundleFile(path string) (d []byte, err error) {
-	c, err := p.bundle.Open(path)
+func (p *Engine) readBundleFile(path string) (bs []byte, err error) {
+	file, err := p.bundle.Open(path)
 	if err != nil {
 		err = fmt.Errorf("open %s error: %s", path, err)
 		return
 	}
 	defer func() {
-		_ = c.Close()
+		_ = file.Close()
 	}()
-	d, err = ioutil.ReadAll(c)
+	
+	bs, err = ioutil.ReadAll(file)
 	if err != nil {
 		err = fmt.Errorf("read %s content error: %s", path, err)
 		return
@@ -173,13 +182,13 @@ func (p *Engine) parseMappers() (err error) {
 		return
 	}
 	for _, v := range files {
-		var d []byte
-		d, err = p.readBundleFile(v)
+		var bs []byte
+		bs, err = p.readBundleFile(v)
 		if err != nil {
 			return
 		}
 		Infof("[gobatis] register fragment: %s.xml", v)
-		err = parseMapper(p, v, string(d))
+		err = parseMapper(p, v, string(bs))
 		if err != nil {
 			return
 		}

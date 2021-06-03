@@ -9,10 +9,10 @@
         "from",
         vip
         ) values(
-        #{name},
-        #{user},
-        #{from},
-        ${vip}
+        #{user.Name},
+        #{user.Age},
+        #{user.From},
+        ${user.Vip}
         )
     </insert>
 
@@ -23,10 +23,10 @@
         "from",
         vip
         ) values(
-        #{name},
-        #{user},
-        #{from},
-        ${vip}
+        #{user.Name},
+        #{user.Age},
+        #{user.From},
+        ${user.Vip}
         ) returning id,created_at;
     </select>
 
@@ -38,7 +38,7 @@
         select * from users where name=#{name};
     </select>
 
-    <select id="GetUserByFrom" parameter="places:[]string" result="*">
+    <select id="GetUserByFrom" parameter="places:[]string">
         select * from users where "from" in
         <foreach index="index" item="item" collection="places" open="(" separator="," close=")">
             #{item}
@@ -48,14 +48,14 @@
     <select id="QueryUsers" parameter="m" result="*">
         select * from users
         <where>
-            <if test="m.Name != nil">
-                name = #{m.Name}
+            <if test='m["name"] != nil'>
+                name = #{m["name"]}
             </if>
-            <if test="m.From != nil">
-                and "from" = #{m.From}
+            <if test="m['from'] != nil">
+                and "from" = #{m['from']}
             </if>
-            <if test="m.Vip != nil">
-                and vip = #{m.Vip}
+            <if test="m['vip'] != nil">
+                and vip = #{m['vip']}
             </if>
         </where>
     </select>

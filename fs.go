@@ -43,17 +43,37 @@ func (p fsDir) Open(name string) (http.File, error) {
 	if filepath.Separator != '/' && strings.ContainsRune(name, filepath.Separator) {
 		return nil, errors.New("http: invalid character in file path")
 	}
+	
+	fullPath := p.prepare(name)
+	f, err := os.Open(fullPath)
+	if err != nil {
+		return nil, mapDirOpenError(err, fullPath)
+	}
+	return &fsFile{f: f}, nil
+}
+
+func (p fsDir) prepare(name string) string {
 	dir := string(p)
 	if dir == "" {
 		dir = "."
 	}
-	fullName := filepath.Join(dir, filepath.FromSlash(path.Clean("/"+name)))
-	f, err := os.Open(fullName)
-	if err != nil {
-		return nil, mapDirOpenError(err, fullName)
-	}
-	return &fsFile{f: f}, nil
+	return filepath.Join(dir, filepath.FromSlash(path.Clean("/"+name)))
 }
+
+//func (p fsDir) Has(name string) (ok bool, err error) {
+//	fullPath := p.prepare(name)
+//	f, err := os.Open(fullPath)
+//	if err != nil {
+//		if err == os.ErrNotExist {
+//			err = nil
+//			return
+//		}
+//		return
+//	}
+//	_ = f.Close()
+//	ok = true
+//	return
+//}
 
 type fsFile struct {
 	f http.File

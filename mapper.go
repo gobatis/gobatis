@@ -172,7 +172,6 @@ func (p *fragment) checkResult(ft reflect.Type, mn, fn string) {
 	switch p.node.Name {
 	case dtd.SELECT:
 		switch p.resultAttribute {
-		
 		case result_result:
 			if len(p.out) == 0 {
 				if ft.NumOut() > 1 {
@@ -415,7 +414,7 @@ func (p *fragment) trimPrefixOverrides(parser *exprParser, node *xmlNode, res *p
 			throw(p.node.File, p.node.ctx, parasFragmentErr).format("regexp compile error: %s", err)
 		}
 	}
-	res.merge(tag, s)
+	res.sql = fmt.Sprintf("%s %s %s", res.sql, tag, s)
 }
 
 func (p *fragment) parseSet(parser *exprParser, node *xmlNode, res *psr) {

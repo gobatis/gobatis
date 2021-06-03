@@ -362,7 +362,7 @@ func (p *execResult) scan() error {
 		return err
 	}
 	if len(p.values) > 0 {
-		switch p.values[0].Kind() {
+		switch p.values[0].Elem().Kind() {
 		case reflect.Int:
 			r, e := cast.ToIntE(ra)
 			if e != nil {
@@ -420,7 +420,6 @@ func (p *execResult) scan() error {
 			}
 			p.values[0].Elem().SetUint(r)
 		}
-		
 	}
 	return nil
 }

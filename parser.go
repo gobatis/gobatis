@@ -724,12 +724,11 @@ func (p *exprValue) visitMap(index reflect.Value) (r *exprValue, err error) {
 	}
 	
 	mv := elem.MapIndex(index)
+	r = &exprValue{}
 	if mv.Kind() == reflect.Invalid {
-		err = fmt.Errorf("visit map index '%s' is invalid", index)
-		return
-	}
-	r = &exprValue{
-		value: mv.Interface(),
+		r.value = nil
+	} else {
+		r.value = mv.Interface()
 	}
 	return
 }
