@@ -88,7 +88,6 @@ const (
 
 type fragment struct {
 	db         *DB
-	logger     Logger
 	id         string
 	node       *xmlNode
 	cacheable  bool
@@ -538,7 +537,7 @@ func (p *caller) call() (err error) {
 	
 	start := time.Now()
 	defer func() {
-		p.fragment.logger.Debugf("[gobatis] [%s] cost: %s", p.fragment.id, time.Since(start))
+		Debugf("[gobatis] [%s] cost: %s", p.fragment.id, time.Since(start))
 	}()
 	
 	switch p.fragment.node.Name {
@@ -582,12 +581,12 @@ func (p *caller) exec(in ...reflect.Value) (err error) {
 		return
 	}
 	
-	p.fragment.logger.Debugf("[gobatis] [%s] exec statement: %s", p.fragment.id, s)
-	p.fragment.logger.Debugf("[gobatis] [%s] exec parameter: %s", p.fragment.id, p.printVars(vars))
+	Debugf("[gobatis] [%s] exec statement: %s", p.fragment.id, s)
+	Debugf("[gobatis] [%s] exec parameter: %s", p.fragment.id, p.printVars(vars))
 	
 	res, err := exec.ExecContext(ctx, s, vars...)
 	if err != nil {
-		p.fragment.logger.Debugf("[gobatis] [%s] exec error: %v", p.fragment.id, err)
+		Errorf("[gobatis] [%s] exec error: %v", p.fragment.id, err)
 		return
 	}
 	
@@ -636,11 +635,11 @@ func (p *caller) query(in ...reflect.Value) (err error) {
 	if err != nil {
 		return
 	}
-	p.fragment.logger.Debugf("[gobatis] [%s] query statement: %s", p.fragment.id, s)
-	p.fragment.logger.Debugf("[gobatis] [%s] query parameter: [%+v]", p.fragment.id, p.printVars(vars))
+	Debugf("[gobatis] [%s] query statement: %s", p.fragment.id, s)
+	Debugf("[gobatis] [%s] query parameter: [%+v]", p.fragment.id, p.printVars(vars))
 	rows, err := q.QueryContext(ctx, s, vars...)
 	if err != nil {
-		p.fragment.logger.Debugf("[gobatis] [%s] query error: %v", p.fragment.id, err)
+		Debugf("[gobatis] [%s] query error: %v", p.fragment.id, err)
 		return
 	}
 	defer func() {

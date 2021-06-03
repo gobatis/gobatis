@@ -7,8 +7,31 @@ import (
 )
 
 var (
-	log_level = Debug
+	_level         = Debug
+	_logger Logger = newDefaultLogger()
 )
+
+func Debugf(format string, args ...interface{}) {
+	if _level == Debug {
+		_logger.Debugf(format, args...)
+	}
+}
+
+func Infof(format string, args ...interface{}) {
+	if _level <= Info {
+		_logger.Infof(format, args...)
+	}
+}
+
+func Warnf(format string, args ...interface{}) {
+	if _level <= Warn {
+		_logger.Warnf(format, args...)
+	}
+}
+
+func Errorf(format string, args ...interface{}) {
+	_logger.Errorf(format, args...)
+}
 
 type LogLevel = int
 
@@ -26,34 +49,28 @@ type Logger interface {
 	Errorf(format string, args ...interface{})
 }
 
-func newLogger() *logger {
-	return &logger{
+func newDefaultLogger() *defaultLogger {
+	return &defaultLogger{
 		logger: logrus.New(),
 	}
 }
 
-type logger struct {
+type defaultLogger struct {
 	logger *logrus.Logger
 }
 
-func (p logger) Debugf(format string, args ...interface{}) {
-	if log_level == Debug {
-		log.Printf(chalk.Cyan.Color("[DEBUG]")+format, args...)
-	}
+func (p defaultLogger) Debugf(format string, args ...interface{}) {
+	log.Printf(chalk.Cyan.Color("[DEBUG]")+format, args...)
 }
 
-func (p logger) Infof(format string, args ...interface{}) {
-	if log_level <= Info {
-		log.Printf(chalk.Green.Color("[INFO]")+format, args...)
-	}
+func (p defaultLogger) Infof(format string, args ...interface{}) {
+	log.Printf(chalk.Green.Color("[INFO]")+format, args...)
 }
 
-func (p logger) Warnf(format string, args ...interface{}) {
-	if log_level <= Warn {
-		log.Printf(chalk.Yellow.Color("[WARN]")+format, args...)
-	}
+func (p defaultLogger) Warnf(format string, args ...interface{}) {
+	log.Printf(chalk.Yellow.Color("[WARN]")+format, args...)
 }
 
-func (p logger) Errorf(format string, args ...interface{}) {
+func (p defaultLogger) Errorf(format string, args ...interface{}) {
 	log.Printf(chalk.Red.Color("[ERROR]")+format, args...)
 }

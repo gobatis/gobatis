@@ -13,6 +13,10 @@ import (
 	"sync"
 )
 
+const (
+	config_xml = "gobatis.xml"
+)
+
 func parseConfig(engine *Engine, file, content string) (err error) {
 	defer func() {
 		e := recover()
@@ -54,7 +58,7 @@ func parseMapper(engine *Engine, file, content string) (err error) {
 	}
 	
 	if l.rootNode == nil {
-		engine.logger.Warnf("empty mapperCache file: %s", file)
+		Warnf("empty mapperCache file: %s", file)
 		return
 	}
 	for _, v := range l.rootNode.Nodes {
@@ -94,7 +98,7 @@ func initExprParser(tokens string) (parser *expr.ExprParser) {
 	return
 }
 
-func parseFragment(db *DB, logger Logger, file, id string, node *xmlNode) (frag *fragment, err error) {
+func parseFragment(db *DB, file, id string, node *xmlNode) (frag *fragment, err error) {
 	
 	defer func() {
 		e := recover()
@@ -102,10 +106,9 @@ func parseFragment(db *DB, logger Logger, file, id string, node *xmlNode) (frag 
 	}()
 	
 	frag = &fragment{
-		db:     db,
-		logger: logger,
-		id:     id,
-		node:   node,
+		db:   db,
+		id:   id,
+		node: node,
 	}
 	
 	frag.setResultAttribute()

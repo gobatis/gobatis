@@ -20,7 +20,7 @@ func NewMySQL(dsn string) *Engine {
 }
 
 func NewEngine(db *DB) *Engine {
-	engine := &Engine{master: db, logger: newLogger(), fragmentManager: newMethodManager()}
+	engine := &Engine{master: db, fragmentManager: newMethodManager()}
 	return engine
 }
 
@@ -28,7 +28,6 @@ type Engine struct {
 	master          *DB
 	bundle          http.FileSystem
 	slaves          []*DB
-	logger          Logger
 	fragmentManager *fragmentManager
 }
 
@@ -45,7 +44,11 @@ func (p *Engine) SetTag(tag string) {
 }
 
 func (p *Engine) SetLogLevel(level LogLevel) {
-	log_level = level
+	_level = level
+}
+
+func (p *Engine) SetLogger(logger Logger) {
+	_logger = logger
 }
 
 func (p *Engine) Init() (err error) {
@@ -135,12 +138,12 @@ func (p *Engine) parseConfig() (err error) {
 		err = fmt.Errorf("no bundle")
 		return
 	}
-	d, err := p.readBundleFile(CONFIG_XML)
+	d, err := p.readBundleFile(config_xml)
 	if err != nil {
 		return
 	}
-	p.logger.Infof("[gobatis] register fragment: gobatis.xml")
-	err = parseConfig(p, CONFIG_XML, string(d))
+	Infof("[gobatis] register fragment: gobatis.xml")
+	err = parseConfig(p, config_xml, string(d))
 	if err != nil {
 		return
 	}
@@ -175,7 +178,7 @@ func (p *Engine) parseMappers() (err error) {
 		if err != nil {
 			return
 		}
-		p.logger.Infof("[gobatis] register fragment: %s.xml", v)
+		Infof("[gobatis] register fragment: %s.xml", v)
 		err = parseMapper(p, v, string(d))
 		if err != nil {
 			return
@@ -203,7 +206,7 @@ func (p *Engine) walkMappers(root string) (files []string, err error) {
 			}
 			files = append(files, _files...)
 		} else {
-			if path != filepath.Join("/", CONFIG_XML) {
+			if path != filepath.Join("/", config_xml) {
 				files = append(files, path)
 			}
 		}
@@ -213,7 +216,7 @@ func (p *Engine) walkMappers(root string) (files []string, err error) {
 
 func (p *Engine) addFragment(file string, ctx antlr.ParserRuleContext, id string, node *xmlNode) {
 	
-	m, err := parseFragment(p.master, p.logger, file, id, node)
+	m, err := parseFragment(p.master, file, id, node)
 	if err != nil {
 		return
 	}
