@@ -3,31 +3,12 @@
 
 <mapper>
     <insert id="AddUser" parameter="user:struct">
-        insert into users(
-        name,
-        age,
-        "from",
-        vip
-        ) values(
-        #{user.Name},
-        #{user.Age},
-        #{user.From},
-        ${user.Vip}
-        )
+        insert into users( name, age, "from", vip ) values( #{user.Name}, #{user.Age}, #{user.From}, ${user.Vip})
     </insert>
 
     <select id="AddUserReturnId" parameter="user" result="id,created_at">
-        insert into users(
-        name,
-        age,
-        "from",
-        vip
-        ) values(
-        #{user.Name},
-        #{user.Age},
-        #{user.From},
-        ${user.Vip}
-        ) returning id,created_at;
+        insert into users(name,age,"from",vip ) values(#{user.Name},#{user.Age},#{user.From},${user.Vip} )
+        returning id,created_at;
     </select>
 
     <select id="GetUserById" parameter="id:int64" result="name,age">

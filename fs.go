@@ -60,21 +60,6 @@ func (p fsDir) prepare(name string) string {
 	return filepath.Join(dir, filepath.FromSlash(path.Clean("/"+name)))
 }
 
-//func (p fsDir) Has(name string) (ok bool, err error) {
-//	fullPath := p.prepare(name)
-//	f, err := os.Open(fullPath)
-//	if err != nil {
-//		if err == os.ErrNotExist {
-//			err = nil
-//			return
-//		}
-//		return
-//	}
-//	_ = f.Close()
-//	ok = true
-//	return
-//}
-
 type fsFile struct {
 	f http.File
 }
