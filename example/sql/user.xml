@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//gobatis.co//DTD Mapper 1.0//EN" "gobatis.co/dtd/mapper.dtd">
+
+<mapper>
+    <insert id="AddUser" parameter="user:struct">
+        insert into users(
+        name,
+        age,
+        "from",
+        vip
+        ) values(
+        #{name},
+        #{user},
+        #{from},
+        ${vip}
+        )
+    </insert>
+
+    <select id="AddUserReturnId" parameter="user" result="id,created_at">
+        insert into users(
+        name,
+        age,
+        "from",
+        vip
+        ) values(
+        #{name},
+        #{user},
+        #{from},
+        ${vip}
+        ) returning id,created_at;
+    </select>
+
+    <select id="GetUserById" parameter="id:int64" result="name,age">
+        select * from users where id=#{id};
+    </select>
+
+    <select id="GetUserByName" parameter="name" resultType="struct">
+        select * from users where name=#{name};
+    </select>
+
+    <select id="GetUserByFrom" parameter="places:[]string" resultType="[]struct">
+        select * from users where "from" in
+        <foreach index="index" item="item" collection="places" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </select>
+
+    <select id="QueryUsers" parameter="m" resultType="[]struct">
+        select * from users
+        <where>
+            <if test="m.Name != nil">
+                name = #{m.Name}
+            </if>
+            <if test="m.From != nil">
+                and "from" = #{m.From}
+            </if>
+            <if test="m.Vip != nil">
+                and vip = #{m.Vip}
+            </if>
+        </where>
+    </select>
+</mapper>

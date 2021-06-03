@@ -1,5 +1,12 @@
-运行
+# Example
 
+sql migration:
+
+```
+user.sql
+```
+
+run:
 ```bash
 $ go run main.go
 ```

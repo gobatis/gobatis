@@ -6,30 +6,29 @@
 # 引入库
 go get -v github.com/gobatis/gobatis
 
-# 安装 XML 规范文件
+# 安装 XML 语法映射文件
 sh -c "$(curl -fsSL https://gobatis.co/dtd/dtd.sh)"
 ```
 
 ## 目录结构
 
 ```
-|- sql          // 存放 xml 映射文件
-|- mapper       // 存放 mapper 映射文件
-main.go         // 定义 goabtis engine
-gobatis.xml     // xml 配置文件
+project
+├── entity
+│   └── user.go   // 存放实体类
+├── mapper
+│   ├── mapper.go // 定义 mapper
+└── sql
+│   └── user.xml  // sql 文件    
+├── main.go       // 程序入口    
 ```
 
 ## 项目启动
 
-> main.go
+> project/main.go
 
 ``` go
 package main
-
-import (
-  "gorm.io/gorm"
-  "gorm.io/driver/sqlite"
-)
 
 type Product struct {
   gorm.Model
@@ -38,17 +37,17 @@ type Product struct {
 }
 
 func main() {
-    engine := NewPostgresql("postgresql://postgres:postgres@127.0.0.1:54322/gobatis?connect_timeout=10&sslmode=disable")
-	engine.SetBundle(bundle.Dir("test"))
+    engine := NewPostgresql("postgresql://postgres:postgres@127.0.0.1:5432/gobatis?connect_timeout=10&sslmode=disable")
+	engine.BindSQL(gobatis.NewBundle("./sql"))
 	err := engine.Init()
 	if err != nil {
-	    log.Println("gobatis engine init error:", err)
+	    log.Println("engine init error:", err)
 	    return
 	}
 	
 	err = engine.master.Ping()
 	if err != nil {
-	    log.Println("gobatis engine master ping error:", err)
+	    log.Println("engine master ping error:", err)
 	    return
 	}
 	
@@ -65,7 +64,7 @@ func main() {
 
 ## Mapper
 
-> mapper/user_mapper.go
+> project/mapper/mapper.go
 
 ``` go 
 type UserMapper struct{
@@ -74,22 +73,8 @@ type UserMapper struct{
 }
 ```
 
-## XML文件
-
-> gobatis.xml
-
-``` xml
-<?xml version="1.0" encoding="UTF-8" ?>
-<!DOCTYPE configuration
-        PUBLIC "-//gobatis.co//DTD Config 1.0//EN"
-        "gobatis.co/dtd/config.dtd">
-
-<configuration>
-    <module base="github.com/gobatis/gobatis"/>
-</configuration>
-```
-
-> sql/user.xml
+## SQL
+> project/sql/user.xml
 
 ``` xml
 <?xml version="1.0" encoding="UTF-8" ?>

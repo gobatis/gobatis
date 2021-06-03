@@ -40,7 +40,7 @@ module.exports = {
                         collapsable: false, // 可选的, 默认值是 true,
                         sidebarDepth: 1,    // 可选的, 默认值是 1
                         children: [
-                            ['/configuration', 'XML 配置'],
+                            // ['/configuration', 'XML 配置'],
                             ['/sqlmap-xml', 'XML 映射文件'],
                             ['/dynamic-sql', '动态 SQL'],
                             ['/expression', '表达式'],
@@ -55,11 +55,11 @@ module.exports = {
                             ['/engine', 'Engine'],
                             ['/mapper', 'Mapper'],
                             ['/entity', 'Entity'],
-                            ['/mapper', '事务处理'],
+                            ['/mapper', '事务'],
                             ['/mapper', '日志'],
                             ['/mapper', '连接池'],
-                            ['/mapper', '性能'],
                             ['/deploy', '部署'],
+                            ['/mapper', '性能'],
                         ]
                     },
 

@@ -6,13 +6,56 @@ tagline: 适用于 golang 的持久层框架
 actionText: 快速上手 →
 actionLink: /introduction
 features:
-- title: 简洁至上
-  details: 以 Markdown 为中心的项目结构，以最少的配置帮助你专注于写作。
-- title: Vue驱动
-  details: 享受 Vue + webpack 的开发体验，在 Markdown 中使用 Vue 组件，同时可以使用 Vue 来开发自定义主题。
-- title: 高性能
-  details: VuePress 为每个页面预渲染生成静态的 HTML，同时在页面被加载的时候，将作为 SPA 运行。
+- title: 简洁高效
+  details: 不做多余的事情，本质上只是做 SQL 语句的拼装，避免因侵入用户代码而出错。
+- title: 体验至上
+  details: 以人为本，从命名到工具链的打磨，为了愉悦编程而不断探索。
+- title: 传承创新
+  details: 以 MyBatis 语法为参照，结合 Golang 语言特点，自成一套体系。
 footer: MIT Licensed | Copyright © 2020-present Koyeo
 ---
 
 
+## 安装
+
+```
+go get -v github.com/gobatis/gobatis
+```
+
+## 用法概览
+
+**user.go:**
+```go
+type User struct{
+	Id   int    `sql:"id"`
+	Name string `sql:"name"`
+	Age  string `sql:"age"`
+}
+```
+
+**user.mapper.go:**
+```go
+var UserMapper = &usermapper{}
+
+type userMapper struct{
+    CreateUser func (user *User) error                         // 创建用户
+    GetUserById func (id int) (name string,age int, err error) // 查询单个用户
+    GetUsers func()([]*User, error)                            // 查询多个用户
+}
+```
+
+**user.xml:**
+
+```xml
+<insert id="CreateUser" parameter="user">
+    insert into users(name,age) values( #{user.Name}, #{user.Age} );
+</insert>
+
+<select id="GetUserById" parameter="id:int" result="name,age"> 
+    select name,age from users where id=${id};
+</select>
+
+<select id="GetUsers" resultType="[]struct"> 
+    select * from users
+</select>
+```
