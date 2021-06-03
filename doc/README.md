@@ -33,7 +33,7 @@ type User struct{
 }
 ```
 
-**user.mapper.go:**
+**mapper.go:**
 ```go
 var UserMapper = &usermapper{}
 
