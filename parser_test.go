@@ -101,11 +101,6 @@ type testFragment struct {
 	Err       int           `json:"err"`
 }
 
-//var (
-//	u1 entity.TestEntity
-//	u2 entity.TestEntity
-//)
-
 const (
 	errLogFile = "err.md"
 )
@@ -117,24 +112,6 @@ func init() {
 	if !os.IsNotExist(err) {
 		_ = os.Remove(logPath)
 	}
-	
-	//u1 = testEntity{
-	//	Name:     "foo",
-	//	Age:      18,
-	//	Weight:   func() int { return 60 },
-	//	auth:     true,
-	//	Children: map[string]int64{"michael": 8},
-	//	Products: map[int][]int{1: []int{11, 12, 13}},
-	//}
-	//u2 = testEntity{
-	//	Name:     "foo parent",
-	//	Age:      20,
-	//	Weight:   func() int { return 40 },
-	//	auth:     true,
-	//	Children: map[string]int64{"alice": 8},
-	//	Products: map[int][]int{2: []int{21, 22, 23}},
-	//	Parent:   &u1,
-	//}
 }
 
 func TestParseConfig(t *testing.T) {
@@ -206,8 +183,36 @@ func TestCorrectParseExprExpression(t *testing.T) {
 
 func TestErrorParseExprExpression(t *testing.T) {
 	testErrorParseExprParameter(t, []testExpression{
-		{In: []interface{}{2, 4}, Parameter: `a:int64,b`, Expr: "a + b", Result: 6, Err: 1},
+		//{In: []interface{}{2, 4}, Parameter: `a:int64,b`, Expr: "a + b", Result: 6, Err: 1},
 	})
+}
+
+func TestAnyExprParam(t *testing.T) {
+	params, err := testAnyExprParam(" * ")
+	require.Equal(t, 0, len(params))
+	require.NoError(t, err)
+	
+	_, err = testAnyExprParam("*,")
+	require.Error(t, err)
+	
+	_, err = testAnyExprParam("*,a")
+	require.Error(t, err)
+	
+	_, err = testAnyExprParam(",*")
+	require.Error(t, err)
+}
+
+func testAnyExprParam(tokens string) (params []*param, err error) {
+	defer func() {
+		e := recover()
+		if e != nil {
+			err = fmt.Errorf("%v", e)
+		}
+	}()
+	parser := newParamParser("test.xml")
+	parser.walkMethods(initExprParser(tokens))
+	params = parser.params
+	return
 }
 
 func execTestErrorMapper(t *testing.T, engine *Engine, tests []testMapper) {

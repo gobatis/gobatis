@@ -101,7 +101,6 @@ const (
 	CHOOSE            = "choose"
 	IF                = "if"
 	BIND              = "bind"
-	RESULT_TYPE       = "resultType"
 	RESULT_SET_TYPE   = "resultSetType"
 	STATEMENT_TYPE    = "statementType"
 	FETCH_SIZE        = "fetchSize"

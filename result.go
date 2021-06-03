@@ -14,11 +14,11 @@ var (
 )
 
 type queryResult struct {
-	rows       *sql.Rows
-	first      bool
-	resultType *resultType
-	selected   map[string]int
-	values     []reflect.Value
+	rows     *sql.Rows
+	first    bool
+	reflect  bool
+	selected map[string]int
+	values   []reflect.Value
 }
 
 func (p *queryResult) Tag() string {
@@ -29,17 +29,17 @@ func (p *queryResult) Rows() *sql.Rows {
 	return p.rows
 }
 
-func (p *queryResult) setSelected(_dest *resultType, params []*param, values []reflect.Value) error {
+func (p *queryResult) setSelected(typeAttribute int, params []*param, values []reflect.Value) error {
 	
-	p.resultType = _dest
 	p.values = values
+	p.reflect = len(params) == 0
 	
-	var el int
-	if p.resultType != nil {
+	if typeAttribute != result_result {
 		return nil
 	}
 	
-	if p.resultType != nil {
+	var el int
+	if p.reflect {
 		el = 1
 	} else {
 		el = len(params)
@@ -49,18 +49,13 @@ func (p *queryResult) setSelected(_dest *resultType, params []*param, values []r
 		return fmt.Errorf("expected to receive %d result filed(s), got %d (except error)", el, len(values))
 	}
 	
-	err := p.checkResultType()
-	if err != nil {
-		return err
-	}
-	
-	if p.resultType != nil {
+	if p.reflect {
 		return nil
 	}
 	
 	p.first = true
 	for i, v := range params {
-		err = p.addSelected(i, v.name)
+		err := p.addSelected(i, v.name)
 		if err != nil {
 			return err
 		}
@@ -70,13 +65,6 @@ func (p *queryResult) setSelected(_dest *resultType, params []*param, values []r
 	}
 	
 	return nil
-}
-
-func (p *queryResult) checkResultType() (err error) {
-	if p.resultType != nil && p.values[0].Elem().Kind() != reflect.Struct {
-		return fmt.Errorf("bind value is not struct or map")
-	}
-	return
 }
 
 func (p *queryResult) addSelected(index int, name string) error {
@@ -133,7 +121,7 @@ func (p *queryResult) scan() (err error) {
 }
 
 func (p *queryResult) reflectRow(columns []string, row []interface{}) error {
-	if p.resultType != nil {
+	if p.reflect {
 		if p.values[0].Elem().Kind() == reflect.Slice {
 			return p.reflectStructs(newRowMap(columns, row))
 		} else {

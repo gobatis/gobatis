@@ -81,21 +81,20 @@ func (p *psr) merge(s ...string) {
 }
 
 const (
-	fragment_result_type = iota + 1
-	fragment_result_map
-	fragment_result
+	result_none = iota
+	result_result
+	result_result_map
 )
 
 type fragment struct {
-	db         *DB
-	id         string
-	node       *xmlNode
-	cacheable  bool
-	sql        string
-	in         []*param
-	out        []*param
-	resultType *resultType
-	resultAttr int
+	db              *DB
+	id              string
+	node            *xmlNode
+	cacheable       bool
+	sql             string
+	in              []*param
+	out             []*param
+	resultAttribute int
 }
 
 func (p *fragment) proxy(field reflect.Value) {
@@ -140,21 +139,12 @@ func (p *fragment) setResultAttribute() {
 		return
 	}
 	
-	if p.node.HasAttribute(dtd.RESULT_TYPE) {
-		p.resultAttr = fragment_result_type
-		_type, slice := handleSlice(p.node.GetAttribute(dtd.RESULT_TYPE))
-		kind, err := varToReflectKind(_type)
-		if err != nil {
-			throw(p.node.File, p.node.ctx, varToReflectKindErr).with(err)
-		}
-		p.resultType = &resultType{
-			kind:  kind,
-			slice: slice,
-		}
+	if p.node.HasAttribute(dtd.RESULT) {
+		p.resultAttribute = result_result
 	} else if p.node.HasAttribute(dtd.RESULT_MAP) {
-		p.resultAttr = fragment_result_map
-	} else if p.node.HasAttribute(dtd.RESULT) {
-		p.resultAttr = fragment_result
+		p.resultAttribute = result_result_map
+	} else {
+		p.resultAttribute = result_none
 	}
 }
 
@@ -181,31 +171,42 @@ func (p *fragment) checkResult(ft reflect.Type, mn, fn string) {
 	
 	switch p.node.Name {
 	case dtd.SELECT:
-		switch p.resultAttr {
-		case fragment_result_type:
-			if ft.NumOut() > 1 {
-				if p.resultType.slice {
-					if ft.Out(0).Kind() != reflect.Slice ||
-						(ft.Out(0).Elem().Kind() != reflect.Ptr && ft.Out(0).Elem().Kind() != reflect.Struct) ||
-						(ft.Out(0).Elem().Kind() == reflect.Ptr && ft.Out(0).Elem().Elem().Kind() != reflect.Struct) {
-						throw(p.node.File, p.node.ctx, checkResultErr).
-							format("%s.%s out[0] expect []struct, got: %s", mn, fn, ft.Out(0))
+		switch p.resultAttribute {
+		
+		case result_result:
+			if len(p.out) == 0 {
+				if ft.NumOut() > 1 {
+					switch ft.Out(0).Kind() {
+					case reflect.Ptr:
+						switch ft.Out(0).Elem().Kind() {
+						case reflect.Struct, reflect.Map:
+							return
+						}
+					case reflect.Slice:
+						switch ft.Out(0).Elem().Kind() {
+						case reflect.Ptr:
+							switch ft.Out(0).Elem().Elem().Kind() {
+							case reflect.Struct, reflect.Map:
+								return
+							}
+						case reflect.Struct, reflect.Map:
+							return
+						}
+					case reflect.Struct, reflect.Map:
+						return
 					}
-				} else {
-					if (ft.Out(0).Kind() != reflect.Ptr && ft.Out(0).Kind() != reflect.Struct) ||
-						(ft.Out(0).Kind() == reflect.Ptr && ft.Out(0).Elem().Kind() != reflect.Struct) {
-						throw(p.node.File, p.node.ctx, checkResultErr).
-							format("%s.%s out[0] expect struct, got: %s", mn, fn, ft.Out(0))
+					throw(p.node.File, p.node.ctx, checkResultErr).
+						format("%s.%s out[0] expect (struct | []struct | map | []map), got: %s", mn, fn, ft.Out(0))
+				}
+			} else {
+				for i, v := range p.out {
+					if !v.expected(ft.Out(i)) {
+						throw(p.node.File, p.node.ctx, varBindErr).
+							format("%s.%s bind result '%s' expect '%s', got '%s'", mn, fn, v.name, v.Type(), ft.Out(i))
 					}
 				}
 			}
-		case fragment_result:
-			for i, v := range p.out {
-				if !v.expected(ft.Out(i)) {
-					throw(p.node.File, p.node.ctx, varBindErr).
-						format("%s.%s bind result '%s' expect '%s', got '%s'", mn, fn, v.name, v.Type(), ft.Out(i))
-				}
-			}
+			
 		}
 	case dtd.INSERT, dtd.UPDATE, dtd.DELETE:
 		if ft.NumOut() > 1 {
@@ -654,7 +655,7 @@ func (p *caller) parseQueryResult(rows *sql.Rows) error {
 	res := queryResult{rows: rows}
 	res.rows = rows
 	
-	err := res.setSelected(p.fragment.resultType, p.fragment.out, p.values)
+	err := res.setSelected(p.fragment.resultAttribute, p.fragment.out, p.values)
 	if err != nil {
 		return err
 	}

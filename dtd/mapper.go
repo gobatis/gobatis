@@ -198,7 +198,7 @@ var Case = &Element{
 	Attributes: map[string]int{
 		VALUE:       REQUIRED,
 		RESULT_MAP:  IMPLIED,
-		RESULT_TYPE: IMPLIED,
+		//RESULT_TYPE: IMPLIED,
 	},
 }
 
@@ -228,7 +228,7 @@ var Select = &Element{
 		PARAMETER_MAP:   IMPLIED,
 		PARAMETER:       IMPLIED,
 		RESULT_MAP:      IMPLIED,
-		RESULT_TYPE:     IMPLIED,
+		//RESULT_TYPE:     IMPLIED,
 		RESULT:          IMPLIED,
 		RESULT_SET_TYPE: IMPLIED,
 		STATEMENT_TYPE:  IMPLIED,
@@ -286,7 +286,7 @@ var SelectKey = &Element{
 		BIND:    ANY_TIMES,
 	},
 	Attributes: map[string]int{
-		RESULT_TYPE:    IMPLIED,
+		//RESULT_TYPE:    IMPLIED,
 		STATEMENT_TYPE: IMPLIED,
 		KEY_PROPERTY:   IMPLIED,
 		KEY_COLUMN:     IMPLIED,

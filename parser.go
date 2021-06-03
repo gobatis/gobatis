@@ -177,7 +177,9 @@ func varToReflectKind(t string) (kind reflect.Kind, err error) {
 		kind = reflect.Complex128
 	case "array":
 		kind = reflect.Array
-	case "auto":
+	case "slice":
+		kind = reflect.Slice
+	case "interface":
 		kind = reflect.Interface
 	case "map":
 		kind = reflect.Map
@@ -419,9 +421,6 @@ func (p *xmlParser) checkResultConflict(node *xmlNode) {
 	if node.HasAttribute(dtd.RESULT) {
 		l[dtd.RESULT] = true
 	}
-	if node.HasAttribute(dtd.RESULT_TYPE) {
-		l[dtd.RESULT_TYPE] = true
-	}
 	if node.HasAttribute(dtd.RESULT_MAP) {
 		l[dtd.RESULT_MAP] = true
 	}
@@ -531,11 +530,6 @@ func (p *xmlParser) ExitEveryRule(ctx antlr.ParserRuleContext) {
 	case xml.XMLParserRULE_element:
 		p.exitElement(nil)
 	}
-}
-
-type resultType struct {
-	kind  reflect.Kind
-	slice bool
 }
 
 type param struct {

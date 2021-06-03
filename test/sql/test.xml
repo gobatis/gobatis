@@ -214,19 +214,19 @@
         select t_char,t_text from test_entities where id > #{start} and id &lt;= #{end};
     </select>
 
-    <select id="SelectStruct" parameter="id:int" resultType="struct">
+    <select id="SelectStruct" parameter="id:int">
         select * from test_entities where id = #{id};
     </select>
 
-    <select id="SelectStructPointer" parameter="id:int" resultType="struct">
+    <select id="SelectStructPointer" parameter="id:int">
         select * from test_entities where id = #{id};
     </select>
 
-    <select id="SelectStructs" parameter="id:int" resultType="[]struct">
+    <select id="SelectStructs" parameter="id:int">
         select * from test_entities where id > #{id} and id &lt; 50;
     </select>
 
-    <select id="SelectStructsPointer" parameter="id:int" resultType="[]struct">
+    <select id="SelectStructsPointer" parameter="id:int" result="*">
         select * from test_entities where id > #{id} and id &lt; 50;
     </select>
 

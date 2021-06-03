@@ -34,18 +34,18 @@
         select * from users where id=#{id};
     </select>
 
-    <select id="GetUserByName" parameter="name" resultType="struct">
+    <select id="GetUserByName" parameter="name">
         select * from users where name=#{name};
     </select>
 
-    <select id="GetUserByFrom" parameter="places:[]string" resultType="[]struct">
+    <select id="GetUserByFrom" parameter="places:[]string" result="*">
         select * from users where "from" in
         <foreach index="index" item="item" collection="places" open="(" separator="," close=")">
             #{item}
         </foreach>
     </select>
 
-    <select id="QueryUsers" parameter="m" resultType="[]struct">
+    <select id="QueryUsers" parameter="m" result="*">
         select * from users
         <where>
             <if test="m.Name != nil">
