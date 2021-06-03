@@ -7,24 +7,24 @@ import (
 )
 
 var (
-	_level         = Debug
+	_level         = DebugLevel
 	_logger Logger = newDefaultLogger()
 )
 
 func Debugf(format string, args ...interface{}) {
-	if _level == Debug {
+	if _level <= DebugLevel {
 		_logger.Debugf(format, args...)
 	}
 }
 
 func Infof(format string, args ...interface{}) {
-	if _level <= Info {
+	if _level <= InfoLevel {
 		_logger.Infof(format, args...)
 	}
 }
 
 func Warnf(format string, args ...interface{}) {
-	if _level <= Warn {
+	if _level <= WarnLevel {
 		_logger.Warnf(format, args...)
 	}
 }
@@ -36,10 +36,11 @@ func Errorf(format string, args ...interface{}) {
 type LogLevel = int
 
 const (
-	Debug = iota
-	Info
-	Warn
-	Error
+	StackLevel = iota
+	DebugLevel
+	InfoLevel
+	WarnLevel
+	ErrorLevel
 )
 
 type Logger interface {
