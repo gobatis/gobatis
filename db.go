@@ -126,13 +126,13 @@ func (p *DB) Conn(ctx context.Context) (conn *sql.Conn, err error) {
 func (p *DB) Migrate(mapper interface{}) error {
 	
 	mt := reflect.ValueOf(mapper)
-	mt = reflectValueElem(mt)
+	et := reflectValueElem(mt)
 	pv := reflect.ValueOf(p)
 	
-	if mt.Kind() != reflect.Struct {
-		return fmt.Errorf("migrate error: expect struct, pass: %s", mt.Type())
+	if mt.Kind() != reflect.Ptr || et.Kind() != reflect.Struct {
+		return fmt.Errorf("[gobatis][migrate] exec error: mapper expect struct pointer, pass: %s", mt.Type())
 	}
-	
+	mt = et
 	for i := 0; i < mt.NumField(); i++ {
 		field := mt.Field(i)
 		if field.Kind() == reflect.Func &&
@@ -145,10 +145,10 @@ func (p *DB) Migrate(mapper interface{}) error {
 			}
 			err := field.Call([]reflect.Value{reflect.ValueOf(p)})[0].Interface()
 			if err != nil {
-				Errorf("exec %s error: %v", mt.Type().Field(i).Name, err)
+				Errorf("[gobatis][migrate] exec %s error: %v", mt.Type().Field(i).Name, err)
 				return err.(error)
 			}
-			Errorf("exec %s success", mt.Type().Field(i).Name)
+			Errorf("[gobatis][migrate] exec %s success", mt.Type().Field(i).Name)
 		}
 	}
 	
