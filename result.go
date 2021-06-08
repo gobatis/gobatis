@@ -130,7 +130,7 @@ func (p *queryResult) reflectRow(columns []string, row []interface{}) error {
 		}
 	} else {
 		for i, column := range columns {
-			if p.isSelected(column) {
+			if p.isSelected(column) && row[i] != nil {
 				err := p.reflectValue(column, p.values[p.selected[column]].Elem(), row[i])
 				if err != nil {
 					return err
@@ -150,7 +150,7 @@ func (p *queryResult) reflectStruct(r rowMap) error {
 	for i := 0; i < _type.NumField(); i++ {
 		field := _type.Field(i).Tag.Get(p.Tag())
 		v, ok := r[field]
-		if ok {
+		if ok && v != nil {
 			if dv.Field(i).Kind() == reflect.Ptr {
 				dv.Field(i).Set(reflect.New(dv.Field(i).Type().Elem()))
 			}
