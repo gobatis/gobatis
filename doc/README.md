@@ -4,7 +4,7 @@ heroImage: /assets/img/logo.png
 heroText: Gobatis
 tagline: 适用于 golang 的持久层框架
 actionText: 快速上手 →
-actionLink: /introduction
+actionLink: /getting-started
 features:
 - title: 简洁高效
   details: 不做多余的事情，本质上只是做 SQL 语句的拼装，避免因侵入用户代码而出错。
@@ -12,7 +12,7 @@ features:
   details: 以人为本，从命名到工具链的打磨，为了愉悦编程而不断探索。
 - title: 传承创新
   details: 以 MyBatis 语法为参照，结合 Golang 语言特点，自成一套体系。
-footer: MIT Licensed | Copyright © 2020-present Koyeo
+footer: MIT Licensed | Copyright © 2020-present gobatis.co
 ---
 
 

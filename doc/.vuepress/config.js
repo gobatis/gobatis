@@ -21,9 +21,10 @@ module.exports = {
         smoothScroll: true,
         locales: {
             '/': {
+                selectText: '语言',
                 nav: [
-                    {text: '文档', link: '/getting-started'},
-                    {text: 'External', link: 'https://google.com', target: '_blank'},
+                    {text: '文档', link: '/introduction'},
+                    {text: 'Github', link: 'https://github.com/gobatis/gobatis', target: '_blank'},
                 ],
                 sidebar: [
                     {
