@@ -118,7 +118,7 @@ func (p *fragment) call(must bool, _type reflect.Type, in ...reflect.Value) []re
 		}
 	}
 	
-	err := c.call()
+	err := c.call(must)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			if must {
