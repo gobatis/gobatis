@@ -347,74 +347,70 @@ func newRowMap(columns []string, values []interface{}) rowMap {
 
 type rowMap map[string]interface{}
 
-func newExecResult(res sql.Result, values []reflect.Value) *execResult {
-	return &execResult{res: res, values: values}
+func newExecResult(affected int64, values []reflect.Value) *execResult {
+	return &execResult{affected: affected, values: values}
 }
 
 type execResult struct {
-	res    sql.Result
+	affected int64
 	values []reflect.Value
 }
 
 func (p *execResult) scan() error {
-	ra, err := p.res.RowsAffected()
-	if err != nil {
-		return err
-	}
 	if len(p.values) > 0 {
 		switch p.values[0].Elem().Kind() {
 		case reflect.Int:
-			r, e := cast.ToIntE(ra)
+			r, e := cast.ToIntE(p.affected)
 			if e != nil {
 				return e
 			}
 			p.values[0].Elem().SetInt(int64(r))
 		case reflect.Int8:
-			r, e := cast.ToInt8E(ra)
+			r, e := cast.ToInt8E(p.affected)
 			if e != nil {
 				return e
 			}
 			p.values[0].Elem().SetInt(int64(r))
 		case reflect.Int16:
-			r, e := cast.ToInt16E(ra)
+			r, e := cast.ToInt16E(p.affected)
 			if e != nil {
 				return e
 			}
 			p.values[0].Elem().SetInt(int64(r))
 		case reflect.Int32:
-			r, e := cast.ToInt32E(ra)
+			r, e := cast.ToInt32E(p.affected)
 			if e != nil {
 				return e
 			}
 			p.values[0].Elem().SetInt(int64(r))
 		case reflect.Int64:
-			p.values[0].Elem().SetInt(ra)
+			p.values[0].Elem().SetInt(p.affected)
 		case reflect.Uint:
-			r, e := cast.ToUintE(ra)
+			r, e := cast.ToUintE(p.affected)
 			if e != nil {
 				return e
 			}
 			p.values[0].Elem().SetUint(uint64(r))
 		case reflect.Uint8:
-			r, e := cast.ToUint8E(ra)
+			r, e := cast.ToUint8E(p.affected)
 			if e != nil {
 				return e
 			}
 			p.values[0].Elem().SetUint(uint64(r))
 		case reflect.Uint16:
-			r, e := cast.ToUint16E(ra)
+			r, e := cast.ToUint16E(p.affected)
 			if e != nil {
 				return e
 			}
 			p.values[0].Elem().SetUint(uint64(r))
 		case reflect.Uint32:
-			r, e := cast.ToUint32E(ra)
+			r, e := cast.ToUint32E(p.affected)
 			if e != nil {
 				return e
 			}
 			p.values[0].Elem().SetUint(uint64(r))
 		case reflect.Uint64:
-			r, e := cast.ToUint64E(ra)
+			r, e := cast.ToUint64E(p.affected)
 			if e != nil {
 				return e
 			}

@@ -546,10 +546,10 @@ func (p *caller) Scan(pointers ...interface{}) (err error) {
 		p.values = append(p.values, rv)
 	}
 	
-	return p.call()
+	return p.call(false)
 }
 
-func (p *caller) call() (err error) {
+func (p *caller) call(must bool) (err error) {
 	
 	start := time.Now()
 	defer func() {
@@ -560,7 +560,7 @@ func (p *caller) call() (err error) {
 	case dtd.SELECT:
 		return p.query(p.params...)
 	case dtd.INSERT, dtd.DELETE, dtd.UPDATE:
-		return p.exec(p.params...)
+		return p.exec(must, p.params...)
 	default:
 		throw(p.fragment.node.File, p.fragment.node.ctx, callerErr).
 			format("unsupported call method '%s'", p.fragment.node.Name)
@@ -568,7 +568,7 @@ func (p *caller) call() (err error) {
 	}
 }
 
-func (p *caller) exec(in ...reflect.Value) (err error) {
+func (p *caller) exec(must bool, in ...reflect.Value) (err error) {
 	
 	exec, index := p.execer(in)
 	if index > -1 {
@@ -606,7 +606,15 @@ func (p *caller) exec(in ...reflect.Value) (err error) {
 		return
 	}
 	
-	return newExecResult(res, p.values).scan()
+	affected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if must && affected == 0 {
+		return fmt.Errorf("no rows affected")
+	}
+	
+	return newExecResult(affected, p.values).scan()
 }
 
 func (*caller) printVars(vars []interface{}) string {
