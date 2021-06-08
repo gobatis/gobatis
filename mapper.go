@@ -14,6 +14,16 @@ import (
 	"time"
 )
 
+const (
+	must_prefix = "Must"
+)
+
+const (
+	result_none = iota
+	result_result
+	result_result_map
+)
+
 type fragmentManager struct {
 	mu        sync.RWMutex
 	fragments map[string]*fragment
@@ -80,12 +90,6 @@ func (p *psr) merge(s ...string) {
 	}
 }
 
-const (
-	result_none = iota
-	result_result
-	result_result_map
-)
-
 type fragment struct {
 	db              *DB
 	id              string
@@ -97,13 +101,13 @@ type fragment struct {
 	resultAttribute int
 }
 
-func (p *fragment) proxy(field reflect.Value) {
+func (p *fragment) proxy(must bool, field reflect.Value) {
 	field.Set(reflect.MakeFunc(field.Type(), func(args []reflect.Value) (results []reflect.Value) {
-		return p.call(field.Type(), args...)
+		return p.call(must, field.Type(), args...)
 	}))
 }
 
-func (p *fragment) call(_type reflect.Type, in ...reflect.Value) []reflect.Value {
+func (p *fragment) call(must bool, _type reflect.Type, in ...reflect.Value) []reflect.Value {
 	
 	c := &caller{fragment: p, params: in}
 	for i := 0; i < _type.NumOut()-1; i++ {
@@ -114,7 +118,7 @@ func (p *fragment) call(_type reflect.Type, in ...reflect.Value) []reflect.Value
 		}
 	}
 	
-	err := c.call()
+	err := c.call(must)
 	if err != nil {
 		c.values = append(c.values, reflect.ValueOf(err))
 	} else {
@@ -530,10 +534,10 @@ func (p *caller) Scan(pointers ...interface{}) (err error) {
 		p.values = append(p.values, rv)
 	}
 	
-	return p.call()
+	return p.call(false)
 }
 
-func (p *caller) call() (err error) {
+func (p *caller) call(must bool) (err error) {
 	
 	start := time.Now()
 	defer func() {
@@ -542,9 +546,9 @@ func (p *caller) call() (err error) {
 	
 	switch p.fragment.node.Name {
 	case dtd.SELECT:
-		return p.query(p.params...)
+		return p.query(must, p.params...)
 	case dtd.INSERT, dtd.DELETE, dtd.UPDATE:
-		return p.exec(p.params...)
+		return p.exec(must, p.params...)
 	default:
 		throw(p.fragment.node.File, p.fragment.node.ctx, callerErr).
 			format("unsupported call method '%s'", p.fragment.node.Name)
@@ -552,7 +556,7 @@ func (p *caller) call() (err error) {
 	}
 }
 
-func (p *caller) exec(in ...reflect.Value) (err error) {
+func (p *caller) exec(must bool, in ...reflect.Value) (err error) {
 	
 	exec, index := p.execer(in)
 	if index > -1 {
@@ -590,7 +594,7 @@ func (p *caller) exec(in ...reflect.Value) (err error) {
 		return
 	}
 	
-	return newExecResult(res, p.values).scan()
+	return newExecResult(must, res, p.values).scan()
 }
 
 func (*caller) printVars(vars []interface{}) string {
@@ -605,7 +609,7 @@ func (*caller) printVars(vars []interface{}) string {
 	return r
 }
 
-func (p *caller) query(in ...reflect.Value) (err error) {
+func (p *caller) query(must bool, in ...reflect.Value) (err error) {
 	
 	ctx, index := p.context(in)
 	if index > -1 {
@@ -646,14 +650,12 @@ func (p *caller) query(in ...reflect.Value) (err error) {
 		_ = rows.Close()
 	}()
 	
-	return p.parseQueryResult(rows)
+	return p.parseQueryResult(must, rows)
 }
 
-func (p *caller) parseQueryResult(rows *sql.Rows) error {
+func (p *caller) parseQueryResult(must bool, rows *sql.Rows) error {
 	
-	res := queryResult{rows: rows}
-	res.rows = rows
-	
+	res := queryResult{must: must, rows: rows}
 	err := res.setSelected(p.fragment.resultAttribute, p.fragment.out, p.values)
 	if err != nil {
 		return err

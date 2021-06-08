@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"path/filepath"
 	"reflect"
+	"strings"
 )
 
 func NewPostgresql(dsn string) *Engine {
@@ -117,15 +118,23 @@ func (p *Engine) bindMapper(mapper interface{}) (err error) {
 		if rv.Field(i).Kind() != reflect.Func {
 			continue
 		}
+		must := false
 		id := rt.Field(i).Name
+		if strings.HasPrefix(id, must_prefix) {
+			id = strings.TrimPrefix(id, must_prefix)
+			must = true
+		}
 		m, ok := p.fragmentManager.get(id)
 		if !ok {
+			if must {
+				return fmt.Errorf("%s.(Must)%s not defined", rt.Name(), id)
+			}
 			return fmt.Errorf("%s.%s not defined", rt.Name(), id)
 		}
 		ft := rv.Field(i).Type()
 		m.checkParameter(ft, rt.Name(), rv.Type().Field(i).Name)
 		m.checkResult(ft, rt.Name(), rv.Type().Field(i).Name)
-		m.proxy(rv.Field(i))
+		m.proxy(must, rv.Field(i))
 	}
 	return
 }
@@ -232,5 +241,3 @@ func (p *Engine) addFragment(file string, ctx antlr.ParserRuleContext, id string
 	}
 	return
 }
-
-
