@@ -136,7 +136,7 @@ func (p *fragment) call(must bool, _type reflect.Type, in ...reflect.Value) []re
 	for i := 0; i < _type.NumOut()-1; i++ {
 		if _type.Out(i).Kind() == reflect.Ptr {
 			if err == sql.ErrNoRows {
-				c.values[i] = reflect.Zero(c.values[i].Elem().Type())
+				c.values[i] = reflect.Zero(c.values[i].Type())
 			}
 		} else {
 			c.values[i] = c.values[i].Elem()
