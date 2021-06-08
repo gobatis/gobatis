@@ -118,15 +118,27 @@ func (p *fragment) call(must bool, _type reflect.Type, in ...reflect.Value) []re
 		}
 	}
 	
-	err := c.call(must)
+	err := c.call()
 	if err != nil {
-		c.values = append(c.values, reflect.ValueOf(err))
+		if err == sql.ErrNoRows {
+			if must {
+				c.values = append(c.values, reflect.ValueOf(err))
+			} else {
+				c.values = append(c.values, reflect.Zero(errorType))
+			}
+		} else {
+			c.values = append(c.values, reflect.ValueOf(err))
+		}
 	} else {
 		c.values = append(c.values, reflect.Zero(errorType))
 	}
 	
 	for i := 0; i < _type.NumOut()-1; i++ {
-		if _type.Out(i).Kind() != reflect.Ptr {
+		if _type.Out(i).Kind() == reflect.Ptr {
+			if err == sql.ErrNoRows {
+				c.values[i] = reflect.Zero(c.values[i].Elem().Type())
+			}
+		} else {
 			c.values[i] = c.values[i].Elem()
 		}
 	}
@@ -534,10 +546,10 @@ func (p *caller) Scan(pointers ...interface{}) (err error) {
 		p.values = append(p.values, rv)
 	}
 	
-	return p.call(false)
+	return p.call()
 }
 
-func (p *caller) call(must bool) (err error) {
+func (p *caller) call() (err error) {
 	
 	start := time.Now()
 	defer func() {
@@ -546,9 +558,9 @@ func (p *caller) call(must bool) (err error) {
 	
 	switch p.fragment.node.Name {
 	case dtd.SELECT:
-		return p.query(must, p.params...)
+		return p.query(p.params...)
 	case dtd.INSERT, dtd.DELETE, dtd.UPDATE:
-		return p.exec(must, p.params...)
+		return p.exec(p.params...)
 	default:
 		throw(p.fragment.node.File, p.fragment.node.ctx, callerErr).
 			format("unsupported call method '%s'", p.fragment.node.Name)
@@ -556,7 +568,7 @@ func (p *caller) call(must bool) (err error) {
 	}
 }
 
-func (p *caller) exec(must bool, in ...reflect.Value) (err error) {
+func (p *caller) exec(in ...reflect.Value) (err error) {
 	
 	exec, index := p.execer(in)
 	if index > -1 {
@@ -594,7 +606,7 @@ func (p *caller) exec(must bool, in ...reflect.Value) (err error) {
 		return
 	}
 	
-	return newExecResult(must, res, p.values).scan()
+	return newExecResult(res, p.values).scan()
 }
 
 func (*caller) printVars(vars []interface{}) string {
@@ -609,7 +621,7 @@ func (*caller) printVars(vars []interface{}) string {
 	return r
 }
 
-func (p *caller) query(must bool, in ...reflect.Value) (err error) {
+func (p *caller) query(in ...reflect.Value) (err error) {
 	
 	ctx, index := p.context(in)
 	if index > -1 {
@@ -650,12 +662,12 @@ func (p *caller) query(must bool, in ...reflect.Value) (err error) {
 		_ = rows.Close()
 	}()
 	
-	return p.parseQueryResult(must, rows)
+	return p.parseQueryResult(rows)
 }
 
-func (p *caller) parseQueryResult(must bool, rows *sql.Rows) error {
+func (p *caller) parseQueryResult(rows *sql.Rows) error {
 	
-	res := queryResult{must: must, rows: rows}
+	res := queryResult{rows: rows}
 	err := res.setSelected(p.fragment.resultAttribute, p.fragment.out, p.values)
 	if err != nil {
 		return err

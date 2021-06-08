@@ -15,7 +15,6 @@ var (
 
 type queryResult struct {
 	rows     *sql.Rows
-	must     bool
 	first    bool
 	reflect  bool
 	selected map[string]int
@@ -113,7 +112,7 @@ func (p *queryResult) scan() (err error) {
 			break
 		}
 	}
-	if p.must && len(p.values) > 0 && c == 0 {
+	if len(p.values) > 0 && c == 0 {
 		err = sql.ErrNoRows
 		return
 	}
@@ -348,12 +347,11 @@ func newRowMap(columns []string, values []interface{}) rowMap {
 
 type rowMap map[string]interface{}
 
-func newExecResult(must bool, res sql.Result, values []reflect.Value) *execResult {
-	return &execResult{must: must, res: res, values: values}
+func newExecResult(res sql.Result, values []reflect.Value) *execResult {
+	return &execResult{res: res, values: values}
 }
 
 type execResult struct {
-	must   bool
 	res    sql.Result
 	values []reflect.Value
 }
@@ -362,9 +360,6 @@ func (p *execResult) scan() error {
 	ra, err := p.res.RowsAffected()
 	if err != nil {
 		return err
-	}
-	if p.must && ra == 0 {
-		return fmt.Errorf("no rows affected")
 	}
 	if len(p.values) > 0 {
 		switch p.values[0].Elem().Kind() {
