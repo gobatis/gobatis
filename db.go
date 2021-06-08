@@ -148,7 +148,7 @@ func (p *DB) Migrate(mapper interface{}) error {
 				Errorf("[gobatis][migrate] exec %s error: %v", mt.Type().Field(i).Name, err)
 				return err.(error)
 			}
-			Errorf("[gobatis][migrate] exec %s success", mt.Type().Field(i).Name)
+			Infof("[gobatis][migrate] exec %s success", mt.Type().Field(i).Name)
 		}
 	}
 	

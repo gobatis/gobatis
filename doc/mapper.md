@@ -17,11 +17,15 @@ type userMapper struct{
 
 可注入的非 SQL 方法参数类型：
 
-* `*sql.Tx`
-* `*gobatis.DB` 
-* `*context.Context`
+参数 | 描述
+:---|---
+`*sql.Tx` |  用于事务
+`*gobatis.DB` | 常用于数据库迁移
+`*context.Context` | -
 
-> 注意：`*sql.Tx` 和 `*gobatis.DB` 在同一个方法的入参中，只能出现一个。
+::: warning 注意
+`*sql.Tx` 和 `*gobatis.DB` 在同一个方法的入参中，只能出现一个。
+:::
 
 ## 方法类型及返回结果
 

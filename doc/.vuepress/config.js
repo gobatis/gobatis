@@ -41,7 +41,7 @@ module.exports = {
                         sidebarDepth: 1,    // 可选的, 默认值是 1
                         children: [
                             // ['/configuration', 'XML 配置'],
-                            ['/sqlmap-xml', 'XML 映射文件'],
+                            ['/sqlmap-xml', 'XML映射文件'],
                             ['/dynamic-sql', '动态 SQL'],
                             ['/expression', '表达式'],
                         ]
@@ -56,6 +56,7 @@ module.exports = {
                             ['/entity', 'Entity'],
                             ['/tx', '事务'],
                             ['/log', '日志'],
+                            ['/error', '错误处理'],
                             ['/pool', '连接池'],
                             ['/deploy', '部署'],
                             ['/performance', '性能'],
@@ -66,7 +67,7 @@ module.exports = {
                         collapsable: false, // 可选的, 默认值是 true,
                         sidebarDepth: 1,    // 可选的, 默认值是 1
                         children: [
-                            ['/dtd', 'XML 语法支持'],
+                            ['/dtd', 'XML语法提示'],
                         ]
                     },
 
