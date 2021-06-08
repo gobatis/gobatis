@@ -176,7 +176,7 @@ func (p *queryResult) reflectStructs(r rowMap) error {
 	for i := 0; i < _type.NumField(); i++ {
 		field := _type.Field(i).Tag.Get(p.Tag())
 		v, ok := r[field]
-		if ok {
+		if ok && v != nil {
 			if elem.Elem().Field(i).Kind() == reflect.Ptr {
 				elem.Elem().Field(i).Set(reflect.New(elem.Elem().Field(i).Type().Elem()))
 			}

@@ -55,6 +55,10 @@ select 元素允许你配置很多属性来配置每条语句的行为细节。
   resultSetType="FORWARD_ONLY">
 ```
 
+::: tip 提示 
+select 元素内部执行 `QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error)` 函数。当结果集为空时返回 `sql.NoErrRows` 错误，常见处理方式查看[查询错误处理](error.html#%E6%9F%A5%E8%AF%A2%E9%94%99%E8%AF%AF);
+:::
+
 **Select 元素的属性**
 
 属性 | 描述
