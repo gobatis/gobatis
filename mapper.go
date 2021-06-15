@@ -610,11 +610,17 @@ func (p *caller) exec(must bool, in ...reflect.Value) (err error) {
 	if err != nil {
 		return err
 	}
-	if must && affected == 0 {
-		return fmt.Errorf("no rows affected")
+	
+	if must && affected != 1 {
+		return fmt.Errorf("expect affect 1 row, got %d", affected)
 	}
 	
-	return newExecResult(affected, p.values).scan()
+	return p.parseExecResult(affected, p.values)
+}
+
+func (p *caller) parseExecResult(affected int64, values []reflect.Value) error {
+	res := &execResult{affected: affected, values: values}
+	return res.scan()
 }
 
 func (*caller) printVars(vars []interface{}) string {

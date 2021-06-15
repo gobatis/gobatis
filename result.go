@@ -347,10 +347,6 @@ func newRowMap(columns []string, values []interface{}) rowMap {
 
 type rowMap map[string]interface{}
 
-func newExecResult(affected int64, values []reflect.Value) *execResult {
-	return &execResult{affected: affected, values: values}
-}
-
 type execResult struct {
 	affected int64
 	values []reflect.Value
