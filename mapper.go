@@ -669,7 +669,7 @@ func (p *caller) query(in ...reflect.Value) (err error) {
 	Debugf("[gobatis] [%s] query parameter: [%+v]", p.fragment.id, p.printVars(vars))
 	rows, err := q.QueryContext(ctx, s, vars...)
 	if err != nil {
-		Debugf("[gobatis] [%s] query error: %v", p.fragment.id, err)
+		Errorf("[gobatis] [%s] query error: %v", p.fragment.id, err)
 		return
 	}
 	defer func() {
