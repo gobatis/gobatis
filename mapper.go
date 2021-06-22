@@ -16,6 +16,7 @@ import (
 
 const (
 	must_prefix = "Must"
+	tx_suffix   = "Tx"
 )
 
 const (

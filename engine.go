@@ -124,6 +124,9 @@ func (p *Engine) bindMapper(mapper interface{}) (err error) {
 			id = strings.TrimPrefix(id, must_prefix)
 			must = true
 		}
+		if strings.HasSuffix(id, tx_suffix) {
+			id = strings.TrimSuffix(id, tx_suffix)
+		}
 		m, ok := p.fragmentManager.get(id)
 		if !ok {
 			if must {

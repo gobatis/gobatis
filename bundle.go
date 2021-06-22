@@ -11,7 +11,11 @@ import (
 type Bundle = http.FileSystem
 
 type BundleOption struct {
-	vfsgen.Options
+	Filename        string
+	PackageName     string
+	BuildTags       string
+	VariableName    string
+	VariableComment string
 }
 
 func NewBundle(dir string) (bundle Bundle) {
