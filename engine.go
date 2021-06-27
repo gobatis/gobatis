@@ -139,6 +139,7 @@ func (p *Engine) bindMapper(mapper interface{}) (err error) {
 		m.checkResult(ft, rt.Name(), rv.Type().Field(i).Name)
 		m.proxy(must, rv.Field(i))
 	}
+	// TODO 检查 nil 方法
 	return
 }
 
