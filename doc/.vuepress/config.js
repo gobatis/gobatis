@@ -57,7 +57,6 @@ module.exports = {
                             ['/entity', 'Entity'],
                             ['/tx', '事务'],
                             ['/log', '日志'],
-                            ['/error', '错误处理'],
                             ['/pool', '连接池'],
                             ['/deploy', '部署'],
                             ['/performance', '性能'],
