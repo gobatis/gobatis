@@ -4,7 +4,7 @@
 
 ``` sh
 # 引入库
-go get -v github.com/gobatis/gobatis
+go get -u github.com/gobatis/gobatis
 
 # 安装 XML 语法映射文件
 sh -c "$(curl -fsSL https://gobatis.co/dtd/dtd.sh)"
