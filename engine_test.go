@@ -33,9 +33,6 @@ func rv(v interface{}) reflect.Value {
 
 func TestEngine(t *testing.T) {
 	
-	// TODO 支持手动调用 SQL 语句
-	//db.Query().Parameter("", 123, 34, 5).Result("name, age", &name, &age)()
-	
 	engine := NewPostgresql("postgresql://postgres:postgres@127.0.0.1:5432/gobatis?connect_timeout=10&sslmode=disable")
 	err := engine.Init(NewBundle("test"))
 	require.NoError(t, err)
