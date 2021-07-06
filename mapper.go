@@ -110,7 +110,7 @@ func (p *fragment) proxy(must bool, field reflect.Value) {
 
 func (p *fragment) call(must bool, _type reflect.Type, in ...reflect.Value) []reflect.Value {
 	
-	c := &caller{fragment: p, args: in}
+	c := &caller{fragment: p, args: in, logger: p.db.logger}
 	for i := 0; i < _type.NumOut()-1; i++ {
 		if _type.Out(i).Kind() == reflect.Ptr {
 			c.values = append(c.values, reflect.New(_type.Out(i).Elem()))

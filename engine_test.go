@@ -36,7 +36,7 @@ func TestEngine(t *testing.T) {
 	// TODO 支持手动调用 SQL 语句
 	//db.Query().Parameter("", 123, 34, 5).Result("name, age", &name, &age)()
 	
-	engine := NewPostgresql("postgresql://postgres:postgres@127.0.0.1:54322/gobatis?connect_timeout=10&sslmode=disable")
+	engine := NewPostgresql("postgresql://postgres:postgres@127.0.0.1:5432/gobatis?connect_timeout=10&sslmode=disable")
 	err := engine.Init(NewBundle("test"))
 	require.NoError(t, err)
 	
@@ -211,6 +211,7 @@ func testSelectInsertContextTx(t *testing.T, engine *Engine, _testMapper *mapper
 	ctx := context.WithValue(context.Background(), "name", "gobatis")
 	tx, err := engine.Master().Begin()
 	require.NoError(t, err)
+	t.Log(_testMapper.SelectInsertContextTx == nil)
 	id, err := _testMapper.SelectInsertContextTx(ctx, tx, entity.TestEntity{
 		Char: "hello",
 	})
@@ -279,7 +280,7 @@ func testSelectStruct(t *testing.T, _testMapper *mapper.TestMapper) {
 	require.NoError(t, err)
 	d, err = json.MarshalIndent(item2, "", "\t")
 	require.NoError(t, err)
-	fmt.Println(string(d))
+	//fmt.Println(string(d))
 }
 
 func testSelectStructs(t *testing.T, _testMapper *mapper.TestMapper) {
@@ -293,5 +294,5 @@ func testSelectStructs(t *testing.T, _testMapper *mapper.TestMapper) {
 	require.NoError(t, err)
 	d, err = json.MarshalIndent(item2, "", "\t")
 	require.NoError(t, err)
-	fmt.Println(string(d))
+	//fmt.Println(string(d))
 }

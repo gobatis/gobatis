@@ -58,7 +58,7 @@ func parseMapper(engine *Engine, file, content string) (err error) {
 	}
 	
 	if l.rootNode == nil {
-		Warnf("empty mapperCache file: %s", file)
+		engine.logger.Warnf("empty mapperCache file: %s", file)
 		return
 	}
 	for _, v := range l.rootNode.Nodes {

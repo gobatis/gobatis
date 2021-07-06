@@ -146,7 +146,8 @@
                 ${index} - &lt; - ${ item }
             </foreach>
         </foreach>
-        ')
+        '
+        )
         returning id;
     </select>
 
@@ -184,7 +185,7 @@
         returning id;
     </select>
 
-    <select id="SelectInsertContextTx" parameter="entity:struct" result="id">
+    <select id="SelectInsertContext" parameter="entity:struct" result="id">
         insert into test_entities(t_char,t_text) values('SelectInsertContextTx', #{entity.Char})
         returning id;
     </select>

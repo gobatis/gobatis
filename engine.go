@@ -117,10 +117,6 @@ func (p *Engine) BindMapper(ptr ...interface{}) (err error) {
 }
 
 func (p *Engine) bindMapper(mapper interface{}) (err error) {
-	defer func() {
-		e := recover()
-		err = castRecoverError("", e)
-	}()
 	
 	rv := reflect.ValueOf(mapper)
 	if rv.Kind() != reflect.Ptr || rv.Elem().Kind() != reflect.Struct {
@@ -144,16 +140,15 @@ func (p *Engine) bindMapper(mapper interface{}) (err error) {
 		m, ok := p.fragmentManager.get(id)
 		if !ok {
 			if must {
-				return fmt.Errorf("%s.(Must)%s not defined", rt.Name(), id)
+				return fmt.Errorf("%s.(Must)%s statement not defined", rt.Name(), id)
 			}
-			return fmt.Errorf("%s.%s not defined", rt.Name(), id)
+			return fmt.Errorf("%s.%s statement not defined", rt.Name(), id)
 		}
 		ft := rv.Field(i).Type()
 		m.checkParameter(ft, rt.Name(), rv.Type().Field(i).Name)
 		m.checkResult(ft, rt.Name(), rv.Type().Field(i).Name)
 		m.proxy(must, rv.Field(i))
 	}
-	// TODO 检查 nil 方法
 	return
 }
 
