@@ -110,7 +110,7 @@ func (p *fragment) proxy(must bool, field reflect.Value) {
 
 func (p *fragment) call(must bool, _type reflect.Type, in ...reflect.Value) []reflect.Value {
 	
-	c := &caller{fragment: p, params: in}
+	c := &caller{fragment: p, args: in}
 	for i := 0; i < _type.NumOut()-1; i++ {
 		if _type.Out(i).Kind() == reflect.Ptr {
 			c.values = append(c.values, reflect.New(_type.Out(i).Elem()))
@@ -533,7 +533,8 @@ func (p *fragment) parseForeachChild(parser *exprParser, node *xmlNode, frags *[
 
 type caller struct {
 	fragment *fragment
-	params   []reflect.Value
+	logger   Logger
+	args     []reflect.Value
 	values   []reflect.Value
 }
 
@@ -554,14 +555,14 @@ func (p *caller) call(must bool) (err error) {
 	
 	start := time.Now()
 	defer func() {
-		Debugf("[gobatis] [%s] cost: %s", p.fragment.id, time.Since(start))
+		p.logger.Debugf("[gobatis] [%s] cost: %s", p.fragment.id, time.Since(start))
 	}()
 	
 	switch p.fragment.node.Name {
 	case dtd.SELECT:
-		return p.query(p.params...)
+		return p.query(p.args...)
 	case dtd.INSERT, dtd.DELETE, dtd.UPDATE:
-		return p.exec(must, p.params...)
+		return p.exec(must, p.args...)
 	default:
 		throw(p.fragment.node.File, p.fragment.node.ctx, callerErr).
 			format("unsupported call method '%s'", p.fragment.node.Name)
@@ -598,12 +599,12 @@ func (p *caller) exec(must bool, in ...reflect.Value) (err error) {
 		return
 	}
 	
-	Debugf("[gobatis] [%s] exec statement: %s", p.fragment.id, s)
-	Debugf("[gobatis] [%s] exec parameter: %s", p.fragment.id, p.printVars(vars))
+	p.logger.Debugf("[gobatis] [%s] exec statement: %s", p.fragment.id, s)
+	p.logger.Debugf("[gobatis] [%s] exec parameter: %s", p.fragment.id, p.printVars(vars))
 	
 	res, err := exec.ExecContext(ctx, s, vars...)
 	if err != nil {
-		Errorf("[gobatis] [%s] exec error: %v", p.fragment.id, err)
+		p.logger.Errorf("[gobatis] [%s] exec error: %v", p.fragment.id, err)
 		return
 	}
 	
@@ -666,11 +667,11 @@ func (p *caller) query(in ...reflect.Value) (err error) {
 	if err != nil {
 		return
 	}
-	Debugf("[gobatis] [%s] query statement: %s", p.fragment.id, s)
-	Debugf("[gobatis] [%s] query parameter: [%+v]", p.fragment.id, p.printVars(vars))
+	p.logger.Debugf("[gobatis] [%s] query statement: %s", p.fragment.id, s)
+	p.logger.Debugf("[gobatis] [%s] query parameter: [%+v]", p.fragment.id, p.printVars(vars))
 	rows, err := q.QueryContext(ctx, s, vars...)
 	if err != nil {
-		Errorf("[gobatis] [%s] query error: %v", p.fragment.id, err)
+		p.logger.Errorf("[gobatis] [%s] query error: %v", p.fragment.id, err)
 		return
 	}
 	defer func() {

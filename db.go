@@ -28,6 +28,7 @@ type DB struct {
 	driver string
 	dsn    string
 	db     *sql.DB
+	logger Logger
 }
 
 func (p *DB) initDB() (err error) {
@@ -124,13 +125,12 @@ func (p *DB) Conn(ctx context.Context) (conn *sql.Conn, err error) {
 }
 
 func (p *DB) Migrate(mapper interface{}) error {
-	
 	mt := reflect.ValueOf(mapper)
 	et := reflectValueElem(mt)
 	pv := reflect.ValueOf(p)
 	
 	if mt.Kind() != reflect.Ptr || et.Kind() != reflect.Struct {
-		return fmt.Errorf("[gobatis][migrate] exec error: mapper expect struct pointer, pass: %s", mt.Type())
+		return fmt.Errorf("migration mapper expect struct pointer, pass: %s", mt.Type())
 	}
 	mt = et
 	for i := 0; i < mt.NumField(); i++ {
@@ -145,10 +145,10 @@ func (p *DB) Migrate(mapper interface{}) error {
 			}
 			err := field.Call([]reflect.Value{reflect.ValueOf(p)})[0].Interface()
 			if err != nil {
-				Errorf("[gobatis][migrate] exec %s error: %v", mt.Type().Field(i).Name, err)
+				p.logger.Errorf("[gobatis][migrate] exec %s error: %v", mt.Type().Field(i).Name, err)
 				return err.(error)
 			}
-			Infof("[gobatis][migrate] exec %s success", mt.Type().Field(i).Name)
+			p.logger.Infof("[gobatis][migrate] exec %s success", mt.Type().Field(i).Name)
 		}
 	}
 	

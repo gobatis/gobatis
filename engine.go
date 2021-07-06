@@ -5,6 +5,7 @@ import (
 	"github.com/antlr/antlr4/runtime/Go/antlr"
 	"github.com/gobatis/gobatis/driver/mysql"
 	"github.com/gobatis/gobatis/driver/postgresql"
+	"github.com/koyeo/_log"
 	"io/ioutil"
 	"net/http"
 	"path/filepath"
@@ -27,8 +28,9 @@ func NewEngine(db *DB) *Engine {
 
 type Engine struct {
 	master          *DB
-	bundle          http.FileSystem
 	slaves          []*DB
+	logger          Logger
+	bundle          http.FileSystem
 	fragmentManager *fragmentManager
 }
 
@@ -40,21 +42,33 @@ func (p *Engine) SetTag(tag string) {
 	reflect_tag = tag
 }
 
-func (p *Engine) SetLogLevel(level LogLevel) {
-	_level = level
+func (p *Engine) SetLogLevel(level Level) {
+	p.logger.SetLevel(level)
 }
 
 func (p *Engine) SetLogger(logger Logger) {
-	_logger = logger
+	p.logger = logger
+	if p.master != nil {
+		p.master.logger = logger
+	}
+	for _, v := range p.slaves {
+		v.logger = logger
+	}
 }
 
 func (p *Engine) Init(bundle Bundle) (err error) {
+	
+	if p.logger == nil {
+		p.logger = _log.NewStdLogger()
+	}
+	
 	p.bundle = bundle
 	err = p.parseBundle()
 	if err != nil {
 		return
 	}
 	err = p.master.initDB()
+	p.master.logger = p.logger
 	if err != nil {
 		err = fmt.Errorf("init master db error: %s", err)
 		return
@@ -76,7 +90,7 @@ func (p *Engine) Call(name string, args ...reflect.Value) *caller {
 	if !ok {
 		panic(fmt.Errorf("method '%s' not exist", name))
 	}
-	return &caller{fragment: f, params: args}
+	return &caller{fragment: f, args: args, logger: p.logger}
 }
 
 func (p *Engine) parseBundle() (err error) {
@@ -160,7 +174,7 @@ func (p *Engine) parseConfig() (err error) {
 	if err != nil {
 		return
 	}
-	Infof("[gobatis] register fragment: gobatis.xml")
+	p.logger.Infof("[gobatis] register fragment: gobatis.xml")
 	err = parseConfig(p, config_xml, string(bs))
 	if err != nil {
 		return
@@ -197,7 +211,7 @@ func (p *Engine) parseMappers() (err error) {
 		if err != nil {
 			return
 		}
-		Infof("[gobatis] register fragment: %s.xml", v)
+		p.logger.Infof("[gobatis] register fragment: %s.xml", v)
 		err = parseMapper(p, v, string(bs))
 		if err != nil {
 			return

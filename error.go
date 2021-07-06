@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/antlr/antlr4/runtime/Go/antlr"
 	"github.com/gobatis/gobatis/parser/xml"
-	"runtime/debug"
 )
 
 const (
@@ -93,9 +92,6 @@ func (p *_error) Error() string {
 
 func castRecoverError(file string, e interface{}) error {
 	if e != nil {
-		if _level == StackLevel {
-			debug.PrintStack()
-		}
 		_e, ok := e.(*_error)
 		if ok {
 			if _e.file == "" {
