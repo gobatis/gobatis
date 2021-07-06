@@ -42,6 +42,10 @@ func (p *Engine) SetTag(tag string) {
 	reflect_tag = tag
 }
 
+func (p *Engine) UseJsonTag() {
+	reflect_tag = "json"
+}
+
 func (p *Engine) SetLogLevel(level Level) {
 	p.logger.SetLevel(level)
 }
