@@ -287,3 +287,16 @@
                 >
 
 
+        <!ELEMENT inserter (#PCDATA | include | trim | where | set | foreach | choose | if | bind)*>
+        <!ATTLIST inserter
+                table CDATA #REQUIRED
+                multiple CDATA #IMPLIED
+                >
+
+
+        <!ELEMENT query (#PCDATA | include | trim | where | set | foreach | choose | if | bind)*>
+        <!ATTLIST query
+                table CDATA #REQUIRED
+                limit CDATA #IMPLIED
+                count CDATA #IMPLIED
+                >
