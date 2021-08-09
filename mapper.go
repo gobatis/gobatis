@@ -686,7 +686,6 @@ func (p *caller) parseQueryResult(rows *sql.Rows) error {
 	if err != nil {
 		return err
 	}
-	
 	return res.scan()
 }
 

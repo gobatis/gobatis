@@ -6,6 +6,7 @@ import (
 	"github.com/gobatis/gobatis/cast"
 	"github.com/shopspring/decimal"
 	"reflect"
+	"strings"
 	"time"
 )
 
@@ -17,6 +18,7 @@ type queryResult struct {
 	rows     *sql.Rows
 	first    bool
 	reflect  bool
+	all      bool
 	selected map[string]int
 	values   []reflect.Value
 }
@@ -147,8 +149,10 @@ func (p *queryResult) reflectStruct(r rowMap) error {
 		dv = dv.Elem()
 	}
 	_type := dv.Type()
+	
 	for i := 0; i < _type.NumField(); i++ {
 		field := _type.Field(i).Tag.Get(p.Tag())
+		field = p.trimComma(field)
 		v, ok := r[field]
 		if ok && v != nil {
 			if dv.Field(i).Kind() == reflect.Ptr {
@@ -161,6 +165,13 @@ func (p *queryResult) reflectStruct(r rowMap) error {
 		}
 	}
 	return nil
+}
+
+func (p *queryResult) trimComma(field string) string {
+	if strings.Contains(field, ",") {
+		return strings.TrimSpace(strings.Split(field, ",")[0])
+	}
+	return field
 }
 
 func (p *queryResult) reflectStructs(r rowMap) error {
@@ -195,7 +206,6 @@ func (p *queryResult) reflectStructs(r rowMap) error {
 }
 
 func (p *queryResult) reflectValue(column string, dest reflect.Value, value interface{}) error {
-	
 	var err error
 	dv := reflectValueElem(dest)
 	dt := reflectTypeElem(dest.Type())
@@ -349,7 +359,7 @@ type rowMap map[string]interface{}
 
 type execResult struct {
 	affected int64
-	values []reflect.Value
+	values   []reflect.Value
 }
 
 func (p *execResult) scan() error {
