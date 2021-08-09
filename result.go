@@ -168,6 +168,7 @@ func (p *queryResult) reflectStruct(r rowMap) error {
 }
 
 func (p *queryResult) trimComma(field string) string {
+	// TODO 也许可以更加优化
 	if strings.Contains(field, ",") {
 		return strings.TrimSpace(strings.Split(field, ",")[0])
 	}
