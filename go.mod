@@ -4,7 +4,7 @@ go 1.13
 
 require (
 	github.com/AlekSi/pointer v1.1.0
-	github.com/antlr/antlr4 v0.0.0-20210412152734-e404d26f6142
+	github.com/antlr/antlr4 v0.0.0-20210311221813-5e5b6d35b418
 	github.com/go-sql-driver/mysql v1.5.0
 	github.com/gofrs/uuid v4.0.0+incompatible // indirect
 	github.com/jackc/pgx/v4 v4.11.0
