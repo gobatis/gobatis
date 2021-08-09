@@ -608,10 +608,8 @@ func (p *caller) exec(must bool, in ...reflect.Value) (err error) {
 		return
 	}
 	
-	affected, err := res.RowsAffected()
-	if err != nil {
-		return err
-	}
+	// 兼容不支持 RowsAffected 的数据库
+	affected, _ := res.RowsAffected()
 	
 	if must && affected != 1 {
 		return fmt.Errorf("expect affect 1 row, got %d", affected)
