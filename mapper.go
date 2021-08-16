@@ -327,7 +327,8 @@ func (p *fragment) parseSql(parser *exprParser, node *xmlNode, res *psr) {
 			inject = false
 		}
 	}
-	res.merge(s)
+	// to avoid useless space
+	res.sql += s
 }
 
 func (p *fragment) parseBlocks(parser *exprParser, node *xmlNode, res *psr) {
@@ -605,6 +606,8 @@ func (p *caller) exec(must bool, in ...reflect.Value) (err error) {
 	
 	res, err := exec.ExecContext(ctx, s, vars...)
 	if err != nil {
+		p.logger.Errorf("[gobatis] [%s] exec statement: %s", p.fragment.id, s)
+		p.logger.Errorf("[gobatis] [%s] exec parameter: %s", p.fragment.id, p.printVars(vars))
 		p.logger.Errorf("[gobatis] [%s] exec error: %v", p.fragment.id, err)
 		return
 	}
@@ -670,6 +673,8 @@ func (p *caller) query(in ...reflect.Value) (err error) {
 	p.logger.Debugf("[gobatis] [%s] query parameter: [%+v]", p.fragment.id, p.printVars(vars))
 	rows, err := q.QueryContext(ctx, s, vars...)
 	if err != nil {
+		p.logger.Errorf("[gobatis] [%s] query statement: %s", p.fragment.id, s)
+		p.logger.Errorf("[gobatis] [%s] query parameter: [%+v]", p.fragment.id, p.printVars(vars))
 		p.logger.Errorf("[gobatis] [%s] query error: %v", p.fragment.id, err)
 		return
 	}
