@@ -87,8 +87,10 @@ type psr struct {
 
 func (p *psr) merge(s ...string) {
 	for _, v := range s {
-		p.sql += strings.TrimSpace(v)
+		// TODO 更详细的测试子元素拼接时的空格保留
+		p.sql += " " + strings.TrimSpace(v)
 	}
+	fmt.Println(p.sql)
 }
 
 type fragment struct {
