@@ -363,10 +363,12 @@ func (p *fragment) parseBlock(parser *exprParser, node *xmlNode, res *psr) {
 }
 
 func (p *fragment) parseTest(parser *exprParser, node *xmlNode, res *psr) bool {
+	//fmt.Println("Test", node.GetAttribute(dtd.TEST), "start")
 	v, err := parser.parseExpression(node.ctx, node.GetAttribute(dtd.TEST))
 	if err != nil {
 		throw(p.node.File, p.node.ctx, parasFragmentErr).with(err)
 	}
+	//fmt.Println("Test", node.GetAttribute(dtd.TEST), "end", v)
 	b, err := cast.ToBoolE(v)
 	if err != nil {
 		throw(p.node.File, p.node.ctx, parasFragmentErr).with(err)

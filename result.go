@@ -187,6 +187,7 @@ func (p *queryResult) reflectStructs(r rowMap) error {
 	elem := reflect.New(_type)
 	for i := 0; i < _type.NumField(); i++ {
 		field := _type.Field(i).Tag.Get(p.Tag())
+		field = p.trimComma(field)
 		v, ok := r[field]
 		if ok && v != nil {
 			if elem.Elem().Field(i).Kind() == reflect.Ptr {
