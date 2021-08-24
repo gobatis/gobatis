@@ -81,14 +81,16 @@ type queryer interface {
 }
 
 type psr struct {
-	sql       string
-	cacheable bool
+	sql     string
+	dynamic bool
 }
 
-func (p *psr) merge(s ...string) {
+func (p *psr) merge(s ...*psr) {
 	for _, v := range s {
-		// TODO 更详细的测试子元素拼接时的空格保留
-		p.sql += " " + strings.TrimSpace(v)
+		p.sql += " " + strings.TrimSpace(v.sql)
+		if !p.dynamic && v.dynamic {
+			p.dynamic = v.dynamic
+		}
 	}
 }
 
@@ -100,6 +102,7 @@ type fragment struct {
 	sql             string
 	in              []*param
 	out             []*param
+	stmt            *sql.Stmt
 	resultAttribute int
 }
 
@@ -110,6 +113,11 @@ func (p *fragment) proxy(must bool, field reflect.Value) {
 }
 
 func (p *fragment) call(must bool, _type reflect.Type, in ...reflect.Value) []reflect.Value {
+	
+	// use stmt cache
+	if p.stmt != nil {
+	
+	}
 	
 	c := &caller{fragment: p, args: in, logger: p.db.logger}
 	for i := 0; i < _type.NumOut()-1; i++ {
@@ -271,10 +279,6 @@ func (p *fragment) parseStatement(args ...reflect.Value) (sql string, vars []int
 	}
 	res := new(psr)
 	p.parseBlocks(parser, p.node, res)
-	if res.cacheable {
-		p.cacheable = res.cacheable
-		p.sql = res.sql
-	}
 	
 	sql = res.sql
 	vars = parser.vars
@@ -342,11 +346,12 @@ func (p *fragment) parseBlock(parser *exprParser, node *xmlNode, res *psr) {
 	if node.textOnly {
 		p.parseSql(parser, node, res)
 	} else {
+		res.dynamic = true
 		switch node.Name {
 		case dtd.IF:
 			r := new(psr)
 			if p.parseTest(parser, node, r) {
-				res.merge(r.sql)
+				res.merge(r)
 			}
 		case dtd.WHERE:
 			p.parseWhere(parser, node, res)
@@ -396,7 +401,7 @@ func (p *fragment) parseChoose(parser *exprParser, node *xmlNode, res *psr) {
 		case dtd.WHEN:
 			r := new(psr)
 			if p.parseTest(parser, child, r) {
-				res.merge(r.sql)
+				res.merge(r)
 				return
 			}
 		case dtd.OTHERWISE:
@@ -503,7 +508,9 @@ func (p *fragment) parseForeach(parser *exprParser, node *xmlNode, res *psr) {
 		throw(parser.file, node.ctx, popParamsStackErr).with(err)
 	}
 	if len(frags) > 0 {
-		res.merge(open + strings.Join(frags, separator) + _close)
+		res.merge(&psr{
+			sql: open + strings.Join(frags, separator) + _close,
+		})
 	}
 }
 

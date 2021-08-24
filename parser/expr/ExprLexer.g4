@@ -23,6 +23,11 @@ ELLIPSIS               : '...';
 LOGICAL_OR             : '||';
 LOGICAL_AND            : '&&';
 
+TEST_AND               : 'and';
+TEST_AND_UP            : 'AND';
+TEST_OR                : 'or';
+TEST_OR_UP             : 'OR';
+
 // Relation operators
 
 EQUALS                 : '==';
@@ -96,7 +101,7 @@ BIG_U_VALUE: '\\' 'U' HEX_DIGIT HEX_DIGIT HEX_DIGIT HEX_DIGIT HEX_DIGIT HEX_DIGI
 
 // String literals
 RAW_STRING_LIT         : '`' ~'`'*                      '`';
-INTERPRETED_STRING_LIT : '"' (~["\\] | ESCAPED_VALUE)*  '"' | '\'' (~["\\] | ESCAPED_VALUE)*  '\'';
+INTERPRETED_STRING_LIT : '"' (~["\\] | ESCAPED_VALUE)*  '"' | '\'' (~['\\] | ESCAPED_VALUE)*  '\'';
 
 // Hidden tokens
 //WS                     : [ \t]+             -> channel(HIDDEN);

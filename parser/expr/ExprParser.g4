@@ -14,6 +14,12 @@ paramType: (L_BRACKET R_BRACKET)? IDENTIFIER;
 
 expressions: misc* expression misc*  EOF;
 
+test: testExpression* EOF;
+
+testExpression: misc* expression misc* (testLogical misc* expression)?;
+
+testLogical: (TEST_AND | TEST_OR | TEST_AND_UP | TEST_OR_UP);
+
 misc: WS TERMINATOR;
 
 expression:

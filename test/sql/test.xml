@@ -230,5 +230,7 @@
     <select id="SelectStructsPointer" parameter="id:int" result="*">
         select * from test_entities where id > #{id} and id &lt; 50;
     </select>
+    
+    <insert id="Insert"
 
 </mapper>

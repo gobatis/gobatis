@@ -2,11 +2,9 @@ package gobatis
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/AlekSi/pointer"
-	"github.com/gobatis/gobatis/test/entity"
-	"github.com/gobatis/gobatis/test/mapper"
+	"github.com/gobatis/gobatis/test"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/require"
 	"os"
@@ -45,7 +43,7 @@ func TestEngine(t *testing.T) {
 		require.NoError(t, err)
 	}()
 	
-	_testMapper := new(mapper.TestMapper)
+	_testMapper := new(test.TestMapper)
 	err = engine.BindMapper(_testMapper)
 	require.NoError(t, err)
 	
@@ -67,8 +65,8 @@ func TestEngine(t *testing.T) {
 	testSelectStructs(t, _testMapper)
 }
 
-func testSelectInsert(t *testing.T, _testMapper *mapper.TestMapper) {
-	id, err := _testMapper.SelectInsert(entity.TestEntity{
+func testSelectInsert(t *testing.T, _testMapper *test.TestMapper) {
+	id, err := _testMapper.SelectInsert(test.Entity{
 		Int8:                     1,
 		BigInt:                   2,
 		Int:                      3,
@@ -97,12 +95,12 @@ func testSelectInsert(t *testing.T, _testMapper *mapper.TestMapper) {
 	}
 }
 
-func testSelectInsertPointer(t *testing.T, _testMapper *mapper.TestMapper) {
+func testSelectInsertPointer(t *testing.T, _testMapper *test.TestMapper) {
 	dec := decimal.NewFromFloat(3.14)
 	now := time.Now()
 	interval := 100 * time.Second
 	
-	id, err := _testMapper.SelectInsertPointer(&entity.TestEntityPointer{
+	id, err := _testMapper.SelectInsertPointer(&test.EntityPointer{
 		Int8:                     pointer.ToInt8(1),
 		BigInt:                   pointer.ToInt64(2),
 		Int:                      pointer.ToInt(3),
@@ -131,8 +129,8 @@ func testSelectInsertPointer(t *testing.T, _testMapper *mapper.TestMapper) {
 	}
 }
 
-func testSelectInsertForeachSlice(t *testing.T, _testMapper *mapper.TestMapper) {
-	id, err := _testMapper.SelectInsertForeachSlice(entity.TestEntity{
+func testSelectInsertForeachSlice(t *testing.T, _testMapper *test.TestMapper) {
+	id, err := _testMapper.SelectInsertForeachSlice(test.Entity{
 		Int8: 1,
 	}, []string{"tom", "alice"})
 	require.NoError(t, err)
@@ -141,12 +139,12 @@ func testSelectInsertForeachSlice(t *testing.T, _testMapper *mapper.TestMapper) 
 	}
 }
 
-func testSelectInsertForeachSlicePointer(t *testing.T, _testMapper *mapper.TestMapper) {
+func testSelectInsertForeachSlicePointer(t *testing.T, _testMapper *test.TestMapper) {
 	enums := [][]*string{
 		{pointer.ToString("tom1"), pointer.ToString("alice1")},
 		{pointer.ToString("tom2"), pointer.ToString("alice2")},
 	}
-	id, err := _testMapper.SelectInsertForeachSlicePointer(&entity.TestEntityPointer{
+	id, err := _testMapper.SelectInsertForeachSlicePointer(&test.EntityPointer{
 		Int8: pointer.ToInt8(1),
 	}, &enums)
 	require.NoError(t, err)
@@ -155,12 +153,12 @@ func testSelectInsertForeachSlicePointer(t *testing.T, _testMapper *mapper.TestM
 	}
 }
 
-func testSelectInsertForeachMap(t *testing.T, _testMapper *mapper.TestMapper) {
+func testSelectInsertForeachMap(t *testing.T, _testMapper *test.TestMapper) {
 	enums := map[string][]string{
 		"first":  {"f1", "f2"},
 		"second": {"fs", "s2"},
 	}
-	id, err := _testMapper.SelectInsertForeachMap(entity.TestEntity{
+	id, err := _testMapper.SelectInsertForeachMap(test.Entity{
 		Int8: 1,
 	}, enums)
 	require.NoError(t, err)
@@ -169,12 +167,12 @@ func testSelectInsertForeachMap(t *testing.T, _testMapper *mapper.TestMapper) {
 	}
 }
 
-func testSelectInsertForeachMapPointer(t *testing.T, _testMapper *mapper.TestMapper) {
+func testSelectInsertForeachMapPointer(t *testing.T, _testMapper *test.TestMapper) {
 	enums := map[string][]*string{
 		"first":  {pointer.ToString("f1"), pointer.ToString("f2")},
 		"second": {pointer.ToString("fs"), pointer.ToString("s2")},
 	}
-	id, err := _testMapper.SelectInsertForeachMapPointer(&entity.TestEntityPointer{
+	id, err := _testMapper.SelectInsertForeachMapPointer(&test.EntityPointer{
 		Int8: pointer.ToInt8(1),
 	}, &enums)
 	require.NoError(t, err)
@@ -183,8 +181,8 @@ func testSelectInsertForeachMapPointer(t *testing.T, _testMapper *mapper.TestMap
 	}
 }
 
-func testSelectInsertForeachStruct(t *testing.T, _testMapper *mapper.TestMapper) {
-	id, err := _testMapper.SelectInsertForeachStruct(entity.TestEntity{
+func testSelectInsertForeachStruct(t *testing.T, _testMapper *test.TestMapper) {
+	id, err := _testMapper.SelectInsertForeachStruct(test.Entity{
 		Int8: 1,
 		Char: "Hello",
 	})
@@ -194,8 +192,8 @@ func testSelectInsertForeachStruct(t *testing.T, _testMapper *mapper.TestMapper)
 	}
 }
 
-func testSelectInsertForeachStructPointer(t *testing.T, _testMapper *mapper.TestMapper) {
-	id, err := _testMapper.SelectInsertForeachStructPointer(&entity.TestEntityPointer{
+func testSelectInsertForeachStructPointer(t *testing.T, _testMapper *test.TestMapper) {
+	id, err := _testMapper.SelectInsertForeachStructPointer(&test.EntityPointer{
 		Char: pointer.ToString("Hello"),
 	})
 	require.NoError(t, err)
@@ -204,12 +202,12 @@ func testSelectInsertForeachStructPointer(t *testing.T, _testMapper *mapper.Test
 	}
 }
 
-func testSelectInsertContextTx(t *testing.T, engine *Engine, _testMapper *mapper.TestMapper) {
+func testSelectInsertContextTx(t *testing.T, engine *Engine, _testMapper *test.TestMapper) {
 	ctx := context.WithValue(context.Background(), "name", "gobatis")
 	tx, err := engine.Master().Begin()
 	require.NoError(t, err)
 	t.Log(_testMapper.SelectInsertContextTx == nil)
-	id, err := _testMapper.SelectInsertContextTx(ctx, tx, entity.TestEntity{
+	id, err := _testMapper.SelectInsertContextTx(ctx, tx, test.Entity{
 		Char: "hello",
 	})
 	require.NoError(t, err)
@@ -220,7 +218,7 @@ func testSelectInsertContextTx(t *testing.T, engine *Engine, _testMapper *mapper
 	}
 }
 
-func testInsert(t *testing.T, _testMapper *mapper.TestMapper) {
+func testInsert(t *testing.T, _testMapper *test.TestMapper) {
 	rows, err := _testMapper.Insert("Insert", "red", "yellow", "blue")
 	require.NoError(t, err)
 	if rows != 1 {
@@ -228,34 +226,34 @@ func testInsert(t *testing.T, _testMapper *mapper.TestMapper) {
 	}
 }
 
-func testSelectRow(t *testing.T, _testMapper *mapper.TestMapper) {
+func testSelectRow(t *testing.T, _testMapper *test.TestMapper) {
 	tChar, tText, err := _testMapper.SelectRow(47)
 	require.NoError(t, err)
 	require.Equal(t, tChar, "hello")
 	require.Equal(t, tText, "world")
 }
 
-func testSelectRowPointer(t *testing.T, _testMapper *mapper.TestMapper) {
+func testSelectRowPointer(t *testing.T, _testMapper *test.TestMapper) {
 	tChar, tText, err := _testMapper.SelectRowPointer(pointer.ToInt(47))
 	require.NoError(t, err)
 	require.Equal(t, *tChar, "hello")
 	require.Equal(t, *tText, "world")
 }
 
-func testSelectRows(t *testing.T, _testMapper *mapper.TestMapper) {
+func testSelectRows(t *testing.T, _testMapper *test.TestMapper) {
 	tChar, tText, err := _testMapper.SelectRows(363, 364)
 	require.NoError(t, err)
 	for _, v := range tChar {
 		//require.Equal(t, v, "hello")
-		fmt.Println(v)
+		t.Log(v)
 	}
 	for _, v := range tText {
 		//require.Equal(t, v, "world")
-		fmt.Printf("scanner: %+v\n", v)
+		t.Logf("scanner: %+v", v)
 	}
 }
 
-func testSelectRowsPointer(t *testing.T, _testMapper *mapper.TestMapper) {
+func testSelectRowsPointer(t *testing.T, _testMapper *test.TestMapper) {
 	tChar, tText, err := _testMapper.SelectRowsPointer(pointer.ToInt(47), pointer.ToInt(50))
 	require.NoError(t, err)
 	for _, v := range tChar {
@@ -266,30 +264,34 @@ func testSelectRowsPointer(t *testing.T, _testMapper *mapper.TestMapper) {
 	}
 }
 
-func testSelectStruct(t *testing.T, _testMapper *mapper.TestMapper) {
+func testSelectStruct(t *testing.T, _testMapper *test.TestMapper) {
 	item, err := _testMapper.SelectStruct(47)
+	_ = item
 	require.NoError(t, err)
-	d, err := json.MarshalIndent(item, "", "\t")
+	//d, err := json.MarshalIndent(item, "", "\t")
 	require.NoError(t, err)
-	fmt.Println(string(d))
+	//fmt.Println(string(d))
 	
 	item2, err := _testMapper.SelectStructPointer(47)
+	_ = item2
 	require.NoError(t, err)
-	d, err = json.MarshalIndent(item2, "", "\t")
+	//d, err = json.MarshalIndent(item2, "", "\t")
 	require.NoError(t, err)
 	//fmt.Println(string(d))
 }
 
-func testSelectStructs(t *testing.T, _testMapper *mapper.TestMapper) {
+func testSelectStructs(t *testing.T, _testMapper *test.TestMapper) {
 	item, err := _testMapper.SelectStructs(47)
+	_ = item
 	require.NoError(t, err)
-	d, err := json.MarshalIndent(item, "", "\t")
+	//d, err := json.MarshalIndent(item, "", "\t")
 	require.NoError(t, err)
-	fmt.Println(string(d))
+	//fmt.Println(string(d))
 	
 	item2, err := _testMapper.SelectStructsPointer(47)
+	_ = item2
 	require.NoError(t, err)
-	d, err = json.MarshalIndent(item2, "", "\t")
+	//d, err = json.MarshalIndent(item2, "", "\t")
 	require.NoError(t, err)
 	//fmt.Println(string(d))
 }
