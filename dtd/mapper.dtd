@@ -290,11 +290,16 @@
         <!ELEMENT inserter (#PCDATA | field)*>
         <!ATTLIST inserter
                 table CDATA #REQUIRED
-                data CDATA #IMPLIED
+                data CDATA #REQUIRED
+                index CDATA #IMPLIED
+                item CDATA #IMPLIED
                 >
 
         <!ELEMENT field (#PCDATA)>
-
+        <!ATTLIST field
+                name CDATA #REQUIRED
+                test CDATA #IMPLIED
+                >
 
         <!ELEMENT query (#PCDATA | include | trim | where | set | foreach | choose | if | bind)*>
         <!ATTLIST query

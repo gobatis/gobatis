@@ -22,15 +22,6 @@ type ExprParserListener interface {
 	// EnterExpressions is called when entering the expressions production.
 	EnterExpressions(c *ExpressionsContext)
 
-	// EnterTest is called when entering the test production.
-	EnterTest(c *TestContext)
-
-	// EnterTestExpression is called when entering the testExpression production.
-	EnterTestExpression(c *TestExpressionContext)
-
-	// EnterTestLogical is called when entering the testLogical production.
-	EnterTestLogical(c *TestLogicalContext)
-
 	// EnterMisc is called when entering the misc production.
 	EnterMisc(c *MiscContext)
 
@@ -39,6 +30,9 @@ type ExprParserListener interface {
 
 	// EnterPrimaryExpr is called when entering the primaryExpr production.
 	EnterPrimaryExpr(c *PrimaryExprContext)
+
+	// EnterLogical is called when entering the logical production.
+	EnterLogical(c *LogicalContext)
 
 	// EnterOperand is called when entering the operand production.
 	EnterOperand(c *OperandContext)
@@ -94,15 +88,6 @@ type ExprParserListener interface {
 	// ExitExpressions is called when exiting the expressions production.
 	ExitExpressions(c *ExpressionsContext)
 
-	// ExitTest is called when exiting the test production.
-	ExitTest(c *TestContext)
-
-	// ExitTestExpression is called when exiting the testExpression production.
-	ExitTestExpression(c *TestExpressionContext)
-
-	// ExitTestLogical is called when exiting the testLogical production.
-	ExitTestLogical(c *TestLogicalContext)
-
 	// ExitMisc is called when exiting the misc production.
 	ExitMisc(c *MiscContext)
 
@@ -111,6 +96,9 @@ type ExprParserListener interface {
 
 	// ExitPrimaryExpr is called when exiting the primaryExpr production.
 	ExitPrimaryExpr(c *PrimaryExprContext)
+
+	// ExitLogical is called when exiting the logical production.
+	ExitLogical(c *LogicalContext)
 
 	// ExitOperand is called when exiting the operand production.
 	ExitOperand(c *OperandContext)

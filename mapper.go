@@ -74,10 +74,12 @@ func (p *fragmentManager) get(id string) (m *fragment, ok bool) {
 
 type execer interface {
 	ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
+	PrepareContext(ctx context.Context, query string) (*sql.Stmt, error)
 }
 
 type queryer interface {
 	QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error)
+	PrepareContext(ctx context.Context, query string) (*sql.Stmt, error)
 }
 
 type psr struct {
@@ -94,15 +96,20 @@ func (p *psr) merge(s ...*psr) {
 	}
 }
 
+type stmt struct {
+	stmt  *sql.Stmt
+	exprs []string
+	in    []*param
+	out   []*param
+}
+
 type fragment struct {
 	db              *DB
 	id              string
 	node            *xmlNode
-	cacheable       bool
-	sql             string
 	in              []*param
 	out             []*param
-	stmt            *sql.Stmt
+	stmt            *stmt
 	resultAttribute int
 }
 
@@ -113,11 +120,6 @@ func (p *fragment) proxy(must bool, field reflect.Value) {
 }
 
 func (p *fragment) call(must bool, _type reflect.Type, in ...reflect.Value) []reflect.Value {
-	
-	// use stmt cache
-	if p.stmt != nil {
-	
-	}
 	
 	c := &caller{fragment: p, args: in, logger: p.db.logger}
 	for i := 0; i < _type.NumOut()-1; i++ {
@@ -259,7 +261,8 @@ func (p *fragment) checkResult(ft reflect.Type, mn, fn string) {
 	}
 }
 
-func (p *fragment) parseStatement(args ...reflect.Value) (sql string, vars []interface{}, err error) {
+func (p *fragment) parseStatement(args ...reflect.Value) (sql string, exprs []string, vars []interface{},
+	dynamic bool, err error) {
 	
 	defer func() {
 		e := recover()
@@ -282,6 +285,9 @@ func (p *fragment) parseStatement(args ...reflect.Value) (sql string, vars []int
 	
 	sql = res.sql
 	vars = parser.vars
+	exprs = parser.exprs
+	dynamic = res.dynamic
+	
 	return
 }
 
@@ -316,7 +322,8 @@ func (p *fragment) parseSql(parser *exprParser, node *xmlNode, res *psr) {
 				s += string(chars[i])
 			}
 		} else if chars[i] == 125 {
-			r, err := parser.parseExpression(node.ctx, string(chars[from:i]))
+			_expr := string(chars[from:i])
+			r, err := parser.parseExpression(node.ctx, _expr)
 			if err != nil {
 				panic(err)
 			}
@@ -325,12 +332,13 @@ func (p *fragment) parseSql(parser *exprParser, node *xmlNode, res *psr) {
 			} else {
 				parser.varIndex++
 				s += fmt.Sprintf("$%d", parser.varIndex)
-				parser.addVar(r)
+				parser.addVar(_expr, r)
 			}
 			begin = false
 			inject = false
 		}
 	}
+	
 	// to avoid useless space
 	res.sql += s
 }
@@ -605,9 +613,21 @@ func (p *caller) exec(must bool, in ...reflect.Value) (err error) {
 			_ = conn.Close()
 		}
 	}()
-	s, vars, err := p.fragment.parseStatement(in...)
+	
+	s, exprs, vars, dynamic, err := p.fragment.parseStatement(in...)
 	if err != nil {
 		return
+	}
+	if !dynamic {
+		var _stmt *sql.Stmt
+		_stmt, err = exec.PrepareContext(ctx, s)
+		if err != nil {
+			return
+		}
+		p.fragment.stmt = &stmt{
+			stmt:  _stmt,
+			exprs: exprs,
+		}
 	}
 	
 	p.logger.Debugf("[gobatis] [%s] exec statement: %s", p.fragment.id, s)
@@ -674,10 +694,11 @@ func (p *caller) query(in ...reflect.Value) (err error) {
 		}
 	}()
 	
-	s, vars, err := p.fragment.parseStatement(in...)
+	s, exprs, vars, dynamic, err := p.fragment.parseStatement(in...)
 	if err != nil {
 		return
 	}
+	fmt.Println("dynamic", p.fragment.id, dynamic, exprs)
 	p.logger.Debugf("[gobatis] [%s] query statement: %s", p.fragment.id, s)
 	p.logger.Debugf("[gobatis] [%s] query parameter: [%+v]", p.fragment.id, p.printVars(vars))
 	rows, err := q.QueryContext(ctx, s, vars...)

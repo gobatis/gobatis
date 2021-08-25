@@ -2,10 +2,18 @@ lexer grammar ExprLexer;
 
 NIL_LIT                : 'nil';
 
+// Logical
+LOGICAL_OR             : '||';
+LOGICAL_AND            : '&&';
+LOGICAL_AND_LOWER      : 'and';
+LOGICAL_OR_LOWER       : 'or';
+LOGICAL_AND_UPPER      : 'AND';
+LOGICAL_OR_UPPER       : 'OR';
+
+// Identifier
 IDENTIFIER             : LETTER (LETTER | UNICODE_DIGIT)*;
 
 // Punctuation
-
 L_PAREN                : '(';
 R_PAREN                : ')';
 L_BRACKET              : '[';
@@ -18,15 +26,8 @@ DOT                    : '.';
 PLUS_PLUS              : '++';
 MINUS_MINUS            : '--';
 ELLIPSIS               : '...';
-// Logical
 
-LOGICAL_OR             : '||';
-LOGICAL_AND            : '&&';
 
-TEST_AND               : 'and';
-TEST_AND_UP            : 'AND';
-TEST_OR                : 'or';
-TEST_OR_UP             : 'OR';
 
 // Relation operators
 

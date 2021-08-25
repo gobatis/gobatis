@@ -41,12 +41,12 @@ func (p *testListener) ExitEveryRule(ctx antlr.ParserRuleContext) {
 }
 
 func TestParseTest(t *testing.T) {
-	lexer := NewExprLexer(antlr.NewInputStream("a != '' or b != ''"))
+	lexer := NewExprLexer(antlr.NewInputStream("a != '' AND b != ''"))
 	stream := antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel)
 	p := NewExprParser(stream)
 	p.BuildParseTrees = true
 	p.AddErrorListener(antlr.NewDiagnosticErrorListener(true))
-	antlr.ParseTreeWalkerDefault.Walk(&testListener{}, p.Test())
+	antlr.ParseTreeWalkerDefault.Walk(&testListener{}, p.Expressions())
 }
 
 type expressionListener struct {

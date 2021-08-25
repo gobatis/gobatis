@@ -977,9 +977,9 @@ type exprParser struct {
 	paramsStack *paramsStack
 	coverage    *coverage
 	file        string
-	//paramIndex  int
-	vars     []interface{}
-	varIndex int
+	vars        []interface{}
+	exprs       []string
+	varIndex    int
 }
 
 func (p *exprParser) builtParams() *exprParams {
@@ -1009,8 +1009,7 @@ func (p *exprParser) ExitExpression(ctx *expr.ExpressionContext) {
 	} else if ctx.GetMul_op() != nil ||
 		ctx.GetAdd_op() != nil ||
 		ctx.GetRel_op() != nil ||
-		ctx.LOGICAL_AND() != nil ||
-		ctx.LOGICAL_OR() != nil {
+		ctx.Logical() != nil {
 		left, right, err := p.popBinaryOperands()
 		if err != nil {
 			p.throw(ctx, popBinaryOperandsErr).with(err)
@@ -1024,11 +1023,8 @@ func (p *exprParser) ExitExpression(ctx *expr.ExpressionContext) {
 		} else if ctx.GetRel_op() != nil {
 			p.relationCalc(left, right, ctx, ctx.GetRel_op())
 			p.coverage.add(ctx)
-		} else if ctx.LOGICAL_AND() != nil {
-			p.logicCalc(left, right, ctx, ctx.LOGICAL_AND().GetSymbol())
-			p.coverage.add(ctx)
-		} else if ctx.LOGICAL_OR() != nil {
-			p.logicCalc(left, right, ctx, ctx.LOGICAL_OR().GetSymbol())
+		} else if ctx.Logical() != nil {
+			p.logicCalc(left, right, ctx, ctx.Logical().GetStart())
 			p.coverage.add(ctx)
 		}
 	}
@@ -1225,9 +1221,10 @@ func (p *exprParser) parseExpression(nodeCtx antlr.ParserRuleContext, expresion 
 	return
 }
 
-func (p *exprParser) addVar(_var interface{}) {
+func (p *exprParser) addVar(_expr string, _var interface{}) {
 	_var = cast.Indirect(_var)
 	p.vars = append(p.vars, _var)
+	p.exprs = append(p.exprs, _expr)
 }
 
 func (p *exprParser) throw(ctx antlr.ParserRuleContext, code int) *_error {
@@ -1334,9 +1331,9 @@ func (p *exprParser) logicCalc(left, right *exprValue, ctx antlr.ParserRuleConte
 	var err error
 	var result interface{}
 	switch op.GetTokenType() {
-	case expr.ExprParserLOGICAL_AND:
+	case expr.ExprParserLOGICAL_AND, expr.ExprParserLOGICAL_AND_LOWER, expr.ExprParserLOGICAL_AND_UPPER:
 		result, err = cast.LogicAndAnyE(left.value, right.value)
-	case expr.ExprParserLOGICAL_OR:
+	case expr.ExprParserLOGICAL_OR, expr.ExprParserLOGICAL_OR_LOWER, expr.ExprParserLOGICAL_OR_UPPER:
 		result, err = cast.LogicOrAnyE(left.value, right.value)
 	}
 	if err != nil {
