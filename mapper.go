@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/gobatis/gobatis/cast"
 	"github.com/gobatis/gobatis/dtd"
-	"github.com/ttacon/chalk"
 	"reflect"
 	"regexp"
 	"strings"
@@ -27,6 +26,7 @@ const (
 
 type fragmentManager struct {
 	mu        sync.RWMutex
+	list      []*fragment
 	fragments map[string]*fragment
 }
 
@@ -45,7 +45,20 @@ func (p *fragmentManager) add(m *fragment) error {
 		return fmt.Errorf("duplicated fragment '%s'", m.id)
 	}
 	p.fragments[m.id] = m
+	p.list = append(p.list, m)
 	return nil
+}
+
+func (p *fragmentManager) all() []*fragment {
+	p.mu.RLock()
+	defer func() {
+		p.mu.RUnlock()
+	}()
+	items := make([]*fragment, len(p.list))
+	for i, v := range p.list {
+		items[i] = v
+	}
+	return items
 }
 
 func (p *fragmentManager) replace(m *fragment) error {
@@ -96,20 +109,13 @@ func (p *psr) merge(s ...*psr) {
 	}
 }
 
-type stmt struct {
-	stmt  *sql.Stmt
-	exprs []string
-	in    []*param
-	out   []*param
-}
-
 type fragment struct {
 	db              *DB
 	id              string
 	node            *xmlNode
 	in              []*param
 	out             []*param
-	stmt            *stmt
+	stmt            *Stmt
 	resultAttribute int
 }
 
@@ -376,12 +382,10 @@ func (p *fragment) parseBlock(parser *exprParser, node *xmlNode, res *psr) {
 }
 
 func (p *fragment) parseTest(parser *exprParser, node *xmlNode, res *psr) bool {
-	//fmt.Println("Test", node.GetAttribute(dtd.TEST), "start")
 	v, err := parser.parseExpression(node.ctx, node.GetAttribute(dtd.TEST))
 	if err != nil {
 		throw(p.node.File, p.node.ctx, parasFragmentErr).with(err)
 	}
-	//fmt.Println("Test", node.GetAttribute(dtd.TEST), "end", v)
 	b, err := cast.ToBoolE(v)
 	if err != nil {
 		throw(p.node.File, p.node.ctx, parasFragmentErr).with(err)
@@ -591,7 +595,7 @@ func (p *caller) call(must bool) (err error) {
 
 func (p *caller) exec(must bool, in ...reflect.Value) (err error) {
 	
-	exec, index := p.execer(in)
+	_execer, index := p.execer(in)
 	if index > -1 {
 		in = p.removeParam(in, index)
 	}
@@ -600,17 +604,32 @@ func (p *caller) exec(must bool, in ...reflect.Value) (err error) {
 		in = p.removeParam(in, index)
 	}
 	
+	tx, _ := _execer.(*Tx)
+	if tx != nil {
+		stmt := tx.getStmt(p.fragment.id)
+		if stmt != nil {
+			return stmt.exec(true, must, ctx, in)
+		}
+	}
+	
+	if p.fragment.stmt != nil {
+		return p.fragment.stmt.exec(false, must, ctx, in)
+	}
+	
 	var conn *sql.Conn
-	if exec == nil {
+	if _execer == nil {
 		conn, err = p.fragment.db.Conn(ctx)
 		if err != nil {
 			return
 		}
-		exec = conn
+		_execer = conn
 	}
 	defer func() {
-		if conn != nil {
-			_ = conn.Close()
+		if conn != nil && p.fragment.stmt == nil {
+			err = conn.Close()
+			if err != nil {
+				return
+			}
 		}
 	}()
 	
@@ -618,54 +637,51 @@ func (p *caller) exec(must bool, in ...reflect.Value) (err error) {
 	if err != nil {
 		return
 	}
+	
+	p.logger.Debugf("[gobatis] [%s] exec statement: %s", p.fragment.id, s)
+	p.logger.Debugf("[gobatis] [%s] exec parameter: %s", p.fragment.id, printVars(vars))
+	
+	_stmt, err := _execer.PrepareContext(ctx, s)
+	if err != nil {
+		p.logger.Errorf("[gobatis] [%s] exec statement: %s", p.fragment.id, s)
+		p.logger.Errorf("[gobatis] [%s] exec parameter: %s", p.fragment.id, printVars(vars))
+		p.logger.Errorf("[gobatis] [%s] prepare error: %v", p.fragment.id, err)
+		return err
+	}
+	
 	if !dynamic {
-		var _stmt *sql.Stmt
-		_stmt, err = exec.PrepareContext(ctx, s)
-		if err != nil {
-			return
+		stmt := &Stmt{
+			stmt:   _stmt,
+			exprs:  exprs,
+			sql:    s,
+			conn:   conn,
+			caller: p,
 		}
-		p.fragment.stmt = &stmt{
-			stmt:  _stmt,
-			exprs: exprs,
+		if tx != nil {
+			tx.addStmt(stmt)
+		} else {
+			p.fragment.stmt = stmt
 		}
 	}
 	
-	p.logger.Debugf("[gobatis] [%s] exec statement: %s", p.fragment.id, s)
-	p.logger.Debugf("[gobatis] [%s] exec parameter: %s", p.fragment.id, p.printVars(vars))
-	
-	res, err := exec.ExecContext(ctx, s, vars...)
+	res, err := _stmt.ExecContext(ctx, vars...)
 	if err != nil {
 		p.logger.Errorf("[gobatis] [%s] exec statement: %s", p.fragment.id, s)
-		p.logger.Errorf("[gobatis] [%s] exec parameter: %s", p.fragment.id, p.printVars(vars))
+		p.logger.Errorf("[gobatis] [%s] exec parameter: %s", p.fragment.id, printVars(vars))
 		p.logger.Errorf("[gobatis] [%s] exec error: %v", p.fragment.id, err)
 		return
 	}
 	
-	// 兼容不支持 RowsAffected 的数据库
+	return p.parseExecResult(must, res, p.values)
+}
+
+func (p *caller) parseExecResult(must bool, res sql.Result, values []reflect.Value) error {
+	// ignore RowsAffected to support database that not support
 	affected, _ := res.RowsAffected()
-	
 	if must && affected != 1 {
 		return fmt.Errorf("expect affect 1 row, got %d", affected)
 	}
-	
-	return p.parseExecResult(affected, p.values)
-}
-
-func (p *caller) parseExecResult(affected int64, values []reflect.Value) error {
-	res := &execResult{affected: affected, values: values}
-	return res.scan()
-}
-
-func (*caller) printVars(vars []interface{}) string {
-	if len(vars) == 0 {
-		return ""
-	}
-	r := "\n"
-	for i, v := range vars {
-		r += fmt.Sprintf("   $%d %s (%s) %+v\n",
-			i+1, chalk.Green.Color("=>"), chalk.Yellow.Color(reflect.TypeOf(v).String()), v)
-	}
-	return r
+	return (&execResult{affected: affected, values: values}).scan()
 }
 
 func (p *caller) query(in ...reflect.Value) (err error) {
@@ -675,22 +691,37 @@ func (p *caller) query(in ...reflect.Value) (err error) {
 		in = p.removeParam(in, index)
 	}
 	
-	q, index := p.queryer(in)
+	_queryer, index := p.queryer(in)
 	if index > -1 {
 		in = p.removeParam(in, index)
 	}
 	
+	tx, _ := _queryer.(*Tx)
+	if tx != nil {
+		stmt := tx.getStmt(p.fragment.id)
+		if stmt != nil {
+			return stmt.query(true, ctx, in, p.values)
+		}
+	}
+	
+	if p.fragment.stmt != nil {
+		return p.fragment.stmt.query(false, ctx, in, p.values)
+	}
+	
 	var conn *sql.Conn
-	if q == nil {
+	if _queryer == nil {
 		conn, err = p.fragment.db.Conn(ctx)
 		if err != nil {
 			return
 		}
-		q = conn
+		_queryer = conn
 	}
 	defer func() {
-		if conn != nil {
-			_ = conn.Close()
+		if conn != nil && p.fragment.stmt == nil {
+			err = conn.Close()
+			if err != nil {
+				return
+			}
 		}
 	}()
 	
@@ -698,27 +729,54 @@ func (p *caller) query(in ...reflect.Value) (err error) {
 	if err != nil {
 		return
 	}
-	fmt.Println("dynamic", p.fragment.id, dynamic, exprs)
+	
 	p.logger.Debugf("[gobatis] [%s] query statement: %s", p.fragment.id, s)
-	p.logger.Debugf("[gobatis] [%s] query parameter: [%+v]", p.fragment.id, p.printVars(vars))
-	rows, err := q.QueryContext(ctx, s, vars...)
+	p.logger.Debugf("[gobatis] [%s] query parameter: [%+v]", p.fragment.id, printVars(vars))
+	
+	_stmt, err := _queryer.PrepareContext(ctx, s)
+	if err != nil {
+		p.logger.Errorf("[gobatis] [%s] exec statement: %s", p.fragment.id, s)
+		p.logger.Errorf("[gobatis] [%s] exec parameter: %s", p.fragment.id, printVars(vars))
+		p.logger.Errorf("[gobatis] [%s] prepare error: %v", p.fragment.id, err)
+		return err
+	}
+	
+	if !dynamic {
+		stmt := &Stmt{
+			stmt:   _stmt,
+			exprs:  exprs,
+			sql:    s,
+			conn:   conn,
+			caller: p,
+		}
+		if tx != nil {
+			tx.addStmt(stmt)
+		} else {
+			p.fragment.stmt = stmt
+		}
+	}
+	
+	rows, err := _stmt.QueryContext(ctx, vars...)
 	if err != nil {
 		p.logger.Errorf("[gobatis] [%s] query statement: %s", p.fragment.id, s)
-		p.logger.Errorf("[gobatis] [%s] query parameter: [%+v]", p.fragment.id, p.printVars(vars))
+		p.logger.Errorf("[gobatis] [%s] query parameter: [%+v]", p.fragment.id, printVars(vars))
 		p.logger.Errorf("[gobatis] [%s] query error: %v", p.fragment.id, err)
 		return
 	}
-	defer func() {
-		_ = rows.Close()
-	}()
 	
-	return p.parseQueryResult(rows)
+	return p.parseQueryResult(rows, p.values)
 }
 
-func (p *caller) parseQueryResult(rows *sql.Rows) error {
+func (p *caller) parseQueryResult(rows *sql.Rows, values []reflect.Value) (err error) {
+	defer func() {
+		err = rows.Close()
+		if err != nil {
+			return
+		}
+	}()
 	
 	res := queryResult{rows: rows}
-	err := res.setSelected(p.fragment.resultAttribute, p.fragment.out, p.values)
+	err = res.setSelected(p.fragment.resultAttribute, p.fragment.out, values)
 	if err != nil {
 		return err
 	}

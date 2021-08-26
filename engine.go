@@ -82,11 +82,27 @@ func (p *Engine) Init(bundle Bundle) (err error) {
 }
 
 func (p *Engine) Close() {
-	if p.master != nil {
-		_ = p.master.Close()
+	if p.fragmentManager != nil {
+		for _, v := range p.fragmentManager.all() {
+			if v.stmt != nil {
+				err := v.stmt.Close()
+				if err != nil {
+					p.logger.Errorf("[gobatis] close stmt error: %s", err)
+				}
+			}
+		}
 	}
 	for _, v := range p.slaves {
-		_ = v.Close()
+		err := v.Close()
+		if err != nil {
+			p.logger.Errorf("[gobatis] close slave db error: %s", err)
+		}
+	}
+	if p.master != nil {
+		err := p.master.Close()
+		if err != nil {
+			p.logger.Errorf("[gobatis] close master db error: %s", err)
+		}
 	}
 }
 

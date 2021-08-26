@@ -17,6 +17,13 @@ var (
 	pwd string
 )
 
+type StmtMapper struct {
+	TestInsertStmtTx  func(tx *Tx, user *test.User) error
+	TestInsertStmt2Tx func(tx *Tx, user *test.User) error
+	TestQueryStmtTx   func(tx *Tx, name string, age int64) ([]*test.User, error)
+	TestQueryStmt2Tx  func(tx *Tx, name string, age int64) ([]*test.User, error)
+}
+
 func init() {
 	var err error
 	pwd, err = os.Getwd()
@@ -63,6 +70,106 @@ func TestEngine(t *testing.T) {
 	testSelectRowsPointer(t, _testMapper)
 	testSelectStruct(t, _testMapper)
 	testSelectStructs(t, _testMapper)
+}
+
+func TestStmt(t *testing.T) {
+	engine := NewPostgresql("postgresql://postgres:postgres@127.0.0.1:5432/gobatis?connect_timeout=10&sslmode=disable")
+	err := engine.Init(NewBundle("test"))
+	err = engine.master.Ping()
+	require.NoError(t, err)
+	engine.SetLogLevel(DebugLevel)
+	defer func() {
+		engine.Close()
+	}()
+	
+	stmtMapper := new(test.StmtMapper)
+	err = engine.BindMapper(stmtMapper)
+	require.NoError(t, err)
+	
+	err = stmtMapper.TestInsertStmt(&test.User{
+		Name: "tom",
+		Age:  18,
+	})
+	require.NoError(t, err)
+	
+	err = stmtMapper.TestInsertStmt(&test.User{
+		Name: "michael",
+		Age:  8,
+	})
+	require.NoError(t, err)
+	
+	err = stmtMapper.TestInsertStmt2(&test.User{
+		Name: "default",
+		Age:  8,
+	})
+	require.NoError(t, err)
+	
+	err = stmtMapper.TestInsertStmt2(&test.User{
+		Name: "default",
+		Age:  9,
+	})
+	require.NoError(t, err)
+	
+	users, err := stmtMapper.TestQueryStmt("tom", 18)
+	require.NoError(t, err)
+	require.True(t, len(users) > 0)
+	t.Log(users[0].Name, users[0].Age)
+	
+	users, err = stmtMapper.TestQueryStmt("michael", 8)
+	require.NoError(t, err)
+	require.True(t, len(users) > 0)
+	t.Log(users[0].Name, users[0].Age)
+}
+
+func TestStmtTx(t *testing.T) {
+	engine := NewPostgresql("postgresql://postgres:postgres@127.0.0.1:5432/gobatis?connect_timeout=10&sslmode=disable")
+	err := engine.Init(NewBundle("test"))
+	err = engine.master.Ping()
+	require.NoError(t, err)
+	//engine.SetLogLevel(DebugLevel)
+	defer func() {
+		engine.Close()
+	}()
+	
+	stmtMapper := new(StmtMapper)
+	err = engine.BindMapper(stmtMapper)
+	require.NoError(t, err)
+	
+	tx, err := engine.Master().Begin()
+	require.NoError(t, err)
+	defer func() {
+		if err != nil {
+			err = tx.Rollback()
+			require.NoError(t, err)
+		} else {
+			err = tx.Commit()
+			require.NoError(t, err)
+		}
+	}()
+	
+	err = stmtMapper.TestInsertStmtTx(tx, &test.User{
+		Name: "tom_tx",
+		Age:  18,
+	})
+	require.NoError(t, err)
+	
+	err = stmtMapper.TestInsertStmtTx(tx, &test.User{
+		Name: "michael_tx",
+		Age:  8,
+	})
+	require.NoError(t, err)
+	
+	err = stmtMapper.TestInsertStmt2Tx(tx, &test.User{
+		Name: "default_tx",
+		Age:  8,
+	})
+	require.NoError(t, err)
+	
+	err = stmtMapper.TestInsertStmt2Tx(tx, &test.User{
+		Name: "default_tx",
+		Age:  9,
+	})
+	require.NoError(t, err)
 }
 
 func testSelectInsert(t *testing.T, _testMapper *test.TestMapper) {
@@ -207,7 +314,7 @@ func testSelectInsertContextTx(t *testing.T, engine *Engine, _testMapper *test.T
 	tx, err := engine.Master().Begin()
 	require.NoError(t, err)
 	t.Log(_testMapper.SelectInsertContextTx == nil)
-	id, err := _testMapper.SelectInsertContextTx(ctx, tx, test.Entity{
+	id, err := _testMapper.SelectInsertContextTx(ctx, tx.Tx(), test.Entity{
 		Char: "hello",
 	})
 	require.NoError(t, err)

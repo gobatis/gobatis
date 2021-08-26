@@ -25,3 +25,10 @@ type TestMapper struct {
 	SelectStructs                    func(id int) (entity []Entity, err error)
 	SelectStructsPointer             func(id int) (entity []*Entity, err error)
 }
+
+type StmtMapper struct {
+	TestInsertStmt  func(user *User) error
+	TestInsertStmt2 func(user *User) error
+	TestQueryStmt   func(name string, age int64) ([]*User, error)
+	TestQueryStmt2   func(name string, age int64) ([]*User, error)
+}

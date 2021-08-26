@@ -54,3 +54,9 @@ type EntityPointer struct {
 	Interval                 *time.Duration   `sql:"t_interval"`
 	Boolean                  *bool            `sql:"t_boolean"`
 }
+
+type User struct {
+	Id   int64  `sql:"id"`
+	Name string `sql:"name"`
+	Age  int    `sql:"age"`
+}
