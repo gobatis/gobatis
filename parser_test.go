@@ -262,15 +262,16 @@ func execTestFragment(t *testing.T, engine *Engine, tests []testFragment) {
 		
 		frag, ok := engine.fragmentManager.get(test.Id)
 		require.True(t, ok, test)
-		sql, args, err := frag.parseStatement(vars...)
+		sql, exprs, _vars, dynamic, err := frag.parseStatement(vars...)
 		require.NoError(t, err)
-		
+		_ = dynamic
+		_ = exprs
 		if test.Err > 0 {
 			require.Error(t, err, test)
 		} else {
 			require.NoError(t, err, test)
 			require.Equal(t, reg.ReplaceAllString(test.SQL, ""), reg.ReplaceAllString(sql, ""), test)
-			require.Equal(t, len(args), test.Vars, test)
+			require.Equal(t, len(_vars), test.Vars, test)
 		}
 	}
 }

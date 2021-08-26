@@ -31,6 +31,9 @@ type ExprParserListener interface {
 	// EnterPrimaryExpr is called when entering the primaryExpr production.
 	EnterPrimaryExpr(c *PrimaryExprContext)
 
+	// EnterLogical is called when entering the logical production.
+	EnterLogical(c *LogicalContext)
+
 	// EnterOperand is called when entering the operand production.
 	EnterOperand(c *OperandContext)
 
@@ -93,6 +96,9 @@ type ExprParserListener interface {
 
 	// ExitPrimaryExpr is called when exiting the primaryExpr production.
 	ExitPrimaryExpr(c *PrimaryExprContext)
+
+	// ExitLogical is called when exiting the logical production.
+	ExitLogical(c *LogicalContext)
 
 	// ExitOperand is called when exiting the operand production.
 	ExitOperand(c *OperandContext)

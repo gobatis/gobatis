@@ -167,7 +167,7 @@
                 type CDATA #REQUIRED
                 >
 
-        <!ELEMENT select (#PCDATA | include | trim | where | set | foreach | choose | if | bind)*>
+        <!ELEMENT select (#PCDATA | selectKey | include | trim | where | set | foreach | choose | if | bind | inserter)*>
         <!ATTLIST select
                 id CDATA #REQUIRED
                 parameter CDATA #IMPLIED
@@ -185,7 +185,7 @@
                 resultSets CDATA #IMPLIED
                 >
 
-        <!ELEMENT insert (#PCDATA | selectKey | include | trim | where | set | foreach | choose | if | bind)*>
+        <!ELEMENT insert (#PCDATA | selectKey | include | trim | where | set | foreach | choose | if | bind | inserter)*>
         <!ATTLIST insert
                 id CDATA #REQUIRED
                 parameter CDATA #IMPLIED
@@ -287,12 +287,19 @@
                 >
 
 
-        <!ELEMENT inserter (#PCDATA | include | trim | where | set | foreach | choose | if | bind)*>
+        <!ELEMENT inserter (#PCDATA | field)*>
         <!ATTLIST inserter
                 table CDATA #REQUIRED
-                multiple CDATA #IMPLIED
+                data CDATA #REQUIRED
+                index CDATA #IMPLIED
+                item CDATA #IMPLIED
                 >
 
+        <!ELEMENT field (#PCDATA)>
+        <!ATTLIST field
+                name CDATA #REQUIRED
+                test CDATA #IMPLIED
+                >
 
         <!ELEMENT query (#PCDATA | include | trim | where | set | foreach | choose | if | bind)*>
         <!ATTLIST query

@@ -68,6 +68,12 @@ func (s *BaseExprParserListener) EnterPrimaryExpr(ctx *PrimaryExprContext) {}
 // ExitPrimaryExpr is called when production primaryExpr is exited.
 func (s *BaseExprParserListener) ExitPrimaryExpr(ctx *PrimaryExprContext) {}
 
+// EnterLogical is called when production logical is entered.
+func (s *BaseExprParserListener) EnterLogical(ctx *LogicalContext) {}
+
+// ExitLogical is called when production logical is exited.
+func (s *BaseExprParserListener) ExitLogical(ctx *LogicalContext) {}
+
 // EnterOperand is called when production operand is entered.
 func (s *BaseExprParserListener) EnterOperand(ctx *OperandContext) {}
 

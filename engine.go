@@ -64,6 +64,7 @@ func (p *Engine) Init(bundle Bundle) (err error) {
 	
 	if p.logger == nil {
 		p.logger = _log.NewStdLogger()
+		p.logger.SetLevel(InfoLevel)
 	}
 	
 	p.bundle = bundle
@@ -81,21 +82,49 @@ func (p *Engine) Init(bundle Bundle) (err error) {
 }
 
 func (p *Engine) Close() {
-	if p.master != nil {
-		_ = p.master.Close()
+	if p.fragmentManager != nil {
+		for _, v := range p.fragmentManager.all() {
+			if v.stmt != nil {
+				err := v.stmt.Close()
+				if err != nil {
+					p.logger.Errorf("[gobatis] close stmt error: %s", err)
+				}
+			}
+		}
 	}
 	for _, v := range p.slaves {
-		_ = v.Close()
+		err := v.Close()
+		if err != nil {
+			p.logger.Errorf("[gobatis] close slave db error: %s", err)
+		}
+	}
+	if p.master != nil {
+		err := p.master.Close()
+		if err != nil {
+			p.logger.Errorf("[gobatis] close master db error: %s", err)
+		}
 	}
 }
 
-func (p *Engine) Call(name string, args ...reflect.Value) *caller {
-	f, ok := p.fragmentManager.get(name)
-	if !ok {
-		panic(fmt.Errorf("method '%s' not exist", name))
-	}
-	return &caller{fragment: f, args: args, logger: p.logger}
+func (p *Engine) SQL(name string, args ...interface{}) {
+
 }
+
+func (p *Engine) Call(name string, args ...interface{}) {
+	//f, ok := p.fragmentManager.get(name)
+	//if !ok {
+	//	panic(fmt.Errorf("method '%s' not exist", name))
+	//}
+	//return &caller{fragment: f, args: args, logger: p.logger}
+}
+
+//func (p *Engine) Call(name string, args ...reflect.Value) *caller {
+//	f, ok := p.fragmentManager.get(name)
+//	if !ok {
+//		panic(fmt.Errorf("method '%s' not exist", name))
+//	}
+//	return &caller{fragment: f, args: args, logger: p.logger}
+//}
 
 func (p *Engine) parseBundle() (err error) {
 	err = p.parseConfig()

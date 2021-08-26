@@ -61,7 +61,9 @@
         t_serial,
         t_big_serial,
         t_money,
-        t_char,
+        <if test="entity.Char!= nil and entity.Text != nil">
+            t_char,
+        </if>
         t_text,
         t_timestamp_without_time_zone,
         t_timestamp_with_time_zone,
@@ -82,7 +84,9 @@
         #{ entity.Serial },
         #{ entity.BigSerial },
         #{ entity.Money },
-        #{ entity.Char },
+        <if test="entity.Char!=nil and entity.Text != nil">
+            #{ entity.Char },
+        </if>
         #{ entity.Text },
         #{ entity.TimestampWithoutTimeZone },
         #{ entity.TimestampWithTimeZone },
@@ -230,5 +234,11 @@
     <select id="SelectStructsPointer" parameter="id:int" result="*">
         select * from test_entities where id > #{id} and id &lt; 50;
     </select>
+
+    <!--    <insert id="TestInserter" parameter="row">-->
+    <!--        <inserter table="'users'" data="row" item="" index="">-->
+    <!--                <field name="'name'">#{ row.Name }</field>-->
+    <!--        </inserter>-->
+    <!--    </insert>-->
 
 </mapper>

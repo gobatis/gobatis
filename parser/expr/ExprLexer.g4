@@ -2,10 +2,18 @@ lexer grammar ExprLexer;
 
 NIL_LIT                : 'nil';
 
+// Logical
+LOGICAL_OR             : '||';
+LOGICAL_AND            : '&&';
+LOGICAL_AND_LOWER      : 'and';
+LOGICAL_OR_LOWER       : 'or';
+LOGICAL_AND_UPPER      : 'AND';
+LOGICAL_OR_UPPER       : 'OR';
+
+// Identifier
 IDENTIFIER             : LETTER (LETTER | UNICODE_DIGIT)*;
 
 // Punctuation
-
 L_PAREN                : '(';
 R_PAREN                : ')';
 L_BRACKET              : '[';
@@ -18,10 +26,8 @@ DOT                    : '.';
 PLUS_PLUS              : '++';
 MINUS_MINUS            : '--';
 ELLIPSIS               : '...';
-// Logical
 
-LOGICAL_OR             : '||';
-LOGICAL_AND            : '&&';
+
 
 // Relation operators
 
@@ -96,7 +102,7 @@ BIG_U_VALUE: '\\' 'U' HEX_DIGIT HEX_DIGIT HEX_DIGIT HEX_DIGIT HEX_DIGIT HEX_DIGI
 
 // String literals
 RAW_STRING_LIT         : '`' ~'`'*                      '`';
-INTERPRETED_STRING_LIT : '"' (~["\\] | ESCAPED_VALUE)*  '"' | '\'' (~["\\] | ESCAPED_VALUE)*  '\'';
+INTERPRETED_STRING_LIT : '"' (~["\\] | ESCAPED_VALUE)*  '"' | '\'' (~['\\] | ESCAPED_VALUE)*  '\'';
 
 // Hidden tokens
 //WS                     : [ \t]+             -> channel(HIDDEN);

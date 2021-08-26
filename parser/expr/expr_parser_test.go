@@ -32,6 +32,23 @@ func TestParseParameters(t *testing.T) {
 	antlr.ParseTreeWalkerDefault.Walk(&parameterListener{}, p.Parameters())
 }
 
+type testListener struct {
+	*antlr.BaseParseTreeListener
+}
+
+func (p *testListener) ExitEveryRule(ctx antlr.ParserRuleContext) {
+	fmt.Println(ctx.GetRuleIndex(), ":", ctx.GetText())
+}
+
+func TestParseTest(t *testing.T) {
+	lexer := NewExprLexer(antlr.NewInputStream("a != '' AND b != ''"))
+	stream := antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel)
+	p := NewExprParser(stream)
+	p.BuildParseTrees = true
+	p.AddErrorListener(antlr.NewDiagnosticErrorListener(true))
+	antlr.ParseTreeWalkerDefault.Walk(&testListener{}, p.Expressions())
+}
+
 type expressionListener struct {
 	*antlr.BaseParseTreeListener
 }

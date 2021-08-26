@@ -1,4 +1,4 @@
-package entity
+package test
 
 import (
 	"database/sql"
@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-type TestEntity struct {
+type Entity struct {
 	Id                       int64           `sql:"id"`
 	Int8                     int8            `sql:"t_int8"`
 	BigInt                   int64           `sql:"t_bigint"`
@@ -31,7 +31,7 @@ type TestEntity struct {
 	Boolean                  bool            `sql:"t_boolean"`
 }
 
-type TestEntityPointer struct {
+type EntityPointer struct {
 	Id                       *int64
 	Int8                     *int8            `sql:"t_int8"`
 	BigInt                   *int64           `sql:"t_bigint"`
@@ -53,4 +53,10 @@ type TestEntityPointer struct {
 	TimeWithTimeZone         *time.Time       `sql:"t_time_with_time_zone"`
 	Interval                 *time.Duration   `sql:"t_interval"`
 	Boolean                  *bool            `sql:"t_boolean"`
+}
+
+type User struct {
+	Id   int64  `sql:"id"`
+	Name string `sql:"name"`
+	Age  int    `sql:"age"`
 }

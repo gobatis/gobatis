@@ -12,13 +12,12 @@ paramDecl: IDENTIFIER | (IDENTIFIER COLON paramType);
 
 paramType: (L_BRACKET R_BRACKET)? IDENTIFIER;
 
-expressions: misc* expression misc*  EOF;
+expressions: expression EOF;
 
 misc: WS TERMINATOR;
 
 expression:
 	primaryExpr
-//	| expression arguments
 	| unary_op = (
 	    PLUS
         | MINUS
@@ -43,9 +42,7 @@ expression:
         | GREATER
         | GREATER_OR_EQUALS
 	)  expression
-	| expression LOGICAL_AND expression
-	| expression LOGICAL_OR expression
-	;
+	| expression logical expression;
 
 primaryExpr:
     operand
@@ -55,6 +52,8 @@ primaryExpr:
 		| slice_
 		| call
 	);
+
+logical: LOGICAL_AND | LOGICAL_OR | LOGICAL_AND_LOWER | LOGICAL_OR_LOWER | LOGICAL_AND_UPPER | LOGICAL_OR_UPPER;
 
 operand: literal | var_ | L_PAREN expression R_PAREN;
 
@@ -100,5 +99,3 @@ slice_:
 		expression? COLON expression?
 		| expression? COLON expression COLON expression
 	) R_BRACKET;
-
-

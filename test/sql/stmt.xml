@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//gobatis.co//DTD Mapper 1.0//EN" "gobatis.co/dtd/mapper.dtd">
+
+<mapper>
+    <insert id="TestInsertStmt" parameter="user">
+        insert into users(name,age)
+        values(
+        #{user.Name},
+        #{user.Age}
+        )
+    </insert>
+
+    <insert id="TestInsertStmt2" parameter="user">
+        insert into users(name,age)
+        values(
+        '${user.Name}',
+        #{user.Age}
+        )
+    </insert>
+
+    <select id="TestQueryStmt" parameter="name,age">
+        select * from users where name = #{name} and age = #{age};
+    </select>
+
+    <select id="TestQueryStmt2" parameter="name,age">
+        select * from users where name = ${name} and age = #{age};
+    </select>
+</mapper>

@@ -2,6 +2,8 @@ package gobatis
 
 import (
 	"database/sql"
+	"fmt"
+	"github.com/ttacon/chalk"
 	"reflect"
 )
 
@@ -21,7 +23,9 @@ func isContext(v reflect.Type) bool {
 }
 
 func isTx(v reflect.Type) bool {
-	if v.Kind() == reflect.Ptr && v.Elem().Name() == "Tx" && v.Elem().PkgPath() == "database/sql" {
+	if v.Kind() == reflect.Ptr && v.Elem().Name() == "Tx" &&
+		(v.Elem().PkgPath() == "database/sql" ||
+			v.Elem().PkgPath() == "github.com/gobatis/gobatis") {
 		return true
 	}
 	return false
@@ -56,4 +60,16 @@ func reflectTypeElem(vt reflect.Type) reflect.Type {
 		vt = vt.Elem()
 	}
 	return vt
+}
+
+func printVars(vars []interface{}) string {
+	if len(vars) == 0 {
+		return ""
+	}
+	r := "\n"
+	for i, v := range vars {
+		r += fmt.Sprintf("   $%d %s (%s) %+v\n",
+			i+1, chalk.Green.Color("=>"), chalk.Yellow.Color(reflect.TypeOf(v).String()), v)
+	}
+	return r
 }
