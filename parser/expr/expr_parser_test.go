@@ -49,6 +49,16 @@ func TestParseTest(t *testing.T) {
 	antlr.ParseTreeWalkerDefault.Walk(&testListener{}, p.Expressions())
 }
 
+func TestParseTertiary(t *testing.T) {
+	lexer := NewExprLexer(antlr.NewInputStream("a ? b : c"))
+	stream := antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel)
+	p := NewExprParser(stream)
+	p.BuildParseTrees = true
+	p.AddErrorListener(antlr.NewDiagnosticErrorListener(true))
+	antlr.ParseTreeWalkerDefault.Walk(&testListener{}, p.Expressions())
+}
+
+
 type expressionListener struct {
 	*antlr.BaseParseTreeListener
 }

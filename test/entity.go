@@ -59,4 +59,5 @@ type User struct {
 	Id   int64  `sql:"id"`
 	Name string `sql:"name"`
 	Age  int    `sql:"age"`
+	From string `sql:"from"`
 }

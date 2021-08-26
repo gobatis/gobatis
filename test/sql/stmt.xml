@@ -11,9 +11,18 @@
     </insert>
 
     <insert id="TestInsertStmt2" parameter="user">
-        insert into users(name,age)
+        insert into users(
+        <if test="user.Name == 'jack' and (user.Age == 3 or user.Age == 4)">
+            name,
+        </if>
+        "from",
+        age
+        )
         values(
-        '${user.Name}',
+        <if test="user.Name == 'jack' and (user.Age == 3 or user.Age == 4)">
+            '${user.Name}',
+        </if>
+        #{ user.From == 'usa' ? 'USA' : nil },
         #{user.Age}
         )
     </insert>

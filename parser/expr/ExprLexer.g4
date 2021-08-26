@@ -22,6 +22,7 @@ ASSIGN                 : '=';
 COMMA                  : ',';
 SEMI                   : ';';
 COLON                  : ':';
+QUESTION               : '?';
 DOT                    : '.';
 PLUS_PLUS              : '++';
 MINUS_MINUS            : '--';

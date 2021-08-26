@@ -16,6 +16,7 @@ const (
 	popValueStackErr
 	popParamsStackErr
 	popBinaryOperandsErr
+	popTertiaryOperandsErr
 	popResultErr
 	unsupportedRelationCalcErr
 	unsupportedUnaryCalc
@@ -40,6 +41,7 @@ const (
 	callerErr
 	syntaxErr
 	resultAttributeConflictErr
+	castBoolErr
 )
 
 func throw(file string, ctx antlr.ParserRuleContext, code int) *_error {

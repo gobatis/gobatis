@@ -42,7 +42,8 @@ expression:
         | GREATER
         | GREATER_OR_EQUALS
 	)  expression
-	| expression logical expression;
+	| expression logical expression
+	| expression tertiary = QUESTION expression COLON expression;
 
 primaryExpr:
     operand
