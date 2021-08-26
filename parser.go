@@ -1027,6 +1027,13 @@ func (p *exprParser) ExitExpression(ctx *expr.ExpressionContext) {
 			p.logicCalc(left, right, ctx, ctx.Logical().GetStart())
 			p.coverage.add(ctx)
 		}
+	} else if ctx.GetTertiary() != nil {
+		condition, left, right, err := p.popTertiaryOperands()
+		if err != nil {
+			p.throw(ctx, popTertiaryOperandsErr).with(err)
+		}
+		p.coverage.add(ctx)
+		p.tertiaryCalc(condition, left, right, ctx)
 	}
 }
 
@@ -1243,6 +1250,22 @@ func (p *exprParser) popBinaryOperands() (left, right *exprValue, err error) {
 	return
 }
 
+func (p *exprParser) popTertiaryOperands() (condition, left, right *exprValue, err error) {
+	right, err = p.valueStack.pop()
+	if err != nil {
+		return
+	}
+	left, err = p.valueStack.pop()
+	if err != nil {
+		return
+	}
+	condition, err = p.valueStack.pop()
+	if err != nil {
+		return
+	}
+	return
+}
+
 func (p *exprParser) numericStringCalc(left, right *exprValue, ctx antlr.ParserRuleContext, op antlr.Token) {
 	
 	var err error
@@ -1340,4 +1363,17 @@ func (p *exprParser) logicCalc(left, right *exprValue, ctx antlr.ParserRuleConte
 		p.throw(ctx, logicCalcErr).with(err)
 	}
 	p.valueStack.push(&exprValue{value: result})
+}
+
+func (p *exprParser) tertiaryCalc(condition, left, right *exprValue, ctx antlr.ParserRuleContext) {
+	
+	ok, err := cast.ToBoolE(condition.value)
+	if err != nil {
+		p.throw(ctx, castBoolErr).with(err)
+	}
+	if ok {
+		p.valueStack.push(left)
+	} else {
+		p.valueStack.push(right)
+	}
 }

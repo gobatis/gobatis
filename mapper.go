@@ -16,6 +16,7 @@ import (
 const (
 	must_prefix = "Must"
 	tx_suffix   = "Tx"
+	stmt_suffix = "Stmt"
 )
 
 const (
@@ -115,17 +116,19 @@ type fragment struct {
 	node            *xmlNode
 	in              []*param
 	out             []*param
-	stmt            *Stmt
 	resultAttribute int
+	must            bool
+	stmt            bool
+	_stmt           *Stmt
 }
 
-func (p *fragment) proxy(must bool, field reflect.Value) {
+func (p *fragment) proxy(field reflect.Value) {
 	field.Set(reflect.MakeFunc(field.Type(), func(args []reflect.Value) (results []reflect.Value) {
-		return p.call(must, field.Type(), args...)
+		return p.call(field.Type(), args...)
 	}))
 }
 
-func (p *fragment) call(must bool, _type reflect.Type, in ...reflect.Value) []reflect.Value {
+func (p *fragment) call(_type reflect.Type, in ...reflect.Value) []reflect.Value {
 	
 	c := &caller{fragment: p, args: in, logger: p.db.logger}
 	for i := 0; i < _type.NumOut()-1; i++ {
@@ -136,10 +139,10 @@ func (p *fragment) call(must bool, _type reflect.Type, in ...reflect.Value) []re
 		}
 	}
 	
-	err := c.call(must)
+	err := c.call()
 	if err != nil {
 		if err == sql.ErrNoRows {
-			if must {
+			if p.must {
 				c.values = append(c.values, reflect.ValueOf(err))
 			} else {
 				c.values = append(c.values, reflect.Zero(errorType))
@@ -561,20 +564,20 @@ type caller struct {
 	values   []reflect.Value
 }
 
-func (p *caller) Scan(pointers ...interface{}) (err error) {
-	for _, v := range pointers {
-		rv := reflect.ValueOf(v)
-		if rv.Kind() != reflect.Ptr {
-			err = fmt.Errorf("scan only accept pointer")
-			return
-		}
-		p.values = append(p.values, rv)
-	}
-	
-	return p.call(false)
-}
+//func (p *caller) Scan(pointers ...interface{}) (err error) {
+//	for _, v := range pointers {
+//		rv := reflect.ValueOf(v)
+//		if rv.Kind() != reflect.Ptr {
+//			err = fmt.Errorf("scan only accept pointer")
+//			return
+//		}
+//		p.values = append(p.values, rv)
+//	}
+//
+//	return p.call()
+//}
 
-func (p *caller) call(must bool) (err error) {
+func (p *caller) call() (err error) {
 	
 	start := time.Now()
 	defer func() {
@@ -585,7 +588,7 @@ func (p *caller) call(must bool) (err error) {
 	case dtd.SELECT:
 		return p.query(p.args...)
 	case dtd.INSERT, dtd.DELETE, dtd.UPDATE:
-		return p.exec(must, p.args...)
+		return p.exec(p.args...)
 	default:
 		throw(p.fragment.node.File, p.fragment.node.ctx, callerErr).
 			format("unsupported call method '%s'", p.fragment.node.Name)
@@ -593,7 +596,7 @@ func (p *caller) call(must bool) (err error) {
 	}
 }
 
-func (p *caller) exec(must bool, in ...reflect.Value) (err error) {
+func (p *caller) exec(in ...reflect.Value) (err error) {
 	
 	_execer, index := p.execer(in)
 	if index > -1 {
@@ -608,12 +611,12 @@ func (p *caller) exec(must bool, in ...reflect.Value) (err error) {
 	if tx != nil {
 		stmt := tx.getStmt(p.fragment.id)
 		if stmt != nil {
-			return stmt.exec(true, must, ctx, in)
+			return stmt.exec(true, ctx, in)
 		}
 	}
 	
-	if p.fragment.stmt != nil {
-		return p.fragment.stmt.exec(false, must, ctx, in)
+	if p.fragment._stmt != nil {
+		return p.fragment._stmt.exec(false, ctx, in)
 	}
 	
 	var conn *sql.Conn
@@ -625,7 +628,7 @@ func (p *caller) exec(must bool, in ...reflect.Value) (err error) {
 		_execer = conn
 	}
 	defer func() {
-		if conn != nil && p.fragment.stmt == nil {
+		if conn != nil && p.fragment._stmt == nil {
 			err = conn.Close()
 			if err != nil {
 				return
@@ -649,7 +652,7 @@ func (p *caller) exec(must bool, in ...reflect.Value) (err error) {
 		return err
 	}
 	
-	if !dynamic {
+	if p.fragment.stmt && !dynamic {
 		stmt := &Stmt{
 			stmt:   _stmt,
 			exprs:  exprs,
@@ -660,7 +663,7 @@ func (p *caller) exec(must bool, in ...reflect.Value) (err error) {
 		if tx != nil {
 			tx.addStmt(stmt)
 		} else {
-			p.fragment.stmt = stmt
+			p.fragment._stmt = stmt
 		}
 	}
 	
@@ -672,13 +675,13 @@ func (p *caller) exec(must bool, in ...reflect.Value) (err error) {
 		return
 	}
 	
-	return p.parseExecResult(must, res, p.values)
+	return p.parseExecResult(res, p.values)
 }
 
-func (p *caller) parseExecResult(must bool, res sql.Result, values []reflect.Value) error {
+func (p *caller) parseExecResult(res sql.Result, values []reflect.Value) error {
 	// ignore RowsAffected to support database that not support
 	affected, _ := res.RowsAffected()
-	if must && affected != 1 {
+	if p.fragment.must && affected != 1 {
 		return fmt.Errorf("expect affect 1 row, got %d", affected)
 	}
 	return (&execResult{affected: affected, values: values}).scan()
@@ -704,8 +707,8 @@ func (p *caller) query(in ...reflect.Value) (err error) {
 		}
 	}
 	
-	if p.fragment.stmt != nil {
-		return p.fragment.stmt.query(false, ctx, in, p.values)
+	if p.fragment._stmt != nil {
+		return p.fragment._stmt.query(false, ctx, in, p.values)
 	}
 	
 	var conn *sql.Conn
@@ -717,7 +720,7 @@ func (p *caller) query(in ...reflect.Value) (err error) {
 		_queryer = conn
 	}
 	defer func() {
-		if conn != nil && p.fragment.stmt == nil {
+		if conn != nil && p.fragment._stmt == nil {
 			err = conn.Close()
 			if err != nil {
 				return
@@ -741,7 +744,7 @@ func (p *caller) query(in ...reflect.Value) (err error) {
 		return err
 	}
 	
-	if !dynamic {
+	if p.fragment.stmt && !dynamic {
 		stmt := &Stmt{
 			stmt:   _stmt,
 			exprs:  exprs,
@@ -752,7 +755,7 @@ func (p *caller) query(in ...reflect.Value) (err error) {
 		if tx != nil {
 			tx.addStmt(stmt)
 		} else {
-			p.fragment.stmt = stmt
+			p.fragment._stmt = stmt
 		}
 	}
 	

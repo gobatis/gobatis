@@ -68,8 +68,12 @@ func printVars(vars []interface{}) string {
 	}
 	r := "\n"
 	for i, v := range vars {
+		_t := ""
+		if v != nil {
+			_t = reflect.TypeOf(v).String()
+		}
 		r += fmt.Sprintf("   $%d %s (%s) %+v\n",
-			i+1, chalk.Green.Color("=>"), chalk.Yellow.Color(reflect.TypeOf(v).String()), v)
+			i+1, chalk.Green.Color("=>"), chalk.Yellow.Color(_t), v)
 	}
 	return r
 }

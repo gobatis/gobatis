@@ -25,7 +25,7 @@ func (p *Stmt) Close() error {
 	return nil
 }
 
-func (p *Stmt) exec(tx, must bool, ctx context.Context, in []reflect.Value) (err error) {
+func (p *Stmt) exec(tx bool, ctx context.Context, in []reflect.Value) (err error) {
 	
 	parser := newExprParser(in...)
 	for i, v := range p.caller.fragment.in {
@@ -61,7 +61,7 @@ func (p *Stmt) exec(tx, must bool, ctx context.Context, in []reflect.Value) (err
 		return
 	}
 	
-	return p.caller.parseExecResult(must, res, p.caller.values)
+	return p.caller.parseExecResult( res, p.caller.values)
 }
 
 func (p *Stmt) query(tx bool, ctx context.Context, in []reflect.Value, values []reflect.Value) (err error) {

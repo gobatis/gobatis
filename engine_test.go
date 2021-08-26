@@ -99,6 +99,24 @@ func TestStmt(t *testing.T) {
 	require.NoError(t, err)
 	
 	err = stmtMapper.TestInsertStmt2(&test.User{
+		Name: "jack",
+		Age:  2,
+	})
+	require.NoError(t, err)
+	
+	err = stmtMapper.TestInsertStmt2(&test.User{
+		Name: "jack",
+		Age:  3,
+	})
+	require.NoError(t, err)
+	
+	err = stmtMapper.TestInsertStmt2(&test.User{
+		Name: "jack",
+		Age:  4,
+	})
+	require.NoError(t, err)
+	
+	err = stmtMapper.TestInsertStmt2(&test.User{
 		Name: "default",
 		Age:  8,
 	})
@@ -107,6 +125,7 @@ func TestStmt(t *testing.T) {
 	err = stmtMapper.TestInsertStmt2(&test.User{
 		Name: "default",
 		Age:  9,
+		From: "usa",
 	})
 	require.NoError(t, err)
 	

@@ -84,8 +84,8 @@ func (p *Engine) Init(bundle Bundle) (err error) {
 func (p *Engine) Close() {
 	if p.fragmentManager != nil {
 		for _, v := range p.fragmentManager.all() {
-			if v.stmt != nil {
-				err := v.stmt.Close()
+			if v._stmt != nil {
+				err := v._stmt.Close()
 				if err != nil {
 					p.logger.Errorf("[gobatis] close stmt error: %s", err)
 				}
@@ -162,10 +162,15 @@ func (p *Engine) bindMapper(mapper interface{}) (err error) {
 			continue
 		}
 		must := false
+		stmt := false
 		id := rt.Field(i).Name
 		if strings.HasPrefix(id, must_prefix) {
 			id = strings.TrimPrefix(id, must_prefix)
 			must = true
+		}
+		if strings.HasSuffix(id, stmt_suffix) {
+			id = strings.TrimPrefix(id, stmt_suffix)
+			stmt = true
 		}
 		if strings.HasSuffix(id, tx_suffix) {
 			id = strings.TrimSuffix(id, tx_suffix)
@@ -177,10 +182,12 @@ func (p *Engine) bindMapper(mapper interface{}) (err error) {
 			}
 			return fmt.Errorf("%s.%s statement not defined", rt.Name(), id)
 		}
+		m.must = must
+		m.stmt = stmt
 		ft := rv.Field(i).Type()
 		m.checkParameter(ft, rt.Name(), rv.Type().Field(i).Name)
 		m.checkResult(ft, rt.Name(), rv.Type().Field(i).Name)
-		m.proxy(must, rv.Field(i))
+		m.proxy(rv.Field(i))
 	}
 	return
 }
