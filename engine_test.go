@@ -126,7 +126,7 @@ func TestStmtTx(t *testing.T) {
 	err := engine.Init(NewBundle("test"))
 	err = engine.master.Ping()
 	require.NoError(t, err)
-	//engine.SetLogLevel(DebugLevel)
+	engine.SetLogLevel(DebugLevel)
 	defer func() {
 		engine.Close()
 	}()
@@ -170,6 +170,16 @@ func TestStmtTx(t *testing.T) {
 		Age:  9,
 	})
 	require.NoError(t, err)
+	
+	users, err := stmtMapper.TestQueryStmtTx(tx, "tom_tx", 18)
+	require.NoError(t, err)
+	require.True(t, len(users) > 0, len(users))
+	t.Log(users[0].Name, users[0].Age)
+	
+	users, err = stmtMapper.TestQueryStmtTx(tx, "default_tx", 8)
+	require.NoError(t, err)
+	require.True(t, len(users) > 0, len(users))
+	t.Log(users[0].Name, users[0].Age)
 }
 
 func testSelectInsert(t *testing.T, _testMapper *test.TestMapper) {
