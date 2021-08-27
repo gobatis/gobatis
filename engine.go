@@ -182,8 +182,10 @@ func (p *Engine) bindMapper(mapper interface{}) (err error) {
 			}
 			return fmt.Errorf("%s.%s statement not defined", rt.Name(), id)
 		}
+		m = m.fork()
 		m.must = must
 		m.stmt = stmt
+		m.id = rt.Field(i).Name
 		ft := rv.Field(i).Type()
 		m.checkParameter(ft, rt.Name(), rv.Type().Field(i).Name)
 		m.checkResult(ft, rt.Name(), rv.Type().Field(i).Name)

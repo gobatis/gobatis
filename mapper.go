@@ -122,6 +122,20 @@ type fragment struct {
 	_stmt           *Stmt
 }
 
+func (p *fragment) fork() *fragment {
+	n := new(fragment)
+	n.db = p.db
+	n.id = p.id
+	n.node = p.node
+	n.in = p.in
+	n.out = p.out
+	n.resultAttribute = p.resultAttribute
+	n.must = p.must
+	n.stmt = p.stmt
+	n._stmt = p._stmt
+	return n
+}
+
 func (p *fragment) proxy(field reflect.Value) {
 	field.Set(reflect.MakeFunc(field.Type(), func(args []reflect.Value) (results []reflect.Value) {
 		return p.call(field.Type(), args...)
@@ -703,12 +717,20 @@ func (p *caller) query(in ...reflect.Value) (err error) {
 	if tx != nil {
 		stmt := tx.getStmt(p.fragment.id)
 		if stmt != nil {
-			return stmt.query(true, ctx, in, p.values)
+			err = stmt.query(true, ctx, in, p.values)
+			if err != nil {
+				return
+			}
+			return
 		}
 	}
 	
 	if p.fragment._stmt != nil {
-		return p.fragment._stmt.query(false, ctx, in, p.values)
+		err = p.fragment._stmt.query(false, ctx, in, p.values)
+		if err != nil {
+			return
+		}
+		return
 	}
 	
 	var conn *sql.Conn
@@ -767,13 +789,18 @@ func (p *caller) query(in ...reflect.Value) (err error) {
 		return
 	}
 	
-	return p.parseQueryResult(rows, p.values)
+	err = p.parseQueryResult(rows, p.values)
+	if err != nil {
+		return
+	}
+	return
 }
 
 func (p *caller) parseQueryResult(rows *sql.Rows, values []reflect.Value) (err error) {
 	defer func() {
-		err = rows.Close()
-		if err != nil {
+		_err := rows.Close()
+		if _err != nil {
+			p.logger.Errorf("[gobatis] [%s] close rows error: %s", p.fragment.id, err)
 			return
 		}
 	}()

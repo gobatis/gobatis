@@ -61,7 +61,7 @@ func (p *Stmt) exec(tx bool, ctx context.Context, in []reflect.Value) (err error
 		return
 	}
 	
-	return p.caller.parseExecResult( res, p.caller.values)
+	return p.caller.parseExecResult(res, p.caller.values)
 }
 
 func (p *Stmt) query(tx bool, ctx context.Context, in []reflect.Value, values []reflect.Value) (err error) {
@@ -100,5 +100,10 @@ func (p *Stmt) query(tx bool, ctx context.Context, in []reflect.Value, values []
 		return
 	}
 	
-	return p.caller.parseQueryResult(rows, values)
+	err = p.caller.parseQueryResult(rows, values)
+	if err != nil {
+		return
+	}
+	
+	return
 }
