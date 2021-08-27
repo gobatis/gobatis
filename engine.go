@@ -169,7 +169,7 @@ func (p *Engine) bindMapper(mapper interface{}) (err error) {
 			must = true
 		}
 		if strings.HasSuffix(id, stmt_suffix) {
-			id = strings.TrimPrefix(id, stmt_suffix)
+			id = strings.TrimSuffix(id, stmt_suffix)
 			stmt = true
 		}
 		if strings.HasSuffix(id, tx_suffix) {
