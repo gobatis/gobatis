@@ -643,9 +643,8 @@ func (p *caller) exec(in ...reflect.Value) (err error) {
 	}
 	defer func() {
 		if conn != nil && p.fragment._stmt == nil {
-			err = conn.Close()
-			if err != nil {
-				return
+			if _err := conn.Close(); _err != nil {
+				p.logger.Errorf("[gobatis] [%s] close conn error: %s", p.fragment.id, err)
 			}
 		}
 	}()
@@ -743,9 +742,8 @@ func (p *caller) query(in ...reflect.Value) (err error) {
 	}
 	defer func() {
 		if conn != nil && p.fragment._stmt == nil {
-			err = conn.Close()
-			if err != nil {
-				return
+			if _err := conn.Close(); _err != nil {
+				p.logger.Errorf("[gobatis] [%s] close conn error: %s", p.fragment.id, err)
 			}
 		}
 	}()
@@ -788,7 +786,6 @@ func (p *caller) query(in ...reflect.Value) (err error) {
 		p.logger.Errorf("[gobatis] [%s] query error: %v", p.fragment.id, err)
 		return
 	}
-	
 	err = p.parseQueryResult(rows, p.values)
 	if err != nil {
 		return
@@ -798,10 +795,8 @@ func (p *caller) query(in ...reflect.Value) (err error) {
 
 func (p *caller) parseQueryResult(rows *sql.Rows, values []reflect.Value) (err error) {
 	defer func() {
-		_err := rows.Close()
-		if _err != nil {
-			p.logger.Errorf("[gobatis] [%s] close rows error: %s", p.fragment.id, err)
-			return
+		if _err := rows.Close(); _err != nil {
+			p.logger.Errorf("[gobatis] [%s] close rows error: %s", p.fragment.id, _err)
 		}
 	}()
 	
