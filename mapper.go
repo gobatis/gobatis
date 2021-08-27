@@ -657,30 +657,35 @@ func (p *caller) exec(in ...reflect.Value) (err error) {
 	p.logger.Debugf("[gobatis] [%s] exec statement: %s", p.fragment.id, s)
 	p.logger.Debugf("[gobatis] [%s] exec parameter: %s", p.fragment.id, printVars(vars))
 	
-	_stmt, err := _execer.PrepareContext(ctx, s)
-	if err != nil {
-		p.logger.Errorf("[gobatis] [%s] exec statement: %s", p.fragment.id, s)
-		p.logger.Errorf("[gobatis] [%s] exec parameter: %s", p.fragment.id, printVars(vars))
-		p.logger.Errorf("[gobatis] [%s] prepare error: %v", p.fragment.id, err)
-		return err
-	}
-	
-	if p.fragment.stmt && !dynamic {
-		stmt := &Stmt{
-			stmt:   _stmt,
-			exprs:  exprs,
-			sql:    s,
-			conn:   conn,
-			caller: p,
+	var res sql.Result
+	if p.fragment.stmt {
+		var _stmt *sql.Stmt
+		_stmt, err = _execer.PrepareContext(ctx, s)
+		if err != nil {
+			p.logger.Errorf("[gobatis] [%s] exec statement: %s", p.fragment.id, s)
+			p.logger.Errorf("[gobatis] [%s] exec parameter: %s", p.fragment.id, printVars(vars))
+			p.logger.Errorf("[gobatis] [%s] prepare error: %v", p.fragment.id, err)
+			return err
 		}
-		if tx != nil {
-			tx.addStmt(stmt)
-		} else {
-			p.fragment._stmt = stmt
+		
+		if !dynamic {
+			stmt := &Stmt{
+				stmt:   _stmt,
+				exprs:  exprs,
+				sql:    s,
+				conn:   conn,
+				caller: p,
+			}
+			if tx != nil {
+				tx.addStmt(stmt)
+			} else {
+				p.fragment._stmt = stmt
+			}
 		}
+		res, err = _stmt.ExecContext(ctx, vars...)
+	} else {
+		res, err = _execer.ExecContext(ctx, s, vars...)
 	}
-	
-	res, err := _stmt.ExecContext(ctx, vars...)
 	if err != nil {
 		p.logger.Errorf("[gobatis] [%s] exec statement: %s", p.fragment.id, s)
 		p.logger.Errorf("[gobatis] [%s] exec parameter: %s", p.fragment.id, printVars(vars))
@@ -756,30 +761,36 @@ func (p *caller) query(in ...reflect.Value) (err error) {
 	p.logger.Debugf("[gobatis] [%s] query statement: %s", p.fragment.id, s)
 	p.logger.Debugf("[gobatis] [%s] query parameter: [%+v]", p.fragment.id, printVars(vars))
 	
-	_stmt, err := _queryer.PrepareContext(ctx, s)
-	if err != nil {
-		p.logger.Errorf("[gobatis] [%s] exec statement: %s", p.fragment.id, s)
-		p.logger.Errorf("[gobatis] [%s] exec parameter: %s", p.fragment.id, printVars(vars))
-		p.logger.Errorf("[gobatis] [%s] prepare error: %v", p.fragment.id, err)
-		return err
-	}
-	
-	if p.fragment.stmt && !dynamic {
-		stmt := &Stmt{
-			stmt:   _stmt,
-			exprs:  exprs,
-			sql:    s,
-			conn:   conn,
-			caller: p,
+	var rows *sql.Rows
+	if p.fragment.stmt {
+		var _stmt *sql.Stmt
+		_stmt, err = _queryer.PrepareContext(ctx, s)
+		if err != nil {
+			p.logger.Errorf("[gobatis] [%s] exec statement: %s", p.fragment.id, s)
+			p.logger.Errorf("[gobatis] [%s] exec parameter: %s", p.fragment.id, printVars(vars))
+			p.logger.Errorf("[gobatis] [%s] prepare error: %v", p.fragment.id, err)
+			return err
 		}
-		if tx != nil {
-			tx.addStmt(stmt)
-		} else {
-			p.fragment._stmt = stmt
+		
+		if p.fragment.stmt && !dynamic {
+			stmt := &Stmt{
+				stmt:   _stmt,
+				exprs:  exprs,
+				sql:    s,
+				conn:   conn,
+				caller: p,
+			}
+			if tx != nil {
+				tx.addStmt(stmt)
+			} else {
+				p.fragment._stmt = stmt
+			}
 		}
+		
+		rows, err = _stmt.QueryContext(ctx, vars...)
+	} else {
+		rows, err = _queryer.QueryContext(ctx, s, vars...)
 	}
-	
-	rows, err := _stmt.QueryContext(ctx, vars...)
 	if err != nil {
 		p.logger.Errorf("[gobatis] [%s] query statement: %s", p.fragment.id, s)
 		p.logger.Errorf("[gobatis] [%s] query parameter: [%+v]", p.fragment.id, printVars(vars))
