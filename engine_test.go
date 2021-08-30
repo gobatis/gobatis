@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/AlekSi/pointer"
 	"github.com/gobatis/gobatis/test"
+	"github.com/jackc/pgtype"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/require"
 	"os"
@@ -201,6 +202,36 @@ func TestStmtTx(t *testing.T) {
 	t.Log(users[0].Name, users[0].Age)
 }
 
+func TestStringArray(t *testing.T) {
+	engine := NewPostgresql("postgresql://postgres:postgres@127.0.0.1:5432/gobatis?connect_timeout=10&sslmode=disable")
+	err := engine.Init(NewBundle("test"))
+	err = engine.master.Ping()
+	require.NoError(t, err)
+	engine.SetLogLevel(DebugLevel)
+	defer func() {
+		engine.Close()
+	}()
+	m := new(test.StmtMapper)
+	err = engine.BindMapper(m)
+	require.NoError(t, err)
+	
+	tags := pgtype.TextArray{}
+	err = tags.Set([]string{"a", "b"})
+	require.NoError(t, err)
+	err = m.InsertStringArray(&test.User{
+		Id:   0,
+		Name: "tags",
+		Tags: tags,
+	})
+	require.NoError(t, err)
+	
+	//r, err := m.GetStringArray("tags")
+	//require.NoError(t, err)
+	//for _, v := range r.Tags.Elements {
+	//	fmt.Println(v.String)
+	//}
+}
+
 func testSelectInsert(t *testing.T, _testMapper *test.TestMapper) {
 	id, err := _testMapper.SelectInsert(test.Entity{
 		Int8:                     1,
@@ -363,14 +394,14 @@ func testInsert(t *testing.T, _testMapper *test.TestMapper) {
 }
 
 func testSelectRow(t *testing.T, _testMapper *test.TestMapper) {
-	tChar, tText, err := _testMapper.SelectRow(47)
+	tChar, tText, err := _testMapper.SelectRow(950)
 	require.NoError(t, err)
 	require.Equal(t, tChar, "hello")
 	require.Equal(t, tText, "world")
 }
 
 func testSelectRowPointer(t *testing.T, _testMapper *test.TestMapper) {
-	tChar, tText, err := _testMapper.SelectRowPointer(pointer.ToInt(47))
+	tChar, tText, err := _testMapper.SelectRowPointer(pointer.ToInt(950))
 	require.NoError(t, err)
 	require.Equal(t, *tChar, "hello")
 	require.Equal(t, *tText, "world")

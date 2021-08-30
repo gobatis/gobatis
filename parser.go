@@ -982,6 +982,20 @@ type exprParser struct {
 	varIndex    int
 }
 
+func (p *exprParser) realVars() ([]interface{}, error) {
+	for i, v := range p.vars {
+		n, ok := v.(Valuer)
+		if ok {
+			vv, err := n.Value()
+			if err != nil {
+				return nil, err
+			}
+			p.vars[i] = vv
+		}
+	}
+	return p.vars, nil
+}
+
 func (p *exprParser) builtParams() *exprParams {
 	return newExprParams()
 }
@@ -1195,7 +1209,7 @@ func (p *exprParser) ExitNil_(ctx *expr.Nil_Context) {
 	p.coverage.add(ctx)
 }
 
-func (p *exprParser) parseExpression(nodeCtx antlr.ParserRuleContext, expresion string) (result interface{}, err error) {
+func (p *exprParser) parseExpression(nodeCtx antlr.ParserRuleContext, expression string) (result interface{}, err error) {
 	
 	defer func() {
 		e := recover()
@@ -1206,7 +1220,7 @@ func (p *exprParser) parseExpression(nodeCtx antlr.ParserRuleContext, expresion 
 	p.valueStack = newValueStack()
 	p.coverage = newCoverage()
 	
-	parser := initExprParser(expresion)
+	parser := initExprParser(expression)
 	antlr.ParseTreeWalkerDefault.Walk(p, parser.Expressions())
 	
 	if !p.coverage.covered() {

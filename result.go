@@ -123,6 +123,7 @@ func (p *queryResult) scan() (err error) {
 }
 
 func (p *queryResult) reflectRow(columns []string, row []interface{}) error {
+	
 	if p.reflect {
 		if p.values[0].Elem().Kind() == reflect.Slice {
 			return p.reflectStructs(newRowMap(columns, row))
@@ -215,10 +216,12 @@ func (p *queryResult) reflectValue(column string, dest reflect.Value, value inte
 		dt = reflectTypeElem(dt.Elem())
 	}
 	dtv := reflect.New(dt)
+	
 	if dtv.Type().Implements(scannerType) {
 		errs := dtv.MethodByName("Scan").Call([]reflect.Value{reflect.ValueOf(value)})
 		if len(errs) > 0 && errs[0].Interface() != nil {
 			err = errs[0].Interface().(error)
+			return err
 		}
 		return p.set(dv, dtv.Elem().Interface())
 	} else {

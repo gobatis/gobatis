@@ -7,6 +7,7 @@ require (
 	github.com/antlr/antlr4 v0.0.0-20210311221813-5e5b6d35b418
 	github.com/go-sql-driver/mysql v1.5.0
 	github.com/gofrs/uuid v4.0.0+incompatible // indirect
+	github.com/jackc/pgtype v1.7.0
 	github.com/jackc/pgx/v4 v4.11.0
 	github.com/koyeo/_log v0.0.0-20210706034038-00e6a17eb9c0
 	github.com/kr/pretty v0.2.0 // indirect

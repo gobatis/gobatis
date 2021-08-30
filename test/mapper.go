@@ -27,8 +27,10 @@ type TestMapper struct {
 }
 
 type StmtMapper struct {
-	TestInsertStmt  func(user *User) error
-	TestInsertStmt2 func(user *User) error
-	TestQueryStmt   func(name string, age int64) ([]*User, error)
-	TestQueryStmt2   func(name string, age int64) ([]*User, error)
+	TestInsertStmt    func(user *User) error
+	TestInsertStmt2   func(user *User) error
+	TestQueryStmt     func(name string, age int64) ([]*User, error)
+	TestQueryStmt2    func(name string, age int64) ([]*User, error)
+	InsertStringArray func(user *User) (err error)
+	GetStringArray    func(name string) (user *User, err error)
 }

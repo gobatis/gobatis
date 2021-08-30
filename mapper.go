@@ -293,7 +293,10 @@ func (p *fragment) parseStatement(args ...reflect.Value) (sql string, exprs []st
 	p.parseBlocks(parser, p.node, res)
 	
 	sql = res.sql
-	vars = parser.vars
+	vars, err = parser.realVars()
+	if err != nil {
+		return
+	}
 	exprs = parser.exprs
 	dynamic = res.dynamic
 	
