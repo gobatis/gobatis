@@ -235,10 +235,9 @@
         select * from test_entities where id > #{id} and id &lt; 50;
     </select>
 
-    <!--    <insert id="TestInserter" parameter="row">-->
-    <!--        <inserter table="'users'" data="row" item="" index="">-->
-    <!--                <field name="'name'">#{ row.Name }</field>-->
-    <!--        </inserter>-->
-    <!--    </insert>-->
+    <insert id="TestInserter" parameter="row">
+        <inserter table="'users'" row="row">
+        </inserter>
+    </insert>
 
 </mapper>

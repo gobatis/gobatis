@@ -293,7 +293,7 @@ func testCorrectParseExprExpression(t *testing.T, tests []testExpression) {
 			require.NoError(t, err, test, ii, vv)
 		}
 		
-		result, err := _expr.parseExpression(nil, test.Expr)
+		result, _, err := _expr.parseExpression(nil, test.Expr)
 		if test.Err > 0 {
 			require.Error(t, err, test)
 			writeError(t, fmt.Sprintf("test parse expression: %d", i), test, err)

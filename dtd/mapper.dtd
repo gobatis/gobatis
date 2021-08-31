@@ -290,14 +290,15 @@
         <!ELEMENT inserter (#PCDATA | field)*>
         <!ATTLIST inserter
                 table CDATA #REQUIRED
-                data CDATA #REQUIRED
-                index CDATA #IMPLIED
+                row CDATA #IMPLIED
+                rows CDATA #IMPLIED
                 item CDATA #IMPLIED
+                index CDATA #IMPLIED
                 >
 
         <!ELEMENT field (#PCDATA)>
         <!ATTLIST field
-                name CDATA #REQUIRED
+                name CDATA #IMPLIED
                 test CDATA #IMPLIED
                 >
 

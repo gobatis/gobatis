@@ -335,7 +335,7 @@ func (p *fragment) parseSql(parser *exprParser, node *xmlNode, res *psr) {
 			}
 		} else if chars[i] == 125 {
 			_expr := string(chars[from:i])
-			r, err := parser.parseExpression(node.ctx, _expr)
+			r, _, err := parser.parseExpression(node.ctx, _expr)
 			if err != nil {
 				panic(err)
 			}
@@ -388,7 +388,7 @@ func (p *fragment) parseBlock(parser *exprParser, node *xmlNode, res *psr) {
 }
 
 func (p *fragment) parseTest(parser *exprParser, node *xmlNode, res *psr) bool {
-	v, err := parser.parseExpression(node.ctx, node.GetAttribute(dtd.TEST))
+	v,_, err := parser.parseExpression(node.ctx, node.GetAttribute(dtd.TEST))
 	if err != nil {
 		throw(p.node.File, p.node.ctx, parasFragmentErr).with(err)
 	}
