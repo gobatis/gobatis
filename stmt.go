@@ -38,7 +38,7 @@ func (p *Stmt) exec(tx bool, ctx context.Context, in []reflect.Value) (err error
 	vars := make([]interface{}, 0)
 	for _, v := range p.exprs {
 		var _var interface{}
-		_var, err = parser.parseExpression(p.caller.fragment.node.ctx, v)
+		_var, _, err = parser.parseExpression(p.caller.fragment.node.ctx, v)
 		if err != nil {
 			return err
 		}
@@ -77,7 +77,7 @@ func (p *Stmt) query(tx bool, ctx context.Context, in []reflect.Value, values []
 	vars := make([]interface{}, 0)
 	for _, v := range p.exprs {
 		var _var interface{}
-		_var, err = parser.parseExpression(p.caller.fragment.node.ctx, v)
+		_var, _, err = parser.parseExpression(p.caller.fragment.node.ctx, v)
 		if err != nil {
 			return err
 		}

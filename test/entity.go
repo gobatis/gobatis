@@ -2,6 +2,7 @@ package test
 
 import (
 	"database/sql"
+	"github.com/jackc/pgtype"
 	"github.com/shopspring/decimal"
 	"time"
 )
@@ -56,8 +57,9 @@ type EntityPointer struct {
 }
 
 type User struct {
-	Id   int64  `sql:"id"`
-	Name string `sql:"name"`
-	Age  int    `sql:"age"`
-	From string `sql:"from"`
+	Id   int64            `sql:"id"`
+	Name string           `sql:"name"`
+	Age  int              `sql:"age"`
+	From string           `sql:"from"`
+	Tags pgtype.TextArray `sql:"tags"`
 }

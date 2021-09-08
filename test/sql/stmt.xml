@@ -12,16 +12,12 @@
 
     <insert id="TestInsertStmt2" parameter="user">
         insert into users(
-        <if test="user.Name == 'jack' and (user.Age == 3 or user.Age == 4)">
-            name,
-        </if>
+        name,
         "from",
         age
         )
         values(
-        <if test="user.Name == 'jack' and (user.Age == 3 or user.Age == 4)">
-            '${user.Name}',
-        </if>
+        '${user.Name}',
         #{ user.From == 'usa' ? 'USA' : nil },
         #{user.Age}
         )
@@ -33,5 +29,18 @@
 
     <select id="TestQueryStmt2" parameter="name,age">
         select * from users where name = ${name} and age = #{age};
+    </select>
+
+    <insert id="InsertStringArray" parameter="user">
+        insert into users(name,age,tags)
+        values(
+        #{user.Name},
+        #{user.Age},
+        #{user.Tags}
+        )
+    </insert>
+
+    <select id="GetStringArray" parameter="name">
+        select * from users where name = #{ name }
     </select>
 </mapper>

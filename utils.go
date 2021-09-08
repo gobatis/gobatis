@@ -2,6 +2,7 @@ package gobatis
 
 import (
 	"database/sql"
+	"database/sql/driver"
 	"fmt"
 	"github.com/ttacon/chalk"
 	"reflect"
@@ -9,10 +10,16 @@ import (
 
 var errorType reflect.Type
 var scannerType reflect.Type
+var valuerType reflect.Type
+
+type Valuer interface {
+	Value() (driver.Value, error)
+}
 
 func init() {
 	errorType = reflect.TypeOf((*error)(nil)).Elem()
 	scannerType = reflect.TypeOf((*sql.Scanner)(nil)).Elem()
+	valuerType = reflect.TypeOf((*Valuer)(nil)).Elem()
 }
 
 func isContext(v reflect.Type) bool {

@@ -980,6 +980,21 @@ type exprParser struct {
 	vars        []interface{}
 	exprs       []string
 	varIndex    int
+	static      bool
+}
+
+func (p *exprParser) realVars() ([]interface{}, error) {
+	for i, v := range p.vars {
+		n, ok := v.(Valuer)
+		if ok {
+			vv, err := n.Value()
+			if err != nil {
+				return nil, err
+			}
+			p.vars[i] = vv
+		}
+	}
+	return p.vars, nil
 }
 
 func (p *exprParser) builtParams() *exprParams {
@@ -1024,10 +1039,12 @@ func (p *exprParser) ExitExpression(ctx *expr.ExpressionContext) {
 			p.relationCalc(left, right, ctx, ctx.GetRel_op())
 			p.coverage.add(ctx)
 		} else if ctx.Logical() != nil {
+			p.static = false
 			p.logicCalc(left, right, ctx, ctx.Logical().GetStart())
 			p.coverage.add(ctx)
 		}
 	} else if ctx.GetTertiary() != nil {
+		p.static = false
 		condition, left, right, err := p.popTertiaryOperands()
 		if err != nil {
 			p.throw(ctx, popTertiaryOperandsErr).with(err)
@@ -1038,6 +1055,7 @@ func (p *exprParser) ExitExpression(ctx *expr.ExpressionContext) {
 }
 
 func (p *exprParser) ExitVar_(ctx *expr.Var_Context) {
+	p.static = false
 	alias := ctx.IDENTIFIER().GetText()
 	var val exprValue
 	if _builtin.is(alias) {
@@ -1195,7 +1213,8 @@ func (p *exprParser) ExitNil_(ctx *expr.Nil_Context) {
 	p.coverage.add(ctx)
 }
 
-func (p *exprParser) parseExpression(nodeCtx antlr.ParserRuleContext, expresion string) (result interface{}, err error) {
+func (p *exprParser) parseExpression(nodeCtx antlr.ParserRuleContext,
+	expression string) (result interface{}, static bool, err error) {
 	
 	defer func() {
 		e := recover()
@@ -1203,10 +1222,11 @@ func (p *exprParser) parseExpression(nodeCtx antlr.ParserRuleContext, expresion 
 	}()
 	
 	p.nodeCtx = nodeCtx
+	p.static = false
 	p.valueStack = newValueStack()
 	p.coverage = newCoverage()
 	
-	parser := initExprParser(expresion)
+	parser := initExprParser(expression)
 	antlr.ParseTreeWalkerDefault.Walk(p, parser.Expressions())
 	
 	if !p.coverage.covered() {
@@ -1224,6 +1244,7 @@ func (p *exprParser) parseExpression(nodeCtx antlr.ParserRuleContext, expresion 
 		p.throw(nil, popResultErr).with(err)
 	}
 	result = v.value
+	static = p.static
 	
 	return
 }
