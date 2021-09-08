@@ -75,7 +75,8 @@ func TestEngine(t *testing.T) {
 
 func TestStmt(t *testing.T) {
 	engine := NewPostgresql("postgresql://postgres:postgres@127.0.0.1:5432/gobatis?connect_timeout=10&sslmode=disable")
-	err := engine.Init(NewBundle("test"))
+	err := engine.Init(NewBundle("test/sql"))
+	require.NoError(t, err)
 	err = engine.master.Ping()
 	require.NoError(t, err)
 	engine.SetLogLevel(DebugLevel)
@@ -143,7 +144,8 @@ func TestStmt(t *testing.T) {
 
 func TestStmtTx(t *testing.T) {
 	engine := NewPostgresql("postgresql://postgres:postgres@127.0.0.1:5432/gobatis?connect_timeout=10&sslmode=disable")
-	err := engine.Init(NewBundle("test"))
+	err := engine.Init(NewBundle("test/sql"))
+	require.NoError(t, err)
 	err = engine.master.Ping()
 	require.NoError(t, err)
 	engine.SetLogLevel(DebugLevel)
