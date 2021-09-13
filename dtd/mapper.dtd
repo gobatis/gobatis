@@ -289,17 +289,35 @@
 
         <!ELEMENT inserter (#PCDATA | field)*>
         <!ATTLIST inserter
-                table CDATA #REQUIRED
-                row CDATA #IMPLIED
-                rows CDATA #IMPLIED
-                item CDATA #IMPLIED
-                index CDATA #IMPLIED
+                table CDATA #IMPLIED
+                :table CDATA #IMPLIED
+                :row CDATA #IMPLIED
+                :rows CDATA #IMPLIED
+                :item CDATA #IMPLIED
+                :index CDATA #IMPLIED
                 >
 
-        <!ELEMENT field (#PCDATA)>
+        <!ELEMENT field (#PCDATA | name | value)*>
         <!ATTLIST field
-                name CDATA #IMPLIED
                 test CDATA #IMPLIED
+                name CDATA #IMPLIED
+                :name CDATA #IMPLIED
+                value CDATA #IMPLIED
+                :value CDATA #IMPLIED
+                >
+
+        <!ELEMENT name (#PCDATA)>
+        <!ATTLIST name
+                test CDATA #IMPLIED
+                name CDATA #IMPLIED
+                value CDATA #IMPLIED
+                >
+
+        <!ELEMENT value (#PCDATA)>
+        <!ATTLIST value
+                test CDATA #IMPLIED
+                name CDATA #IMPLIED
+                value CDATA #IMPLIED
                 >
 
         <!ELEMENT query (#PCDATA | include | trim | where | set | foreach | choose | if | bind)*>
