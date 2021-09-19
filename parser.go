@@ -37,13 +37,11 @@ func parseConfig(engine *Engine, file, content string) (err error) {
 	return
 }
 
-func parseMapper(engine *Engine, file, content string) (err error) {
-	
+func parseMapper(engine *Engine, file, content string) (fs []*fragment, err error) {
 	defer func() {
 		e := recover()
 		err = castRecoverError(file, e)
 	}()
-	
 	l := &xmlParser{
 		file:          file,
 		stack:         newXMLStack(),
@@ -61,6 +59,7 @@ func parseMapper(engine *Engine, file, content string) (err error) {
 		engine.logger.Warnf("empty mapperCache file: %s", file)
 		return
 	}
+	var f *fragment
 	for _, v := range l.rootNode.Nodes {
 		switch v.Name {
 		case dtd.SELECT, dtd.INSERT, dtd.DELETE, dtd.UPDATE, dtd.SQL:
@@ -68,21 +67,14 @@ func parseMapper(engine *Engine, file, content string) (err error) {
 			if id == "" {
 				throw(file, v.ctx, parseMapperErr).format("fragment: %s miss id", v.Name)
 			}
-			parseFragment(engine, engine.Master(), file, v.ctx, id, v)
+			f, err = parseFragment(file, id, v)
+			if err != nil {
+				throw(file, v.ctx, parseFragmentErr).with(err)
+			}
+			fs = append(fs, f)
 		}
 	}
-	return
-}
-
-func parseFragment(engine *Engine, db *DB, file string, ctx antlr.ParserRuleContext, id string, node *xmlNode) {
-	m, err := makeFragment(db, file, id, node)
-	if err != nil {
-		return
-	}
-	err = engine.fragmentManager.add(m)
-	if err != nil {
-		throw(file, ctx, parseMapperErr).with(err)
-	}
+	
 	return
 }
 
@@ -110,24 +102,23 @@ func initExprParser(tokens string) (parser *expr.ExprParser) {
 	return
 }
 
-func makeFragment(db *DB, file, id string, node *xmlNode) (frag *fragment, err error) {
+func parseFragment(file, id string, node *xmlNode) (f *fragment, err error) {
 	defer func() {
 		e := recover()
 		err = castRecoverError(file, e)
 	}()
 	
-	frag = &fragment{
-		db:   db,
+	f = &fragment{
 		id:   id,
 		node: node,
 	}
-	frag.setResultAttribute()
+	f.setResultAttribute()
 	
 	if node.HasAttribute(dtd.PARAMETER) {
-		frag.in = frag.parseParams(node.GetAttribute(dtd.PARAMETER))
+		f.in = f.parseParams(node.GetAttribute(dtd.PARAMETER))
 	}
 	if node.HasAttribute(dtd.RESULT) {
-		frag.out = frag.parseParams(node.GetAttribute(dtd.RESULT))
+		f.out = f.parseParams(node.GetAttribute(dtd.RESULT))
 	}
 	return
 }

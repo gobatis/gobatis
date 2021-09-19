@@ -36,6 +36,8 @@ const (
 	checkParameterErr
 	checkResultErr
 	parseMapperErr
+	registerFragmentErr
+	parseFragmentErr
 	validateXMLNodeErr
 	parasFragmentErr
 	callerErr

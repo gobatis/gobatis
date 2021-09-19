@@ -402,7 +402,7 @@ func (p *fragment) parseBlock(parser *exprParser, node *xmlNode, res *psr) {
 }
 
 func (p *fragment) parseTest(parser *exprParser, node *xmlNode, res *psr) bool {
-	v,_, err := parser.parseExpression(node.ctx, node.GetAttribute(dtd.TEST))
+	v, _, err := parser.parseExpression(node.ctx, node.GetAttribute(dtd.TEST))
 	if err != nil {
 		throw(p.node.File, p.node.ctx, parasFragmentErr).with(err)
 	}

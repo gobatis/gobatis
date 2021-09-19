@@ -242,6 +242,7 @@ func (p *Engine) parseMappers() (err error) {
 	if err != nil {
 		return
 	}
+	var fs []*fragment
 	for _, v := range files {
 		var bs []byte
 		bs, err = p.readBundleFile(v)
@@ -249,12 +250,25 @@ func (p *Engine) parseMappers() (err error) {
 			return
 		}
 		p.logger.Infof("[gobatis] register fragment: %s.xml", v)
-		err = parseMapper(p, v, string(bs))
+		fs, err = parseMapper(p, v, string(bs))
 		if err != nil {
 			return
 		}
+		p.registerMapper(fs)
 	}
+	
 	return
+}
+
+func (p *Engine) registerMapper(fs []*fragment) {
+	var err error
+	for _, v := range fs {
+		v.db = p.Master()
+		err = p.fragmentManager.add(v)
+		if err != nil {
+			throw(v.node.File, v.node.ctx, registerFragmentErr).with(err)
+		}
+	}
 }
 
 func (p *Engine) walkMappers(root string) (files []string, err error) {
@@ -283,5 +297,3 @@ func (p *Engine) walkMappers(root string) (files []string, err error) {
 	}
 	return
 }
-
-
