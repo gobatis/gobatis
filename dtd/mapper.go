@@ -196,8 +196,8 @@ var Case = &Element{
 		DISCRIMINATOR: AT_MOST_ONCE,
 	},
 	Attributes: map[string]int{
-		VALUE:       REQUIRED,
-		RESULT_MAP:  IMPLIED,
+		VALUE:      REQUIRED,
+		RESULT_MAP: IMPLIED,
 		//RESULT_TYPE: IMPLIED,
 	},
 }
@@ -213,21 +213,22 @@ var TypeAlias = &Element{
 var Select = &Element{
 	Name: SELECT,
 	Nodes: map[string]int{
-		PCDATA:  ANY_TIMES,
-		INCLUDE: ANY_TIMES,
-		TRIM:    ANY_TIMES,
-		WHERE:   ANY_TIMES,
-		SET:     ANY_TIMES,
-		FOREACH: ANY_TIMES,
-		CHOOSE:  ANY_TIMES,
-		IF:      ANY_TIMES,
-		BIND:    ANY_TIMES,
+		PCDATA:   ANY_TIMES,
+		INCLUDE:  ANY_TIMES,
+		TRIM:     ANY_TIMES,
+		WHERE:    ANY_TIMES,
+		SET:      ANY_TIMES,
+		FOREACH:  ANY_TIMES,
+		CHOOSE:   ANY_TIMES,
+		IF:       ANY_TIMES,
+		BIND:     ANY_TIMES,
+		INSERTER: AT_MOST_ONCE,
 	},
 	Attributes: map[string]int{
-		ID:              REQUIRED,
-		PARAMETER_MAP:   IMPLIED,
-		PARAMETER:       IMPLIED,
-		RESULT_MAP:      IMPLIED,
+		ID:            REQUIRED,
+		PARAMETER_MAP: IMPLIED,
+		PARAMETER:     IMPLIED,
+		RESULT_MAP:    IMPLIED,
 		//RESULT_TYPE:     IMPLIED,
 		RESULT:          IMPLIED,
 		RESULT_SET_TYPE: IMPLIED,
@@ -256,6 +257,7 @@ var Insert = &Element{
 		CHOOSE:     ANY_TIMES,
 		IF:         ANY_TIMES,
 		BIND:       ANY_TIMES,
+		INSERTER:   AT_MOST_ONCE,
 	},
 	Attributes: map[string]int{
 		ID:                REQUIRED,
@@ -346,6 +348,13 @@ var Delete = &Element{
 		STATEMENT_TYPE: IMPLIED,
 		DATABASE_ID:    IMPLIED,
 		LANG:           IMPLIED,
+	},
+}
+
+var Inserter = &Element{
+	Name: INSERTER,
+	Nodes: map[string]int{
+		FIELD: AT_LEAST_ONCE,
 	},
 }
 

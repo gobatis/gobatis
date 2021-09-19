@@ -68,8 +68,20 @@ func parseMapper(engine *Engine, file, content string) (err error) {
 			if id == "" {
 				throw(file, v.ctx, parseMapperErr).format("fragment: %s miss id", v.Name)
 			}
-			engine.addFragment(file, v.ctx, id, v)
+			parseFragment(engine, engine.Master(), file, v.ctx, id, v)
 		}
+	}
+	return
+}
+
+func parseFragment(engine *Engine, db *DB, file string, ctx antlr.ParserRuleContext, id string, node *xmlNode) {
+	m, err := makeFragment(db, file, id, node)
+	if err != nil {
+		return
+	}
+	err = engine.fragmentManager.add(m)
+	if err != nil {
+		throw(file, ctx, parseMapperErr).with(err)
 	}
 	return
 }
@@ -98,8 +110,7 @@ func initExprParser(tokens string) (parser *expr.ExprParser) {
 	return
 }
 
-func parseFragment(db *DB, file, id string, node *xmlNode) (frag *fragment, err error) {
-	
+func makeFragment(db *DB, file, id string, node *xmlNode) (frag *fragment, err error) {
 	defer func() {
 		e := recover()
 		err = castRecoverError(file, e)
@@ -110,7 +121,6 @@ func parseFragment(db *DB, file, id string, node *xmlNode) (frag *fragment, err 
 		id:   id,
 		node: node,
 	}
-	
 	frag.setResultAttribute()
 	
 	if node.HasAttribute(dtd.PARAMETER) {

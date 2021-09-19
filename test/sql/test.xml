@@ -236,9 +236,9 @@
     </select>
 
     <insert id="TestInserter" parameter="row">
-        <inserter table="users" :row="row">
-            <field name="name">#{row.Name}</field>
+        <inserter table="'users'" data="rows" item="row">
+            <field name="*"/>
+            <field name="'age'">#{row.Name}</field>
         </inserter>
     </insert>
-
 </mapper>

@@ -2,7 +2,6 @@ package gobatis
 
 import (
 	"fmt"
-	"github.com/antlr/antlr4/runtime/Go/antlr"
 	"github.com/gobatis/gobatis/driver/mysql"
 	"github.com/gobatis/gobatis/driver/postgresql"
 	"github.com/koyeo/_log"
@@ -185,6 +184,7 @@ func (p *Engine) bindMapper(mapper interface{}) (err error) {
 		m = m.fork()
 		m.must = must
 		m.stmt = stmt
+		// use origin name as id
 		m.id = rt.Field(i).Name
 		ft := rv.Field(i).Type()
 		m.checkParameter(ft, rt.Name(), rv.Type().Field(i).Name)
@@ -284,15 +284,4 @@ func (p *Engine) walkMappers(root string) (files []string, err error) {
 	return
 }
 
-func (p *Engine) addFragment(file string, ctx antlr.ParserRuleContext, id string, node *xmlNode) {
-	
-	m, err := parseFragment(p.master, file, id, node)
-	if err != nil {
-		return
-	}
-	err = p.fragmentManager.add(m)
-	if err != nil {
-		throw(file, ctx, parseMapperErr).with(err)
-	}
-	return
-}
+

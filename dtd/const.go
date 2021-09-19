@@ -128,4 +128,6 @@ const (
 	WHEN              = "when"
 	OTHERWISE         = "otherwise"
 	TEST              = "test"
+	INSERTER          = "inserter"
+	FIELD             = "field"
 )
