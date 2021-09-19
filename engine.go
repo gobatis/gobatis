@@ -250,7 +250,7 @@ func (p *Engine) parseMappers() (err error) {
 			return
 		}
 		p.logger.Infof("[gobatis] register fragment: %s.xml", v)
-		fs, err = parseMapper(p, v, string(bs))
+		fs, err = parseMapper( v, string(bs))
 		if err != nil {
 			return
 		}

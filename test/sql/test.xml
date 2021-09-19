@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//gobatis.co//DTD Mapper 1.0//EN" "gobatis.co/dtd/mapper.dtd">
-
 <mapper>
     <select id="SelectInsert" parameter="entity:struct" result="id">
         insert into test_entities(
@@ -235,10 +234,10 @@
         select * from test_entities where id > #{id} and id &lt; 50;
     </select>
 
-    <insert id="TestInserter" parameter="row">
-        <inserter table="'users'" data="rows" item="row">
-            <field name="*"/>
-            <field name="'age'">#{row.Name}</field>
-        </inserter>
-    </insert>
+<!--    <insert id="TestInserter" parameter="row">-->
+    <!--        <inserter table="'users'" data="rows" item="row">-->
+    <!--            <field name="*"/>-->
+    <!--            <field name="'age'">#{row.Name}</field>-->
+    <!--        </inserter>-->
+    <!--    </insert>-->
 </mapper>

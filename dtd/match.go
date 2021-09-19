@@ -116,9 +116,13 @@ func MapperElement(name string) (elem *Element, err error) {
 		elem = Otherwise
 	case IF:
 		elem = If
+	case INSERTER:
+		elem = Inserter
+	case FIELD:
+		elem = Field
 	default:
 		err = fmt.Errorf("not match %s dtd element", name)
 	}
-
+	
 	return
 }

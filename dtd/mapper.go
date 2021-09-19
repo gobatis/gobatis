@@ -358,6 +358,10 @@ var Inserter = &Element{
 	},
 }
 
+var Field = &Element{
+	Name: FIELD,
+}
+
 var Include = &Element{
 	Name: INCLUDE,
 	Nodes: map[string]int{

@@ -37,7 +37,7 @@ func parseConfig(engine *Engine, file, content string) (err error) {
 	return
 }
 
-func parseMapper(engine *Engine, file, content string) (fs []*fragment, err error) {
+func parseMapper(file, content string) (fs []*fragment, err error) {
 	defer func() {
 		e := recover()
 		err = castRecoverError(file, e)
@@ -54,9 +54,7 @@ func parseMapper(engine *Engine, file, content string) (fs []*fragment, err erro
 		throw(file, nil, parseCoveredErr).
 			format("parse mapper token not covered: %d/%d", l.coverage.len(), l.coverage.total)
 	}
-	
 	if l.rootNode == nil {
-		engine.logger.Warnf("empty mapperCache file: %s", file)
 		return
 	}
 	var f *fragment
@@ -74,7 +72,6 @@ func parseMapper(engine *Engine, file, content string) (fs []*fragment, err erro
 			fs = append(fs, f)
 		}
 	}
-	
 	return
 }
 
