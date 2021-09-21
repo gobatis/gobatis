@@ -341,6 +341,8 @@ func (p *fragment) parseBlock(parser *exprParser, node *xmlNode, s *sentence) {
 			p.parseTrim(parser, node, s)
 		case dtd.SET:
 			p.parseSet(parser, node, s)
+		case dtd.INSERTER:
+			p.parseInserter(parser, node, s)
 		}
 	}
 }
@@ -516,4 +518,26 @@ func (p *fragment) parseForeachChild(parser *exprParser, node *xmlNode, frags *[
 		r += br.sql
 	}
 	*frags = append(*frags, r)
+}
+
+func (p *fragment) parseInserter(parser *exprParser, node *xmlNode, s *sentence) {
+	
+	var (
+		table interface{}
+		err   error
+		//dynamic bool
+	)
+	table, _, err = parser.parseExpression(node.ctx, node.GetAttribute(dtd.TABLE))
+	if err != nil {
+		throw(p.node.File, node.ctx, parseInserterErr).with(err)
+	}
+	
+	s.sql += fmt.Sprintf("inserter %v", table)
+	
+	for _, v := range node.Nodes {
+		switch v.Name {
+		case dtd.FIELD:
+			fmt.Println(v.GetAttribute(dtd.NAME))
+		}
+	}
 }

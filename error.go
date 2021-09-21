@@ -44,6 +44,7 @@ const (
 	syntaxErr
 	resultAttributeConflictErr
 	castBoolErr
+	parseInserterErr
 )
 
 func throw(file string, ctx antlr.ParserRuleContext, code int) *_error {
