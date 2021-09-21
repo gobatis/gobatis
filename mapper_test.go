@@ -56,7 +56,7 @@ var testParseMappersCases = []testParseMapperCase{
 	{
 		definition: `
 		<insert id="TestInserter" parameter="row">
-			<inserter table="'users'" data="rows" item="row">
+			<inserter table="'users'" data="row">
 				<field name="*"/>
 				<field name="'age'">#{row.Name}</field>
 			</inserter>

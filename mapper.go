@@ -444,8 +444,10 @@ func (p *fragment) parseForeach(parser *exprParser, node *xmlNode, res *sentence
 	} else {
 		item, slice = handleSlice(item)
 	}
+	
 	indexParam := &param{name: index, _type: reflect.Interface.String(), slice: false}
 	itemParam := &param{name: item, _type: reflect.Interface.String(), slice: slice}
+	
 	open := node.GetAttribute(dtd.OPEN)
 	_close := node.GetAttribute(dtd.CLOSE)
 	separator := node.GetAttribute(dtd.SEPARATOR)
@@ -533,6 +535,8 @@ func (p *fragment) parseInserter(parser *exprParser, node *xmlNode, s *sentence)
 	}
 	
 	s.sql += fmt.Sprintf("inserter %v", table)
+	
+	fmt.Println(parser.paramsStack.getVar("row"))
 	
 	for _, v := range node.Nodes {
 		switch v.Name {
