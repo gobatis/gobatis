@@ -1,8 +1,6 @@
 package gobatis
 
 import (
-	"context"
-	"database/sql"
 	"fmt"
 	"github.com/gobatis/gobatis/cast"
 	"github.com/gobatis/gobatis/dtd"
@@ -10,7 +8,6 @@ import (
 	"regexp"
 	"strings"
 	"sync"
-	"time"
 )
 
 const (
@@ -86,22 +83,12 @@ func (p *fragmentManager) get(id string) (m *fragment, ok bool) {
 	return
 }
 
-type execer interface {
-	ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
-	PrepareContext(ctx context.Context, query string) (*sql.Stmt, error)
-}
-
-type queryer interface {
-	QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error)
-	PrepareContext(ctx context.Context, query string) (*sql.Stmt, error)
-}
-
-type psr struct {
+type raw struct {
 	sql     string
 	dynamic bool
 }
 
-func (p *psr) merge(s ...*psr) {
+func (p *raw) merge(s ...*raw) {
 	for _, v := range s {
 		p.sql += " " + strings.TrimSpace(v.sql)
 		if !p.dynamic && v.dynamic {
@@ -136,60 +123,31 @@ func (p *fragment) fork() *fragment {
 	return n
 }
 
+func (p *fragment) newCaller(t reflect.Type, in ...reflect.Value) (c *caller) {
+	c = &caller{fragment: p, args: in, logger: p.db.logger, t: t}
+	for i := 0; i < t.NumOut()-1; i++ {
+		if t.Out(i).Kind() == reflect.Ptr {
+			c.values = append(c.values, reflect.New(t.Out(i).Elem()))
+		} else {
+			c.values = append(c.values, reflect.New(t.Out(i)))
+		}
+	}
+	return
+}
+
 func (p *fragment) proxy(field reflect.Value) {
 	field.Set(reflect.MakeFunc(field.Type(), func(args []reflect.Value) (results []reflect.Value) {
-		return p.call(field.Type(), args...)
+		return p.newCaller(field.Type(), args...).call().values
 	}))
 }
 
-func (p *fragment) call(_type reflect.Type, in ...reflect.Value) []reflect.Value {
-	
-	c := &caller{fragment: p, args: in, logger: p.db.logger}
-	for i := 0; i < _type.NumOut()-1; i++ {
-		if _type.Out(i).Kind() == reflect.Ptr {
-			c.values = append(c.values, reflect.New(_type.Out(i).Elem()))
-		} else {
-			c.values = append(c.values, reflect.New(_type.Out(i)))
-		}
-	}
-	
-	err := c.call()
-	if err != nil {
-		if err == sql.ErrNoRows {
-			if p.must {
-				c.values = append(c.values, reflect.ValueOf(err))
-			} else {
-				c.values = append(c.values, reflect.Zero(errorType))
-			}
-		} else {
-			c.values = append(c.values, reflect.ValueOf(err))
-		}
-	} else {
-		c.values = append(c.values, reflect.Zero(errorType))
-	}
-	
-	for i := 0; i < _type.NumOut()-1; i++ {
-		if _type.Out(i).Kind() == reflect.Ptr {
-			if err == sql.ErrNoRows {
-				c.values[i] = reflect.Zero(c.values[i].Type())
-			}
-		} else {
-			c.values[i] = c.values[i].Elem()
-		}
-	}
-	
-	return c.values
-}
-
 func (p *fragment) setResultAttribute() {
-	
 	if p.node.Name != dtd.SELECT &&
 		p.node.Name != dtd.INSERT &&
 		p.node.Name != dtd.UPDATE &&
 		p.node.Name != dtd.DELETE {
 		return
 	}
-	
 	if p.node.HasAttribute(dtd.RESULT) {
 		p.resultAttribute = result_result
 	} else if p.node.HasAttribute(dtd.RESULT_MAP) {
@@ -303,7 +261,7 @@ func (p *fragment) parseStatement(args ...reflect.Value) (sql string, exprs []st
 			throw(p.node.File, p.node.ctx, parasFragmentErr).with(err)
 		}
 	}
-	res := new(psr)
+	res := new(raw)
 	p.parseBlocks(parser, p.node, res)
 	
 	sql = res.sql
@@ -326,7 +284,7 @@ func (p *fragment) trimPrefixOverride(sql, prefix string) (r string, err error) 
 	return
 }
 
-func (p *fragment) parseSql(parser *exprParser, node *xmlNode, res *psr) {
+func (p *fragment) parseSql(parser *exprParser, node *xmlNode, res *raw) {
 	chars := []rune(node.Text)
 	begin := false
 	inject := false
@@ -369,21 +327,21 @@ func (p *fragment) parseSql(parser *exprParser, node *xmlNode, res *psr) {
 	res.sql += s
 }
 
-func (p *fragment) parseBlocks(parser *exprParser, node *xmlNode, res *psr) {
+func (p *fragment) parseBlocks(parser *exprParser, node *xmlNode, res *raw) {
 	for _, child := range node.Nodes {
 		p.parseBlock(parser, child, res)
 	}
 	return
 }
 
-func (p *fragment) parseBlock(parser *exprParser, node *xmlNode, res *psr) {
+func (p *fragment) parseBlock(parser *exprParser, node *xmlNode, res *raw) {
 	if node.textOnly {
 		p.parseSql(parser, node, res)
 	} else {
 		res.dynamic = true
 		switch node.Name {
 		case dtd.IF:
-			r := new(psr)
+			r := new(raw)
 			if p.parseTest(parser, node, r) {
 				res.merge(r)
 			}
@@ -401,7 +359,7 @@ func (p *fragment) parseBlock(parser *exprParser, node *xmlNode, res *psr) {
 	}
 }
 
-func (p *fragment) parseTest(parser *exprParser, node *xmlNode, res *psr) bool {
+func (p *fragment) parseTest(parser *exprParser, node *xmlNode, res *raw) bool {
 	v, _, err := parser.parseExpression(node.ctx, node.GetAttribute(dtd.TEST))
 	if err != nil {
 		throw(p.node.File, p.node.ctx, parasFragmentErr).with(err)
@@ -418,11 +376,11 @@ func (p *fragment) parseTest(parser *exprParser, node *xmlNode, res *psr) bool {
 	return true
 }
 
-func (p *fragment) parseWhere(parser *exprParser, node *xmlNode, res *psr) {
+func (p *fragment) parseWhere(parser *exprParser, node *xmlNode, res *raw) {
 	p.trimPrefixOverrides(parser, node, res, dtd.WHERE, "AND |OR ")
 }
 
-func (p *fragment) parseChoose(parser *exprParser, node *xmlNode, res *psr) {
+func (p *fragment) parseChoose(parser *exprParser, node *xmlNode, res *raw) {
 	var pass bool
 	var oc int
 	for _, child := range node.Nodes {
@@ -431,7 +389,7 @@ func (p *fragment) parseChoose(parser *exprParser, node *xmlNode, res *psr) {
 		}
 		switch child.Name {
 		case dtd.WHEN:
-			r := new(psr)
+			r := new(raw)
 			if p.parseTest(parser, child, r) {
 				res.merge(r)
 				return
@@ -456,12 +414,12 @@ func (p *fragment) parseChoose(parser *exprParser, node *xmlNode, res *psr) {
 	}
 }
 
-func (p *fragment) parseTrim(parser *exprParser, node *xmlNode, res *psr) {
+func (p *fragment) parseTrim(parser *exprParser, node *xmlNode, res *raw) {
 	p.trimPrefixOverrides(parser, node, res, node.GetAttribute(dtd.PREFIX), node.GetAttribute(dtd.PREFIX_OVERRIDES))
 }
 
-func (p *fragment) trimPrefixOverrides(parser *exprParser, node *xmlNode, res *psr, tag, prefixes string) {
-	wr := new(psr)
+func (p *fragment) trimPrefixOverrides(parser *exprParser, node *xmlNode, res *raw, tag, prefixes string) {
+	wr := new(raw)
 	p.parseBlocks(parser, node, wr)
 	var err error
 	s := strings.TrimSpace(wr.sql)
@@ -475,11 +433,11 @@ func (p *fragment) trimPrefixOverrides(parser *exprParser, node *xmlNode, res *p
 	res.sql = fmt.Sprintf("%s %s %s", res.sql, tag, s)
 }
 
-func (p *fragment) parseSet(parser *exprParser, node *xmlNode, res *psr) {
+func (p *fragment) parseSet(parser *exprParser, node *xmlNode, res *raw) {
 	p.trimPrefixOverrides(parser, node, res, dtd.SET, ",")
 }
 
-func (p *fragment) parseForeach(parser *exprParser, node *xmlNode, res *psr) {
+func (p *fragment) parseForeach(parser *exprParser, node *xmlNode, res *raw) {
 	
 	_var := node.GetAttribute(dtd.COLLECTION)
 	collection, ok := parser.paramsStack.getVar(_var)
@@ -540,7 +498,7 @@ func (p *fragment) parseForeach(parser *exprParser, node *xmlNode, res *psr) {
 		throw(parser.file, node.ctx, popParamsStackErr).with(err)
 	}
 	if len(frags) > 0 {
-		res.merge(&psr{
+		res.merge(&raw{
 			sql: open + strings.Join(frags, separator) + _close,
 		})
 	}
@@ -567,294 +525,9 @@ func (p *fragment) parseParams(tokens string) []*param {
 func (p *fragment) parseForeachChild(parser *exprParser, node *xmlNode, frags *[]string) {
 	r := ""
 	for _, child := range node.Nodes {
-		br := new(psr)
+		br := new(raw)
 		p.parseBlock(parser, child, br)
 		r += br.sql
 	}
 	*frags = append(*frags, r)
-}
-
-type caller struct {
-	fragment *fragment
-	logger   Logger
-	args     []reflect.Value
-	values   []reflect.Value
-}
-
-//func (p *caller) Scan(pointers ...interface{}) (err error) {
-//	for _, v := range pointers {
-//		rv := reflect.ValueOf(v)
-//		if rv.Kind() != reflect.Ptr {
-//			err = fmt.Errorf("scan only accept pointer")
-//			return
-//		}
-//		p.values = append(p.values, rv)
-//	}
-//
-//	return p.call()
-//}
-
-func (p *caller) call() (err error) {
-	
-	start := time.Now()
-	defer func() {
-		p.logger.Debugf("[gobatis] [%s] cost: %s", p.fragment.id, time.Since(start))
-	}()
-	
-	switch p.fragment.node.Name {
-	case dtd.SELECT:
-		return p.query(p.args...)
-	case dtd.INSERT, dtd.DELETE, dtd.UPDATE:
-		return p.exec(p.args...)
-	default:
-		throw(p.fragment.node.File, p.fragment.node.ctx, callerErr).
-			format("unsupported call method '%s'", p.fragment.node.Name)
-		return
-	}
-}
-
-func (p *caller) exec(in ...reflect.Value) (err error) {
-	
-	_execer, index := p.execer(in)
-	if index > -1 {
-		in = p.removeParam(in, index)
-	}
-	ctx, index := p.context(in)
-	if index > -1 {
-		in = p.removeParam(in, index)
-	}
-	
-	tx, _ := _execer.(*Tx)
-	if tx != nil {
-		stmt := tx.getStmt(p.fragment.id)
-		if stmt != nil {
-			return stmt.exec(true, ctx, in)
-		}
-	}
-	
-	if p.fragment._stmt != nil {
-		return p.fragment._stmt.exec(false, ctx, in)
-	}
-	
-	var conn *sql.Conn
-	if _execer == nil {
-		conn, err = p.fragment.db.Conn(ctx)
-		if err != nil {
-			return
-		}
-		_execer = conn
-	}
-	defer func() {
-		if conn != nil && p.fragment._stmt == nil {
-			if _err := conn.Close(); _err != nil {
-				p.logger.Errorf("[gobatis] [%s] close conn error: %s", p.fragment.id, err)
-			}
-		}
-	}()
-	
-	s, exprs, vars, dynamic, err := p.fragment.parseStatement(in...)
-	if err != nil {
-		return
-	}
-	
-	p.logger.Debugf("[gobatis] [%s] exec statement: %s", p.fragment.id, s)
-	p.logger.Debugf("[gobatis] [%s] exec parameter: %s", p.fragment.id, printVars(vars))
-	
-	var res sql.Result
-	if p.fragment.stmt {
-		var _stmt *sql.Stmt
-		_stmt, err = _execer.PrepareContext(ctx, s)
-		if err != nil {
-			p.logger.Errorf("[gobatis] [%s] exec statement: %s", p.fragment.id, s)
-			p.logger.Errorf("[gobatis] [%s] exec parameter: %s", p.fragment.id, printVars(vars))
-			p.logger.Errorf("[gobatis] [%s] prepare error: %v", p.fragment.id, err)
-			return err
-		}
-		
-		if !dynamic {
-			stmt := &Stmt{
-				stmt:   _stmt,
-				exprs:  exprs,
-				sql:    s,
-				conn:   conn,
-				caller: p,
-			}
-			if tx != nil {
-				tx.addStmt(stmt)
-			} else {
-				p.fragment._stmt = stmt
-			}
-		}
-		res, err = _stmt.ExecContext(ctx, vars...)
-	} else {
-		res, err = _execer.ExecContext(ctx, s, vars...)
-	}
-	if err != nil {
-		p.logger.Errorf("[gobatis] [%s] exec statement: %s", p.fragment.id, s)
-		p.logger.Errorf("[gobatis] [%s] exec parameter: %s", p.fragment.id, printVars(vars))
-		p.logger.Errorf("[gobatis] [%s] exec error: %v", p.fragment.id, err)
-		return
-	}
-	
-	return p.parseExecResult(res, p.values)
-}
-
-func (p *caller) parseExecResult(res sql.Result, values []reflect.Value) error {
-	// ignore RowsAffected to support database that not support
-	affected, _ := res.RowsAffected()
-	if p.fragment.must && affected != 1 {
-		return fmt.Errorf("expect affect 1 row, got %d", affected)
-	}
-	return (&execResult{affected: affected, values: values}).scan()
-}
-
-func (p *caller) query(in ...reflect.Value) (err error) {
-	
-	ctx, index := p.context(in)
-	if index > -1 {
-		in = p.removeParam(in, index)
-	}
-	
-	_queryer, index := p.queryer(in)
-	if index > -1 {
-		in = p.removeParam(in, index)
-	}
-	
-	tx, _ := _queryer.(*Tx)
-	if tx != nil {
-		stmt := tx.getStmt(p.fragment.id)
-		if stmt != nil {
-			err = stmt.query(true, ctx, in, p.values)
-			if err != nil {
-				return
-			}
-			return
-		}
-	}
-	
-	if p.fragment._stmt != nil {
-		err = p.fragment._stmt.query(false, ctx, in, p.values)
-		if err != nil {
-			return
-		}
-		return
-	}
-	
-	var conn *sql.Conn
-	if _queryer == nil {
-		conn, err = p.fragment.db.Conn(ctx)
-		if err != nil {
-			return
-		}
-		_queryer = conn
-	}
-	defer func() {
-		if conn != nil && p.fragment._stmt == nil {
-			if _err := conn.Close(); _err != nil {
-				p.logger.Errorf("[gobatis] [%s] close conn error: %s", p.fragment.id, err)
-			}
-		}
-	}()
-	
-	s, exprs, vars, dynamic, err := p.fragment.parseStatement(in...)
-	if err != nil {
-		return
-	}
-	
-	p.logger.Debugf("[gobatis] [%s] query statement: %s", p.fragment.id, s)
-	p.logger.Debugf("[gobatis] [%s] query parameter: [%+v]", p.fragment.id, printVars(vars))
-	
-	var rows *sql.Rows
-	if p.fragment.stmt {
-		var _stmt *sql.Stmt
-		_stmt, err = _queryer.PrepareContext(ctx, s)
-		if err != nil {
-			p.logger.Errorf("[gobatis] [%s] exec statement: %s", p.fragment.id, s)
-			p.logger.Errorf("[gobatis] [%s] exec parameter: %s", p.fragment.id, printVars(vars))
-			p.logger.Errorf("[gobatis] [%s] prepare error: %v", p.fragment.id, err)
-			return err
-		}
-		
-		if p.fragment.stmt && !dynamic {
-			stmt := &Stmt{
-				stmt:   _stmt,
-				exprs:  exprs,
-				sql:    s,
-				conn:   conn,
-				caller: p,
-			}
-			if tx != nil {
-				tx.addStmt(stmt)
-			} else {
-				p.fragment._stmt = stmt
-			}
-		}
-		
-		rows, err = _stmt.QueryContext(ctx, vars...)
-	} else {
-		rows, err = _queryer.QueryContext(ctx, s, vars...)
-	}
-	if err != nil {
-		p.logger.Errorf("[gobatis] [%s] query statement: %s", p.fragment.id, s)
-		p.logger.Errorf("[gobatis] [%s] query parameter: [%+v]", p.fragment.id, printVars(vars))
-		p.logger.Errorf("[gobatis] [%s] query error: %v", p.fragment.id, err)
-		return
-	}
-	err = p.parseQueryResult(rows, p.values)
-	if err != nil {
-		return
-	}
-	return
-}
-
-func (p *caller) parseQueryResult(rows *sql.Rows, values []reflect.Value) (err error) {
-	defer func() {
-		if _err := rows.Close(); _err != nil {
-			p.logger.Errorf("[gobatis] [%s] close rows error: %s", p.fragment.id, _err)
-		}
-	}()
-	
-	res := queryResult{rows: rows}
-	err = res.setSelected(p.fragment.resultAttribute, p.fragment.out, values)
-	if err != nil {
-		return err
-	}
-	return res.scan()
-}
-
-func (p *caller) removeParam(a []reflect.Value, i int) []reflect.Value {
-	return append(a[:i], a[i+1:]...)
-}
-
-func (p *caller) context(in []reflect.Value) (context.Context, int) {
-	for i, v := range in {
-		if isContext(v.Type()) {
-			return v.Interface().(context.Context), i
-		}
-	}
-	return context.Background(), -1
-}
-
-func (p *caller) execer(in []reflect.Value) (execer, int) {
-	if len(in) > 0 {
-		t := reflect.TypeOf(new(execer)).Elem()
-		for i, v := range in {
-			if v.Type().Implements(t) {
-				return v.Interface().(execer), i
-			}
-		}
-	}
-	return nil, -1
-}
-
-func (p *caller) queryer(in []reflect.Value) (queryer, int) {
-	if len(in) > 0 {
-		t := reflect.TypeOf(new(queryer)).Elem()
-		for i, v := range in {
-			if v.Type().Implements(t) {
-				return v.Interface().(queryer), i
-			}
-		}
-	}
-	return nil, -1
 }

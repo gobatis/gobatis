@@ -2,7 +2,6 @@
 <!DOCTYPE configuration
         PUBLIC "-//gobatis.co//DTD Config 1.0//EN"
         "gobaits.co/dtd/config.dtd">
-
 <configuration>
     <module base="github.com/gobatis/gobatis"/>
 </configuration>
