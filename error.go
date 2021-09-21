@@ -94,7 +94,7 @@ func (p *_error) Error() string {
 	return msg
 }
 
-func castRecoverError(file string, e interface{}) error {
+func catch(file string, e interface{}) error {
 	if e != nil {
 		_e, ok := e.(*_error)
 		if ok {

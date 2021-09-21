@@ -20,7 +20,7 @@ const (
 func parseConfig(engine *Engine, file, content string) (err error) {
 	defer func() {
 		e := recover()
-		err = castRecoverError(file, e)
+		err = catch(file, e)
 	}()
 	l := &xmlParser{
 		file:          file,
@@ -40,7 +40,7 @@ func parseConfig(engine *Engine, file, content string) (err error) {
 func parseMapper(file, content string) (fs []*fragment, err error) {
 	defer func() {
 		e := recover()
-		err = castRecoverError(file, e)
+		err = catch(file, e)
 	}()
 	l := &xmlParser{
 		file:          file,
@@ -102,7 +102,7 @@ func initExprParser(tokens string) (parser *expr.ExprParser) {
 func parseFragment(file, id string, node *xmlNode) (f *fragment, err error) {
 	defer func() {
 		e := recover()
-		err = castRecoverError(file, e)
+		err = catch(file, e)
 	}()
 	
 	f = &fragment{
@@ -1216,7 +1216,7 @@ func (p *exprParser) parseExpression(nodeCtx antlr.ParserRuleContext,
 	
 	defer func() {
 		e := recover()
-		err = castRecoverError(p.file, e)
+		err = catch(p.file, e)
 	}()
 	
 	p.nodeCtx = nodeCtx

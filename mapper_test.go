@@ -27,11 +27,32 @@ type testParseMapperCase struct {
 }
 
 type testParseMapperCaseSql struct {
-	in  []reflect.Value
-	sql string
+	in    []reflect.Value
+	sql   string
+	error bool
 }
 
 var testParseMappersCases = []testParseMapperCase{
+	{
+		definition: `
+		<insert id="TestInserter" parameter="row">
+			insert into users("name", "age") values(#{row.Name}, #{row.Age});
+		</insert>`,
+		method: rv(func(row string) (err error) { return }),
+		sqls: []*testParseMapperCaseSql{
+			{
+				in: []reflect.Value{rv(struct {
+					Name string
+					Age  int
+				}{
+					Name: "tom",
+					Age:  18,
+				})},
+				sql: `insert into users("name","age") values(?,?)`,
+			},
+		},
+		error: false,
+	},
 	{
 		definition: `
 		<insert id="TestInserter" parameter="row">
@@ -62,18 +83,29 @@ func TestParseMappers(t *testing.T) {
 	var (
 		fs  []*fragment
 		f   *fragment
+		s   *sentence
 		err error
 	)
 	for _, c := range testParseMappersCases {
 		fs, err = parseMapper("", wrapMapperSchema(c.definition))
-		if !c.error {
+		if c.error {
+			require.Equal(t, true, err != nil)
+			continue
+		} else {
 			require.NoError(t, err)
 		}
 		require.Equal(t, 1, len(fs))
 		f = fs[0]
-		f.proxy(rv(c.method))
-		//f.call()
-		fmt.Println(fs[0].in[0].name)
+		for _, sql := range c.sqls {
+			s, err = f.newCaller(nil).prepare(sql.in...)
+			if sql.error {
+				require.Equal(t, true, err != nil)
+				continue
+			} else {
+				require.NoError(t, err)
+			}
+			t.Log(s.sql)
+		}
 	}
 	
 }
