@@ -107,6 +107,14 @@ func (p *inserter) hasField(v string) bool {
 	return ok
 }
 
+func (p *inserter) noField() bool {
+	return p.fm == nil
+}
+
+func (p *inserter) noValue() bool {
+	return len(p.vs) == 0
+}
+
 type fragment struct {
 	db              *DB
 	id              string
@@ -567,13 +575,13 @@ func (p *fragment) parseInserter(parser *exprParser, node *xmlNode, s *sentence)
 	//p.parseSql(parser, node.ctx, sql, s)
 }
 
-func (p *fragment) parseInserterFields(parser *exprParser, node *xmlNode, is *inserter) ([]string, [][]string) {
+func (p *fragment) parseInserterFields(parser *exprParser, node *xmlNode, it *inserter) ([]string, [][]string) {
 	var err error
 	var fn string
 	var fv interface{}
 	for _, v := range node.Nodes {
-		if !is.rows && len(is.vs) == 0 {
-			is.vs = append(is.vs, []string{})
+		if !it.rows && len(it.vs) == 0 {
+			it.vs = append(it.vs, []string{})
 		}
 		switch v.Name {
 		case dtd.FIELD:
@@ -584,22 +592,22 @@ func (p *fragment) parseInserterFields(parser *exprParser, node *xmlNode, is *in
 					throw(p.node.File, node.ctx, parseInserterErr).with(fmt.Errorf("data not found"))
 				}
 				dv := toReflectValueElem(data.value)
-				p.extractInserterFields(dv, is)
+				p.extractInserterFields(dv, it)
 			} else {
 				fv, _, err = parser.parseExpression(node.ctx, fn)
 				if err != nil {
 					throw(p.node.File, node.ctx, parseInserterErr).with(err)
 				}
-				is.addField(fmt.Sprintf("\"%s\"", fv))
-				if !is.rows {
-					is.vs[0] = append(is.vs[0], node.NodeText())
+				it.addField(fmt.Sprintf("\"%s\"", fv))
+				if !it.rows {
+					it.vs[0] = append(it.vs[0], node.NodeText())
 				}
 			}
 		}
 	}
 }
 
-func (p *fragment) extractInserterFields(dv reflect.Value, is *inserter) {
+func (p *fragment) extractInserterFields(dv reflect.Value, it *inserter) {
 	for i := 0; i < dv.NumField(); i++ {
 		//dv.Field(i).Type()
 		// TODO find by tag first，and convert low snake name
@@ -607,7 +615,7 @@ func (p *fragment) extractInserterFields(dv reflect.Value, is *inserter) {
 	return
 }
 
-func (p *fragment) parseInserterRows(parser *exprParser, node *xmlNode) (values [][]interface{}) {
+func (p *fragment) parseInserterRows(parser *exprParser, node *xmlNode, it *inserter) {
 	data, ok := parser.paramsStack.getVar(node.GetAttribute(dtd.DATA))
 	if !ok {
 		throw(p.node.File, node.ctx, parseInserterErr).with(fmt.Errorf("data not found"))
@@ -620,7 +628,11 @@ func (p *fragment) parseInserterRows(parser *exprParser, node *xmlNode) (values 
 			dvv = toReflectElem(dv.Index(i))
 			switch dvv.Kind() {
 			case reflect.Struct:
+				if it.noField() {
+					p.extractInserterFields(dvv, it)
+				}
 				//dvv.Field()
+				//p.extractInserterFields(dvv,)
 			case reflect.String,
 				reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
 				reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64,
