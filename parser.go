@@ -131,6 +131,16 @@ func toReflectValueElem(source interface{}) reflect.Value {
 	}
 }
 
+func toReflectElem(v reflect.Value) reflect.Value {
+	for {
+		if v.Kind() == reflect.Ptr {
+			v = v.Elem()
+		} else {
+			return v
+		}
+	}
+}
+
 func trimValueQuote(s string) string {
 	if len(s) > 1 {
 		switch s[0] {
@@ -255,6 +265,16 @@ type xmlNodeAttribute struct {
 	Start antlr.Token `json:"-"`
 	Value string
 	ctx   antlr.ParserRuleContext
+}
+
+// NodeText TODO think more
+func (p *xmlNode) NodeText() string {
+	for _, v := range p.Nodes {
+		if v.textOnly {
+			return v.Text
+		}
+	}
+	return ""
 }
 
 func (p *xmlNode) GetAttribute(name string) string {

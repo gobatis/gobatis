@@ -2,6 +2,7 @@ package gobatis
 
 import (
 	"fmt"
+	"github.com/antlr/antlr4/runtime/Go/antlr"
 	"github.com/gobatis/gobatis/cast"
 	"github.com/gobatis/gobatis/dtd"
 	"reflect"
@@ -81,6 +82,29 @@ func (p *fragmentManager) get(id string) (m *fragment, ok bool) {
 	}
 	m, ok = p.fragments[id]
 	return
+}
+
+type inserter struct {
+	fl   []string
+	fm   map[string]bool
+	vs   [][]string
+	rows bool
+}
+
+func (p *inserter) addField(v string) {
+	if p.fm == nil {
+		p.fm = map[string]bool{}
+	}
+	p.fm[v] = true
+	p.fl = append(p.fl, v)
+}
+
+func (p *inserter) hasField(v string) bool {
+	if p.fm == nil {
+		return false
+	}
+	_, ok := p.fm[v]
+	return ok
 }
 
 type fragment struct {
@@ -270,8 +294,8 @@ func (p *fragment) trimPrefixOverride(sql, prefix string) (r string, err error) 
 	return
 }
 
-func (p *fragment) parseSql(parser *exprParser, node *xmlNode, s *sentence) {
-	chars := []rune(node.Text)
+func (p *fragment) parseSql(parser *exprParser, ctx antlr.ParserRuleContext, text string, s *sentence) {
+	chars := []rune(text)
 	begin := false
 	inject := false
 	var from int
@@ -293,7 +317,7 @@ func (p *fragment) parseSql(parser *exprParser, node *xmlNode, s *sentence) {
 			}
 		} else if chars[i] == 125 {
 			_expr := string(chars[from:i])
-			r, _, err := parser.parseExpression(node.ctx, _expr)
+			r, _, err := parser.parseExpression(ctx, _expr)
 			if err != nil {
 				panic(err)
 			}
@@ -322,7 +346,7 @@ func (p *fragment) parseBlocks(parser *exprParser, node *xmlNode, s *sentence) {
 
 func (p *fragment) parseBlock(parser *exprParser, node *xmlNode, s *sentence) {
 	if node.textOnly {
-		p.parseSql(parser, node, s)
+		p.parseSql(parser, node.ctx, node.Text, s)
 	} else {
 		s.dynamic = true
 		switch node.Name {
@@ -524,24 +548,88 @@ func (p *fragment) parseForeachChild(parser *exprParser, node *xmlNode, frags *[
 
 func (p *fragment) parseInserter(parser *exprParser, node *xmlNode, s *sentence) {
 	
-	var (
-		table interface{}
-		err   error
-		//dynamic bool
-	)
-	table, _, err = parser.parseExpression(node.ctx, node.GetAttribute(dtd.TABLE))
-	if err != nil {
-		throw(p.node.File, node.ctx, parseInserterErr).with(err)
-	}
+	//mutilple
+	//bool
+	//item
+	//string
 	
-	s.sql += fmt.Sprintf("inserter %v", table)
+	//table, _, err := parser.parseExpression(node.ctx, node.GetAttribute(dtd.TABLE))
+	//if err != nil {
+	//	throw(p.node.File, node.ctx, parseInserterErr).with(err)
+	//}
+	//item := node.GetAttribute("item")
+	//index := node.GetAttribute("index")
+	//multiple := item != ""
 	
-	fmt.Println(parser.paramsStack.getVar("row"))
-	
+	//sql := fmt.Sprintf("insert into %v(%s) values(%s)",
+	//	table, strings.Join(fields, ","), strings.Join(values, ","))
+	//
+	//p.parseSql(parser, node.ctx, sql, s)
+}
+
+func (p *fragment) parseInserterFields(parser *exprParser, node *xmlNode, is *inserter) ([]string, [][]string) {
+	var err error
+	var fn string
+	var fv interface{}
 	for _, v := range node.Nodes {
+		if !is.rows && len(is.vs) == 0 {
+			is.vs = append(is.vs, []string{})
+		}
 		switch v.Name {
 		case dtd.FIELD:
-			fmt.Println(v.GetAttribute(dtd.NAME))
+			fn = v.GetAttribute(dtd.NAME)
+			if fn == "*" {
+				data, ok := parser.paramsStack.getVar(node.GetAttribute(dtd.DATA))
+				if !ok {
+					throw(p.node.File, node.ctx, parseInserterErr).with(fmt.Errorf("data not found"))
+				}
+				dv := toReflectValueElem(data.value)
+				p.extractInserterFields(dv, is)
+			} else {
+				fv, _, err = parser.parseExpression(node.ctx, fn)
+				if err != nil {
+					throw(p.node.File, node.ctx, parseInserterErr).with(err)
+				}
+				is.addField(fmt.Sprintf("\"%s\"", fv))
+				if !is.rows {
+					is.vs[0] = append(is.vs[0], node.NodeText())
+				}
+			}
 		}
 	}
+}
+
+func (p *fragment) extractInserterFields(dv reflect.Value, is *inserter) {
+	for i := 0; i < dv.NumField(); i++ {
+		//dv.Field(i).Type()
+		// TODO find by tag first，and convert low snake name
+	}
+	return
+}
+
+func (p *fragment) parseInserterRows(parser *exprParser, node *xmlNode) (values [][]interface{}) {
+	data, ok := parser.paramsStack.getVar(node.GetAttribute(dtd.DATA))
+	if !ok {
+		throw(p.node.File, node.ctx, parseInserterErr).with(fmt.Errorf("data not found"))
+	}
+	dv := toReflectValueElem(data.value)
+	switch dv.Kind() {
+	case reflect.Slice, reflect.Array:
+		var dvv reflect.Value
+		for i := 0; i < dv.Len(); i++ {
+			dvv = toReflectElem(dv.Index(i))
+			switch dvv.Kind() {
+			case reflect.Struct:
+				//dvv.Field()
+			case reflect.String,
+				reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+				reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64,
+				reflect.Float32, reflect.Float64:
+				
+			}
+		}
+	default:
+		throw(p.node.File, node.ctx, parseInserterErr).with(fmt.Errorf("uniterable data"))
+	}
+	return
 }
