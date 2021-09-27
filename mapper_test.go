@@ -33,31 +33,10 @@ type testParseMapperCaseSql struct {
 }
 
 var testParseMappersCases = []testParseMapperCase{
-	//{
-	//	definition: `
-	//	<insert id="TestInserter" parameter="row">
-	//		insert into users("name", "age") values(#{row.Name}, #{row.Age});
-	//	</insert>`,
-	//	method: rv(func(row string) (err error) { return }),
-	//	sqls: []*testParseMapperCaseSql{
-	//		{
-	//			in: []reflect.Value{rv(struct {
-	//				Name string
-	//				Age  int
-	//			}{
-	//				Name: "tom",
-	//				Age:  18,
-	//			})},
-	//			sql: `insert into users("name","age") values(?,?)`,
-	//		},
-	//	},
-	//	error: false,
-	//},
 	{
 		definition: `
-		<insert id="TestInserter" parameter="row">
+		<insert id="TestInserterRow1" parameter="row">
 			<inserter table="'users'" data="row">
-				<field name="*"/>
 				<field name="'name'">#{row.Name}</field>
 				<field name="'age'">${row.Age}</field>
 			</inserter>
@@ -71,6 +50,36 @@ var testParseMappersCases = []testParseMapperCase{
 				}{
 					Name: "tom",
 					Age:  18,
+				})},
+				sql: `insert into users("name","age") values(?,?)`,
+			},
+		},
+		error: false,
+	},
+	{
+		definition: `
+		<insert id="TestInserterRows1" parameter="row">
+			<inserter table="'users'" data="row">
+				<field name="*"/>
+				<field name="'name'">#{row.Name}</field>
+				<field name="'age'">#{row.Age}</field>
+			</inserter>
+		</insert>`,
+		method: rv(func(row string) (err error) { return }),
+		sqls: []*testParseMapperCaseSql{
+			{
+				in: []reflect.Value{rv([]struct {
+					Name string
+					Age  int
+				}{
+					{
+						Name: "tom",
+						Age:  18,
+					},
+					{
+						Name: "alice",
+						Age:  22,
+					},
 				})},
 				sql: `insert into users("name","age") values(?,?)`,
 			},
@@ -105,9 +114,20 @@ func TestParseMappers(t *testing.T) {
 			} else {
 				require.NoError(t, err)
 			}
+			//f.par
 			t.Log(s.sql)
 			t.Log(s.realSql())
 		}
+		//switch c.tag {
+		//case dtd.INSERTER:
+		//	testParseInserter(t, f, c)
+		//}
 	}
-	
+}
+
+// test parse inserter
+func testParseInserter(t *testing.T, f *fragment, c testParseMapperCase) {
+	//f.parseInserter(f)
+	//s := new(sentence)
+	//f.build(s,c.)
 }
