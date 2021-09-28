@@ -10,7 +10,8 @@ import (
 
 var errorType reflect.Type
 var scannerType reflect.Type
-var valuerType reflect.Type
+
+//var valuerType reflect.Type
 
 type Valuer interface {
 	Value() (driver.Value, error)
@@ -19,10 +20,10 @@ type Valuer interface {
 func init() {
 	errorType = reflect.TypeOf((*error)(nil)).Elem()
 	scannerType = reflect.TypeOf((*sql.Scanner)(nil)).Elem()
-	valuerType = reflect.TypeOf((*Valuer)(nil)).Elem()
+	//valuerType = reflect.TypeOf((*Valuer)(nil)).Elem()
 }
 
-func isContext(v reflect.Type) bool {
+func isCtx(v reflect.Type) bool {
 	if v.Name() == "Context" && v.PkgPath() == "context" {
 		return true
 	}
@@ -45,8 +46,8 @@ func isDB(v reflect.Type) bool {
 	return false
 }
 
-func isErrorType(_type reflect.Type) bool {
-	return _type.Implements(reflect.TypeOf((*error)(nil)).Elem())
+func isError(t reflect.Type) bool {
+	return t.Implements(reflect.TypeOf((*error)(nil)).Elem())
 }
 
 func reflectValueElem(vt reflect.Value) reflect.Value {
@@ -83,4 +84,16 @@ func printVars(vars []interface{}) string {
 			i+1, chalk.Green.Color("=>"), chalk.Yellow.Color(_t), v)
 	}
 	return r
+}
+
+func innerVar(name string) string {
+	return fmt.Sprintf("@%s", name)
+}
+
+func queryCountMethod(id string) string {
+	return fmt.Sprintf("%s@Count", id)
+}
+
+func queryCollectMethod(id string) string {
+	return fmt.Sprintf("%s@Collect", id)
 }

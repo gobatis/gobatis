@@ -234,10 +234,10 @@
         select * from test_entities where id > #{id} and id &lt; 50;
     </select>
 
-<!--    <insert id="TestInserter" parameter="row">-->
-    <!--        <inserter table="'users'" data="rows" item="row">-->
-    <!--            <field name="*"/>-->
-    <!--            <field name="'age'">#{row.Name}</field>-->
-    <!--        </inserter>-->
-    <!--    </insert>-->
+<!--    <insert id="TestInserter" parameter="rows" useGeneratedKeys="true" keyProperty="id => item.Id">-->
+<!--        <inserter table="'users'" data="rows" item="row">-->
+<!--            <field name="*"/>-->
+<!--            <field name="'age'">#{row.Name}</field>-->
+<!--        </inserter>-->
+<!--    </insert>-->
 </mapper>

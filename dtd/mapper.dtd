@@ -16,7 +16,7 @@
                limitations under the License.
 
         -->
-        <!ELEMENT mapper (cache-ref | cache | resultMap* | parameterMap* | sql* | insert* | update* | delete* | select* )+>
+        <!ELEMENT mapper (cache-ref | cache | resultMap* | parameterMap* | sql* | insert* | update* | delete* | select* | query* | save* | migrate* )+>
         <!ATTLIST mapper
                 namespace CDATA #IMPLIED
                 >
@@ -286,17 +286,54 @@
                 test CDATA #REQUIRED
                 >
 
-
-        <!ELEMENT inserter (#PCDATA | field)*>
+        <!ELEMENT inserter (#PCDATA | field | exclude)*>
         <!ATTLIST inserter
                 table CDATA #REQUIRED
-                data CDATA #IMPLIED
-                item CDATA #IMPLIED
-                index CDATA #IMPLIED
+                entity CDATA #IMPLIED
                 >
 
         <!ELEMENT field (#PCDATA)>
         <!ATTLIST field
                 name CDATA #REQUIRED
                 test CDATA #IMPLIED
+                >
+
+        <!ELEMENT exclude (#PCDATA)>
+        <!ATTLIST exclude
+                name CDATA #REQUIRED
+                test CDATA #IMPLIED
+                >
+
+
+        <!ELEMENT statement (#PCDATA | sql | inserter | include | trim | where | set | foreach | choose | if | bind )+>
+        <!ATTLIST statement
+                type (INSERT | SELECT | UPDATE) #REQUIRED
+                test CDATA #IMPLIED
+                >
+
+        <!ELEMENT block (#PCDATA | include | trim | where | set | foreach | choose | if | bind)*>
+        <!ATTLIST block
+                type (COUNT | SELECT | SOURCE | EXTRA)  #REQUIRED
+                test CDATA #IMPLIED
+                >
+
+        <!ELEMENT query (#PCDATA | block | include | trim | where | set | foreach | choose | if | bind)*>
+        <!ATTLIST query
+                id CDATA #REQUIRED
+                parameter CDATA #IMPLIED
+                >
+
+
+        <!ELEMENT save (#PCDATA | statement | include | trim | where | set | foreach | choose | if | bind)*>
+        <!ATTLIST save
+                id CDATA #REQUIRED
+                parameter CDATA #IMPLIED
+                result CDATA #IMPLIED
+                >
+
+
+        <!ELEMENT migrate (#PCDATA)*>
+        <!ATTLIST migrate
+                id CDATA #REQUIRED
+                mute CDATA #IMPLIED
                 >

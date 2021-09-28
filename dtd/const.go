@@ -130,6 +130,7 @@ const (
 	TEST              = "test"
 	INSERTER          = "inserter"
 	FIELD             = "field"
+	EXCLUDE           = "exclude"
 	TABLE             = "table"
-	DATA              = "data"
+	//DATA              = "data"
 )

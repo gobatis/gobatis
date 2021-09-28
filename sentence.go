@@ -24,7 +24,7 @@ func (p *sentence) merge(s ...*sentence) {
 	}
 }
 
-func (p *sentence) printLog() {
+func (p sentence) printLog() {
 	//p.logger.Errorf("[gobatis] [%s] exec statement: %s", p.fragment.id, s)
 	//p.logger.Errorf("[gobatis] [%s] exec parameter: %s", p.fragment.id, printVars(vars))
 	//p.logger.Errorf("[gobatis] [%s] prepare error: %v", p.fragment.id, err)

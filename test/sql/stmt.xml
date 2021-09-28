@@ -2,7 +2,7 @@
 <!DOCTYPE mapper PUBLIC "-//gobatis.co//DTD Mapper 1.0//EN" "gobatis.co/dtd/mapper.dtd">
 
 <mapper>
-    <insert id="TestInsertStmt" parameter="user">
+    <insert id="TestInsertStmt" parameter="user" useGeneratedKeys="true" keyProperty="id => user.Id">
         insert into users(name,age)
         values(
         #{user.Name},

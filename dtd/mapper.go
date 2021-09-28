@@ -354,12 +354,25 @@ var Delete = &Element{
 var Inserter = &Element{
 	Name: INSERTER,
 	Nodes: map[string]int{
-		FIELD: AT_LEAST_ONCE,
+		FIELD:   AT_LEAST_ONCE,
+		EXCLUDE: ANY_TIMES,
 	},
 }
 
 var Field = &Element{
 	Name: FIELD,
+	Attributes: map[string]int{
+		NAME: REQUIRED,
+		TEST: IMPLIED,
+	},
+}
+
+var Exclude = &Element{
+	Name: EXCLUDE,
+	Attributes: map[string]int{
+		NAME: REQUIRED,
+		TEST: IMPLIED,
+	},
 }
 
 var Include = &Element{

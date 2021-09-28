@@ -40,6 +40,7 @@ const (
 	parseFragmentErr
 	validateXMLNodeErr
 	parasFragmentErr
+	parserBindErr
 	callerErr
 	syntaxErr
 	resultAttributeConflictErr
@@ -97,6 +98,7 @@ func (p *_error) Error() string {
 
 func catch(file string, e interface{}) error {
 	if e != nil {
+		//debug.PrintStack()
 		_e, ok := e.(*_error)
 		if ok {
 			if _e.file == "" {
@@ -171,7 +173,7 @@ type errorListener struct {
 }
 
 func (p *errorListener) SyntaxError(recognizer antlr.Recognizer, offendingSymbol interface{}, line, column int, msg string, e antlr.RecognitionException) {
-	throw("", nil, syntaxErr).format("词法分析错误")
+	throw("", nil, syntaxErr).format("syntax error")
 }
 
 func (p *errorListener) ReportAmbiguity(recognizer antlr.Parser, dfa *antlr.DFA, startIndex, stopIndex int, exact bool, ambigAlts *antlr.BitSet, configs antlr.ATNConfigSet) {

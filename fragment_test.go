@@ -35,8 +35,11 @@ type testParseMapperCaseSql struct {
 var testParseMappersCases = []testParseMapperCase{
 	{
 		definition: `
-		<insert id="TestInserterRow1" parameter="row">
-			<inserter table="'users'" data="row">
+		<insert id="TestInserter1" parameter="row">
+			<inserter table="'users'" entity="row">
+				<field name="*">
+				<exclude name="'age'" />
+				<exclude name="'name'" />
 				<field name="'name'">#{row.Name}</field>
 				<field name="'age'">${row.Age}</field>
 			</inserter>
@@ -50,36 +53,6 @@ var testParseMappersCases = []testParseMapperCase{
 				}{
 					Name: "tom",
 					Age:  18,
-				})},
-				sql: `insert into users("name","age") values(?,?)`,
-			},
-		},
-		error: false,
-	},
-	{
-		definition: `
-		<insert id="TestInserterRows1" parameter="row">
-			<inserter table="'users'" data="row">
-				<field name="*"/>
-				<field name="'name'">#{row.Name}</field>
-				<field name="'age'">#{row.Age}</field>
-			</inserter>
-		</insert>`,
-		method: rv(func(row string) (err error) { return }),
-		sqls: []*testParseMapperCaseSql{
-			{
-				in: []reflect.Value{rv([]struct {
-					Name string
-					Age  int
-				}{
-					{
-						Name: "tom",
-						Age:  18,
-					},
-					{
-						Name: "alice",
-						Age:  22,
-					},
 				})},
 				sql: `insert into users("name","age") values(?,?)`,
 			},
@@ -116,12 +89,9 @@ func TestParseMappers(t *testing.T) {
 			}
 			//f.par
 			t.Log(s.sql)
-			t.Log(s.realSql())
+			t.Log(s.vars)
+			//t.Log(s.realSql())
 		}
-		//switch c.tag {
-		//case dtd.INSERTER:
-		//	testParseInserter(t, f, c)
-		//}
 	}
 }
 

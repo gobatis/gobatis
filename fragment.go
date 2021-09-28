@@ -23,14 +23,44 @@ const (
 	result_result_map
 )
 
+type inserter struct {
+	table string
+	fl    []string
+	fm    map[string]bool
+	vs    []interface{}
+	mul   bool
+	item  string
+	index string
+}
+
+func (p *inserter) addField(v string) {
+	if p.fm == nil {
+		p.fm = map[string]bool{}
+	}
+	p.fm[v] = true
+	p.fl = append(p.fl, v)
+}
+
+func (p inserter) hasField(v string) bool {
+	if p.fm == nil {
+		return false
+	}
+	_, ok := p.fm[v]
+	return ok
+}
+
+func (p inserter) noField() bool {
+	return p.fm == nil
+}
+
+func (p inserter) noValue() bool {
+	return len(p.vs) == 0
+}
+
 type fragmentManager struct {
 	mu        sync.RWMutex
 	list      []*fragment
 	fragments map[string]*fragment
-}
-
-func newMethodManager() *fragmentManager {
-	return &fragmentManager{}
 }
 
 func (p *fragmentManager) add(m *fragment) error {
@@ -85,15 +115,15 @@ func (p *fragmentManager) get(id string) (m *fragment, ok bool) {
 }
 
 type fragment struct {
-	db              *DB
-	id              string
-	node            *xmlNode
-	in              []*param
-	out             []*param
-	resultAttribute int
-	must            bool
-	stmt            bool
-	_stmt           *Stmt
+	db    *DB
+	id    string
+	node  *xmlNode
+	in    []*param
+	out   []*param
+	ra    int
+	must  bool
+	stmt  bool
+	_stmt *Stmt
 }
 
 func (p fragment) fork() *fragment {
@@ -103,7 +133,7 @@ func (p fragment) fork() *fragment {
 	n.node = p.node
 	n.in = p.in
 	n.out = p.out
-	n.resultAttribute = p.resultAttribute
+	n.ra = p.ra
 	n.must = p.must
 	n.stmt = p.stmt
 	n._stmt = p._stmt
@@ -141,18 +171,18 @@ func (p fragment) setResultAttribute() {
 		return
 	}
 	if p.node.HasAttribute(dtd.RESULT) {
-		p.resultAttribute = result_result
+		p.ra = result_result
 	} else if p.node.HasAttribute(dtd.RESULT_MAP) {
-		p.resultAttribute = result_result_map
+		p.ra = result_result_map
 	} else {
-		p.resultAttribute = result_none
+		p.ra = result_none
 	}
 }
 
 func (p fragment) checkParameter(ft reflect.Type, mn, fn string) {
 	ac := 0
 	for i := 0; i < ft.NumIn(); i++ {
-		if isContext(ft.In(i)) || isTx(ft.In(i)) || isDB(ft.In(i)) {
+		if isCtx(ft.In(i)) || isTx(ft.In(i)) || isDB(ft.In(i)) {
 			continue
 		}
 		ac++
@@ -165,14 +195,14 @@ func (p fragment) checkParameter(ft reflect.Type, mn, fn string) {
 
 func (p fragment) checkResult(ft reflect.Type, mn, fn string) {
 	
-	if ft.NumOut() == 0 || !isErrorType(ft.Out(ft.NumOut()-1)) {
+	if ft.NumOut() == 0 || !isError(ft.Out(ft.NumOut()-1)) {
 		throw(p.node.File, p.node.ctx, checkResultErr).
 			format("out expect error at last, got %s", ft.Out(ft.NumOut()-1).String())
 	}
 	
 	switch p.node.Name {
 	case dtd.SELECT:
-		switch p.resultAttribute {
+		switch p.ra {
 		case result_result:
 			if len(p.out) == 0 {
 				if ft.NumOut() > 1 {
@@ -254,10 +284,11 @@ func (p fragment) build(s *sentence, args ...reflect.Value) (err error) {
 	}
 	p.parseBlocks(parser, p.node, s)
 	s.exprs = parser.exprs
-	s.vars, err = parser.realVars()
-	if err != nil {
-		return
-	}
+	// TODO TEST OLD
+	//s.vars, err = parser.realVars()
+	//if err != nil {
+	//	return
+	//}
 	
 	return
 }
@@ -332,6 +363,10 @@ func (p fragment) parseBlock(parser *exprParser, node *xmlNode, s *sentence) {
 			if p.parseTest(parser, node, r) {
 				s.merge(r)
 			}
+		case dtd.BIND:
+			p.parseBind(parser, node)
+		case dtd.SELECT_KEY:
+			p.parseSelectKey(parser, node)
 		case dtd.WHERE:
 			p.parseWhere(parser, node, s)
 		case dtd.CHOOSE:
@@ -344,8 +379,26 @@ func (p fragment) parseBlock(parser *exprParser, node *xmlNode, s *sentence) {
 			p.parseSet(parser, node, s)
 		case dtd.INSERTER:
 			p.parseInserter(parser, node, s)
+		default:
+			throw(node.File, node.ctx, parasFragmentErr).with(fmt.Errorf("unknown tag: %s", node.Name))
 		}
 	}
+}
+
+func (p fragment) parseBind(parser *exprParser, node *xmlNode) {
+	name := node.GetAttribute(dtd.NAME)
+	// TODO check var rule
+	value, _, err := parser.parseExpression(node.ctx, node.GetAttribute(dtd.VALUE))
+	if err != nil {
+		throw(node.File, node.ctx, parserBindErr).with(err)
+	}
+	parser.paramsStack.peak().set(name, exprValue{
+		value: value,
+	})
+}
+
+func (p fragment) parseSelectKey(parser *exprParser, node *xmlNode) {
+	// TODO implements
 }
 
 func (p fragment) parseTest(parser *exprParser, node *xmlNode, s *sentence) bool {
@@ -526,15 +579,22 @@ func (p fragment) parseForeachChild(parser *exprParser, node *xmlNode, frags *[]
 func (p fragment) parseInserter(parser *exprParser, node *xmlNode, s *sentence) {
 	var it = new(inserter)
 	var err error
-	table, _, err := parser.parseExpression(node.ctx, node.GetAttribute(dtd.TABLE))
+	table, static, err := parser.parseExpression(node.ctx, node.GetAttribute(dtd.TABLE))
 	if err != nil {
 		throw(p.node.File, node.ctx, parseInserterErr).with(err)
 	}
-	it.table = table.(string)
+	if static {
+		it.table = table.(string)
+	} else {
+		it.table = "$1"
+	}
 	it.item = node.GetAttribute(dtd.ITEM)
 	it.index = node.GetAttribute(dtd.INDEX)
-	it.rows = it.item != ""
+	it.mul = it.item != ""
 	p.parseInserterFields(parser, node, it)
+	if it.mul {
+		p.parseInserterValues(parser, node, it)
+	}
 	p.makeInserterSql(parser, node.ctx, it, s)
 }
 
@@ -543,9 +603,6 @@ func (p fragment) parseInserterFields(parser *exprParser, node *xmlNode, it *ins
 	var fn string
 	var fv interface{}
 	for _, v := range node.Nodes {
-		if !it.rows && len(it.vs) == 0 {
-			it.vs = append(it.vs, []string{})
-		}
 		switch v.Name {
 		case dtd.FIELD:
 			fn = v.GetAttribute(dtd.NAME)
@@ -554,8 +611,8 @@ func (p fragment) parseInserterFields(parser *exprParser, node *xmlNode, it *ins
 				if !ok {
 					throw(p.node.File, node.ctx, parseInserterErr).with(fmt.Errorf("data not found"))
 				}
-				dv := toReflectValueElem(data.value)
 				if it.noField() {
+					dv := toReflectValueElem(data.value)
 					p.extractInserterFields(dv, it)
 				}
 			} else {
@@ -563,9 +620,16 @@ func (p fragment) parseInserterFields(parser *exprParser, node *xmlNode, it *ins
 				if err != nil {
 					throw(p.node.File, node.ctx, parseInserterErr).with(err)
 				}
-				it.addField(fmt.Sprintf("\"%s\"", fv))
-				if !it.rows {
-					it.vs[0] = append(it.vs[0], v.NodeText())
+				field := fmt.Sprintf("\"%s\"", fv)
+				if !it.hasField(field) {
+					it.addField(field)
+					var r interface{}
+					r, _, err = parser.parseExpression(node.ctx, v.NodeText())
+					if err != nil {
+						fmt.Println(v.NodeText())
+						throw(p.node.File, node.ctx, parseInserterErr).with(err)
+					}
+					it.vs = append(it.vs, r)
 				}
 			}
 		}
@@ -579,14 +643,32 @@ func (p fragment) extractInserterFields(dv reflect.Value, it *inserter) {
 			p.extractInserterFields(dv.Index(0), it)
 		}
 	case reflect.Struct:
-		dt := dv.Type()
-		for i := 0; i < dt.NumField(); i++ {
-			it.addField(p.extractFiledName(dt.Field(i)))
+		for i := 0; i < dv.Type().NumField(); i++ {
+			it.addField(p.extractFiledName(dv.Type().Field(i)))
 		}
 	default:
 		throw(p.node.File, p.node.ctx, parseInserterErr).with(fmt.Errorf("unsuport inserter data type"))
 	}
 	return
+}
+
+func (p fragment) parseInserterValues(parser *exprParser, node *xmlNode, it *inserter) {
+	data, ok := parser.paramsStack.getVar(node.GetAttribute(dtd.DATA))
+	if !ok {
+		throw(p.node.File, node.ctx, parseInserterErr).with(fmt.Errorf("data not found"))
+	}
+	dv := toReflectValueElem(data.value)
+	for i := 0; i < dv.Len(); i++ {
+		for ii := 0; ii < len(it.fl); ii++ {
+			field := it.fl[ii]
+			for j := 0; j < dv.Index(i).Type().NumField(); j++ {
+				if p.extractFiledName(dv.Index(i).Type().Field(j)) == field {
+					//fmt.Println("value:", field, expression, dv.Index(i).Field(j).Interface())
+					it.vs = append(it.vs, dv.Index(i).Field(j).Interface())
+				}
+			}
+		}
+	}
 }
 
 func (p fragment) extractFiledName(field reflect.StructField) string {
@@ -595,50 +677,25 @@ func (p fragment) extractFiledName(field reflect.StructField) string {
 		tag = strings.TrimSpace(strings.Split(tag, ",")[0])
 	}
 	if tag != "" {
-		return tag
+		return fmt.Sprintf("\"%s\"", tag)
 	}
 	// TODO support lower snake name
-	return strings.ToLower(field.Name)
+	return fmt.Sprintf("\"%s\"", strings.ToLower(field.Name))
 }
-
-//func (p fragment) parseInserterRows(parser *exprParser, node *xmlNode, it *inserter) {
-//	data, ok := parser.paramsStack.getVar(node.GetAttribute(dtd.DATA))
-//	if !ok {
-//		throw(p.node.File, node.ctx, parseInserterErr).with(fmt.Errorf("data not found"))
-//	}
-//	dv := toReflectValueElem(data.value)
-//	switch dv.Kind() {
-//	case reflect.Slice, reflect.Array:
-//		var dvv reflect.Value
-//		for i := 0; i < dv.Len(); i++ {
-//			dvv = toReflectElem(dv.Index(i))
-//			switch dvv.Kind() {
-//			case reflect.Struct:
-//				if it.noField() {
-//					p.extractInserterFields(dvv, it)
-//				}
-//				//dvv.Field()
-//				//p.extractInserterFields(dvv,)
-//			case reflect.String,
-//				reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
-//				reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64,
-//				reflect.Float32, reflect.Float64:
-//
-//			}
-//		}
-//	default:
-//		throw(p.node.File, node.ctx, parseInserterErr).with(fmt.Errorf("uniterable data"))
-//	}
-//	return
-//}
 
 func (p fragment) makeInserterSql(parser *exprParser, ctx antlr.ParserRuleContext, it *inserter, s *sentence) {
 	str := strings.Builder{}
 	str.WriteString(fmt.Sprintf("insert into %s(%s)", it.table, strings.Join(it.fl, ",")))
-	if it.rows {
-	
-	} else if len(it.vs) == 1 {
-		str.WriteString(fmt.Sprintf(" values(%s)", strings.Join(it.vs[0], ",")))
+	var vs []string
+	for i := range it.vs {
+		vs = append(vs, fmt.Sprintf("$%d", i+1))
 	}
-	p.parseSql(parser, ctx, str.String(), s)
+	str.WriteString(fmt.Sprintf(" values(%s)", strings.Join(vs, ",")))
+	s.sql = str.String()
+	s.vars = it.vs
+	//p.parseSql(parser, ctx, str.String(), s)
 }
+
+//func (p fragment) parseQuery(){
+//
+//}

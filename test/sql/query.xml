@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//gobatis.co//DTD Mapper 1.0//EN" "gobatis.co/dtd/mapper.dtd">
+
+<mapper>
+    <!-- 函数  Query001 = func(authed bool, page, limit int64) (total int64, items []*User, err error)  -->
+    <query id="QueryE001" parameter="authed,page,limit">
+        <block type="COUNT">
+            select count(1)
+        </block>
+        <block type="SELECT">
+            select id,username,email,mobile
+        </block>
+        <block type="SOURCE">
+            from users where authed = #{authed}
+            order by id desc
+        </block>
+        <block type="EXTRA">
+            limit #{limit} offset #{ @page(page, limit) };
+        </block>
+    </query>
+</mapper>

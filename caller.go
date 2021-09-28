@@ -350,7 +350,7 @@ func (p *caller) parseQueryResult(rows *sql.Rows, values []reflect.Value) (err e
 	}()
 	
 	res := queryResult{rows: rows}
-	err = res.setSelected(p.fragment.resultAttribute, p.fragment.out, values)
+	err = res.setSelected(p.fragment.ra, p.fragment.out, values)
 	if err != nil {
 		return err
 	}
@@ -363,7 +363,7 @@ func (p *caller) removeParam(a []reflect.Value, i int) []reflect.Value {
 
 func (p *caller) context(in []reflect.Value) (context.Context, int) {
 	for i, v := range in {
-		if isContext(v.Type()) {
+		if isCtx(v.Type()) {
 			return v.Interface().(context.Context), i
 		}
 	}

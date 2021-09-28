@@ -21,7 +21,7 @@ func NewMySQL(dsn string) *Engine {
 }
 
 func NewEngine(db *DB) *Engine {
-	engine := &Engine{master: db, fragmentManager: newMethodManager()}
+	engine := &Engine{master: db, fragmentManager: &fragmentManager{}}
 	return engine
 }
 
@@ -250,7 +250,7 @@ func (p *Engine) parseMappers() (err error) {
 			return
 		}
 		p.logger.Infof("[gobatis] register fragment: %s.xml", v)
-		fs, err = parseMapper( v, string(bs))
+		fs, err = parseMapper(v, string(bs))
 		if err != nil {
 			return
 		}

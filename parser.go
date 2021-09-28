@@ -858,7 +858,7 @@ func (p *valueStack) empty() bool {
 
 func newExprParams(params ...reflect.Value) *exprParams {
 	r := &exprParams{}
-	r.set(params...)
+	r.init(params...)
 	return r
 }
 
@@ -883,7 +883,21 @@ func (p *exprParams) get(name string) (val exprValue, ok bool) {
 	return
 }
 
-func (p *exprParams) set(params ...reflect.Value) {
+func (p *exprParams) set(name string, param exprValue) {
+	if p.check != nil {
+		index, ok := p.check[name]
+		if ok {
+			p.values[index] = param
+			return
+		}
+	} else {
+		p.check = map[string]int{}
+	}
+	p.values = append(p.values, param)
+	p.check[name] = len(p.values) - 1
+}
+
+func (p *exprParams) init(params ...reflect.Value) {
 	p.values = make([]exprValue, 0)
 	for _, v := range params {
 		p.values = append(p.values, exprValue{
