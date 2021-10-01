@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/gobatis/gobatis/dtd"
 	"reflect"
+	"strings"
 	"time"
 )
 
@@ -16,19 +17,55 @@ type conn interface {
 	Close() error
 }
 
-type execer interface {
-	PrepareContext(ctx context.Context, query string) (*sql.Stmt, error)
-	ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
+//type execer interface {
+//	PrepareContext(ctx context.Context, query string) (*sql.Stmt, error)
+//	ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
+//}
+//
+//type queryer interface {
+//	QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error)
+//	PrepareContext(ctx context.Context, query string) (*sql.Stmt, error)
+//}
+
+type segment struct {
+	query   bool
+	sql     string
+	exprs   []string
+	vars    []interface{}
+	dynamic bool
+	ctx     context.Context
+	conn    conn
 }
 
-type queryer interface {
-	QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error)
-	PrepareContext(ctx context.Context, query string) (*sql.Stmt, error)
+func (p *segment) merge(s ...*segment) {
+	for _, v := range s {
+		p.sql += " " + strings.TrimSpace(v.sql)
+		if !p.dynamic && v.dynamic {
+			p.dynamic = v.dynamic
+		}
+	}
+}
+
+func (p segment) printLog() {
+	//p.logger.Errorf("[gobatis] [%s] exec statement: %s", p.fragment.id, s)
+	//p.logger.Errorf("[gobatis] [%s] exec parameter: %s", p.fragment.id, printVars(vars))
+	//p.logger.Errorf("[gobatis] [%s] prepare error: %v", p.fragment.id, err)
+}
+
+func (p *segment) realSql() string {
+	s := p.sql
+	for i, v := range p.vars {
+		s = strings.Replace(s, fmt.Sprintf("$%d", i+1), fmt.Sprintf("%v", v), 1)
+	}
+	return s
+}
+
+type segments struct {
 }
 
 type caller struct {
-	t        reflect.Type
-	fragment *fragment
+	mt       reflect.Type
+	fragment *method
 	logger   Logger
 	result   []reflect.Value
 }
@@ -40,34 +77,32 @@ func (p *caller) call(in ...reflect.Value) *caller {
 		p.logger.Debugf("[gobatis] [%s] cost: %s", p.fragment.id, time.Since(start))
 	}()
 	
-	s, err := p.prepare(in...)
-	if err != nil {
-		p.setError(err)
-		return p
-	}
-	
 	switch p.fragment.node.Name {
-	case dtd.SELECT:
-		err = p.exec(true, s)
-	case dtd.INSERT, dtd.DELETE, dtd.UPDATE:
-		err = p.exec(false, s)
+	case dtd.SELECT, dtd.INSERT, dtd.DELETE, dtd.UPDATE:
+		s, err := p.prepareSegment(in...)
+		if err != nil {
+			p.setError(err)
+			return p
+		}
+		err = p.exec(s)
+		if err != nil {
+			p.setError(err)
+			return p
+		}
 	default:
 		throw(p.fragment.node.File, p.fragment.node.ctx, callerErr).
 			format("unsupported call method '%s'", p.fragment.node.Name)
-	}
-	if err != nil {
-		p.setError(err)
-		return p
 	}
 	
 	return p
 }
 
-func (p *caller) prepare(in ...reflect.Value) (s *sentence, err error) {
+func (p *caller) prepareSegment(in ...reflect.Value) (s *segment, err error) {
 	
 	var index int
-	s = new(sentence)
-	
+	s = &segment{
+		query: p.fragment.node.Name == dtd.SELECT,
+	}
 	s.ctx, index = p.context(in)
 	if index > -1 {
 		in = p.removeParam(in, index)
@@ -78,7 +113,7 @@ func (p *caller) prepare(in ...reflect.Value) (s *sentence, err error) {
 		in = p.removeParam(in, index)
 	}
 	
-	err = p.fragment.build(s, in...)
+	err = p.fragment.buildSegment(s, in...)
 	if err != nil {
 		return
 	}
@@ -86,7 +121,7 @@ func (p *caller) prepare(in ...reflect.Value) (s *sentence, err error) {
 	return
 }
 
-func (p *caller) exec(query bool, s *sentence) (err error) {
+func (p *caller) exec(s *segment) (err error) {
 	
 	if s.conn == nil {
 		s.conn, err = p.fragment.db.Conn(s.ctx)
@@ -103,7 +138,7 @@ func (p *caller) exec(query bool, s *sentence) (err error) {
 		}
 	}()
 	
-	if query {
+	if s.query {
 		var rows *sql.Rows
 		rows, err = s.conn.QueryContext(s.ctx, s.sql, s.vars...)
 		if err != nil {
@@ -135,9 +170,9 @@ func (p *caller) setError(err error) {
 	} else {
 		p.result = append(p.result, reflect.Zero(errorType))
 	}
-	if p.t != nil {
-		for i := 0; i < p.t.NumOut()-1; i++ {
-			if p.t.Out(i).Kind() == reflect.Ptr {
+	if p.mt != nil {
+		for i := 0; i < p.mt.NumOut()-1; i++ {
+			if p.mt.Out(i).Kind() == reflect.Ptr {
 				if err == sql.ErrNoRows {
 					p.result[i] = reflect.Zero(p.result[i].Type())
 				}
@@ -187,7 +222,7 @@ func (p *caller) setError(err error) {
 //		}
 //	}()
 //
-//	s, exprs, vars, dynamic, err := p.fragment.build(in...)
+//	s, exprs, vars, dynamic, err := p.fragment.buildSegment(in...)
 //	if err != nil {
 //		return
 //	}
@@ -291,7 +326,7 @@ func (p *caller) parseExecResult(res sql.Result, values []reflect.Value) error {
 //		}
 //	}()
 //
-//	s, exprs, vars, dynamic, err := p.fragment.build(in...)
+//	s, exprs, vars, dynamic, err := p.fragment.buildSegment(in...)
 //	if err != nil {
 //		return
 //	}

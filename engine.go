@@ -184,7 +184,6 @@ func (p *Engine) bindMapper(mapper interface{}) (err error) {
 		m = m.fork()
 		m.must = must
 		m.stmt = stmt
-		// use origin name as id
 		m.id = rt.Field(i).Name
 		ft := rv.Field(i).Type()
 		m.checkParameter(ft, rt.Name(), rv.Type().Field(i).Name)
@@ -242,7 +241,7 @@ func (p *Engine) parseMappers() (err error) {
 	if err != nil {
 		return
 	}
-	var fs []*fragment
+	var fs []*method
 	for _, v := range files {
 		var bs []byte
 		bs, err = p.readBundleFile(v)
@@ -260,7 +259,7 @@ func (p *Engine) parseMappers() (err error) {
 	return
 }
 
-func (p *Engine) registerMapper(fs []*fragment) {
+func (p *Engine) registerMapper(fs []*method) {
 	var err error
 	for _, v := range fs {
 		v.db = p.Master()

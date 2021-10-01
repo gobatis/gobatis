@@ -37,7 +37,7 @@ func parseConfig(engine *Engine, file, content string) (err error) {
 	return
 }
 
-func parseMapper(file, content string) (fs []*fragment, err error) {
+func parseMapper(file, content string) (fs []*method, err error) {
 	defer func() {
 		e := recover()
 		err = catch(file, e)
@@ -57,7 +57,7 @@ func parseMapper(file, content string) (fs []*fragment, err error) {
 	if l.rootNode == nil {
 		return
 	}
-	var f *fragment
+	var f *method
 	for _, v := range l.rootNode.Nodes {
 		switch v.Name {
 		case dtd.SELECT, dtd.INSERT, dtd.DELETE, dtd.UPDATE, dtd.SQL:
@@ -99,13 +99,13 @@ func initExprParser(tokens string) (parser *expr.ExprParser) {
 	return
 }
 
-func parseFragment(file, id string, node *xmlNode) (f *fragment, err error) {
+func parseFragment(file, id string, node *xmlNode) (f *method, err error) {
 	defer func() {
 		e := recover()
 		err = catch(file, e)
 	}()
 	
-	f = &fragment{
+	f = &method{
 		id:   id,
 		node: node,
 	}
@@ -275,6 +275,10 @@ func (p *xmlNode) NodeText() string {
 		}
 	}
 	return ""
+}
+
+func (p *xmlNode) EmptyText() bool {
+	return strings.TrimSpace(p.Text) == ""
 }
 
 func (p *xmlNode) GetAttribute(name string) string {

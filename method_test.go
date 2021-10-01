@@ -77,9 +77,9 @@ var testParseMappersCases = []testParseMapperCase{
 // test parse mappers
 func TestParseMappers(t *testing.T) {
 	var (
-		fs  []*fragment
-		f   *fragment
-		s   *sentence
+		fs  []*method
+		f   *method
+		s   *segment
 		err error
 	)
 	for _, c := range testParseMappersCases {
@@ -93,7 +93,7 @@ func TestParseMappers(t *testing.T) {
 		require.Equal(t, 1, len(fs))
 		f = fs[0]
 		for _, sql := range c.sqls {
-			s, err = f.newCaller(nil).prepare(sql.in...)
+			s, err = f.newCaller(nil).prepareSegment(sql.in...)
 			if sql.error {
 				require.Equal(t, true, err != nil)
 				continue
@@ -109,8 +109,8 @@ func TestParseMappers(t *testing.T) {
 }
 
 // test parse inserter
-func testParseInserter(t *testing.T, f *fragment, c testParseMapperCase) {
+func testParseInserter(t *testing.T, f *method, c testParseMapperCase) {
 	//f.parseInserter(f)
-	//s := new(sentence)
-	//f.build(s,c.)
+	//s := new(segment)
+	//f.buildSegment(s,c.)
 }

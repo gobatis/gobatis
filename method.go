@@ -57,15 +57,15 @@ func (p inserter) noValue() bool {
 
 type fragmentManager struct {
 	mu        sync.RWMutex
-	list      []*fragment
-	fragments map[string]*fragment
+	list      []*method
+	fragments map[string]*method
 }
 
-func (p *fragmentManager) add(m *fragment) error {
+func (p *fragmentManager) add(m *method) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	if p.fragments == nil {
-		p.fragments = map[string]*fragment{}
+		p.fragments = map[string]*method{}
 	}
 	_, ok := p.fragments[m.id]
 	if ok {
@@ -76,23 +76,23 @@ func (p *fragmentManager) add(m *fragment) error {
 	return nil
 }
 
-func (p *fragmentManager) all() []*fragment {
+func (p *fragmentManager) all() []*method {
 	p.mu.RLock()
 	defer func() {
 		p.mu.RUnlock()
 	}()
-	items := make([]*fragment, len(p.list))
+	items := make([]*method, len(p.list))
 	for i, v := range p.list {
 		items[i] = v
 	}
 	return items
 }
 
-func (p *fragmentManager) replace(m *fragment) error {
+func (p *fragmentManager) replace(m *method) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	if p.fragments == nil {
-		p.fragments = map[string]*fragment{}
+		p.fragments = map[string]*method{}
 	}
 	_, ok := p.fragments[m.id]
 	if !ok {
@@ -102,7 +102,7 @@ func (p *fragmentManager) replace(m *fragment) error {
 	return nil
 }
 
-func (p *fragmentManager) get(id string) (m *fragment, ok bool) {
+func (p *fragmentManager) get(id string) (m *method, ok bool) {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 	if p.fragments == nil {
@@ -112,7 +112,7 @@ func (p *fragmentManager) get(id string) (m *fragment, ok bool) {
 	return
 }
 
-type fragment struct {
+type method struct {
 	db    *DB
 	id    string
 	node  *xmlNode
@@ -124,8 +124,8 @@ type fragment struct {
 	_stmt *Stmt
 }
 
-func (p fragment) fork() *fragment {
-	n := new(fragment)
+func (p method) fork() *method {
+	n := new(method)
 	n.db = p.db
 	n.id = p.id
 	n.node = p.node
@@ -138,30 +138,30 @@ func (p fragment) fork() *fragment {
 	return n
 }
 
-func (p fragment) newCaller(t reflect.Type) *caller {
-	c := &caller{t: t, fragment: &p}
+func (p method) newCaller(mt reflect.Type) *caller {
+	c := &caller{mt: mt, fragment: &p}
 	if p.db != nil {
 		c.logger = p.db.logger
 	}
-	if t != nil {
-		for i := 0; i < t.NumOut()-1; i++ {
-			if t.Out(i).Kind() == reflect.Ptr {
-				c.result = append(c.result, reflect.New(t.Out(i).Elem()))
+	if mt != nil {
+		for i := 0; i < mt.NumOut()-1; i++ {
+			if mt.Out(i).Kind() == reflect.Ptr {
+				c.result = append(c.result, reflect.New(mt.Out(i).Elem()))
 			} else {
-				c.result = append(c.result, reflect.New(t.Out(i)))
+				c.result = append(c.result, reflect.New(mt.Out(i)))
 			}
 		}
 	}
 	return c
 }
 
-func (p fragment) proxy(field reflect.Value) {
-	field.Set(reflect.MakeFunc(field.Type(), func(in []reflect.Value) []reflect.Value {
-		return p.newCaller(field.Type()).call(in...).result
+func (p method) proxy(mt reflect.Value) {
+	mt.Set(reflect.MakeFunc(mt.Type(), func(in []reflect.Value) []reflect.Value {
+		return p.newCaller(mt.Type()).call(in...).result
 	}))
 }
 
-func (p fragment) setResultAttribute() {
+func (p method) setResultAttribute() {
 	if p.node.Name != dtd.SELECT &&
 		p.node.Name != dtd.INSERT &&
 		p.node.Name != dtd.UPDATE &&
@@ -177,7 +177,7 @@ func (p fragment) setResultAttribute() {
 	}
 }
 
-func (p fragment) checkParameter(ft reflect.Type, mn, fn string) {
+func (p method) checkParameter(ft reflect.Type, mn, fn string) {
 	ac := 0
 	for i := 0; i < ft.NumIn(); i++ {
 		if isCtx(ft.In(i)) || isTx(ft.In(i)) || isDB(ft.In(i)) {
@@ -191,7 +191,7 @@ func (p fragment) checkParameter(ft reflect.Type, mn, fn string) {
 	}
 }
 
-func (p fragment) checkResult(ft reflect.Type, mn, fn string) {
+func (p method) checkResult(ft reflect.Type, mn, fn string) {
 	
 	if ft.NumOut() == 0 || !isError(ft.Out(ft.NumOut()-1)) {
 		throw(p.node.File, p.node.ctx, checkResultErr).
@@ -262,7 +262,7 @@ func (p fragment) checkResult(ft reflect.Type, mn, fn string) {
 	}
 }
 
-func (p fragment) build(s *sentence, args ...reflect.Value) (err error) {
+func (p method) buildSegment(s *segment, args ...reflect.Value) (err error) {
 	defer func() {
 		e := recover()
 		err = catch(p.node.File, e)
@@ -272,7 +272,6 @@ func (p fragment) build(s *sentence, args ...reflect.Value) (err error) {
 		throw(p.node.File, p.node.ctx, parasFragmentErr).
 			format("expect %d args, got %d", len(p.in), len(args))
 	}
-	
 	parser := newExprParser(args...)
 	for i, v := range p.in {
 		err = parser.paramsStack.list.Front().Next().Value.(*exprParams).bind(v, i)
@@ -280,7 +279,7 @@ func (p fragment) build(s *sentence, args ...reflect.Value) (err error) {
 			throw(p.node.File, p.node.ctx, parasFragmentErr).with(err)
 		}
 	}
-	p.parseStatements(parser, p.node, s)
+	p.parseElements(parser, p.node, s)
 	s.exprs = parser.exprs
 	s.vars, err = parser.realVars()
 	if err != nil {
@@ -290,7 +289,7 @@ func (p fragment) build(s *sentence, args ...reflect.Value) (err error) {
 	return
 }
 
-func (p fragment) trimPrefixOverride(sql, prefix string) (r string, err error) {
+func (p method) trimPrefixOverride(sql, prefix string) (r string, err error) {
 	reg, err := regexp.Compile(`(?i)^` + prefix)
 	if err != nil {
 		return
@@ -299,7 +298,7 @@ func (p fragment) trimPrefixOverride(sql, prefix string) (r string, err error) {
 	return
 }
 
-func (p fragment) parseSql(parser *exprParser, ctx antlr.ParserRuleContext, text string, s *sentence) {
+func (p method) parseSql(parser *exprParser, ctx antlr.ParserRuleContext, text string, s *segment) {
 	chars := []rune(text)
 	begin := false
 	inject := false
@@ -342,21 +341,25 @@ func (p fragment) parseSql(parser *exprParser, ctx antlr.ParserRuleContext, text
 	s.sql += sql
 }
 
-func (p fragment) parseStatements(parser *exprParser, node *xmlNode, s *sentence) {
+func (p method) parseElements(parser *exprParser, node *xmlNode, s *segment) {
 	for _, child := range node.Nodes {
-		p.parseStatement(parser, child, s)
+		p.parseElement(parser, node, child, s)
 	}
 	return
 }
 
-func (p fragment) parseStatement(parser *exprParser, node *xmlNode, s *sentence) {
+func (p method) parseBlocks(parse *exprParser, node *xmlNode, s *segment) {
+
+}
+
+func (p method) parseElement(parser *exprParser, parent, node *xmlNode, s *segment) {
 	if node.textOnly {
 		p.parseSql(parser, node.ctx, node.Text, s)
 	} else {
 		s.dynamic = true
 		switch node.Name {
 		case dtd.IF:
-			r := new(sentence)
+			r := new(segment)
 			if p.parseTest(parser, node, r) {
 				s.merge(r)
 			}
@@ -369,26 +372,20 @@ func (p fragment) parseStatement(parser *exprParser, node *xmlNode, s *sentence)
 		case dtd.CHOOSE:
 			p.parseChoose(parser, node, s)
 		case dtd.FOREACH:
-			p.parseForeach(parser, node, s)
+			p.parseForeach(parser, parent, node, s)
 		case dtd.TRIM:
 			p.parseTrim(parser, node, s)
 		case dtd.SET:
 			p.parseSet(parser, node, s)
 		case dtd.INSERTER:
 			p.parseInserter(parser, node, s)
-		case dtd.SAVE:
-			p.parseSave(parser, node, s)
-		case dtd.QUERY:
-			p.parseQuery(parser, node, s)
-		case dtd.BLOCK:
-			// pass
 		default:
 			throw(node.File, node.ctx, parasFragmentErr).with(fmt.Errorf("unknown tag: %s", node.Name))
 		}
 	}
 }
 
-func (p fragment) parseBind(parser *exprParser, node *xmlNode) {
+func (p method) parseBind(parser *exprParser, node *xmlNode) {
 	name := node.GetAttribute(dtd.NAME)
 	// TODO check var rule
 	value, _, err := parser.parseExpression(node.ctx, node.GetAttribute(dtd.VALUE))
@@ -400,11 +397,11 @@ func (p fragment) parseBind(parser *exprParser, node *xmlNode) {
 	})
 }
 
-func (p fragment) parseSelectKey(parser *exprParser, node *xmlNode) {
+func (p method) parseSelectKey(parser *exprParser, node *xmlNode) {
 	// TODO implements
 }
 
-func (p fragment) parseTest(parser *exprParser, node *xmlNode, s *sentence) bool {
+func (p method) parseTest(parser *exprParser, node *xmlNode, s *segment) bool {
 	v, _, err := parser.parseExpression(node.ctx, node.GetAttribute(dtd.TEST))
 	if err != nil {
 		throw(p.node.File, p.node.ctx, parasFragmentErr).with(err)
@@ -416,16 +413,16 @@ func (p fragment) parseTest(parser *exprParser, node *xmlNode, s *sentence) bool
 	if !b {
 		return false
 	}
-	p.parseStatements(parser, node, s)
+	p.parseElements(parser, node, s)
 	
 	return true
 }
 
-func (p fragment) parseWhere(parser *exprParser, node *xmlNode, s *sentence) {
+func (p method) parseWhere(parser *exprParser, node *xmlNode, s *segment) {
 	p.trimPrefixOverrides(parser, node, s, dtd.WHERE, "AND |OR ")
 }
 
-func (p fragment) parseChoose(parser *exprParser, node *xmlNode, s *sentence) {
+func (p method) parseChoose(parser *exprParser, node *xmlNode, s *segment) {
 	var pass bool
 	var oc int
 	for _, child := range node.Nodes {
@@ -434,14 +431,14 @@ func (p fragment) parseChoose(parser *exprParser, node *xmlNode, s *sentence) {
 		}
 		switch child.Name {
 		case dtd.WHEN:
-			r := new(sentence)
+			r := new(segment)
 			if p.parseTest(parser, child, r) {
 				s.merge(r)
 				return
 			}
 		case dtd.OTHERWISE:
 			oc++
-			p.parseStatements(parser, child, s)
+			p.parseElements(parser, child, s)
 			return
 		default:
 			if child.textOnly {
@@ -459,13 +456,13 @@ func (p fragment) parseChoose(parser *exprParser, node *xmlNode, s *sentence) {
 	}
 }
 
-func (p fragment) parseTrim(parser *exprParser, node *xmlNode, s *sentence) {
+func (p method) parseTrim(parser *exprParser, node *xmlNode, s *segment) {
 	p.trimPrefixOverrides(parser, node, s, node.GetAttribute(dtd.PREFIX), node.GetAttribute(dtd.PREFIX_OVERRIDES))
 }
 
-func (p fragment) trimPrefixOverrides(parser *exprParser, node *xmlNode, res *sentence, tag, prefixes string) {
-	wr := new(sentence)
-	p.parseStatements(parser, node, wr)
+func (p method) trimPrefixOverrides(parser *exprParser, node *xmlNode, res *segment, tag, prefixes string) {
+	wr := new(segment)
+	p.parseElements(parser, node, wr)
 	var err error
 	s := strings.TrimSpace(wr.sql)
 	filters := strings.Split(prefixes, "|")
@@ -478,11 +475,11 @@ func (p fragment) trimPrefixOverrides(parser *exprParser, node *xmlNode, res *se
 	res.sql = fmt.Sprintf("%s %s %s", res.sql, tag, s)
 }
 
-func (p fragment) parseSet(parser *exprParser, node *xmlNode, res *sentence) {
+func (p method) parseSet(parser *exprParser, node *xmlNode, res *segment) {
 	p.trimPrefixOverrides(parser, node, res, dtd.SET, ",")
 }
 
-func (p fragment) parseForeach(parser *exprParser, node *xmlNode, res *sentence) {
+func (p method) parseForeach(parser *exprParser, parent, node *xmlNode, res *segment) {
 	
 	_var := node.GetAttribute(dtd.COLLECTION)
 	collection, ok := parser.paramsStack.getVar(_var)
@@ -519,7 +516,7 @@ func (p fragment) parseForeach(parser *exprParser, node *xmlNode, res *sentence)
 			if i == 0 {
 				p.bindForeachParams(parser, indexParam, itemParam)
 			}
-			p.parseForeachChild(parser, node, &frags)
+			p.parseForeachChild(parser, parent, node, &frags)
 		}
 	case reflect.Map:
 		for i, v := range elem.MapKeys() {
@@ -527,7 +524,7 @@ func (p fragment) parseForeach(parser *exprParser, node *xmlNode, res *sentence)
 			if i == 0 {
 				p.bindForeachParams(parser, indexParam, itemParam)
 			}
-			p.parseForeachChild(parser, node, &frags)
+			p.parseForeachChild(parser, parent, node, &frags)
 		}
 	case reflect.Struct:
 		for i := 0; i < elem.NumField(); i++ {
@@ -535,7 +532,7 @@ func (p fragment) parseForeach(parser *exprParser, node *xmlNode, res *sentence)
 			if i == 0 {
 				p.bindForeachParams(parser, indexParam, itemParam)
 			}
-			p.parseForeachChild(parser, node, &frags)
+			p.parseForeachChild(parser, parent, node, &frags)
 		}
 	default:
 		throw(parser.file, node.ctx, parasFragmentErr).format("foreach collection type '%s' can't range", elem.Type())
@@ -545,13 +542,13 @@ func (p fragment) parseForeach(parser *exprParser, node *xmlNode, res *sentence)
 		throw(parser.file, node.ctx, popParamsStackErr).with(err)
 	}
 	if len(frags) > 0 {
-		res.merge(&sentence{
+		res.merge(&segment{
 			sql: open + strings.Join(frags, separator) + _close,
 		})
 	}
 }
 
-func (p fragment) bindForeachParams(parser *exprParser, indexParam, itemParam *param) {
+func (p method) bindForeachParams(parser *exprParser, indexParam, itemParam *param) {
 	parser.paramsStack.peak().check = map[string]int{}
 	err := parser.paramsStack.peak().bind(indexParam, 0)
 	if err != nil {
@@ -563,23 +560,23 @@ func (p fragment) bindForeachParams(parser *exprParser, indexParam, itemParam *p
 	}
 }
 
-func (p fragment) parseParams(tokens string) []*param {
+func (p method) parseParams(tokens string) []*param {
 	parser := newParamParser(p.node.File)
 	parser.walkMethods(initExprParser(tokens))
 	return parser.params
 }
 
-func (p fragment) parseForeachChild(parser *exprParser, node *xmlNode, frags *[]string) {
+func (p method) parseForeachChild(parser *exprParser, parent, node *xmlNode, frags *[]string) {
 	r := ""
 	for _, child := range node.Nodes {
-		br := new(sentence)
-		p.parseStatement(parser, child, br)
+		br := new(segment)
+		p.parseElement(parser, parent, child, br)
 		r += br.sql
 	}
 	*frags = append(*frags, r)
 }
 
-func (p fragment) parseInserter(parser *exprParser, node *xmlNode, s *sentence) {
+func (p method) parseInserter(parser *exprParser, node *xmlNode, s *segment) {
 	var it = new(inserter)
 	var err error
 	table, _, err := parser.parseExpression(node.ctx, node.GetAttribute(dtd.TABLE))
@@ -591,7 +588,7 @@ func (p fragment) parseInserter(parser *exprParser, node *xmlNode, s *sentence) 
 	p.makeInserterSql(parser, node.ctx, it, s)
 }
 
-func (p fragment) parseInserterFields(parser *exprParser, node *xmlNode, it *inserter) {
+func (p method) parseInserterFields(parser *exprParser, node *xmlNode, it *inserter) {
 	var err error
 	var fn string
 	var fv interface{}
@@ -622,7 +619,7 @@ func (p fragment) parseInserterFields(parser *exprParser, node *xmlNode, it *ins
 	}
 }
 
-func (p fragment) extractInserterFields(parser *exprParser, dv reflect.Value, it *inserter) {
+func (p method) extractInserterFields(parser *exprParser, dv reflect.Value, it *inserter) {
 	switch dv.Kind() {
 	case reflect.Slice, reflect.Array:
 		if dv.Len() > 0 {
@@ -645,7 +642,7 @@ func (p fragment) extractInserterFields(parser *exprParser, dv reflect.Value, it
 	return
 }
 
-func (p fragment) extractFiledName(field reflect.StructField) string {
+func (p method) extractFiledName(field reflect.StructField) string {
 	tag := field.Tag.Get(reflect_tag)
 	if strings.Contains(tag, ",") {
 		tag = strings.TrimSpace(strings.Split(tag, ",")[0])
@@ -657,7 +654,7 @@ func (p fragment) extractFiledName(field reflect.StructField) string {
 	return strings.ToLower(field.Name)
 }
 
-func (p fragment) makeInserterSql(parser *exprParser, ctx antlr.ParserRuleContext, it *inserter, s *sentence) {
+func (p method) makeInserterSql(parser *exprParser, ctx antlr.ParserRuleContext, it *inserter, s *segment) {
 	str := strings.Builder{}
 	str.WriteString(fmt.Sprintf("insert into %s(%s)", it.table, strings.Join(it.fl, ",")))
 	str.WriteString(fmt.Sprintf(" values(%s)", strings.Join(it.vs, ",")))
@@ -679,58 +676,80 @@ func (p blocks) len() int {
 	return len(p.items)
 }
 
-func (p fragment) parseBlocks(node *xmlNode) *blocks {
+func (p method) makeBlocks(node *xmlNode) *blocks {
 	bs := new(blocks)
 	if len(node.Nodes) > 0 {
 		bs.items = map[string]*xmlNode{}
 		for _, v := range node.Nodes {
 			if v.Name == dtd.BLOCK {
 				bs.items[v.GetAttribute(dtd.TYPE)] = v
+			} else if !v.EmptyText() {
+				throw(p.node.File, p.node.ctx, parseFragmentErr).with(fmt.Errorf("unsupported ohter element"))
 			}
 		}
 	}
 	return bs
 }
 
-func (p fragment) parseQuery(parser *exprParser, node *xmlNode, s *sentence) {
-	bs := new(blocks)
-	if bs.len() == 0 {
-		return
-	}
-	cn := new(sentence)
-	sn := new(sentence)
+func (p method) parseQuery(parser *exprParser, parent, node *xmlNode, s *segment) {
+	bs := p.makeBlocks(parent)
+	cn := new(segment)
+	sn := new(segment)
 	n := bs.get(dtd.BLOCK_COUNT)
 	if n != nil {
-		p.parseStatement(parser, n, cn)
+		p.parseElement(parser, parent, n, cn)
 	}
 	n = bs.get(dtd.BLOCK_SELECT)
 	if n != nil {
-		p.parseStatement(parser, n, sn)
+		p.parseElement(parser, parent, n, sn)
 	}
 	n = bs.get(dtd.BLOCK_CONDITION)
 	if n != nil {
-		p.parseStatement(parser, n, sn)
+		p.parseElement(parser, parent, n, sn)
 	}
 	n = bs.get(dtd.BLOCK_LIMIT)
 	if n != nil {
-		p.parseStatement(parser, n, sn)
+		p.parseElement(parser, parent, n, sn)
 	}
 	// 合并两个 STATEMENT
 }
 
-func (p fragment) parseSave(parser *exprParser, node *xmlNode, s *sentence) {
-	bs := new(blocks)
-	if bs.len() == 0 {
-		return
-	}
-	is := new(sentence)
-	us := new(sentence)
+func (p method) parseSave(parser *exprParser, parent, node *xmlNode, s *segment) {
+	bs := p.makeBlocks(parent)
 	n := bs.get(dtd.BLOCK_INSERT)
+	update := true
 	if n != nil {
-		p.parseStatement(parser, n, is)
+		v, _, err := parser.parseExpression(node.ctx, n.GetAttribute(dtd.TEST))
+		if err != nil {
+			throw(node.File, node.ctx, parseFragmentErr).with(err)
+		}
+		ok, err := cast.ToBoolE(v)
+		if err != nil {
+			throw(node.File, node.ctx, parseFragmentErr).with(err)
+		}
+		if ok {
+			update = false
+			p.parseElement(parser, parent, n, s)
+		}
 	}
-	n = bs.get(dtd.BLOCK_UPDATE)
-	if n != nil {
-		p.parseStatement(parser, n, us)
+	if update {
+		n = bs.get(dtd.BLOCK_UPDATE)
+		if n != nil {
+			if n.GetAttribute(dtd.TEST) != "" {
+				throw(node.File, node.ctx, parseFragmentErr).with(fmt.Errorf("blcok UPDATE unsupport test"))
+			}
+			p.parseElement(parser, parent, n, s)
+		}
+	}
+}
+
+func (p method) parseBlock(parser *exprParser, parent, node *xmlNode, s *segment) {
+	switch parent.Name {
+	case dtd.SAVE:
+		p.parseSave(parser, parent, node, s)
+	case dtd.UPDATE:
+		p.parseQuery(parser, parent, node, s)
+	default:
+		throw(p.node.File, p.node.ctx, parseFragmentErr).with(fmt.Errorf("tag unsupported block element"))
 	}
 }
