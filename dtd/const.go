@@ -138,7 +138,7 @@ const (
 	BLOCK             = "block"
 	BLOCK_COUNT       = "COUNT"
 	BLOCK_SELECT      = "SELECT"
-	BLOCK_CONDITION   = "CONDITION"
+	BLOCK_FROM        = "FROM"
 	BLOCK_LIMIT       = "LIMIT"
 	BLOCK_INSERT      = "INSERT"
 	BLOCK_UPDATE      = "UPDATE"

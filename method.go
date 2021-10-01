@@ -157,7 +157,7 @@ func (p method) newCaller(mt reflect.Type) *caller {
 
 func (p method) proxy(mt reflect.Value) {
 	mt.Set(reflect.MakeFunc(mt.Type(), func(in []reflect.Value) []reflect.Value {
-		return p.newCaller(mt.Type()).call(in...).result
+		return p.newCaller(mt.Type()).call(in).result
 	}))
 }
 
@@ -262,30 +262,32 @@ func (p method) checkResult(ft reflect.Type, mn, fn string) {
 	}
 }
 
-func (p method) buildSegment(s *segment, args ...reflect.Value) (err error) {
-	defer func() {
-		e := recover()
-		err = catch(p.node.File, e)
-	}()
-	
-	if len(p.in) != len(args) {
+func (p method) prepareParser(in []reflect.Value) (parser *exprParser, err error) {
+	if len(p.in) != len(in) {
 		throw(p.node.File, p.node.ctx, parasFragmentErr).
-			format("expect %d args, got %d", len(p.in), len(args))
+			format("expect %d args, got %d", len(p.in), len(in))
 	}
-	parser := newExprParser(args...)
+	parser = newExprParser(in...)
 	for i, v := range p.in {
 		err = parser.paramsStack.list.Front().Next().Value.(*exprParams).bind(v, i)
 		if err != nil {
 			throw(p.node.File, p.node.ctx, parasFragmentErr).with(err)
 		}
 	}
-	p.parseElements(parser, p.node, s)
-	s.exprs = parser.exprs
+	return
+}
+
+func (p method) buildSegment(parser *exprParser, s *segment, nodes ...*xmlNode) (err error) {
+	for _, node := range nodes {
+		if node == nil {
+			continue
+		}
+		p.parseElements(parser, node, s)
+	}
 	s.vars, err = parser.realVars()
 	if err != nil {
 		return
 	}
-	
 	return
 }
 
@@ -659,97 +661,4 @@ func (p method) makeInserterSql(parser *exprParser, ctx antlr.ParserRuleContext,
 	str.WriteString(fmt.Sprintf("insert into %s(%s)", it.table, strings.Join(it.fl, ",")))
 	str.WriteString(fmt.Sprintf(" values(%s)", strings.Join(it.vs, ",")))
 	p.parseSql(parser, ctx, str.String(), s)
-}
-
-type blocks struct {
-	items map[string]*xmlNode
-}
-
-func (p blocks) get(name string) *xmlNode {
-	if p.items == nil {
-		return nil
-	}
-	return p.items[name]
-}
-
-func (p blocks) len() int {
-	return len(p.items)
-}
-
-func (p method) makeBlocks(node *xmlNode) *blocks {
-	bs := new(blocks)
-	if len(node.Nodes) > 0 {
-		bs.items = map[string]*xmlNode{}
-		for _, v := range node.Nodes {
-			if v.Name == dtd.BLOCK {
-				bs.items[v.GetAttribute(dtd.TYPE)] = v
-			} else if !v.EmptyText() {
-				throw(p.node.File, p.node.ctx, parseFragmentErr).with(fmt.Errorf("unsupported ohter element"))
-			}
-		}
-	}
-	return bs
-}
-
-func (p method) parseQuery(parser *exprParser, parent, node *xmlNode, s *segment) {
-	bs := p.makeBlocks(parent)
-	cn := new(segment)
-	sn := new(segment)
-	n := bs.get(dtd.BLOCK_COUNT)
-	if n != nil {
-		p.parseElement(parser, parent, n, cn)
-	}
-	n = bs.get(dtd.BLOCK_SELECT)
-	if n != nil {
-		p.parseElement(parser, parent, n, sn)
-	}
-	n = bs.get(dtd.BLOCK_CONDITION)
-	if n != nil {
-		p.parseElement(parser, parent, n, sn)
-	}
-	n = bs.get(dtd.BLOCK_LIMIT)
-	if n != nil {
-		p.parseElement(parser, parent, n, sn)
-	}
-	// 合并两个 STATEMENT
-}
-
-func (p method) parseSave(parser *exprParser, parent, node *xmlNode, s *segment) {
-	bs := p.makeBlocks(parent)
-	n := bs.get(dtd.BLOCK_INSERT)
-	update := true
-	if n != nil {
-		v, _, err := parser.parseExpression(node.ctx, n.GetAttribute(dtd.TEST))
-		if err != nil {
-			throw(node.File, node.ctx, parseFragmentErr).with(err)
-		}
-		ok, err := cast.ToBoolE(v)
-		if err != nil {
-			throw(node.File, node.ctx, parseFragmentErr).with(err)
-		}
-		if ok {
-			update = false
-			p.parseElement(parser, parent, n, s)
-		}
-	}
-	if update {
-		n = bs.get(dtd.BLOCK_UPDATE)
-		if n != nil {
-			if n.GetAttribute(dtd.TEST) != "" {
-				throw(node.File, node.ctx, parseFragmentErr).with(fmt.Errorf("blcok UPDATE unsupport test"))
-			}
-			p.parseElement(parser, parent, n, s)
-		}
-	}
-}
-
-func (p method) parseBlock(parser *exprParser, parent, node *xmlNode, s *segment) {
-	switch parent.Name {
-	case dtd.SAVE:
-		p.parseSave(parser, parent, node, s)
-	case dtd.UPDATE:
-		p.parseQuery(parser, parent, node, s)
-	default:
-		throw(p.node.File, p.node.ctx, parseFragmentErr).with(fmt.Errorf("tag unsupported block element"))
-	}
 }

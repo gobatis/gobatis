@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"github.com/gobatis/gobatis/cast"
 	"github.com/gobatis/gobatis/dtd"
 	"reflect"
 	"strings"
@@ -30,11 +31,18 @@ type conn interface {
 type segment struct {
 	query   bool
 	sql     string
-	exprs   []string
+	in      []reflect.Value
 	vars    []interface{}
 	dynamic bool
 	ctx     context.Context
 	conn    conn
+}
+
+func (p segment) fork() *segment {
+	return &segment{
+		ctx:  p.ctx,
+		conn: p.conn,
+	}
 }
 
 func (p *segment) merge(s ...*segment) {
@@ -60,9 +68,6 @@ func (p *segment) realSql() string {
 	return s
 }
 
-type segments struct {
-}
-
 type caller struct {
 	mt       reflect.Type
 	fragment *method
@@ -70,54 +75,74 @@ type caller struct {
 	result   []reflect.Value
 }
 
-func (p *caller) call(in ...reflect.Value) *caller {
+type blocks struct {
+	items map[string]*xmlNode
+}
+
+func (p blocks) get(name string) *xmlNode {
+	if p.items == nil {
+		return nil
+	}
+	return p.items[name]
+}
+
+func (p blocks) len() int {
+	return len(p.items)
+}
+
+func (p *caller) call(in []reflect.Value) *caller {
 	
 	start := time.Now()
 	defer func() {
 		p.logger.Debugf("[gobatis] [%s] cost: %s", p.fragment.id, time.Since(start))
 	}()
 	
+	var err error
+	defer func() {
+		e := recover()
+		if err == nil {
+			err = catch(p.fragment.node.File, e)
+		}
+		if err != nil {
+			p.injectError(err)
+		}
+	}()
+	
 	switch p.fragment.node.Name {
 	case dtd.SELECT, dtd.INSERT, dtd.DELETE, dtd.UPDATE:
-		s, err := p.prepareSegment(in...)
+		s := p.prepareSegment(in)
+		var parser *exprParser
+		parser, err = p.fragment.prepareParser(s.in)
+		err = p.fragment.buildSegment(parser, s, p.fragment.node)
 		if err != nil {
-			p.setError(err)
 			return p
 		}
 		err = p.exec(s)
-		if err != nil {
-			p.setError(err)
-			return p
-		}
+	case dtd.SAVE:
+		err = p.save(in)
+	case dtd.QUERY:
+		err = p.query(in)
 	default:
 		throw(p.fragment.node.File, p.fragment.node.ctx, callerErr).
 			format("unsupported call method '%s'", p.fragment.node.Name)
 	}
-	
 	return p
 }
 
-func (p *caller) prepareSegment(in ...reflect.Value) (s *segment, err error) {
-	
+func (p *caller) prepareSegment(in []reflect.Value) (s *segment) {
 	var index int
 	s = &segment{
 		query: p.fragment.node.Name == dtd.SELECT,
+		in:    in,
 	}
 	s.ctx, index = p.context(in)
 	if index > -1 {
-		in = p.removeParam(in, index)
+		s.in = p.removeParam(s.in, index)
 	}
-	
 	s.conn, index = p.conn(in)
 	if index > -1 {
-		in = p.removeParam(in, index)
+		s.in = p.removeParam(s.in, index)
 	}
-	
-	err = p.fragment.buildSegment(s, in...)
-	if err != nil {
-		return
-	}
-	
 	return
 }
 
@@ -152,11 +177,10 @@ func (p *caller) exec(s *segment) (err error) {
 	if err != nil {
 		return
 	}
-	
 	return p.parseExecResult(r, p.result)
 }
 
-func (p *caller) setError(err error) {
+func (p *caller) injectError(err error) {
 	if err != nil {
 		if err == sql.ErrNoRows {
 			if p.fragment.must {
@@ -181,6 +205,95 @@ func (p *caller) setError(err error) {
 			}
 		}
 	}
+}
+
+func (p *caller) query(in []reflect.Value) (err error) {
+	var (
+		cs     *segment
+		ss     *segment
+		parser *exprParser
+	)
+	bs := p.prepareBlocks()
+	cn := bs.get(dtd.BLOCK_COUNT)
+	if cn != nil {
+		cs = p.prepareSegment(in)
+	}
+	sn := bs.get(dtd.BLOCK_SELECT)
+	if sn != nil {
+		if cs != nil {
+			ss = cs.fork()
+		} else {
+			ss = p.prepareSegment(in)
+		}
+	}
+	fn := bs.get(dtd.BLOCK_FROM)
+	ln := bs.get(dtd.BLOCK_LIMIT)
+	if cs != nil {
+		parser, err = p.fragment.prepareParser(cs.in)
+		if err != nil {
+			return
+		}
+		err = p.fragment.buildSegment(parser, cs, sn, fn, ln)
+		if err != nil {
+			return
+		}
+	}
+	if ss != nil {
+		if parser == nil {
+			parser, err = p.fragment.prepareParser(ss.in)
+			if err != nil {
+				return
+			}
+		}
+		err = p.fragment.buildSegment(parser, ss, sn, fn, ln)
+		if err != nil {
+			return
+		}
+	}
+	return
+}
+
+func (p *caller) save(in []reflect.Value) (err error) {
+	
+	s := p.prepareSegment(in)
+	parser, err := p.fragment.prepareParser(s.in)
+	if err != nil {
+		return
+	}
+	bs := p.prepareBlocks()
+	n := bs.get(dtd.BLOCK_INSERT)
+	update := true
+	if n != nil {
+		var v interface{}
+		v, _, err = parser.parseExpression(n.ctx, n.GetAttribute(dtd.TEST))
+		if err != nil {
+			return
+		}
+		var ok bool
+		ok, err = cast.ToBoolE(v)
+		if err != nil {
+			return
+		}
+		if ok {
+			update = false
+			err = p.fragment.buildSegment(parser, s, n)
+			if err != nil {
+				return
+			}
+		}
+	}
+	
+	if update {
+		n = bs.get(dtd.BLOCK_SELECT)
+		if n != nil {
+			err = p.fragment.buildSegment(parser, s, n)
+			if err != nil {
+				return
+			}
+		}
+	}
+	
+	return
 }
 
 //func (p *caller) exec(in ...reflect.Value) (err error) {
@@ -439,4 +552,20 @@ func (p *caller) conn(in []reflect.Value) (conn, int) {
 		}
 	}
 	return nil, -1
+}
+
+func (p caller) prepareBlocks() *blocks {
+	bs := new(blocks)
+	if len(p.fragment.node.Nodes) > 0 {
+		bs.items = map[string]*xmlNode{}
+	}
+	for _, v := range p.fragment.node.Nodes {
+		if v.Name == dtd.BLOCK {
+			bs.items[v.GetAttribute(dtd.TYPE)] = v
+		} else if !v.EmptyText() {
+			throw(p.fragment.node.File, p.fragment.node.ctx, parseFragmentErr).
+				with(fmt.Errorf("unsupported ohter element"))
+		}
+	}
+	return bs
 }
