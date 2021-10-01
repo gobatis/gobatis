@@ -1,6 +1,7 @@
 package gobatis
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/stretchr/testify/require"
 	"reflect"
@@ -35,11 +36,23 @@ type testParseMapperCaseSql struct {
 var testParseMappersCases = []testParseMapperCase{
 	{
 		definition: `
+		<select id="SelectP001" parameter="id">
+			select * from users where id = #{id};
+		</select>`,
+		method: rv(func(row string) (err error) { return }),
+		sqls: []*testParseMapperCaseSql{
+			{
+				in:  []reflect.Value{rv(100)},
+				sql: `insert into users("name","age") values(?,?)`,
+			},
+		},
+		error: false,
+	},
+	{
+		definition: `
 		<insert id="TestInserter1" parameter="row">
 			<inserter table="'users'" entity="row">
-				<field name="*">
-				<exclude name="'age'" />
-				<exclude name="'name'" />
+				<field name="*" />
 				<field name="'name'">#{row.Name}</field>
 				<field name="'age'">${row.Age}</field>
 			</inserter>
@@ -88,9 +101,9 @@ func TestParseMappers(t *testing.T) {
 				require.NoError(t, err)
 			}
 			//f.par
-			t.Log(s.sql)
-			t.Log(s.vars)
-			//t.Log(s.realSql())
+			t.Log(f.id, s.sql)
+			d, _ := json.Marshal(s.vars)
+			t.Log(f.id, string(d))
 		}
 	}
 }

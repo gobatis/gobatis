@@ -27,18 +27,16 @@ type inserter struct {
 	table string
 	fl    []string
 	fm    map[string]bool
-	vs    []interface{}
-	mul   bool
-	item  string
-	index string
+	vs    []string
 }
 
-func (p *inserter) addField(v string) {
+func (p *inserter) addField(k, v string) {
 	if p.fm == nil {
 		p.fm = map[string]bool{}
 	}
-	p.fm[v] = true
-	p.fl = append(p.fl, v)
+	p.fm[k] = true
+	p.fl = append(p.fl, k)
+	p.vs = append(p.vs, v)
 }
 
 func (p inserter) hasField(v string) bool {
@@ -282,13 +280,12 @@ func (p fragment) build(s *sentence, args ...reflect.Value) (err error) {
 			throw(p.node.File, p.node.ctx, parasFragmentErr).with(err)
 		}
 	}
-	p.parseBlocks(parser, p.node, s)
+	p.parseStatements(parser, p.node, s)
 	s.exprs = parser.exprs
-	// TODO TEST OLD
-	//s.vars, err = parser.realVars()
-	//if err != nil {
-	//	return
-	//}
+	s.vars, err = parser.realVars()
+	if err != nil {
+		return
+	}
 	
 	return
 }
@@ -345,14 +342,14 @@ func (p fragment) parseSql(parser *exprParser, ctx antlr.ParserRuleContext, text
 	s.sql += sql
 }
 
-func (p fragment) parseBlocks(parser *exprParser, node *xmlNode, s *sentence) {
+func (p fragment) parseStatements(parser *exprParser, node *xmlNode, s *sentence) {
 	for _, child := range node.Nodes {
-		p.parseBlock(parser, child, s)
+		p.parseStatement(parser, child, s)
 	}
 	return
 }
 
-func (p fragment) parseBlock(parser *exprParser, node *xmlNode, s *sentence) {
+func (p fragment) parseStatement(parser *exprParser, node *xmlNode, s *sentence) {
 	if node.textOnly {
 		p.parseSql(parser, node.ctx, node.Text, s)
 	} else {
@@ -379,6 +376,12 @@ func (p fragment) parseBlock(parser *exprParser, node *xmlNode, s *sentence) {
 			p.parseSet(parser, node, s)
 		case dtd.INSERTER:
 			p.parseInserter(parser, node, s)
+		case dtd.SAVE:
+			p.parseSave(parser, node, s)
+		case dtd.QUERY:
+			p.parseQuery(parser, node, s)
+		case dtd.BLOCK:
+			// pass
 		default:
 			throw(node.File, node.ctx, parasFragmentErr).with(fmt.Errorf("unknown tag: %s", node.Name))
 		}
@@ -413,7 +416,7 @@ func (p fragment) parseTest(parser *exprParser, node *xmlNode, s *sentence) bool
 	if !b {
 		return false
 	}
-	p.parseBlocks(parser, node, s)
+	p.parseStatements(parser, node, s)
 	
 	return true
 }
@@ -438,7 +441,7 @@ func (p fragment) parseChoose(parser *exprParser, node *xmlNode, s *sentence) {
 			}
 		case dtd.OTHERWISE:
 			oc++
-			p.parseBlocks(parser, child, s)
+			p.parseStatements(parser, child, s)
 			return
 		default:
 			if child.textOnly {
@@ -462,7 +465,7 @@ func (p fragment) parseTrim(parser *exprParser, node *xmlNode, s *sentence) {
 
 func (p fragment) trimPrefixOverrides(parser *exprParser, node *xmlNode, res *sentence, tag, prefixes string) {
 	wr := new(sentence)
-	p.parseBlocks(parser, node, wr)
+	p.parseStatements(parser, node, wr)
 	var err error
 	s := strings.TrimSpace(wr.sql)
 	filters := strings.Split(prefixes, "|")
@@ -570,7 +573,7 @@ func (p fragment) parseForeachChild(parser *exprParser, node *xmlNode, frags *[]
 	r := ""
 	for _, child := range node.Nodes {
 		br := new(sentence)
-		p.parseBlock(parser, child, br)
+		p.parseStatement(parser, child, br)
 		r += br.sql
 	}
 	*frags = append(*frags, r)
@@ -579,22 +582,12 @@ func (p fragment) parseForeachChild(parser *exprParser, node *xmlNode, frags *[]
 func (p fragment) parseInserter(parser *exprParser, node *xmlNode, s *sentence) {
 	var it = new(inserter)
 	var err error
-	table, static, err := parser.parseExpression(node.ctx, node.GetAttribute(dtd.TABLE))
+	table, _, err := parser.parseExpression(node.ctx, node.GetAttribute(dtd.TABLE))
 	if err != nil {
 		throw(p.node.File, node.ctx, parseInserterErr).with(err)
 	}
-	if static {
-		it.table = table.(string)
-	} else {
-		it.table = "$1"
-	}
-	it.item = node.GetAttribute(dtd.ITEM)
-	it.index = node.GetAttribute(dtd.INDEX)
-	it.mul = it.item != ""
+	it.table = table.(string)
 	p.parseInserterFields(parser, node, it)
-	if it.mul {
-		p.parseInserterValues(parser, node, it)
-	}
 	p.makeInserterSql(parser, node.ctx, it, s)
 }
 
@@ -607,68 +600,49 @@ func (p fragment) parseInserterFields(parser *exprParser, node *xmlNode, it *ins
 		case dtd.FIELD:
 			fn = v.GetAttribute(dtd.NAME)
 			if fn == "*" {
-				data, ok := parser.paramsStack.getVar(node.GetAttribute(dtd.DATA))
+				entity, ok := parser.paramsStack.getVar(node.GetAttribute(dtd.ENTITY))
 				if !ok {
 					throw(p.node.File, node.ctx, parseInserterErr).with(fmt.Errorf("data not found"))
 				}
 				if it.noField() {
-					dv := toReflectValueElem(data.value)
-					p.extractInserterFields(dv, it)
+					dv := toReflectValueElem(entity.value)
+					p.extractInserterFields(parser, dv, it)
 				}
 			} else {
 				fv, _, err = parser.parseExpression(node.ctx, fn)
 				if err != nil {
 					throw(p.node.File, node.ctx, parseInserterErr).with(err)
 				}
-				field := fmt.Sprintf("\"%s\"", fv)
-				if !it.hasField(field) {
-					it.addField(field)
-					var r interface{}
-					r, _, err = parser.parseExpression(node.ctx, v.NodeText())
-					if err != nil {
-						fmt.Println(v.NodeText())
-						throw(p.node.File, node.ctx, parseInserterErr).with(err)
-					}
-					it.vs = append(it.vs, r)
+				name := fv.(string)
+				if !it.hasField(name) {
+					it.addField(name, v.NodeText())
 				}
 			}
 		}
 	}
 }
 
-func (p fragment) extractInserterFields(dv reflect.Value, it *inserter) {
+func (p fragment) extractInserterFields(parser *exprParser, dv reflect.Value, it *inserter) {
 	switch dv.Kind() {
 	case reflect.Slice, reflect.Array:
 		if dv.Len() > 0 {
-			p.extractInserterFields(dv.Index(0), it)
+			p.extractInserterFields(parser, dv.Index(0), it)
 		}
 	case reflect.Struct:
+		var name string
+		var iv string
 		for i := 0; i < dv.Type().NumField(); i++ {
-			it.addField(p.extractFiledName(dv.Type().Field(i)))
+			name = p.extractFiledName(dv.Type().Field(i))
+			iv = innerVar(p.id, name)
+			parser.paramsStack.peak().set(iv, exprValue{
+				value: dv.Field(i).Interface(),
+			})
+			it.addField(name, innerExpr(iv))
 		}
 	default:
 		throw(p.node.File, p.node.ctx, parseInserterErr).with(fmt.Errorf("unsuport inserter data type"))
 	}
 	return
-}
-
-func (p fragment) parseInserterValues(parser *exprParser, node *xmlNode, it *inserter) {
-	data, ok := parser.paramsStack.getVar(node.GetAttribute(dtd.DATA))
-	if !ok {
-		throw(p.node.File, node.ctx, parseInserterErr).with(fmt.Errorf("data not found"))
-	}
-	dv := toReflectValueElem(data.value)
-	for i := 0; i < dv.Len(); i++ {
-		for ii := 0; ii < len(it.fl); ii++ {
-			field := it.fl[ii]
-			for j := 0; j < dv.Index(i).Type().NumField(); j++ {
-				if p.extractFiledName(dv.Index(i).Type().Field(j)) == field {
-					//fmt.Println("value:", field, expression, dv.Index(i).Field(j).Interface())
-					it.vs = append(it.vs, dv.Index(i).Field(j).Interface())
-				}
-			}
-		}
-	}
 }
 
 func (p fragment) extractFiledName(field reflect.StructField) string {
@@ -677,25 +651,86 @@ func (p fragment) extractFiledName(field reflect.StructField) string {
 		tag = strings.TrimSpace(strings.Split(tag, ",")[0])
 	}
 	if tag != "" {
-		return fmt.Sprintf("\"%s\"", tag)
+		return tag
 	}
 	// TODO support lower snake name
-	return fmt.Sprintf("\"%s\"", strings.ToLower(field.Name))
+	return strings.ToLower(field.Name)
 }
 
 func (p fragment) makeInserterSql(parser *exprParser, ctx antlr.ParserRuleContext, it *inserter, s *sentence) {
 	str := strings.Builder{}
 	str.WriteString(fmt.Sprintf("insert into %s(%s)", it.table, strings.Join(it.fl, ",")))
-	var vs []string
-	for i := range it.vs {
-		vs = append(vs, fmt.Sprintf("$%d", i+1))
-	}
-	str.WriteString(fmt.Sprintf(" values(%s)", strings.Join(vs, ",")))
-	s.sql = str.String()
-	s.vars = it.vs
-	//p.parseSql(parser, ctx, str.String(), s)
+	str.WriteString(fmt.Sprintf(" values(%s)", strings.Join(it.vs, ",")))
+	p.parseSql(parser, ctx, str.String(), s)
 }
 
-//func (p fragment) parseQuery(){
-//
-//}
+type blocks struct {
+	items map[string]*xmlNode
+}
+
+func (p blocks) get(name string) *xmlNode {
+	if p.items == nil {
+		return nil
+	}
+	return p.items[name]
+}
+
+func (p blocks) len() int {
+	return len(p.items)
+}
+
+func (p fragment) parseBlocks(node *xmlNode) *blocks {
+	bs := new(blocks)
+	if len(node.Nodes) > 0 {
+		bs.items = map[string]*xmlNode{}
+		for _, v := range node.Nodes {
+			if v.Name == dtd.BLOCK {
+				bs.items[v.GetAttribute(dtd.TYPE)] = v
+			}
+		}
+	}
+	return bs
+}
+
+func (p fragment) parseQuery(parser *exprParser, node *xmlNode, s *sentence) {
+	bs := new(blocks)
+	if bs.len() == 0 {
+		return
+	}
+	cn := new(sentence)
+	sn := new(sentence)
+	n := bs.get(dtd.BLOCK_COUNT)
+	if n != nil {
+		p.parseStatement(parser, n, cn)
+	}
+	n = bs.get(dtd.BLOCK_SELECT)
+	if n != nil {
+		p.parseStatement(parser, n, sn)
+	}
+	n = bs.get(dtd.BLOCK_CONDITION)
+	if n != nil {
+		p.parseStatement(parser, n, sn)
+	}
+	n = bs.get(dtd.BLOCK_LIMIT)
+	if n != nil {
+		p.parseStatement(parser, n, sn)
+	}
+	// 合并两个 STATEMENT
+}
+
+func (p fragment) parseSave(parser *exprParser, node *xmlNode, s *sentence) {
+	bs := new(blocks)
+	if bs.len() == 0 {
+		return
+	}
+	is := new(sentence)
+	us := new(sentence)
+	n := bs.get(dtd.BLOCK_INSERT)
+	if n != nil {
+		p.parseStatement(parser, n, is)
+	}
+	n = bs.get(dtd.BLOCK_UPDATE)
+	if n != nil {
+		p.parseStatement(parser, n, us)
+	}
+}

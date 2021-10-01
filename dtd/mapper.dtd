@@ -304,16 +304,9 @@
                 test CDATA #IMPLIED
                 >
 
-
-        <!ELEMENT statement (#PCDATA | sql | inserter | include | trim | where | set | foreach | choose | if | bind )+>
-        <!ATTLIST statement
-                type (INSERT | SELECT | UPDATE) #REQUIRED
-                test CDATA #IMPLIED
-                >
-
-        <!ELEMENT block (#PCDATA | include | trim | where | set | foreach | choose | if | bind)*>
+        <!ELEMENT block (#PCDATA | include | trim | where | set | foreach | choose | if | bind | inserter)*>
         <!ATTLIST block
-                type (COUNT | SELECT | SOURCE | EXTRA)  #REQUIRED
+                type (COUNT | SELECT | CONDITION | LIMIT | INSERT | UPDATE)  #REQUIRED
                 test CDATA #IMPLIED
                 >
 
@@ -324,7 +317,7 @@
                 >
 
 
-        <!ELEMENT save (#PCDATA | statement | include | trim | where | set | foreach | choose | if | bind)*>
+        <!ELEMENT save (#PCDATA | block | include | trim | where | set | foreach | choose | if | bind)*>
         <!ATTLIST save
                 id CDATA #REQUIRED
                 parameter CDATA #IMPLIED

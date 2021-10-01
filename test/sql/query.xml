@@ -10,12 +10,12 @@
         <block type="SELECT">
             select id,username,email,mobile
         </block>
-        <block type="SOURCE">
+        <block type="CONDITION">
             from users where authed = #{authed}
             order by id desc
         </block>
-        <block type="EXTRA">
-            limit #{limit} offset #{ @page(page, limit) };
+        <block type="LIMIT">
+            limit #{limit} offset #{ paging(page,limit) };
         </block>
     </query>
 </mapper>

@@ -83,7 +83,7 @@ func walkXMLNodes(listener antlr.ParseTreeListener, tokens string) {
 	parser := xml.NewXMLParser(stream)
 	parser.BuildParseTrees = true
 	parser.AddErrorListener(antlr.NewDiagnosticErrorListener(false))
-	parser.SetErrorHandler(newParserErrorStrategy())
+	parser.SetErrorHandler(newXmlErrorStrategy())
 	antlr.ParseTreeWalkerDefault.Walk(listener, parser.Document())
 }
 
@@ -249,15 +249,15 @@ func newXMLNode(file, name string, ctx antlr.ParserRuleContext, token antlr.Toke
 }
 
 type xmlNode struct {
+	ctx        antlr.ParserRuleContext
+	start      antlr.Token
+	textOnly   bool
 	File       string `json:"-"`
 	Name       string
 	Text       string
 	Attributes map[string]*xmlNodeAttribute
 	Nodes      []*xmlNode
 	nodesCount map[string]int
-	start      antlr.Token
-	ctx        antlr.ParserRuleContext
-	textOnly   bool
 }
 
 type xmlNodeAttribute struct {
@@ -286,6 +286,11 @@ func (p *xmlNode) GetAttribute(name string) string {
 		return v.Value
 	}
 	return ""
+}
+
+func (p *xmlNode) GetNode(name string) *xmlNode {
+	
+	return nil
 }
 
 func (p *xmlNode) AddAttribute(name string, value *xmlNodeAttribute) {

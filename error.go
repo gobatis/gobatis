@@ -46,6 +46,7 @@ const (
 	resultAttributeConflictErr
 	castBoolErr
 	parseInserterErr
+	parseQueryErr
 )
 
 func throw(file string, ctx antlr.ParserRuleContext, code int) *_error {
@@ -162,6 +163,37 @@ func (p *parserErrorStrategy) ReportError(antlr.Parser, antlr.RecognitionExcepti
 }
 
 func (p *parserErrorStrategy) ReportMatch(antlr.Parser) {
+	// pass
+}
+
+func newXmlErrorStrategy() *xmlErrorStrategy {
+	return &xmlErrorStrategy{BailErrorStrategy: antlr.NewBailErrorStrategy()}
+}
+
+type xmlErrorStrategy struct {
+	*antlr.BailErrorStrategy
+}
+
+func (p *xmlErrorStrategy) Recover(recognizer antlr.Parser, e antlr.RecognitionException) {
+	// TODO handle syntax error detail
+	context := recognizer.GetParserRuleContext()
+	throw("", context, syntaxErr).format("xml syntax error")
+}
+
+func (p *xmlErrorStrategy) RecoverInline(recognizer antlr.Parser) antlr.Token {
+	p.Recover(recognizer, antlr.NewInputMisMatchException(recognizer))
+	return nil
+}
+
+func (p *xmlErrorStrategy) Sync(recognizer antlr.Parser) {
+	// pass
+}
+
+func (p *xmlErrorStrategy) ReportError(antlr.Parser, antlr.RecognitionException) {
+	// pass
+}
+
+func (p *xmlErrorStrategy) ReportMatch(antlr.Parser) {
 	// pass
 }
 

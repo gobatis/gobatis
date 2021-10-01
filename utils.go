@@ -86,14 +86,14 @@ func printVars(vars []interface{}) string {
 	return r
 }
 
-func innerVar(name string) string {
-	return fmt.Sprintf("@%s", name)
+func innerVar(id, name string) string {
+	return fmt.Sprintf("%s_%s", id, name)
 }
 
-func queryCountMethod(id string) string {
-	return fmt.Sprintf("%s@Count", id)
+func innerExpr(name string) string {
+	return fmt.Sprintf("#{%s}", name)
 }
 
-func queryCollectMethod(id string) string {
-	return fmt.Sprintf("%s@Collect", id)
+func innerMethod(id, method string) string {
+	return fmt.Sprintf("%s@%s", id, method)
 }
