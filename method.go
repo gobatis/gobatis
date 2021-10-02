@@ -277,12 +277,96 @@ func (p method) checkResult(ft reflect.Type, mn, fn string) {
 	}
 }
 
+func (p method) context(in []reflect.Value) (context.Context, int) {
+	for i, v := range in {
+		if isCtx(v.Type()) {
+			return v.Interface().(context.Context), i
+		}
+	}
+	return context.Background(), -1
+}
+
+func (p method) conn(in []reflect.Value) (conn, int) {
+	if len(in) > 0 {
+		t := reflect.TypeOf(new(conn)).Elem()
+		for i, v := range in {
+			if v.Type().Implements(t) {
+				return v.Interface().(conn), i
+			}
+		}
+	}
+	return nil, -1
+}
+
+func (p method) removeParam(a []reflect.Value, i int) []reflect.Value {
+	return append(a[:i], a[i+1:]...)
+}
+
+func (p method) prepareSegment(in []reflect.Value) (s *segment) {
+	var index int
+	s = &segment{
+		in: in,
+	}
+	s.ctx, index = p.context(in)
+	if index > -1 {
+		s.in = p.removeParam(s.in, index)
+	}
+	s.conn, index = p.conn(in)
+	if index > -1 {
+		s.in = p.removeParam(s.in, index)
+	}
+	return
+}
+
+func (p method) prepareBlocks() *blocks {
+	bs := new(blocks)
+	if len(p.node.Nodes) > 0 {
+		bs.items = map[string]*xmlNode{}
+	}
+	for _, v := range p.node.Nodes {
+		if v.Name == dtd.BLOCK {
+			bs.items[v.GetAttribute(dtd.TYPE)] = v
+		} else if !v.EmptyText() {
+			throw(p.node.File, p.node.ctx, parseFragmentErr).
+				with(fmt.Errorf("unsupported ohter element"))
+		}
+	}
+	return bs
+}
+
+func (p method) parseSegment(parser *exprParser, s *segment, nodes ...*xmlNode) (err error) {
+	for _, node := range nodes {
+		if node == nil {
+			continue
+		}
+		p.parseElements(parser, node, s)
+	}
+	s.vars, err = parser.realVars()
+	if err != nil {
+		return
+	}
+	return
+}
+
+func (p method) prepareParser(in []reflect.Value) (parser *exprParser, err error) {
+	if len(p.in) != len(in) {
+		throw(p.node.File, p.node.ctx, parasFragmentErr).
+			format("expect %d args, got %d", len(p.in), len(in))
+	}
+	parser = newExprParser(in...)
+	for i, v := range p.in {
+		err = parser.paramsStack.list.Front().Next().Value.(*exprParams).bind(v, i)
+		if err != nil {
+			throw(p.node.File, p.node.ctx, parasFragmentErr).with(err)
+		}
+	}
+	return
+}
+
 func (p method) buildSegment(in []reflect.Value) (s *segment, err error) {
-	
 	defer func() {
 		err = catch(p.node.File, recover())
 	}()
-	
 	s = p.prepareSegment(in)
 	s.query = p.node.Name == dtd.SELECT
 	var parser *exprParser
@@ -318,11 +402,10 @@ func (p method) buildQuery(in []reflect.Value) (ss []*segment, err error) {
 		if err != nil {
 			return
 		}
-		err = p.parseSegment(parser, ss[0], sn, fn, ln)
+		err = p.parseSegment(parser, ss[0], cn, fn, ln)
 		if err != nil {
 			return
 		}
-		fmt.Println(ss[0].sql)
 	}
 	if ss[1] != nil {
 		parser, err = p.prepareParser(ss[1].in)
@@ -333,7 +416,6 @@ func (p method) buildQuery(in []reflect.Value) (ss []*segment, err error) {
 		if err != nil {
 			return
 		}
-		fmt.Println(ss[1].sql)
 	}
 	return
 }
@@ -369,7 +451,6 @@ func (p method) buildSave(in []reflect.Value) (s *segment, err error) {
 			}
 		}
 	}
-	
 	if update {
 		n = bs.get(dtd.BLOCK_SELECT)
 		if n != nil {
@@ -379,77 +460,49 @@ func (p method) buildSave(in []reflect.Value) (s *segment, err error) {
 			}
 		}
 	}
-	
 	return
 }
 
-func (p method) prepareParser(in []reflect.Value) (parser *exprParser, err error) {
-	if len(p.in) != len(in) {
-		throw(p.node.File, p.node.ctx, parasFragmentErr).
-			format("expect %d args, got %d", len(p.in), len(in))
-	}
-	parser = newExprParser(in...)
-	for i, v := range p.in {
-		err = parser.paramsStack.list.Front().Next().Value.(*exprParams).bind(v, i)
-		if err != nil {
-			throw(p.node.File, p.node.ctx, parasFragmentErr).with(err)
-		}
-	}
-	return
-}
-func (p method) prepareSegment(in []reflect.Value) (s *segment) {
-	var index int
-	s = &segment{
-		in: in,
-	}
-	s.ctx, index = p.context(in)
-	if index > -1 {
-		s.in = p.removeParam(s.in, index)
-	}
-	s.conn, index = p.conn(in)
-	if index > -1 {
-		s.in = p.removeParam(s.in, index)
+func (p method) parseElements(parser *exprParser, node *xmlNode, s *segment) {
+	for _, child := range node.Nodes {
+		p.parseElement(parser, node, child, s)
 	}
 	return
 }
 
-func (p method) removeParam(a []reflect.Value, i int) []reflect.Value {
-	return append(a[:i], a[i+1:]...)
-}
-
-func (p method) context(in []reflect.Value) (context.Context, int) {
-	for i, v := range in {
-		if isCtx(v.Type()) {
-			return v.Interface().(context.Context), i
-		}
-	}
-	return context.Background(), -1
-}
-
-func (p method) conn(in []reflect.Value) (conn, int) {
-	if len(in) > 0 {
-		t := reflect.TypeOf(new(conn)).Elem()
-		for i, v := range in {
-			if v.Type().Implements(t) {
-				return v.Interface().(conn), i
+func (p method) parseElement(parser *exprParser, parent, node *xmlNode, s *segment) {
+	if node.textOnly {
+		p.parseSQL(parser, node.ctx, node.Text, s)
+	} else {
+		s.dynamic = true
+		switch node.Name {
+		case dtd.IF:
+			r := new(segment)
+			if p.parseTest(parser, node, r) {
+				s.merge(r)
 			}
+		case dtd.BIND:
+			p.parseBind(parser, node)
+		case dtd.SELECT_KEY:
+			p.parseSelectKey(parser, node)
+		case dtd.WHERE:
+			p.parseWhere(parser, node, s)
+		case dtd.CHOOSE:
+			p.parseChoose(parser, node, s)
+		case dtd.FOREACH:
+			p.parseForeach(parser, parent, node, s)
+		case dtd.TRIM:
+			p.parseTrim(parser, node, s)
+		case dtd.SET:
+			p.parseSet(parser, node, s)
+		case dtd.INSERTER:
+			p.parseInserter(parser, node, s)
+		case dtd.BLOCK:
+			// pass
+		default:
+			throw(node.File, node.ctx, parasFragmentErr).with(fmt.Errorf("unknown tag: %s", node.Name))
 		}
 	}
-	return nil, -1
-}
-
-func (p method) parseSegment(parser *exprParser, s *segment, nodes ...*xmlNode) (err error) {
-	for _, node := range nodes {
-		if node == nil {
-			continue
-		}
-		p.parseElements(parser, node, s)
-	}
-	s.vars, err = parser.realVars()
-	if err != nil {
-		return
-	}
-	return
 }
 
 func (p method) trimPrefixOverride(sql, prefix string) (r string, err error) {
@@ -461,7 +514,7 @@ func (p method) trimPrefixOverride(sql, prefix string) (r string, err error) {
 	return
 }
 
-func (p method) parseSql(parser *exprParser, ctx antlr.ParserRuleContext, text string, s *segment) {
+func (p method) parseSQL(parser *exprParser, ctx antlr.ParserRuleContext, text string, s *segment) {
 	chars := []rune(text)
 	begin := false
 	inject := false
@@ -499,51 +552,7 @@ func (p method) parseSql(parser *exprParser, ctx antlr.ParserRuleContext, text s
 			inject = false
 		}
 	}
-	
-	// to avoid useless space
 	s.sql += sql
-}
-
-func (p method) parseElements(parser *exprParser, node *xmlNode, s *segment) {
-	for _, child := range node.Nodes {
-		p.parseElement(parser, node, child, s)
-	}
-	return
-}
-
-func (p method) parseElement(parser *exprParser, parent, node *xmlNode, s *segment) {
-	if node.textOnly {
-		p.parseSql(parser, node.ctx, node.Text, s)
-	} else {
-		s.dynamic = true
-		switch node.Name {
-		case dtd.IF:
-			r := new(segment)
-			if p.parseTest(parser, node, r) {
-				s.merge(r)
-			}
-		case dtd.BIND:
-			p.parseBind(parser, node)
-		case dtd.SELECT_KEY:
-			p.parseSelectKey(parser, node)
-		case dtd.WHERE:
-			p.parseWhere(parser, node, s)
-		case dtd.CHOOSE:
-			p.parseChoose(parser, node, s)
-		case dtd.FOREACH:
-			p.parseForeach(parser, parent, node, s)
-		case dtd.TRIM:
-			p.parseTrim(parser, node, s)
-		case dtd.SET:
-			p.parseSet(parser, node, s)
-		case dtd.INSERTER:
-			p.parseInserter(parser, node, s)
-		case dtd.BLOCK:
-			// pass
-		default:
-			throw(node.File, node.ctx, parasFragmentErr).with(fmt.Errorf("unknown tag: %s", node.Name))
-		}
-	}
 }
 
 func (p method) parseBind(parser *exprParser, node *xmlNode) {
@@ -642,11 +651,11 @@ func (p method) parseSet(parser *exprParser, node *xmlNode, res *segment) {
 
 func (p method) parseForeach(parser *exprParser, parent, node *xmlNode, res *segment) {
 	
-	_var := node.GetAttribute(dtd.COLLECTION)
-	collection, ok := parser.paramsStack.getVar(_var)
+	ca := node.GetAttribute(dtd.COLLECTION)
+	cv, ok := parser.paramsStack.getVar(ca)
 	if !ok {
 		throw(p.node.File, p.node.ctx, parasFragmentErr).
-			format("can't get foreach collection '%s' value", _var)
+			format("can't get foreach collection '%s' value", ca)
 	}
 	index := node.GetAttribute(dtd.INDEX)
 	if index == "" {
@@ -663,12 +672,12 @@ func (p method) parseForeach(parser *exprParser, parent, node *xmlNode, res *seg
 	indexParam := &param{name: index, _type: reflect.Interface.String(), slice: false}
 	itemParam := &param{name: item, _type: reflect.Interface.String(), slice: slice}
 	
-	open := node.GetAttribute(dtd.OPEN)
-	_close := node.GetAttribute(dtd.CLOSE)
+	oa := node.GetAttribute(dtd.OPEN)
+	cla := node.GetAttribute(dtd.CLOSE)
 	separator := node.GetAttribute(dtd.SEPARATOR)
 	
 	parser.paramsStack.push(newExprParams())
-	elem := toReflectValueElem(collection.value)
+	elem := toReflectValueElem(cv.value)
 	frags := make([]string, 0)
 	switch elem.Kind() {
 	case reflect.Slice, reflect.Array:
@@ -704,7 +713,7 @@ func (p method) parseForeach(parser *exprParser, parent, node *xmlNode, res *seg
 	}
 	if len(frags) > 0 {
 		res.merge(&segment{
-			sql: open + strings.Join(frags, separator) + _close,
+			sql: oa + strings.Join(frags, separator) + cla,
 		})
 	}
 }
@@ -746,7 +755,7 @@ func (p method) parseInserter(parser *exprParser, node *xmlNode, s *segment) {
 	}
 	it.table = table.(string)
 	p.parseInserterFields(parser, node, it)
-	p.makeInserterSql(parser, node.ctx, it, s)
+	p.buildInserterSQL(parser, node.ctx, it, s)
 }
 
 func (p method) parseInserterFields(parser *exprParser, node *xmlNode, it *inserter) {
@@ -780,6 +789,7 @@ func (p method) parseInserterFields(parser *exprParser, node *xmlNode, it *inser
 	}
 }
 
+// extract reflect entity fields as insert fields
 func (p method) extractInserterFields(parser *exprParser, dv reflect.Value, it *inserter) {
 	switch dv.Kind() {
 	case reflect.Slice, reflect.Array:
@@ -803,6 +813,9 @@ func (p method) extractInserterFields(parser *exprParser, dv reflect.Value, it *
 	return
 }
 
+// extract reflect entity field to sql fields
+// if tag found, use tag
+// or use lower_snake_name
 func (p method) extractFiledName(field reflect.StructField) string {
 	tag := field.Tag.Get(reflect_tag)
 	if strings.Contains(tag, ",") {
@@ -815,25 +828,11 @@ func (p method) extractFiledName(field reflect.StructField) string {
 	return strings.ToLower(field.Name)
 }
 
-func (p method) makeInserterSql(parser *exprParser, ctx antlr.ParserRuleContext, it *inserter, s *segment) {
+// build inserter sql
+
+func (p method) buildInserterSQL(parser *exprParser, ctx antlr.ParserRuleContext, it *inserter, s *segment) {
 	str := strings.Builder{}
 	str.WriteString(fmt.Sprintf("insert into %s(%s)", it.table, strings.Join(it.fl, ",")))
 	str.WriteString(fmt.Sprintf(" values(%s)", strings.Join(it.vs, ",")))
-	p.parseSql(parser, ctx, str.String(), s)
-}
-
-func (p method) prepareBlocks() *blocks {
-	bs := new(blocks)
-	if len(p.node.Nodes) > 0 {
-		bs.items = map[string]*xmlNode{}
-	}
-	for _, v := range p.node.Nodes {
-		if v.Name == dtd.BLOCK {
-			bs.items[v.GetAttribute(dtd.TYPE)] = v
-		} else if !v.EmptyText() {
-			throw(p.node.File, p.node.ctx, parseFragmentErr).
-				with(fmt.Errorf("unsupported ohter element"))
-		}
-	}
-	return bs
+	p.parseSQL(parser, ctx, str.String(), s)
 }

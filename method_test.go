@@ -33,7 +33,83 @@ type testParseMapperCaseSql struct {
 	error bool
 }
 
-var testParseMappersCases = []testParseMapperCase{
+var testParseSelectCases = []testParseMapperCase{
+	{
+		definition: `
+		<select id="SelectP001" parameter="id">
+			select * from users where id = #{id};
+		</select>`,
+		method: rv(func(row string) (err error) { return }),
+		sqls: []*testParseMapperCaseSql{
+			{
+				in:  []reflect.Value{rv(100)},
+				sql: `insert into users("name","age") values(?,?)`,
+			},
+		},
+		error: false,
+	},
+	{
+		definition: `
+		<insert id="TestInserter1" parameter="row">
+			<inserter table="'users'" entity="row">
+				<field name="*" />
+				<field name="'name'">#{row.Name}</field>
+				<field name="'age'">${row.Age}</field>
+			</inserter>
+		</insert>`,
+		method: rv(func(row string) (err error) { return }),
+		sqls: []*testParseMapperCaseSql{
+			{
+				in: []reflect.Value{rv(struct {
+					Name string
+					Age  int
+				}{
+					Name: "tom",
+					Age:  18,
+				})},
+				sql: `insert into users("name","age") values(?,?)`,
+			},
+		},
+		error: false,
+	},
+}
+
+// test parse mappers
+func TestParseSelectCases(t *testing.T) {
+	var (
+		fs  []*method
+		f   *method
+		c   *caller
+		s   *segment
+		err error
+	)
+	for _, item := range testParseSelectCases {
+		fs, err = parseMapper("", wrapMapperSchema(item.definition))
+		if item.error {
+			require.Equal(t, true, err != nil)
+			continue
+		} else {
+			require.NoError(t, err)
+		}
+		require.Equal(t, 1, len(fs), item.definition)
+		f = fs[0]
+		for _, sql := range item.sqls {
+			c = f.newCaller(nil)
+			s, err = c.method.buildSegment(sql.in)
+			if sql.error {
+				require.Equal(t, true, err != nil)
+				continue
+			} else {
+				require.NoError(t, err)
+			}
+			t.Log(f.id, s.sql)
+			d, _ := json.Marshal(s.vars)
+			t.Log(f.id, string(d))
+		}
+	}
+}
+
+var testParseQueryCases = []testParseMapperCase{
 	//{
 	//	definition: `
 	//	<select id="SelectP001" parameter="id">
@@ -104,7 +180,7 @@ var testParseMappersCases = []testParseMapperCase{
 }
 
 // test parse mappers
-func TestParseMappers(t *testing.T) {
+func TestParseQueryCases(t *testing.T) {
 	var (
 		fs []*method
 		f  *method
@@ -114,7 +190,7 @@ func TestParseMappers(t *testing.T) {
 		//parser *exprParser
 		err error
 	)
-	for _, item := range testParseMappersCases {
+	for _, item := range testParseQueryCases {
 		fs, err = parseMapper("", wrapMapperSchema(item.definition))
 		if item.error {
 			require.Equal(t, true, err != nil)
@@ -139,13 +215,10 @@ func TestParseMappers(t *testing.T) {
 			t.Log(f.id, ss[0].sql)
 			d, _ := json.Marshal(ss[0].vars)
 			t.Log(f.id, string(d))
+			
+			t.Log(f.id, ss[1].sql)
+			d, _ = json.Marshal(ss[1].vars)
+			t.Log(f.id, string(d))
 		}
 	}
-}
-
-// test parse inserter
-func testParseInserter(t *testing.T, f *method, c testParseMapperCase) {
-	//f.parseInserter(f)
-	//s := new(segment)
-	//f.buildSegment(s,c.)
 }

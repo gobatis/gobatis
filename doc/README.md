@@ -12,7 +12,7 @@ features:
   details: 以人为本，从命名到工具链的打磨，为了愉悦编程而不断探索。
 - title: 传承创新
   details: 以 MyBatis 语法为参照，结合 Golang 语言特点，自成一套体系。
-footer: MIT Licensed | Copyright © 2020-present gobatis.co
+footer: MIT Licensed | Copyright © 2020-present gobatis.co | 黔ICP备2020008039号-2
 ---
 
 

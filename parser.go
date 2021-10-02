@@ -70,8 +70,8 @@ func parseMapper(file, content string) (fs []*method, err error) {
 				throw(file, v.ctx, parseFragmentErr).with(err)
 			}
 			fs = append(fs, f)
-		//default:
-		//	throw(file, v.ctx, parseFragmentErr).format("unknown element: %s", v.Name)
+			//default:
+			//	throw(file, v.ctx, parseFragmentErr).format("unknown element: %s", v.Name)
 		}
 	}
 	return
@@ -120,27 +120,6 @@ func parseFragment(file, id string, node *xmlNode) (f *method, err error) {
 		f.out = f.parseParams(node.GetAttribute(dtd.RESULT))
 	}
 	return
-}
-
-func toReflectValueElem(source interface{}) reflect.Value {
-	v := reflect.ValueOf(source)
-	for {
-		if v.Kind() == reflect.Ptr {
-			v = v.Elem()
-		} else {
-			return v
-		}
-	}
-}
-
-func toReflectElem(v reflect.Value) reflect.Value {
-	for {
-		if v.Kind() == reflect.Ptr {
-			v = v.Elem()
-		} else {
-			return v
-		}
-	}
 }
 
 func trimValueQuote(s string) string {
@@ -530,7 +509,14 @@ func (p *xmlParser) enterChardata(c *xml.ChardataContext) {
 	if p.stack.Peak() == nil {
 		return
 	}
-	p.stack.Peak().AddNode(&xmlNode{File: p.file, Text: c.GetText(), ctx: c, start: c.GetStart(), textOnly: true})
+	p.stack.Peak().AddNode(&xmlNode{
+		File: p.file,
+		//Text:     strings.TrimSpace(c.GetText()),
+		Text:     c.GetText(),
+		ctx:      c,
+		start:    c.GetStart(),
+		textOnly: true,
+	})
 }
 
 func (p *xmlParser) EnterEveryRule(ctx antlr.ParserRuleContext) {

@@ -50,6 +50,17 @@ func isError(t reflect.Type) bool {
 	return t.Implements(reflect.TypeOf((*error)(nil)).Elem())
 }
 
+func toReflectValueElem(s interface{}) reflect.Value {
+	v := reflect.ValueOf(s)
+	for {
+		if v.Kind() == reflect.Ptr {
+			v = v.Elem()
+		} else {
+			return v
+		}
+	}
+}
+
 func reflectValueElem(vt reflect.Value) reflect.Value {
 	for {
 		if vt.Kind() != reflect.Ptr {
