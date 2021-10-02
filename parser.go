@@ -60,16 +60,18 @@ func parseMapper(file, content string) (fs []*method, err error) {
 	var f *method
 	for _, v := range l.rootNode.Nodes {
 		switch v.Name {
-		case dtd.SELECT, dtd.INSERT, dtd.DELETE, dtd.UPDATE, dtd.SQL:
+		case dtd.SELECT, dtd.INSERT, dtd.DELETE, dtd.UPDATE, dtd.SQL, dtd.SAVE, dtd.QUERY:
 			id := v.GetAttribute(dtd.ID)
 			if id == "" {
-				throw(file, v.ctx, parseMapperErr).format("fragment: %s miss id", v.Name)
+				throw(file, v.ctx, parseMapperErr).format("method: %s miss id", v.Name)
 			}
 			f, err = parseFragment(file, id, v)
 			if err != nil {
 				throw(file, v.ctx, parseFragmentErr).with(err)
 			}
 			fs = append(fs, f)
+		//default:
+		//	throw(file, v.ctx, parseFragmentErr).format("unknown element: %s", v.Name)
 		}
 	}
 	return
@@ -402,7 +404,7 @@ func (p *xmlParser) validateNode(node *xmlNode, elem *dtd.Element) {
 	}
 	
 	switch node.Name {
-	case dtd.SELECT, dtd.INSERT, dtd.UPDATE, dtd.DELETE:
+	case dtd.SELECT, dtd.INSERT, dtd.UPDATE, dtd.DELETE, dtd.QUERY, dtd.SAVE:
 		p.checkResultConflict(node)
 	}
 	

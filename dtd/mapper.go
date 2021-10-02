@@ -11,6 +11,8 @@ var Mapper = &Element{
 		UPDATE:        ANY_TIMES,
 		DELETE:        ANY_TIMES,
 		SELECT:        ANY_TIMES,
+		QUERY:         ANY_TIMES,
+		SAVE:          ANY_TIMES,
 	},
 	Attributes: map[string]int{
 		NAMESPACE: IMPLIED,
@@ -351,22 +353,6 @@ var Delete = &Element{
 	},
 }
 
-var Inserter = &Element{
-	Name: INSERTER,
-	Nodes: map[string]int{
-		FIELD:   AT_LEAST_ONCE,
-		EXCLUDE: ANY_TIMES,
-	},
-}
-
-var Field = &Element{
-	Name: FIELD,
-	Attributes: map[string]int{
-		NAME: REQUIRED,
-		TEST: IMPLIED,
-	},
-}
-
 var Exclude = &Element{
 	Name: EXCLUDE,
 	Attributes: map[string]int{
@@ -542,5 +528,81 @@ var If = &Element{
 	},
 	Attributes: map[string]int{
 		TEST: REQUIRED,
+	},
+}
+
+var Inserter = &Element{
+	Name: INSERTER,
+	Nodes: map[string]int{
+		FIELD:   AT_LEAST_ONCE,
+		EXCLUDE: ANY_TIMES,
+	},
+}
+
+var Field = &Element{
+	Name: FIELD,
+	Attributes: map[string]int{
+		NAME: REQUIRED,
+		TEST: IMPLIED,
+	},
+}
+
+var Block = &Element{
+	Name: BLOCK,
+	Nodes: map[string]int{
+		PCDATA:     ANY_TIMES,
+		SELECT_KEY: ANY_TIMES,
+		INCLUDE:    ANY_TIMES,
+		TRIM:       ANY_TIMES,
+		WHERE:      ANY_TIMES,
+		SET:        ANY_TIMES,
+		FOREACH:    ANY_TIMES,
+		CHOOSE:     ANY_TIMES,
+		IF:         ANY_TIMES,
+		BIND:       ANY_TIMES,
+	},
+	Attributes: map[string]int{
+		TYPE: REQUIRED,
+		TEST: IMPLIED,
+	},
+}
+
+var Save = &Element{
+	Name: SAVE,
+	Nodes: map[string]int{
+		BLOCK: AT_LEAST_ONCE,
+	},
+	Attributes: map[string]int{
+		ID:                REQUIRED,
+		PARAMETER_MAP:     IMPLIED,
+		PARAMETER:         IMPLIED,
+		TIMEOUT:           IMPLIED,
+		FLUSH_CACHE:       IMPLIED,
+		STATEMENT_TYPE:    IMPLIED,
+		KEY_PROPERTY:      IMPLIED,
+		USE_GENERATE_KEYS: IMPLIED,
+		KEY_COLUMN:        IMPLIED,
+		DATABASE_ID:       IMPLIED,
+		LANG:              IMPLIED,
+	},
+}
+
+var Query = &Element{
+	Name: SAVE,
+	Nodes: map[string]int{
+		BLOCK: AT_LEAST_ONCE,
+	},
+	Attributes: map[string]int{
+		ID:                REQUIRED,
+		PARAMETER_MAP:     IMPLIED,
+		PARAMETER:         IMPLIED,
+		TIMEOUT:           IMPLIED,
+		FLUSH_CACHE:       IMPLIED,
+		STATEMENT_TYPE:    IMPLIED,
+		KEY_PROPERTY:      IMPLIED,
+		USE_GENERATE_KEYS: IMPLIED,
+		KEY_COLUMN:        IMPLIED,
+		DATABASE_ID:       IMPLIED,
+		LANG:              IMPLIED,
 	},
 }

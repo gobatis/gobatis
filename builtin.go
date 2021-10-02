@@ -28,6 +28,7 @@ func init() {
 			"decimal": _decimal,
 			"bool":    _bool,
 			"string":  _string,
+			"paging":  _paging,
 			"strings": _strings{},
 		},
 	}
@@ -158,6 +159,13 @@ func _string(v interface{}) string {
 		panic(err)
 	}
 	return r
+}
+
+func _paging(page, limit int64) int64 {
+	if page < 1 {
+		page = 1
+	}
+	return (page - 1) * limit
 }
 
 type _strings struct{}

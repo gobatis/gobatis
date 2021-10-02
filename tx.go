@@ -32,11 +32,11 @@ func (p *Tx) addStmt(stmt *Stmt) {
 	if p.stmtMap == nil {
 		p.stmtMap = map[string]*Stmt{}
 	}
-	_, ok := p.stmtMap[stmt.caller.fragment.id]
+	_, ok := p.stmtMap[stmt.caller.method.id]
 	if ok {
 		return
 	}
-	p.stmtMap[stmt.caller.fragment.id] = stmt
+	p.stmtMap[stmt.caller.method.id] = stmt
 }
 
 func (p *Tx) getStmt(id string) *Stmt {

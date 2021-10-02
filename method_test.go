@@ -34,39 +34,68 @@ type testParseMapperCaseSql struct {
 }
 
 var testParseMappersCases = []testParseMapperCase{
+	//{
+	//	definition: `
+	//	<select id="SelectP001" parameter="id">
+	//		select * from users where id = #{id};
+	//	</select>`,
+	//	method: rv(func(row string) (err error) { return }),
+	//	sqls: []*testParseMapperCaseSql{
+	//		{
+	//			in:  []reflect.Value{rv(100)},
+	//			sql: `insert into users("name","age") values(?,?)`,
+	//		},
+	//	},
+	//	error: false,
+	//},
+	//{
+	//	definition: `
+	//	<insert id="TestInserter1" parameter="row">
+	//		<inserter table="'users'" entity="row">
+	//			<field name="*" />
+	//			<field name="'name'">#{row.Name}</field>
+	//			<field name="'age'">${row.Age}</field>
+	//		</inserter>
+	//	</insert>`,
+	//	method: rv(func(row string) (err error) { return }),
+	//	sqls: []*testParseMapperCaseSql{
+	//		{
+	//			in: []reflect.Value{rv(struct {
+	//				Name string
+	//				Age  int
+	//			}{
+	//				Name: "tom",
+	//				Age:  18,
+	//			})},
+	//			sql: `insert into users("name","age") values(?,?)`,
+	//		},
+	//	},
+	//	error: false,
+	//},
 	{
 		definition: `
-		<select id="SelectP001" parameter="id">
-			select * from users where id = #{id};
-		</select>`,
+		<query id="TestQueryP001" parameter="age,page,limit">
+			<block type="COUNT">
+				select count(1)
+			</block>
+			<block type="SELECT">
+				select username,email,status
+			</block>
+			<block type="FROM">
+				from users where age >= #{age}
+			</block>
+			<block type="LIMIT">
+				order by age desc limit #{limit} offset #{ paging(page,limit)}
+			</block>
+		</query>`,
 		method: rv(func(row string) (err error) { return }),
 		sqls: []*testParseMapperCaseSql{
 			{
-				in:  []reflect.Value{rv(100)},
-				sql: `insert into users("name","age") values(?,?)`,
-			},
-		},
-		error: false,
-	},
-	{
-		definition: `
-		<insert id="TestInserter1" parameter="row">
-			<inserter table="'users'" entity="row">
-				<field name="*" />
-				<field name="'name'">#{row.Name}</field>
-				<field name="'age'">${row.Age}</field>
-			</inserter>
-		</insert>`,
-		method: rv(func(row string) (err error) { return }),
-		sqls: []*testParseMapperCaseSql{
-			{
-				in: []reflect.Value{rv(struct {
-					Name string
-					Age  int
-				}{
-					Name: "tom",
-					Age:  18,
-				})},
+				in: []reflect.Value{
+					rv(18),
+					rv(2),
+					rv(10),
+				},
 				sql: `insert into users("name","age") values(?,?)`,
 			},
 		},
@@ -77,12 +106,13 @@ var testParseMappersCases = []testParseMapperCase{
 // test parse mappers
 func TestParseMappers(t *testing.T) {
 	var (
-		fs     []*method
-		f      *method
-		c      *caller
-		s      *segment
-		parser *exprParser
-		err    error
+		fs []*method
+		f  *method
+		c  *caller
+		//s  *segment
+		ss []*segment
+		//parser *exprParser
+		err error
 	)
 	for _, item := range testParseMappersCases {
 		fs, err = parseMapper("", wrapMapperSchema(item.definition))
@@ -92,23 +122,22 @@ func TestParseMappers(t *testing.T) {
 		} else {
 			require.NoError(t, err)
 		}
-		require.Equal(t, 1, len(fs))
+		require.Equal(t, 1, len(fs), item.definition)
 		f = fs[0]
 		for _, sql := range item.sqls {
 			c = f.newCaller(nil)
-			s = c.prepareSegment(sql.in)
-			parser, err = c.fragment.prepareParser(s.in)
+			ss, err = c.method.buildQuery(sql.in)
+			//parser, err = c.method.prepareParser(s.in)
 			require.NoError(t, err)
-			err = c.fragment.buildSegment(parser, s, c.fragment.node)
+			//err = c.method.buildSegment(parser, s, c.method.node)
 			if sql.error {
 				require.Equal(t, true, err != nil)
 				continue
 			} else {
 				require.NoError(t, err)
 			}
-			//f.par
-			t.Log(f.id, s.sql)
-			d, _ := json.Marshal(s.vars)
+			t.Log(f.id, ss[0].sql)
+			d, _ := json.Marshal(ss[0].vars)
 			t.Log(f.id, string(d))
 		}
 	}

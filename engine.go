@@ -114,7 +114,7 @@ func (p *Engine) Call(name string, args ...interface{}) {
 	//if !ok {
 	//	panic(fmt.Errorf("method '%s' not exist", name))
 	//}
-	//return &caller{fragment: f, args: args, logger: p.logger}
+	//return &caller{method: f, args: args, logger: p.logger}
 }
 
 //func (p *Engine) Call(name string, args ...reflect.Value) *caller {
@@ -122,7 +122,7 @@ func (p *Engine) Call(name string, args ...interface{}) {
 //	if !ok {
 //		panic(fmt.Errorf("method '%s' not exist", name))
 //	}
-//	return &caller{fragment: f, args: args, logger: p.logger}
+//	return &caller{method: f, args: args, logger: p.logger}
 //}
 
 func (p *Engine) parseBundle() (err error) {
@@ -210,7 +210,7 @@ func (p *Engine) parseConfig() (err error) {
 	if err != nil {
 		return
 	}
-	p.logger.Infof("[gobatis] register fragment: gobatis.xml")
+	p.logger.Infof("[gobatis] register method: gobatis.xml")
 	err = parseConfig(p, config_xml, string(bs))
 	if err != nil {
 		return
@@ -248,7 +248,7 @@ func (p *Engine) parseMappers() (err error) {
 		if err != nil {
 			return
 		}
-		p.logger.Infof("[gobatis] register fragment: %s.xml", v)
+		p.logger.Infof("[gobatis] register method: %s.xml", v)
 		fs, err = parseMapper(v, string(bs))
 		if err != nil {
 			return

@@ -1,6 +1,7 @@
 package gobatis
 
 import (
+	"context"
 	"fmt"
 	"github.com/antlr/antlr4/runtime/Go/antlr"
 	"github.com/gobatis/gobatis/cast"
@@ -55,6 +56,21 @@ func (p inserter) noValue() bool {
 	return len(p.vs) == 0
 }
 
+type blocks struct {
+	items map[string]*xmlNode
+}
+
+func (p blocks) get(name string) *xmlNode {
+	if p.items == nil {
+		return nil
+	}
+	return p.items[name]
+}
+
+func (p blocks) len() int {
+	return len(p.items)
+}
+
 type fragmentManager struct {
 	mu        sync.RWMutex
 	list      []*method
@@ -69,7 +85,7 @@ func (p *fragmentManager) add(m *method) error {
 	}
 	_, ok := p.fragments[m.id]
 	if ok {
-		return fmt.Errorf("duplicated fragment '%s'", m.id)
+		return fmt.Errorf("duplicated method '%s'", m.id)
 	}
 	p.fragments[m.id] = m
 	p.list = append(p.list, m)
@@ -96,7 +112,7 @@ func (p *fragmentManager) replace(m *method) error {
 	}
 	_, ok := p.fragments[m.id]
 	if !ok {
-		return fmt.Errorf("fragment '%s' not exist", m.id)
+		return fmt.Errorf("method '%s' not exist", m.id)
 	}
 	p.fragments[m.id] = m
 	return nil
@@ -139,7 +155,7 @@ func (p method) fork() *method {
 }
 
 func (p method) newCaller(mt reflect.Type) *caller {
-	c := &caller{mt: mt, fragment: &p}
+	c := &caller{mt: mt, method: &p}
 	if p.db != nil {
 		c.logger = p.db.logger
 	}
@@ -192,7 +208,6 @@ func (p method) checkParameter(ft reflect.Type, mn, fn string) {
 }
 
 func (p method) checkResult(ft reflect.Type, mn, fn string) {
-	
 	if ft.NumOut() == 0 || !isError(ft.Out(ft.NumOut()-1)) {
 		throw(p.node.File, p.node.ctx, checkResultErr).
 			format("out expect error at last, got %s", ft.Out(ft.NumOut()-1).String())
@@ -262,6 +277,112 @@ func (p method) checkResult(ft reflect.Type, mn, fn string) {
 	}
 }
 
+func (p method) buildSegment(in []reflect.Value) (s *segment, err error) {
+	
+	defer func() {
+		err = catch(p.node.File, recover())
+	}()
+	
+	s = p.prepareSegment(in)
+	s.query = p.node.Name == dtd.SELECT
+	var parser *exprParser
+	parser, err = p.prepareParser(s.in)
+	err = p.parseSegment(parser, s, p.node)
+	if err != nil {
+		return
+	}
+	return
+}
+
+func (p method) buildQuery(in []reflect.Value) (ss []*segment, err error) {
+	defer func() {
+		err = catch(p.node.File, recover())
+	}()
+	var parser *exprParser
+	ss = make([]*segment, 2)
+	bs := p.prepareBlocks()
+	cn := bs.get(dtd.BLOCK_COUNT)
+	if cn != nil {
+		ss[0] = p.prepareSegment(in)
+		ss[0].query = true
+	}
+	sn := bs.get(dtd.BLOCK_SELECT)
+	if sn != nil {
+		ss[1] = p.prepareSegment(in)
+		ss[1].query = true
+	}
+	fn := bs.get(dtd.BLOCK_FROM)
+	ln := bs.get(dtd.BLOCK_LIMIT)
+	if ss[0] != nil {
+		parser, err = p.prepareParser(ss[0].in)
+		if err != nil {
+			return
+		}
+		err = p.parseSegment(parser, ss[0], sn, fn, ln)
+		if err != nil {
+			return
+		}
+		fmt.Println(ss[0].sql)
+	}
+	if ss[1] != nil {
+		parser, err = p.prepareParser(ss[1].in)
+		if err != nil {
+			return
+		}
+		err = p.parseSegment(parser, ss[1], sn, fn, ln)
+		if err != nil {
+			return
+		}
+		fmt.Println(ss[1].sql)
+	}
+	return
+}
+
+func (p method) buildSave(in []reflect.Value) (s *segment, err error) {
+	defer func() {
+		err = catch(p.node.File, recover())
+	}()
+	s = p.prepareSegment(in)
+	parser, err := p.prepareParser(s.in)
+	if err != nil {
+		return
+	}
+	bs := p.prepareBlocks()
+	n := bs.get(dtd.BLOCK_INSERT)
+	update := true
+	if n != nil {
+		var v interface{}
+		v, _, err = parser.parseExpression(n.ctx, n.GetAttribute(dtd.TEST))
+		if err != nil {
+			return
+		}
+		var ok bool
+		ok, err = cast.ToBoolE(v)
+		if err != nil {
+			return
+		}
+		if ok {
+			update = false
+			err = p.parseSegment(parser, s, n)
+			if err != nil {
+				return
+			}
+		}
+	}
+	
+	if update {
+		n = bs.get(dtd.BLOCK_SELECT)
+		if n != nil {
+			err = p.parseSegment(parser, s, n)
+			if err != nil {
+				return
+			}
+		}
+	}
+	
+	return
+}
+
 func (p method) prepareParser(in []reflect.Value) (parser *exprParser, err error) {
 	if len(p.in) != len(in) {
 		throw(p.node.File, p.node.ctx, parasFragmentErr).
@@ -276,8 +397,48 @@ func (p method) prepareParser(in []reflect.Value) (parser *exprParser, err error
 	}
 	return
 }
+func (p method) prepareSegment(in []reflect.Value) (s *segment) {
+	var index int
+	s = &segment{
+		in: in,
+	}
+	s.ctx, index = p.context(in)
+	if index > -1 {
+		s.in = p.removeParam(s.in, index)
+	}
+	s.conn, index = p.conn(in)
+	if index > -1 {
+		s.in = p.removeParam(s.in, index)
+	}
+	return
+}
 
-func (p method) buildSegment(parser *exprParser, s *segment, nodes ...*xmlNode) (err error) {
+func (p method) removeParam(a []reflect.Value, i int) []reflect.Value {
+	return append(a[:i], a[i+1:]...)
+}
+
+func (p method) context(in []reflect.Value) (context.Context, int) {
+	for i, v := range in {
+		if isCtx(v.Type()) {
+			return v.Interface().(context.Context), i
+		}
+	}
+	return context.Background(), -1
+}
+
+func (p method) conn(in []reflect.Value) (conn, int) {
+	if len(in) > 0 {
+		t := reflect.TypeOf(new(conn)).Elem()
+		for i, v := range in {
+			if v.Type().Implements(t) {
+				return v.Interface().(conn), i
+			}
+		}
+	}
+	return nil, -1
+}
+
+func (p method) parseSegment(parser *exprParser, s *segment, nodes ...*xmlNode) (err error) {
 	for _, node := range nodes {
 		if node == nil {
 			continue
@@ -350,10 +511,6 @@ func (p method) parseElements(parser *exprParser, node *xmlNode, s *segment) {
 	return
 }
 
-func (p method) parseBlocks(parse *exprParser, node *xmlNode, s *segment) {
-
-}
-
 func (p method) parseElement(parser *exprParser, parent, node *xmlNode, s *segment) {
 	if node.textOnly {
 		p.parseSql(parser, node.ctx, node.Text, s)
@@ -381,6 +538,8 @@ func (p method) parseElement(parser *exprParser, parent, node *xmlNode, s *segme
 			p.parseSet(parser, node, s)
 		case dtd.INSERTER:
 			p.parseInserter(parser, node, s)
+		case dtd.BLOCK:
+			// pass
 		default:
 			throw(node.File, node.ctx, parasFragmentErr).with(fmt.Errorf("unknown tag: %s", node.Name))
 		}
@@ -661,4 +820,20 @@ func (p method) makeInserterSql(parser *exprParser, ctx antlr.ParserRuleContext,
 	str.WriteString(fmt.Sprintf("insert into %s(%s)", it.table, strings.Join(it.fl, ",")))
 	str.WriteString(fmt.Sprintf(" values(%s)", strings.Join(it.vs, ",")))
 	p.parseSql(parser, ctx, str.String(), s)
+}
+
+func (p method) prepareBlocks() *blocks {
+	bs := new(blocks)
+	if len(p.node.Nodes) > 0 {
+		bs.items = map[string]*xmlNode{}
+	}
+	for _, v := range p.node.Nodes {
+		if v.Name == dtd.BLOCK {
+			bs.items[v.GetAttribute(dtd.TYPE)] = v
+		} else if !v.EmptyText() {
+			throw(p.node.File, p.node.ctx, parseFragmentErr).
+				with(fmt.Errorf("unsupported ohter element"))
+		}
+	}
+	return bs
 }
