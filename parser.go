@@ -229,19 +229,6 @@ func newXMLNode(file, name string, ctx antlr.ParserRuleContext, token antlr.Toke
 	}
 }
 
-type xmlNode struct {
-	ctx        antlr.ParserRuleContext
-	start      antlr.Token
-	textOnly   bool
-	File       string `json:"-"`
-	Name       string
-	Text       string
-	Attributes map[string]*xmlNodeAttribute
-	Nodes      []*xmlNode
-	nodesCount map[string]int
-	reference  bool
-}
-
 type xmlNodeAttribute struct {
 	File  string      `json:"-"`
 	Start antlr.Token `json:"-"`
@@ -249,10 +236,22 @@ type xmlNodeAttribute struct {
 	ctx   antlr.ParserRuleContext
 }
 
+type xmlNode struct {
+	ctx        antlr.ParserRuleContext
+	start      antlr.Token
+	plain      bool
+	File       string `json:"-"`
+	Name       string
+	Text       string
+	Attributes map[string]*xmlNodeAttribute
+	Nodes      []*xmlNode
+	nodesCount map[string]int
+}
+
 // NodeText TODO think more
 func (p *xmlNode) NodeText() string {
 	for _, v := range p.Nodes {
-		if v.textOnly {
+		if v.plain {
 			return v.Text
 		}
 	}
@@ -317,6 +316,16 @@ func (p *xmlNode) trimTexts() {
 	for _, v := range p.Nodes {
 		v.trimTexts()
 	}
+}
+
+// append reference util
+func (p *xmlNode) appendText(str string) bool {
+	l := len(p.Nodes)
+	if l > 0 && p.Nodes[l-1].plain {
+		p.Nodes[l-1].Text += str
+		return true
+	}
+	return false
 }
 
 type xmlNodeStack struct {
@@ -402,7 +411,7 @@ func (p *xmlParser) validateNode(node *xmlNode, elem *dtd.Element) {
 	
 	for _, childNode := range node.Nodes {
 		
-		if childNode.textOnly {
+		if childNode.plain {
 			continue
 		}
 		
@@ -516,17 +525,13 @@ func (p *xmlParser) enterReference(c *xml.ReferenceContext) {
 				with(fmt.Errorf("unsupported referenece: %s", c.EntityRef().GetText()))
 		}
 		if v != "" {
-			l := len(p.stack.Peak().Nodes)
-			if l > 0 && p.stack.Peak().Nodes[l-1].textOnly {
-				p.stack.Peak().Nodes[l-1].Text += v
-			} else {
+			if !p.stack.Peak().appendText(v) {
 				p.stack.Peak().AddNode(&xmlNode{
-					File:      p.file,
-					Text:      v,
-					ctx:       c,
-					start:     c.GetStart(),
-					textOnly:  true,
-					reference: true,
+					File:  p.file,
+					Text:  v,
+					ctx:   c,
+					start: c.GetStart(),
+					plain: true,
 				})
 			}
 			p.coverage.add(c)
@@ -538,16 +543,13 @@ func (p *xmlParser) enterChardata(c *xml.ChardataContext) {
 	if p.stack.Peak() == nil {
 		return
 	}
-	l := len(p.stack.Peak().Nodes)
-	if l > 0 && p.stack.Peak().Nodes[l-1].textOnly {
-		p.stack.Peak().Nodes[l-1].Text += c.GetText()
-	} else {
+	if !p.stack.Peak().appendText(c.GetText()) {
 		p.stack.Peak().AddNode(&xmlNode{
-			File:     p.file,
-			Text:     c.GetText(),
-			ctx:      c,
-			start:    c.GetStart(),
-			textOnly: true,
+			File:  p.file,
+			Text:  c.GetText(),
+			ctx:   c,
+			start: c.GetStart(),
+			plain: true,
 		})
 	}
 }

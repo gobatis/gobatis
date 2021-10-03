@@ -471,7 +471,7 @@ func (p method) parseElements(parser *exprParser, node *xmlNode, s *segment) {
 }
 
 func (p method) parseElement(parser *exprParser, parent, node *xmlNode, s *segment) {
-	if node.textOnly {
+	if node.plain {
 		p.parseSQL(parser, node.ctx, node.Text, s)
 	} else {
 		s.dynamic = true
@@ -611,7 +611,7 @@ func (p method) parseChoose(parser *exprParser, node *xmlNode, s *segment) {
 			p.parseElements(parser, child, s)
 			return
 		default:
-			if child.textOnly {
+			if child.plain {
 				if strings.TrimSpace(child.Text) == "" {
 					continue
 				}
