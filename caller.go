@@ -68,6 +68,14 @@ func (p *segment) realSql() string {
 	return s
 }
 
+func (p *segment) concatSQL(s string) {
+	if p.sql == "" {
+		p.sql = s
+	} else {
+		p.sql += " " + s
+	}
+}
+
 type caller struct {
 	mt     reflect.Type
 	method *method

@@ -515,12 +515,17 @@ func (p method) trimPrefixOverride(sql, prefix string) (r string, err error) {
 }
 
 func (p method) parseSQL(parser *exprParser, ctx antlr.ParserRuleContext, text string, s *segment) {
-	chars := []rune(text)
-	begin := false
-	inject := false
-	var from int
-	var next int
-	var sql string
+	if text == "" {
+		return
+	}
+	var (
+		chars  = []rune(text)
+		begin  = false
+		inject = false
+		from   int
+		next   int
+		sql    string
+	)
 	for i := 0; i < len(chars); i++ {
 		if !begin {
 			next = i + 1
@@ -552,7 +557,7 @@ func (p method) parseSQL(parser *exprParser, ctx antlr.ParserRuleContext, text s
 			inject = false
 		}
 	}
-	s.sql += " " + sql
+	s.concatSQL(sql)
 }
 
 func (p method) parseBind(parser *exprParser, node *xmlNode) {
@@ -769,7 +774,8 @@ func (p method) parseInserterFields(parser *exprParser, node *xmlNode, it *inser
 			if fn == "*" {
 				entity, ok := parser.paramsStack.getVar(node.GetAttribute(dtd.ENTITY))
 				if !ok {
-					throw(p.node.File, node.ctx, parseInserterErr).with(fmt.Errorf("data not found"))
+					throw(p.node.File, node.ctx, parseInserterErr).
+						with(fmt.Errorf("inserter entity attribute not defined"))
 				}
 				if it.noField() {
 					dv := toReflectValueElem(entity.value)
@@ -813,6 +819,10 @@ func (p method) extractInserterFields(parser *exprParser, dv reflect.Value, it *
 	return
 }
 
+func (p method) quoteFiled(s string) string {
+	return fmt.Sprintf("\"%s\"", s)
+}
+
 // extract reflect entity field to sql fields
 // if tag found, use tag
 // or use lower_snake_name
@@ -831,8 +841,12 @@ func (p method) extractFiledName(field reflect.StructField) string {
 // build inserter sql
 
 func (p method) buildInserterSQL(parser *exprParser, ctx antlr.ParserRuleContext, it *inserter, s *segment) {
+	fl := make([]string, len(it.fl))
+	for i, v := range it.fl {
+		fl[i] = p.quoteFiled(v)
+	}
 	str := strings.Builder{}
-	str.WriteString(fmt.Sprintf("insert into %s(%s)", it.table, strings.Join(it.fl, ",")))
+	str.WriteString(fmt.Sprintf("insert into %s(%s)", it.table, strings.Join(fl, ",")))
 	str.WriteString(fmt.Sprintf(" values(%s)", strings.Join(it.vs, ",")))
 	p.parseSQL(parser, ctx, str.String(), s)
 }

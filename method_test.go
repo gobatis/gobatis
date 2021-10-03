@@ -28,33 +28,28 @@ type testParseMapperCase struct {
 }
 
 type testParseMapperCaseSql struct {
-	in    []reflect.Value
-	sql   string
-	error bool
+	in     []reflect.Value
+	sql    string
+	values []interface{}
+	error  bool
+}
+
+func (p testParseMapperCaseSql) check(t *testing.T, c *testParseMapperCase, sql string, values []interface{}) bool {
+	require.Equal(t, p.sql, sql, c)
+	require.Equal(t, len(p.values), len(values), c)
+	for i, v := range values {
+		require.Equal(t, p.values[i], v, c)
+	}
+	return false
 }
 
 var testParseSelectCases = []testParseMapperCase{
 	{
 		definition: `
-		<select id="SelectP001" parameter="id">
-			select * from users where id = #{id};
-		</select>`,
-		method: rv(func(row string) (err error) { return }),
-		sqls: []*testParseMapperCaseSql{
-			{
-				in:  []reflect.Value{rv(100)},
-				sql: `insert into users("name","age") values(?,?)`,
-			},
-		},
-		error: false,
-	},
-	{
-		definition: `
-		<insert id="TestInserter1" parameter="row">
-			<inserter table="'users'" entity="row">
-				<field name="*" />
+		<insert id="InserterP001" parameter="row">
+			<inserter table="'users'">
 				<field name="'name'">#{row.Name}</field>
-				<field name="'age'">${row.Age}</field>
+				<field name="'age'">#{row.Age}</field>
 			</inserter>
 		</insert>`,
 		method: rv(func(row string) (err error) { return }),
@@ -67,7 +62,31 @@ var testParseSelectCases = []testParseMapperCase{
 					Name: "tom",
 					Age:  18,
 				})},
-				sql: `insert into users("name","age") values(?,?)`,
+				sql:    `insert into users("name","age") values($1,$2)`,
+				values: []interface{}{"tom", 18},
+			},
+		},
+		error: false,
+	},
+	{
+		definition: `
+		<insert id="InserterP001" parameter="row">
+			<inserter table="'users'" entity="row">
+				<field name="*"/>
+			</inserter>
+		</insert>`,
+		method: rv(func(row string) (err error) { return }),
+		sqls: []*testParseMapperCaseSql{
+			{
+				in: []reflect.Value{rv(struct {
+					Name string
+					Age  int
+				}{
+					Name: "tom",
+					Age:  18,
+				})},
+				sql:    `insert into users("name","age") values($1,$2)`,
+				values: []interface{}{"tom", 18},
 			},
 		},
 		error: false,
@@ -102,9 +121,7 @@ func TestParseSelectCases(t *testing.T) {
 			} else {
 				require.NoError(t, err)
 			}
-			t.Log(f.id, s.sql)
-			d, _ := json.Marshal(s.vars)
-			t.Log(f.id, string(d))
+			sql.check(t, &item, s.sql, s.vars)
 		}
 	}
 }
