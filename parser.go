@@ -239,6 +239,7 @@ type xmlNode struct {
 	Attributes map[string]*xmlNodeAttribute
 	Nodes      []*xmlNode
 	nodesCount map[string]int
+	reference  bool
 }
 
 type xmlNodeAttribute struct {
@@ -308,6 +309,16 @@ func (p *xmlNode) countNode(name string) int {
 	return p.nodesCount[name]
 }
 
+// Trims \n,spaces around elements, such as: <where>、&lt;= ...
+func (p *xmlNode) trimTexts() {
+	if p.Text != "" {
+		p.Text = strings.TrimSpace(p.Text)
+	}
+	for _, v := range p.Nodes {
+		v.trimTexts()
+	}
+}
+
 type xmlNodeStack struct {
 	list *list.List
 	lock *sync.RWMutex
@@ -370,6 +381,8 @@ type xmlParser struct {
 	elementGetter func(name string) (elem *dtd.Element, err error)
 }
 
+// validate first level element
+// accept: select、insert、update
 func (p *xmlParser) validateNode(node *xmlNode, elem *dtd.Element) {
 	
 	// check required attributes
@@ -453,34 +466,13 @@ func (p *xmlParser) enterElement(c *xml.ElementContext) {
 	p.depth++
 }
 
-func (p *xmlParser) enterReference(c *xml.ReferenceContext) {
-	if c.EntityRef() != nil {
-		v := ""
-		switch c.EntityRef().GetText() {
-		case "&lt;":
-			v = "<"
-		case "&gt":
-			v = ">"
-		case "&amp;":
-			v = "&"
-		case "&apos;":
-			v = "'"
-		case "&quot;":
-			v = "\""
-		}
-		if v != "" {
-			p.stack.Peak().AddNode(&xmlNode{File: p.file, Text: v, ctx: c, start: c.GetStart(), textOnly: true})
-			p.coverage.add(c)
-		}
-	}
-}
-
 func (p *xmlParser) exitElement(_ *xml.ElementContext) {
 	if p.stack.Peak() == nil {
 		return
 	}
 	p.depth--
 	child := p.stack.Pop()
+	child.trimTexts()
 	
 	if p.stack.Len() > 0 {
 		p.stack.Peak().AddNode(child)
@@ -505,18 +497,59 @@ func (p *xmlParser) enterAttribute(c *xml.AttributeContext) {
 	})
 }
 
+func (p *xmlParser) enterReference(c *xml.ReferenceContext) {
+	if c.EntityRef() != nil {
+		v := ""
+		switch c.EntityRef().GetText() {
+		case "&lt;":
+			v = "<"
+		case "&gt;":
+			v = ">"
+		case "&amp;":
+			v = "&"
+		case "&apos;":
+			v = "'"
+		case "&quot;":
+			v = "\""
+		default:
+			throw(p.file, c, parseFragmentErr).
+				with(fmt.Errorf("unsupported referenece: %s", c.EntityRef().GetText()))
+		}
+		if v != "" {
+			l := len(p.stack.Peak().Nodes)
+			if l > 0 && p.stack.Peak().Nodes[l-1].textOnly {
+				p.stack.Peak().Nodes[l-1].Text += v
+			} else {
+				p.stack.Peak().AddNode(&xmlNode{
+					File:      p.file,
+					Text:      v,
+					ctx:       c,
+					start:     c.GetStart(),
+					textOnly:  true,
+					reference: true,
+				})
+			}
+			p.coverage.add(c)
+		}
+	}
+}
+
 func (p *xmlParser) enterChardata(c *xml.ChardataContext) {
 	if p.stack.Peak() == nil {
 		return
 	}
-	p.stack.Peak().AddNode(&xmlNode{
-		File: p.file,
-		Text: strings.TrimSpace(c.GetText()),
-		//Text:     c.GetText(),
-		ctx:      c,
-		start:    c.GetStart(),
-		textOnly: true,
-	})
+	l := len(p.stack.Peak().Nodes)
+	if l > 0 && p.stack.Peak().Nodes[l-1].textOnly {
+		p.stack.Peak().Nodes[l-1].Text += c.GetText()
+	} else {
+		p.stack.Peak().AddNode(&xmlNode{
+			File:     p.file,
+			Text:     c.GetText(),
+			ctx:      c,
+			start:    c.GetStart(),
+			textOnly: true,
+		})
+	}
 }
 
 func (p *xmlParser) EnterEveryRule(ctx antlr.ParserRuleContext) {

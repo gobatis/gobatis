@@ -151,7 +151,7 @@ var testParseQueryCases = []testParseMapperCase{
 			<block type="FROM">
 				from users
 				<where>
-				age &lt;= #{age}
+				age &lt;=&gt; #{age}
 				</where>
 			</block>
 			<block type="LIMIT">
