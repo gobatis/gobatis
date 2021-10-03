@@ -511,8 +511,8 @@ func (p *xmlParser) enterChardata(c *xml.ChardataContext) {
 	}
 	p.stack.Peak().AddNode(&xmlNode{
 		File: p.file,
-		//Text:     strings.TrimSpace(c.GetText()),
-		Text:     c.GetText(),
+		Text: strings.TrimSpace(c.GetText()),
+		//Text:     c.GetText(),
 		ctx:      c,
 		start:    c.GetStart(),
 		textOnly: true,

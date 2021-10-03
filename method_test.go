@@ -110,44 +110,6 @@ func TestParseSelectCases(t *testing.T) {
 }
 
 var testParseQueryCases = []testParseMapperCase{
-	//{
-	//	definition: `
-	//	<select id="SelectP001" parameter="id">
-	//		select * from users where id = #{id};
-	//	</select>`,
-	//	method: rv(func(row string) (err error) { return }),
-	//	sqls: []*testParseMapperCaseSql{
-	//		{
-	//			in:  []reflect.Value{rv(100)},
-	//			sql: `insert into users("name","age") values(?,?)`,
-	//		},
-	//	},
-	//	error: false,
-	//},
-	//{
-	//	definition: `
-	//	<insert id="TestInserter1" parameter="row">
-	//		<inserter table="'users'" entity="row">
-	//			<field name="*" />
-	//			<field name="'name'">#{row.Name}</field>
-	//			<field name="'age'">${row.Age}</field>
-	//		</inserter>
-	//	</insert>`,
-	//	method: rv(func(row string) (err error) { return }),
-	//	sqls: []*testParseMapperCaseSql{
-	//		{
-	//			in: []reflect.Value{rv(struct {
-	//				Name string
-	//				Age  int
-	//			}{
-	//				Name: "tom",
-	//				Age:  18,
-	//			})},
-	//			sql: `insert into users("name","age") values(?,?)`,
-	//		},
-	//	},
-	//	error: false,
-	//},
 	{
 		definition: `
 		<query id="TestQueryP001" parameter="age,page,limit">
@@ -162,6 +124,39 @@ var testParseQueryCases = []testParseMapperCase{
 			</block>
 			<block type="LIMIT">
 				order by age desc limit #{limit} offset #{ paging(page,limit)}
+			</block>
+		</query>`,
+		method: rv(func(row string) (err error) { return }),
+		sqls: []*testParseMapperCaseSql{
+			{
+				in: []reflect.Value{
+					rv(18),
+					rv(2),
+					rv(10),
+				},
+				sql: `insert into users("name","age") values(?,?)`,
+			},
+		},
+		error: false,
+	},
+	{
+		definition: `
+		<query id="TestQueryP001" parameter="age,page,limit">
+			<block type="COUNT">
+				select count(1)
+			</block>
+			<block type="SELECT">
+				select username,email,status
+			</block>
+			<block type="FROM">
+				from users
+				<where>
+				age &lt;= #{age}
+				</where>
+			</block>
+			<block type="LIMIT">
+				order by age desc
+				limit #{limit} offset #{ paging(page,limit)}
 			</block>
 		</query>`,
 		method: rv(func(row string) (err error) { return }),

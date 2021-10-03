@@ -552,7 +552,7 @@ func (p method) parseSQL(parser *exprParser, ctx antlr.ParserRuleContext, text s
 			inject = false
 		}
 	}
-	s.sql += sql
+	s.sql += " " + sql
 }
 
 func (p method) parseBind(parser *exprParser, node *xmlNode) {
