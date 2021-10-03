@@ -318,7 +318,7 @@ func (p *xmlNode) trimTexts() {
 	}
 }
 
-// append reference util
+// Concat reference string util function
 func (p *xmlNode) appendText(str string) bool {
 	l := len(p.Nodes)
 	if l > 0 && p.Nodes[l-1].plain {
