@@ -1061,16 +1061,15 @@ func Indirect(a interface{}) interface{} {
 	return v.Interface()
 }
 
-// From html/template/content.go
+// IndirectToStringerOrError From html/template/content.go
 // Copyright 2011 The Go Authors. All rights reserved.
-// indirectToStringerOrError returns the value, after dereferencing as many times
+// IndirectToStringerOrError returns the value, after dereferencing as many times
 // as necessary to reach the base type (or nil) or an implementation of fmt.Stringer
 // or error,
-func indirectToStringerOrError(a interface{}) interface{} {
+func IndirectToStringerOrError(a interface{}) interface{} {
 	if a == nil {
 		return nil
 	}
-	
 	var errorType = reflect.TypeOf((*error)(nil)).Elem()
 	var fmtStringerType = reflect.TypeOf((*fmt.Stringer)(nil)).Elem()
 	
@@ -1083,7 +1082,7 @@ func indirectToStringerOrError(a interface{}) interface{} {
 
 // ToStringE casts an interface to a string type.
 func ToStringE(i interface{}) (string, error) {
-	i = indirectToStringerOrError(i)
+	i = IndirectToStringerOrError(i)
 	
 	switch s := i.(type) {
 	case string:

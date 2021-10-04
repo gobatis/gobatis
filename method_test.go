@@ -1,7 +1,6 @@
 package gobatis
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/stretchr/testify/require"
 	"reflect"
@@ -180,7 +179,7 @@ var testParseQueryCases = []testParseMapperCase{
 		sqls: []*testParseMapperCaseSql{
 			{
 				in: []reflect.Value{
-					rv(18),
+					rv("18"),
 					rv(2),
 					rv(10),
 				},
@@ -224,13 +223,14 @@ func TestParseQueryCases(t *testing.T) {
 			} else {
 				require.NoError(t, err)
 			}
-			t.Log(f.id, ss[0].sql)
-			d, _ := json.Marshal(ss[0].vars)
-			t.Log(f.id, string(d))
-			
-			t.Log(f.id, ss[1].sql)
-			d, _ = json.Marshal(ss[1].vars)
-			t.Log(f.id, string(d))
+			t.Log(f.id,ss[0].realSql())
+			//t.Log(f.id, ss[0].sql)
+			//d, _ := json.Marshal(ss[0].vars)
+			//t.Log(f.id, string(d))
+			//
+			t.Log(f.id, ss[1].realSql())
+			//d, _ = json.Marshal(ss[1].vars)
+			//t.Log(f.id, string(d))
 		}
 	}
 }

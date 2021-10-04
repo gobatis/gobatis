@@ -21,7 +21,7 @@ func NewMySQL(dsn string) *Engine {
 }
 
 func NewEngine(db *DB) *Engine {
-	engine := &Engine{master: db, fragmentManager: &fragmentManager{}}
+	engine := &Engine{master: db, fragmentManager: &methodManager{}}
 	return engine
 }
 
@@ -30,7 +30,7 @@ type Engine struct {
 	slaves          []*DB
 	logger          Logger
 	bundle          http.FileSystem
-	fragmentManager *fragmentManager
+	fragmentManager *methodManager
 }
 
 func (p *Engine) Master() *DB {
@@ -110,7 +110,7 @@ func (p *Engine) SQL(name string, args ...interface{}) {
 }
 
 func (p *Engine) Call(name string, args ...interface{}) {
-	//f, ok := p.fragmentManager.get(name)
+	//f, ok := p.methodManager.get(name)
 	//if !ok {
 	//	panic(fmt.Errorf("method '%s' not exist", name))
 	//}
@@ -118,7 +118,7 @@ func (p *Engine) Call(name string, args ...interface{}) {
 }
 
 //func (p *Engine) Call(name string, args ...reflect.Value) *caller {
-//	f, ok := p.fragmentManager.get(name)
+//	f, ok := p.methodManager.get(name)
 //	if !ok {
 //		panic(fmt.Errorf("method '%s' not exist", name))
 //	}

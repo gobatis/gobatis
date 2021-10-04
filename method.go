@@ -71,13 +71,13 @@ func (p blocks) len() int {
 	return len(p.items)
 }
 
-type fragmentManager struct {
+type methodManager struct {
 	mu        sync.RWMutex
 	list      []*method
 	fragments map[string]*method
 }
 
-func (p *fragmentManager) add(m *method) error {
+func (p *methodManager) add(m *method) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	if p.fragments == nil {
@@ -92,7 +92,7 @@ func (p *fragmentManager) add(m *method) error {
 	return nil
 }
 
-func (p *fragmentManager) all() []*method {
+func (p *methodManager) all() []*method {
 	p.mu.RLock()
 	defer func() {
 		p.mu.RUnlock()
@@ -104,7 +104,7 @@ func (p *fragmentManager) all() []*method {
 	return items
 }
 
-func (p *fragmentManager) replace(m *method) error {
+func (p *methodManager) replace(m *method) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	if p.fragments == nil {
@@ -118,7 +118,7 @@ func (p *fragmentManager) replace(m *method) error {
 	return nil
 }
 
-func (p *fragmentManager) get(id string) (m *method, ok bool) {
+func (p *methodManager) get(id string) (m *method, ok bool) {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 	if p.fragments == nil {
