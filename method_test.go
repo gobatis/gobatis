@@ -2,6 +2,7 @@ package gobatis
 
 import (
 	"fmt"
+	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/require"
 	"reflect"
 	"testing"
@@ -27,14 +28,15 @@ type testParseMapperCase struct {
 }
 
 type testParseMapperCaseSql struct {
-	in     []reflect.Value
-	sql    string
-	values []interface{}
-	error  bool
+	in      []reflect.Value
+	stmtSQL string
+	realSQL string
+	values  []interface{}
+	error   bool
 }
 
 func (p testParseMapperCaseSql) check(t *testing.T, c *testParseMapperCase, sql string, values []interface{}) bool {
-	require.Equal(t, p.sql, sql, c)
+	require.Equal(t, p.stmtSQL, sql, c)
 	require.Equal(t, len(p.values), len(values), c)
 	for i, v := range values {
 		require.Equal(t, p.values[i], v, c)
@@ -61,8 +63,9 @@ var testParseSelectCases = []testParseMapperCase{
 					Name: "tom",
 					Age:  18,
 				})},
-				sql:    `insert into users("name","age") values($1,$2)`,
-				values: []interface{}{"tom", 18},
+				stmtSQL: `insert into users("name","age") values($1,$2)`,
+				realSQL: `insert into users("name","age") values('tom',18)`,
+				values:  []interface{}{"tom", 18},
 			},
 		},
 		error: false,
@@ -84,8 +87,9 @@ var testParseSelectCases = []testParseMapperCase{
 					Name: "tom",
 					Age:  18,
 				})},
-				sql:    `insert into users("name","age") values($1,$2)`,
-				values: []interface{}{"tom", 18},
+				stmtSQL: `insert into users("name","age") values($1,$2)`,
+				realSQL: `insert into users("name","age") values('tom',18)`,
+				values:  []interface{}{"tom", 18},
 			},
 		},
 		error: false,
@@ -121,6 +125,7 @@ func TestParseSelectCases(t *testing.T) {
 				require.NoError(t, err)
 			}
 			sql.check(t, &item, s.sql, s.vars)
+			t.Log(s.realSQL())
 		}
 	}
 }
@@ -150,14 +155,14 @@ var testParseQueryCases = []testParseMapperCase{
 					rv(2),
 					rv(10),
 				},
-				sql: `insert into users("name","age") values(?,?)`,
+				stmtSQL: `insert into users("name","age") values(?,?)`,
 			},
 		},
 		error: false,
 	},
 	{
 		definition: `
-		<query id="TestQueryP001" parameter="age,page,limit">
+		<query id="TestQueryP002" parameter="age,page,limit">
 			<block type="COUNT">
 				select count(1)
 			</block>
@@ -167,7 +172,7 @@ var testParseQueryCases = []testParseMapperCase{
 			<block type="FROM">
 				from users
 				<where>
-				age &lt;=&gt; #{age}
+				age &lt;= #{age}
 				</where>
 			</block>
 			<block type="LIMIT">
@@ -179,11 +184,11 @@ var testParseQueryCases = []testParseMapperCase{
 		sqls: []*testParseMapperCaseSql{
 			{
 				in: []reflect.Value{
-					rv("18"),
+					rv(decimal.NewFromFloat(3.14)),
 					rv(2),
 					rv(10),
 				},
-				sql: `insert into users("name","age") values(?,?)`,
+				stmtSQL: `insert into users("name","age") values(?,?)`,
 			},
 		},
 		error: false,
@@ -223,12 +228,12 @@ func TestParseQueryCases(t *testing.T) {
 			} else {
 				require.NoError(t, err)
 			}
-			t.Log(f.id,ss[0].realSql())
+			t.Log(f.id, ss[0].realSQL())
 			//t.Log(f.id, ss[0].sql)
 			//d, _ := json.Marshal(ss[0].vars)
 			//t.Log(f.id, string(d))
 			//
-			t.Log(f.id, ss[1].realSql())
+			t.Log(f.id, ss[1].realSQL())
 			//d, _ = json.Marshal(ss[1].vars)
 			//t.Log(f.id, string(d))
 		}
