@@ -3,19 +3,30 @@
 
 <mapper>
     <!-- 函数  Query001 = func(authed bool, page, limit int64) (total int64, items []*User, err error)  -->
-    <query id="QueryE001" parameter="authed,page,limit">
+    <query id="QueryR001" parameter="page,limit,status">
         <block type="COUNT">
             select count(1)
         </block>
         <block type="SELECT">
-            select id,username,email,mobile
+            select id,username,status
         </block>
-        <block type="WHERE">
-            from users where authed = #{authed}
+        <block type="SOURCE">
+            from members
+            <where>
+                <choose>
+                    <when test="status>0">
+                        status &lt;= 0
+                    </when>
+                    <otherwise>
+                        status >= 0
+                    </otherwise>
+                </choose>
+            </where>
+        </block>
+        <block type="PAGING">
             order by id desc
-        </block>
-        <block type="LIMIT">
-            limit #{limit} offset #{ paging(page,limit) };
+            limit #{limit}
+            offset #{ paging(page,limit) };
         </block>
     </query>
 </mapper>

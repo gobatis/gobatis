@@ -41,3 +41,7 @@ type InsertMapper struct {
 	InsertR011 func(member *Member) (err error)
 	InsertR012 func(member *Member) (id int64, err error)
 }
+
+type QueryMapper struct {
+	QueryR001 func(page, limit, status int64) (count int64, members []*Member, err error)
+}

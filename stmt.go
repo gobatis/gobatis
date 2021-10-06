@@ -100,7 +100,7 @@ func (p *Stmt) query(tx bool, ctx context.Context, in []reflect.Value, values []
 		return
 	}
 	
-	err = p.caller.parseQueryResult(rows, values)
+	err = p.caller.parseQueryResult(p.caller.method.rt, p.caller.method.out, rows, values)
 	if err != nil {
 		return
 	}

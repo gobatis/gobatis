@@ -466,6 +466,7 @@ func testSelectStructs(t *testing.T, _testMapper *test.TestMapper) {
 }
 
 var insertMapper = new(test.InsertMapper)
+var queryMapper = new(test.QueryMapper)
 
 func TestRunning(t *testing.T) {
 	engine := NewPostgresql("postgresql://postgres:postgres@127.0.0.1:5432/gobatis?connect_timeout=10&sslmode=disable")
@@ -479,7 +480,10 @@ func TestRunning(t *testing.T) {
 		err = engine.master.Close()
 		require.NoError(t, err)
 	}()
-	err = engine.BindMapper(insertMapper)
+	err = engine.BindMapper(
+		insertMapper,
+		queryMapper,
+	)
 	require.NoError(t, err)
 	
 	//engine.SetLoggerLevel(DebugLevel)
@@ -488,6 +492,8 @@ func TestRunning(t *testing.T) {
 	InsertR002(t)
 	InsertR011(t)
 	InsertR012(t)
+	
+	QueryR001(t)
 }
 
 func InsertR001(t *testing.T) {
@@ -526,4 +532,11 @@ func InsertR012(t *testing.T) {
 	})
 	require.NoError(t, err)
 	require.True(t, id > 0)
+}
+
+func QueryR001(t *testing.T) {
+	count, members, err := queryMapper.QueryR001(1, 2, 0)
+	require.NoError(t, err)
+	require.True(t, count > 0)
+	require.True(t, len(members) > 0)
 }

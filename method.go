@@ -401,14 +401,14 @@ func (p method) buildQuery(in []reflect.Value) (ss []*segment, err error) {
 		ss[1] = p.prepareSegment(in)
 		ss[1].query = true
 	}
-	fn := bs.get(dtd.BLOCK_FROM)
-	ln := bs.get(dtd.BLOCK_LIMIT)
+	fn := bs.get(dtd.BLOCK_SOURCE)
+	ln := bs.get(dtd.BLOCK_PAGING)
 	if ss[0] != nil {
 		parser, err = p.prepareParser(ss[0].in)
 		if err != nil {
 			return
 		}
-		err = p.parseSegment(parser, ss[0], cn, fn, ln)
+		err = p.parseSegment(parser, ss[0], cn, fn)
 		if err != nil {
 			return
 		}
