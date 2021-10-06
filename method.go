@@ -36,8 +36,8 @@ func (p *inserter) addField(k, v string) {
 		p.fm = map[string]bool{}
 	}
 	p.fm[k] = true
-	p.fl = append(p.fl, k)
 	p.vs = append(p.vs, v)
+	p.fl = append(p.fl, k)
 }
 
 func (p inserter) hasField(v string) bool {
@@ -48,12 +48,24 @@ func (p inserter) hasField(v string) bool {
 	return ok
 }
 
-func (p inserter) noField() bool {
-	return p.fm == nil
+func (p *inserter) removeField(k string) {
+	if p.fm == nil {
+		return
+	}
+	if _, ok := p.fm[k]; ok {
+		delete(p.fm, k)
+	}
+	for i := range p.fl {
+		if p.fl[i] == k {
+			p.fl = append(p.fl[:i], p.fl[i+1:]...)
+			p.vs = append(p.vs[:i], p.vs[i+1:]...)
+			break
+		}
+	}
 }
 
-func (p inserter) noValue() bool {
-	return len(p.vs) == 0
+func (p inserter) empty() bool {
+	return p.fm == nil
 }
 
 type blocks struct {
@@ -779,7 +791,7 @@ func (p method) parseInserterFields(parser *exprParser, node *xmlNode, it *inser
 					throw(p.node.File, node.ctx, parseInserterErr).
 						with(fmt.Errorf("inserter entity attribute not defined"))
 				}
-				if it.noField() {
+				if it.empty() {
 					dv := toReflectValueElem(entity.value)
 					p.extractInserterFields(parser, dv, it)
 				}
@@ -793,6 +805,13 @@ func (p method) parseInserterFields(parser *exprParser, node *xmlNode, it *inser
 					it.addField(name, v.NodeText())
 				}
 			}
+		case dtd.EXCLUDE:
+			fv, _, err = parser.parseExpression(node.ctx, v.GetAttribute(dtd.NAME))
+			if err != nil {
+				throw(p.node.File, node.ctx, parseInserterErr).with(err)
+			}
+			name := fv.(string)
+			it.removeField(name)
 		}
 	}
 }
@@ -836,8 +855,7 @@ func (p method) extractFiledName(field reflect.StructField) string {
 	if tag != "" {
 		return tag
 	}
-	// TODO support lower snake name
-	return strings.ToLower(field.Name)
+	return snake(field.Name)
 }
 
 // build inserter sql

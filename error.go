@@ -146,7 +146,7 @@ type parserErrorStrategy struct {
 func (p *parserErrorStrategy) Recover(recognizer antlr.Parser, e antlr.RecognitionException) {
 	// TODO handle syntax error detail
 	context := recognizer.GetParserRuleContext()
-	throw("", context, syntaxErr).format("syntax error")
+	throw("", context, syntaxErr).format("express syntax error: %s", e.GetMessage())
 }
 
 func (p *parserErrorStrategy) RecoverInline(recognizer antlr.Parser) antlr.Token {

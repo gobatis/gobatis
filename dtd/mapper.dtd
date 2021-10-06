@@ -306,7 +306,7 @@
 
         <!ELEMENT block (#PCDATA | include | trim | where | set | foreach | choose | if | bind | inserter)*>
         <!ATTLIST block
-                type (COUNT | SELECT | FROM | LIMIT | INSERT | UPDATE)  #REQUIRED
+                type (COUNT | SELECT | WHERE | LIMIT | INSERT | UPDATE)  #REQUIRED
                 test CDATA #IMPLIED
                 >
 

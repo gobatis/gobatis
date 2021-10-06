@@ -10,7 +10,7 @@
         <block type="SELECT">
             select id,username,email,mobile
         </block>
-        <block type="CONDITION">
+        <block type="WHERE">
             from users where authed = #{authed}
             order by id desc
         </block>

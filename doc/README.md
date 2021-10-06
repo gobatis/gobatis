@@ -15,7 +15,6 @@ features:
 footer: MIT Licensed | Copyright © 2020-present gobatis.co | 黔ICP备2020008039号-2
 ---
 
-
 ## 安装
 
 ```

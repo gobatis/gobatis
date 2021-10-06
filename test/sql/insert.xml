@@ -1,38 +1,48 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//gobatis.co//DTD Mapper 1.0//EN" "gobatis.co/dtd/mapper.dtd">
 <mapper>
-    <insert id="InsertE001" parameter="user">
-        <inserter table="'users'">
-            <field name="'username'">#{user.Username}</field>
-            <field name="'password'">#{user.Password}</field>
-        </inserter>
+    <insert id="InsertE001" parameter="member">
+        insert into members(
+        username,
+        email,
+        mobile,
+        password,
+        status
+        ) values(
+        #{member.Username},
+        #{member.email},
+        #{member.mobile},
+        #{member.password},
+        #{member.status}
+        )
     </insert>
 
-    <insert id="InsertE002" parameter="user">
-        <inserter table="'users'" entity="user">
+    <select id="InsertE002" parameter="member" result="id">
+        insert into members(
+        username,
+        email,
+        mobile,
+        password,
+        status
+        ) values(
+        #{member.Username},
+        #{member.email},
+        #{member.mobile},
+        #{member.password},
+        #{member.status}
+        ) returning id;
+    </select>
+
+    <insert id="InsertE011" parameter="member">
+        <inserter table="members">
             <field name="*"/>
-            <exclude name="'id'"/>
-            <exclude name="'created_at'"/>
-            <exclude name="'updated_at'"/>
         </inserter>
     </insert>
 
-    <insert id="InsertE003" parameter="user">
-        insert into users(username,password) values(#{user.Username},#{user.Password});
-    </insert>
-
-    <insert id="InsertE004" parameter="user">
-        insert into users(username,password)
-        values(#{user.Username},#{user.Password})
+    <select id="InsertE012" parameter="member" result="id">
+        <inserter table="members">
+            <field name="*"/>
+        </inserter>
         returning id;
-    </insert>
-
-    <insert id="InsertE006" parameter="user">
-        insert into users(username,password) values(${user.Username},${user.Password});
-    </insert>
-
-    <insert id="InsertE007" parameter="user">
-        <bind name="authed" value="true"/>
-        insert into users(username,password,authed) values(#{user.Username},#{user.Password},${authed});
-    </insert>
+    </select>
 </mapper>

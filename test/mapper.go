@@ -34,3 +34,10 @@ type StmtMapper struct {
 	InsertStringArray func(user *User) (err error)
 	GetStringArray    func(name string) (user *User, err error)
 }
+
+type InsertMapper struct {
+	InsertE001 func(member *Member) (err error)
+	InsertE002 func(member *Member) (id int64, err error)
+	InsertE011 func(member *Member) (err error)
+	InsertE012 func(member *Member) (id int64, err error)
+}

@@ -63,3 +63,14 @@ type User struct {
 	From string           `sql:"from"`
 	Tags pgtype.TextArray `sql:"tags"`
 }
+
+type Member struct {
+	Id        int64      `sql:"id"`
+	Username  string     `sql:"username"`
+	Email     string     `sql:"email"`
+	Mobile    string     `sql:"mobile"`
+	Password  string     `sql:"password"`
+	Status    int        `sql:"status"`
+	CreatedAt time.Time  `sql:"created_at"`
+	UpdatedAt *time.Time `sql:"updated_at"`
+}

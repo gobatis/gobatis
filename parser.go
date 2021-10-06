@@ -1280,6 +1280,11 @@ func (p *exprParser) ExitNil_(ctx *expr.Nil_Context) {
 func (p *exprParser) parseExpression(nodeCtx antlr.ParserRuleContext,
 	expression string) (result interface{}, static bool, err error) {
 	
+	if expression == "" {
+		static = true
+		return
+	}
+	
 	defer func() {
 		e := recover()
 		err = catch(p.file, e)

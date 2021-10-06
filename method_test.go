@@ -134,53 +134,125 @@ var testParseSelectCases = []testParseMapperCase{
 			},
 		},
 	},
+	{
+		definition: `
+		<select id="SelectP005" parameter="status">
+			select * from users where
+			<choose>
+				<when test="status > 1">
+					status = #{status}
+				</when>
+				<when test="status == 1 ">
+					status > #{status}
+				</when>
+				<otherwise>
+					status > 0
+				</otherwise>
+			</choose>
+		</select>`,
+		method: rv(func(row string) (err error) { return }),
+		sqls: []*testParseMapperCaseSql{
+			{
+				in:      []reflect.Value{rv(0)},
+				stmtSQL: `select * from users where status > 0`,
+				realSQL: `select * from users where status > 0`,
+				values:  []interface{}{},
+			},
+			{
+				in:      []reflect.Value{rv(1)},
+				stmtSQL: `select * from users where status > $1`,
+				realSQL: `select * from users where status > 1`,
+				values:  []interface{}{1},
+			},
+			{
+				in:      []reflect.Value{rv(2)},
+				stmtSQL: `select * from users where status = $1`,
+				realSQL: `select * from users where status = 2`,
+				values:  []interface{}{2},
+			},
+		},
+	},
 }
 
 var testParseInsertCases = []testParseMapperCase{
 	{
 		definition: `
-		<insert id="InserterP001" parameter="row">
-			<inserter table="'users'">
-				<field name="'name'">#{row.Name}</field>
-				<field name="'age'">#{row.Age}</field>
+		<insert id="InserterP001" parameter="member">
+			<inserter table="'members'">
+				<field name="'username'">#{member.Username}</field>
+				<field name="'password'">#{member.Password}</field>
+				<field name="'status'">#{member.Status}</field>
 			</inserter>
 		</insert>`,
 		method: rv(func(row string) (err error) { return }),
 		sqls: []*testParseMapperCaseSql{
 			{
 				in: []reflect.Value{rv(struct {
-					Name string
-					Age  int
+					Username string
+					Password string
+					Status   int
 				}{
-					Name: "tom",
-					Age:  18,
+					Username: "InserterP001",
+					Password: "123456",
+					Status:   1,
 				})},
-				stmtSQL: `insert into users("name","age") values($1,$2)`,
-				realSQL: `insert into users("name","age") values('tom',18)`,
-				values:  []interface{}{"tom", 18},
+				stmtSQL: `insert into members("username","password","status") values($1,$2,$3)`,
+				realSQL: `insert into members("username","password","status") values('InserterP001','123456',1)`,
+				values:  []interface{}{"InserterP001", "123456", 1},
 			},
 		},
 	},
 	{
 		definition: `
-		<insert id="InserterP001" parameter="row">
-			<inserter table="'users'" entity="row">
-				<field name="*"/>
+		<insert id="InserterP002" parameter="member">
+			<inserter table="'members'" entity="member">
+				<field name="*" />
 			</inserter>
 		</insert>`,
 		method: rv(func(row string) (err error) { return }),
 		sqls: []*testParseMapperCaseSql{
 			{
 				in: []reflect.Value{rv(struct {
-					Name string
-					Age  int
+					Username string
+					Password string
+					Status   int
 				}{
-					Name: "tom",
-					Age:  18,
+					Username: "InserterP002",
+					Password: "123456",
+					Status:   1,
 				})},
-				stmtSQL: `insert into users("name","age") values($1,$2)`,
-				realSQL: `insert into users("name","age") values('tom',18)`,
-				values:  []interface{}{"tom", 18},
+				stmtSQL: `insert into members("username","password","status") values($1,$2,$3)`,
+				realSQL: `insert into members("username","password","status") values('InserterP002','123456',1)`,
+				values:  []interface{}{"InserterP002", "123456", 1},
+			},
+		},
+	},
+	{
+		definition: `
+		<insert id="InserterP003" parameter="member">
+			<inserter table="'members'" entity="member">
+				<field name="*" />
+				<exclude name="'email'" />
+				<exclude name="'mobile'" />
+			</inserter>
+		</insert>`,
+		method: rv(func(row string) (err error) { return }),
+		sqls: []*testParseMapperCaseSql{
+			{
+				in: []reflect.Value{rv(struct {
+					Username string
+					Email    string
+					Mobile   string
+					Password string
+					Status   int
+				}{
+					Username: "InserterP003",
+					Password: "123456",
+					Status:   1,
+				})},
+				stmtSQL: `insert into members("username","password","status") values($1,$2,$3)`,
+				realSQL: `insert into members("username","password","status") values('InserterP003','123456',1)`,
+				values:  []interface{}{"InserterP003", "123456", 1},
 			},
 		},
 	},
