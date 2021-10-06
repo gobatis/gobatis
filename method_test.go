@@ -118,6 +118,22 @@ var testParseSelectCases = []testParseMapperCase{
 			},
 		},
 	},
+	{
+		definition: `
+		<select id="SelectP004" parameter="id">
+			<bind name="table" value="'users'"  />
+			select * from ${table} where id = #{id};
+		</select>`,
+		method: rv(func(row string) (err error) { return }),
+		sqls: []*testParseMapperCaseSql{
+			{
+				in:      []reflect.Value{rv(1)},
+				stmtSQL: `select * from users where id = $1;`,
+				realSQL: `select * from users where id = 1;`,
+				values:  []interface{}{1},
+			},
+		},
+	},
 }
 
 var testParseInsertCases = []testParseMapperCase{
