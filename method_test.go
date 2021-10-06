@@ -58,7 +58,65 @@ var testParseSelectCases = []testParseMapperCase{
 				values:  []interface{}{1},
 			},
 		},
-		error: false,
+	},
+	{
+		definition: `
+		<select id="SelectP002" parameter="userId,status">
+			select * from orders where user_id = #{userId}
+			<if test="status>0">
+				and status = #{ status }
+			</if>
+		</select>`,
+		method: rv(func(row string) (err error) { return }),
+		sqls: []*testParseMapperCaseSql{
+			{
+				in:      []reflect.Value{rv(1), rv(0)},
+				stmtSQL: `select * from orders where user_id = $1`,
+				realSQL: `select * from orders where user_id = 1`,
+				values:  []interface{}{1},
+			},
+			{
+				in:      []reflect.Value{rv(1), rv(2)},
+				stmtSQL: `select * from orders where user_id = $1 and status = $2`,
+				realSQL: `select * from orders where user_id = 1 and status = 2`,
+				values:  []interface{}{1, 2},
+			},
+		},
+	},
+	{
+		definition: `
+		<select id="SelectP003" parameter="userId,status">
+			select * from orders
+			<where>
+				<if test="userId>0">
+					user_id = #{userId}
+				</if>
+				<if test="status>0">
+					and status = #{ status }
+				</if>
+			</where>
+		</select>`,
+		method: rv(func(row string) (err error) { return }),
+		sqls: []*testParseMapperCaseSql{
+			{
+				in:      []reflect.Value{rv(0), rv(0)},
+				stmtSQL: `select * from orders`,
+				realSQL: `select * from orders`,
+				values:  []interface{}{},
+			},
+			{
+				in:      []reflect.Value{rv(1), rv(0)},
+				stmtSQL: `select * from orders where user_id = $1`,
+				realSQL: `select * from orders where user_id = 1`,
+				values:  []interface{}{1},
+			},
+			{
+				in:      []reflect.Value{rv(0), rv(1)},
+				stmtSQL: `select * from orders where status = $1`,
+				realSQL: `select * from orders where status = 1`,
+				values:  []interface{}{1},
+			},
+		},
 	},
 }
 
@@ -86,7 +144,6 @@ var testParseInsertCases = []testParseMapperCase{
 				values:  []interface{}{"tom", 18},
 			},
 		},
-		error: false,
 	},
 	{
 		definition: `
@@ -110,7 +167,6 @@ var testParseInsertCases = []testParseMapperCase{
 				values:  []interface{}{"tom", 18},
 			},
 		},
-		error: false,
 	},
 }
 
@@ -129,7 +185,6 @@ var testParseUpdateCases = []testParseMapperCase{
 				values:  []interface{}{"123456", 1},
 			},
 		},
-		error: false,
 	},
 }
 
@@ -148,7 +203,6 @@ var testParseDeleteCases = []testParseMapperCase{
 				values:  []interface{}{1},
 			},
 		},
-		error: false,
 	},
 }
 
@@ -197,7 +251,7 @@ func TestParseSelectCases(t *testing.T) {
 				require.NoError(t, err)
 			}
 			sql.check(t, &item, s)
-			t.Log(s.realSQL())
+			t.Log(fmt.Sprintf("[%s]", f.id), s.realSQL())
 		}
 	}
 }

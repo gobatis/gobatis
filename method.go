@@ -647,7 +647,9 @@ func (p method) trimPrefixOverrides(parser *exprParser, node *xmlNode, res *segm
 			throw(p.node.File, p.node.ctx, parasFragmentErr).format("regexp compile error: %s", err)
 		}
 	}
-	res.sql = fmt.Sprintf("%s %s %s", res.sql, tag, s)
+	if s != "" {
+		res.sql = fmt.Sprintf("%s %s %s", res.sql, tag, s)
+	}
 }
 
 func (p method) parseSet(parser *exprParser, node *xmlNode, res *segment) {
