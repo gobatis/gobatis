@@ -20,6 +20,14 @@ func wrapMapperSchema(s string) string {
 		"<mapper>%s</mapper>", s)
 }
 
+func appendCases(v ...[]testParseMapperCase) []testParseMapperCase {
+	items := make([]testParseMapperCase, 0)
+	for _, vv := range v {
+		items = append(items, vv...)
+	}
+	return items
+}
+
 type testParseMapperCase struct {
 	definition string
 	method     reflect.Value
@@ -35,16 +43,26 @@ type testParseMapperCaseSql struct {
 	error   bool
 }
 
-func (p testParseMapperCaseSql) check(t *testing.T, c *testParseMapperCase, sql string, values []interface{}) bool {
-	require.Equal(t, p.stmtSQL, sql, c)
-	require.Equal(t, len(p.values), len(values), c)
-	for i, v := range values {
-		require.Equal(t, p.values[i], v, c)
-	}
-	return false
+var testParseSelectCases = []testParseMapperCase{
+	{
+		definition: `
+		<select id="SelectP001" parameter="id">
+			select * from users where id = #{id};
+		</select>`,
+		method: rv(func(row string) (err error) { return }),
+		sqls: []*testParseMapperCaseSql{
+			{
+				in:      []reflect.Value{rv(1)},
+				stmtSQL: `select * from users where id = $1;`,
+				realSQL: `select * from users where id = 1;`,
+				values:  []interface{}{1},
+			},
+		},
+		error: false,
+	},
 }
 
-var testParseSelectCases = []testParseMapperCase{
+var testParseInsertCases = []testParseMapperCase{
 	{
 		definition: `
 		<insert id="InserterP001" parameter="row">
@@ -96,6 +114,54 @@ var testParseSelectCases = []testParseMapperCase{
 	},
 }
 
+var testParseUpdateCases = []testParseMapperCase{
+	{
+		definition: `
+		<update id="UpdateP001" parameter="id, password">
+			update users set password = #{password} where id = #{id};
+		</update>`,
+		method: rv(func(row string) (err error) { return }),
+		sqls: []*testParseMapperCaseSql{
+			{
+				in:      []reflect.Value{rv(1), rv("123456")},
+				stmtSQL: `update users set password = $1 where id = $2;`,
+				realSQL: `update users set password = '123456' where id = 1;`,
+				values:  []interface{}{"123456", 1},
+			},
+		},
+		error: false,
+	},
+}
+
+var testParseDeleteCases = []testParseMapperCase{
+	{
+		definition: `
+		<delete id="DeleteP001" parameter="id">
+			delete from users where id=#{id};
+		</delete>`,
+		method: rv(func(row string) (err error) { return }),
+		sqls: []*testParseMapperCaseSql{
+			{
+				in:      []reflect.Value{rv(1)},
+				stmtSQL: `delete from users where id=$1;`,
+				realSQL: `delete from users where id=1;`,
+				values:  []interface{}{1},
+			},
+		},
+		error: false,
+	},
+}
+
+func (p testParseMapperCaseSql) check(t *testing.T, c *testParseMapperCase, s *segment) bool {
+	require.Equal(t, p.stmtSQL, s.sql, c)
+	require.Equal(t, p.realSQL, s.realSQL(), c)
+	require.Equal(t, len(p.values), len(s.vars), c)
+	for i, v := range s.vars {
+		require.Equal(t, p.values[i], v, c)
+	}
+	return false
+}
+
 // test parse mappers
 func TestParseSelectCases(t *testing.T) {
 	var (
@@ -105,7 +171,13 @@ func TestParseSelectCases(t *testing.T) {
 		s   *segment
 		err error
 	)
-	for _, item := range testParseSelectCases {
+	
+	for _, item := range appendCases(
+		testParseSelectCases,
+		testParseInsertCases,
+		testParseUpdateCases,
+		testParseDeleteCases,
+	) {
 		fs, err = parseMapper("", wrapMapperSchema(item.definition))
 		if item.error {
 			require.Equal(t, true, err != nil)
@@ -124,7 +196,7 @@ func TestParseSelectCases(t *testing.T) {
 			} else {
 				require.NoError(t, err)
 			}
-			sql.check(t, &item, s.sql, s.vars)
+			sql.check(t, &item, s)
 			t.Log(s.realSQL())
 		}
 	}

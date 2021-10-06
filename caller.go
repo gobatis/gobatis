@@ -65,8 +65,8 @@ func (p segment) printLog() {
 func (p segment) realSQL() string {
 	s := p.sql
 	for i, v := range p.vars {
-		//s = strings.Replace(s, fmt.Sprintf("$%d", i+1), p.realValue(v), 1)
-		s = strings.Replace(s, fmt.Sprintf("$%d", i+1), fmt.Sprintf("$%d[%v]", i+1, v), 1)
+		s = strings.Replace(s, fmt.Sprintf("$%d", i+1), p.realValue(v), 1)
+		//s = strings.Replace(s, fmt.Sprintf("$%d", i+1), fmt.Sprintf("$%d[%v]", i+1, v), 1)
 	}
 	return s
 }
