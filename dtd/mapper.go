@@ -13,6 +13,7 @@ var Mapper = &Element{
 		SELECT:        ANY_TIMES,
 		QUERY:         ANY_TIMES,
 		SAVE:          ANY_TIMES,
+		MIGRATE:       ANY_TIMES,
 	},
 	Attributes: map[string]int{
 		NAMESPACE: IMPLIED,
@@ -353,6 +354,20 @@ var Delete = &Element{
 	},
 }
 
+var Migrate = &Element{
+	Name: MIGRATE,
+	Attributes: map[string]int{
+		ID:             REQUIRED,
+		PARAMETER_MAP:  IMPLIED,
+		PARAMETER:      IMPLIED,
+		TIMEOUT:        IMPLIED,
+		FLUSH_CACHE:    IMPLIED,
+		STATEMENT_TYPE: IMPLIED,
+		DATABASE_ID:    IMPLIED,
+		LANG:           IMPLIED,
+	},
+}
+
 var Exclude = &Element{
 	Name: EXCLUDE,
 	Attributes: map[string]int{
@@ -560,6 +575,7 @@ var Block = &Element{
 		CHOOSE:     ANY_TIMES,
 		IF:         ANY_TIMES,
 		BIND:       ANY_TIMES,
+		INSERTER:   AT_MOST_ONCE,
 	},
 	Attributes: map[string]int{
 		TYPE: REQUIRED,
@@ -571,6 +587,7 @@ var Save = &Element{
 	Name: SAVE,
 	Nodes: map[string]int{
 		BLOCK: AT_LEAST_ONCE,
+		BIND:  ANY_TIMES,
 	},
 	Attributes: map[string]int{
 		ID:                REQUIRED,

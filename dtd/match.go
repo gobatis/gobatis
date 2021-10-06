@@ -128,6 +128,8 @@ func MapperElement(name string) (elem *Element, err error) {
 		elem = Save
 	case BLOCK:
 		elem = Block
+	case MIGRATE:
+		elem = Migrate
 	default:
 		err = fmt.Errorf("not match %s dtd element", name)
 	}

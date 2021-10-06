@@ -36,8 +36,8 @@ type StmtMapper struct {
 }
 
 type InsertMapper struct {
-	InsertE001 func(member *Member) (err error)
-	InsertE002 func(member *Member) (id int64, err error)
-	InsertE011 func(member *Member) (err error)
-	InsertE012 func(member *Member) (id int64, err error)
+	InsertR001 func(member *Member) (err error)
+	InsertR002 func(member *Member) (id int64, err error)
+	InsertR011 func(member *Member) (err error)
+	InsertR012 func(member *Member) (id int64, err error)
 }

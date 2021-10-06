@@ -31,12 +31,12 @@ func (p *queryResult) Rows() *sql.Rows {
 	return p.rows
 }
 
-func (p *queryResult) setSelected(typeAttribute int, params []*param, values []reflect.Value) error {
+func (p *queryResult) setSelected(rt int, params []*param, values []reflect.Value) error {
 	
 	p.values = values
 	p.reflect = len(params) == 0
 	
-	if typeAttribute != result_result {
+	if rt != result_result {
 		return nil
 	}
 	
@@ -123,7 +123,6 @@ func (p *queryResult) scan() (err error) {
 }
 
 func (p *queryResult) reflectRow(columns []string, row []interface{}) error {
-	
 	if p.reflect {
 		if p.values[0].Elem().Kind() == reflect.Slice {
 			return p.reflectStructs(newRowMap(columns, row))

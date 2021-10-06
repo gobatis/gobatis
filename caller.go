@@ -138,9 +138,7 @@ func (p *caller) call(in []reflect.Value) *caller {
 	
 	var err error
 	defer func() {
-		if err != nil {
-			p.injectError(err)
-		}
+		p.convertResult(err)
 	}()
 	
 	switch p.method.node.Name {
@@ -182,6 +180,17 @@ func (p *caller) run(s *segment) (err error) {
 		}
 	}()
 	
+	defer func() {
+		if err != nil {
+			p.logger.Errorf("[gobatis] [%s] exec error\n[sql]: %s\n[vars]: %v\n[detail]: %s",
+				p.method.id, s.sql, s.vars, err)
+		} else {
+			if p.logger.Level() == DebugLevel {
+				p.logger.Debugf("[gobatis] [%s] exec '%s'", p.method.id, s.sql)
+			}
+		}
+	}()
+	
 	if s.query {
 		var rows *sql.Rows
 		rows, err = s.conn.QueryContext(s.ctx, s.sql, s.vars...)
@@ -196,11 +205,10 @@ func (p *caller) run(s *segment) (err error) {
 	if err != nil {
 		return
 	}
-	
 	return p.parseExecResult(r, p.result)
 }
 
-func (p *caller) injectError(err error) {
+func (p *caller) convertResult(err error) {
 	if err != nil {
 		if err == sql.ErrNoRows {
 			if p.method.must {
@@ -437,9 +445,9 @@ func (p *caller) parseQueryResult(rows *sql.Rows, values []reflect.Value) (err e
 			p.logger.Errorf("[gobatis] [%s] close rows error: %s", p.method.id, _err)
 		}
 	}()
-	
 	res := queryResult{rows: rows}
-	err = res.setSelected(p.method.ra, p.method.out, values)
+	
+	err = res.setSelected(p.method.rt, p.method.out, values)
 	if err != nil {
 		return err
 	}

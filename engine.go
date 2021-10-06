@@ -45,7 +45,7 @@ func (p *Engine) UseJsonTag() {
 	reflect_tag = "json"
 }
 
-func (p *Engine) SetLogLevel(level Level) {
+func (p *Engine) SetLoggerLevel(level Level) {
 	p.logger.SetLevel(level)
 }
 
@@ -210,7 +210,7 @@ func (p *Engine) parseConfig() (err error) {
 	if err != nil {
 		return
 	}
-	p.logger.Infof("[gobatis] register method: gobatis.xml")
+	p.logger.Debugf("[gobatis] register: gobatis.xml")
 	err = parseConfig(p, config_xml, string(bs))
 	if err != nil {
 		return
@@ -248,7 +248,7 @@ func (p *Engine) parseMappers() (err error) {
 		if err != nil {
 			return
 		}
-		p.logger.Infof("[gobatis] register method: %s.xml", v)
+		p.logger.Debugf("[gobatis] register: %s.xml", v)
 		fs, err = parseMapper(v, string(bs))
 		if err != nil {
 			return

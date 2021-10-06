@@ -79,7 +79,7 @@ func TestStmt(t *testing.T) {
 	require.NoError(t, err)
 	err = engine.master.Ping()
 	require.NoError(t, err)
-	engine.SetLogLevel(DebugLevel)
+	engine.SetLoggerLevel(DebugLevel)
 	defer func() {
 		engine.Close()
 	}()
@@ -148,7 +148,7 @@ func TestStmtTx(t *testing.T) {
 	require.NoError(t, err)
 	err = engine.master.Ping()
 	require.NoError(t, err)
-	engine.SetLogLevel(DebugLevel)
+	engine.SetLoggerLevel(DebugLevel)
 	defer func() {
 		engine.Close()
 	}()
@@ -209,7 +209,7 @@ func TestStringArray(t *testing.T) {
 	err := engine.Init(NewBundle("test"))
 	err = engine.master.Ping()
 	require.NoError(t, err)
-	engine.SetLogLevel(DebugLevel)
+	engine.SetLoggerLevel(DebugLevel)
 	defer func() {
 		engine.Close()
 	}()
@@ -463,4 +463,67 @@ func testSelectStructs(t *testing.T, _testMapper *test.TestMapper) {
 	//d, err = json.MarshalIndent(item2, "", "\t")
 	require.NoError(t, err)
 	//fmt.Println(string(d))
+}
+
+var insertMapper = new(test.InsertMapper)
+
+func TestRunning(t *testing.T) {
+	engine := NewPostgresql("postgresql://postgres:postgres@127.0.0.1:5432/gobatis?connect_timeout=10&sslmode=disable")
+	err := engine.Init(NewBundle("test"))
+	require.NoError(t, err)
+	
+	err = engine.master.Ping()
+	require.NoError(t, err)
+	
+	defer func() {
+		err = engine.master.Close()
+		require.NoError(t, err)
+	}()
+	err = engine.BindMapper(insertMapper)
+	require.NoError(t, err)
+	
+	//engine.SetLoggerLevel(DebugLevel)
+	
+	InsertR001(t)
+	InsertR002(t)
+	InsertR011(t)
+	InsertR012(t)
+}
+
+func InsertR001(t *testing.T) {
+	err := insertMapper.InsertR001(&test.Member{
+		Username: "InsertR001",
+		Password: "123456",
+		Status:   1,
+	})
+	require.NoError(t, err)
+}
+
+func InsertR002(t *testing.T) {
+	id, err := insertMapper.InsertR002(&test.Member{
+		Username: "InsertR002",
+		Password: "123456",
+		Status:   1,
+	})
+	require.NoError(t, err)
+	require.True(t, id > 0)
+}
+
+func InsertR011(t *testing.T) {
+	err := insertMapper.InsertR011(&test.Member{
+		Username: "InsertR011",
+		Password: "123456",
+		Status:   1,
+	})
+	require.NoError(t, err)
+}
+
+func InsertR012(t *testing.T) {
+	id, err := insertMapper.InsertR012(&test.Member{
+		Username: "InsertR012",
+		Password: "123456",
+		Status:   1,
+	})
+	require.NoError(t, err)
+	require.True(t, id > 0)
 }

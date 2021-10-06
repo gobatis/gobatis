@@ -14,6 +14,7 @@ const (
 
 type Logger interface {
 	SetLevel(level Level)
+	Level() Level
 	Sync() error
 	Fatalf(format string, args ...interface{})
 	Errorf(format string, args ...interface{})

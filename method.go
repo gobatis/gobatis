@@ -146,7 +146,7 @@ type method struct {
 	node  *xmlNode
 	in    []*param
 	out   []*param
-	ra    int
+	rt    int
 	must  bool
 	stmt  bool
 	_stmt *Stmt
@@ -159,7 +159,7 @@ func (p method) fork() *method {
 	n.node = p.node
 	n.in = p.in
 	n.out = p.out
-	n.ra = p.ra
+	n.rt = p.rt
 	n.must = p.must
 	n.stmt = p.stmt
 	n._stmt = p._stmt
@@ -189,19 +189,13 @@ func (p method) proxy(mt reflect.Value) {
 	}))
 }
 
-func (p method) setResultAttribute() {
-	if p.node.Name != dtd.SELECT &&
-		p.node.Name != dtd.INSERT &&
-		p.node.Name != dtd.UPDATE &&
-		p.node.Name != dtd.DELETE {
-		return
-	}
+func (p *method) setResultAttribute() {
 	if p.node.HasAttribute(dtd.RESULT) {
-		p.ra = result_result
+		p.rt = result_result
 	} else if p.node.HasAttribute(dtd.RESULT_MAP) {
-		p.ra = result_result_map
+		p.rt = result_result_map
 	} else {
-		p.ra = result_none
+		p.rt = result_none
 	}
 }
 
@@ -227,7 +221,7 @@ func (p method) checkResult(ft reflect.Type, mn, fn string) {
 	
 	switch p.node.Name {
 	case dtd.SELECT:
-		switch p.ra {
+		switch p.rt {
 		case result_result:
 			if len(p.out) == 0 {
 				if ft.NumOut() > 1 {
@@ -750,6 +744,9 @@ func (p method) bindForeachParams(parser *exprParser, indexParam, itemParam *par
 }
 
 func (p method) parseParams(tokens string) []*param {
+	if tokens == "" {
+		return []*param{}
+	}
 	parser := newParamParser(p.node.File)
 	parser.walkMethods(initExprParser(tokens))
 	return parser.params

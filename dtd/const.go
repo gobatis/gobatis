@@ -131,6 +131,7 @@ const (
 	INSERTER          = "inserter"
 	SAVE              = "save"
 	QUERY             = "query"
+	MIGRATE           = "migrate"
 	FIELD             = "field"
 	EXCLUDE           = "exclude"
 	TABLE             = "table"

@@ -197,6 +197,10 @@ github.com/konsorten/go-windows-terminal-sequences v1.0.1/go.mod h1:T0+1ngSBFLxv
 github.com/konsorten/go-windows-terminal-sequences v1.0.2/go.mod h1:T0+1ngSBFLxvqU3pZ+m/2kptfBszLMUkC4ZK/EgS/cQ=
 github.com/koyeo/_log v0.0.0-20210706034038-00e6a17eb9c0 h1:YN4SdbNEmYW3fZMC90OUHB2/LFmrK+EA2IqVLMd8qIQ=
 github.com/koyeo/_log v0.0.0-20210706034038-00e6a17eb9c0/go.mod h1:r+BRgVkjobqP87hlWX0kRQtLcp276cvMkhGoWYRE1eY=
+github.com/koyeo/_log v0.0.0-20211006130504-97d5c517abe4 h1:aq8EqydcXIzvl+TaxjDYGzoImWppB58N02WsXCstX1k=
+github.com/koyeo/_log v0.0.0-20211006130504-97d5c517abe4/go.mod h1:r+BRgVkjobqP87hlWX0kRQtLcp276cvMkhGoWYRE1eY=
+github.com/koyeo/_log v0.0.0-20211006130730-4b7537dd3986 h1:gifhoJLahK3cbn1PiiA5R35R6qkMT833/TwXLLPZdv4=
+github.com/koyeo/_log v0.0.0-20211006130730-4b7537dd3986/go.mod h1:r+BRgVkjobqP87hlWX0kRQtLcp276cvMkhGoWYRE1eY=
 github.com/kr/logfmt v0.0.0-20140226030751-b84e30acd515/go.mod h1:+0opPa2QZZtGFBFZlji/RkVcI2GknAs/DXo4wKdlNEc=
 github.com/kr/pretty v0.1.0 h1:L/CwN0zerZDmRFUapSPitk6f+Q3+0za1rQkzVuMiMFI=
 github.com/kr/pretty v0.1.0/go.mod h1:dAy3ld7l9f0ibDNOQOHHMYYIIbhfbHSm3C4ZsoJORNo=

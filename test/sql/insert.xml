@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//gobatis.co//DTD Mapper 1.0//EN" "gobatis.co/dtd/mapper.dtd">
 <mapper>
-    <insert id="InsertE001" parameter="member">
+    <insert id="InsertR001" parameter="member">
         insert into members(
         username,
         email,
@@ -10,14 +10,14 @@
         status
         ) values(
         #{member.Username},
-        #{member.email},
-        #{member.mobile},
-        #{member.password},
-        #{member.status}
+        #{member.Email},
+        #{member.Mobile},
+        #{member.Password},
+        #{member.Status}
         )
     </insert>
 
-    <select id="InsertE002" parameter="member" result="id">
+    <select id="InsertR002" parameter="member" result="id">
         insert into members(
         username,
         email,
@@ -26,22 +26,27 @@
         status
         ) values(
         #{member.Username},
-        #{member.email},
-        #{member.mobile},
-        #{member.password},
-        #{member.status}
+        #{member.Email},
+        #{member.Mobile},
+        #{member.Password},
+        #{member.Status}
         ) returning id;
     </select>
 
-    <insert id="InsertE011" parameter="member">
-        <inserter table="members">
+    <insert id="InsertR011" parameter="member">
+        <inserter table="'members'" entity="member">
             <field name="*"/>
+            <exclude name="'id'"/>
+            <exclude name="'created_at'"/>
+            <exclude name="'updated_at'"/>
         </inserter>
     </insert>
 
-    <select id="InsertE012" parameter="member" result="id">
-        <inserter table="members">
-            <field name="*"/>
+    <select id="InsertR012" parameter="member" result="id">
+        <bind name="table" value="'members'"/>
+        <inserter table="table">
+            <field name="'username'">#{member.Username}</field>
+            <field name="'password'">#{member.Password}</field>
         </inserter>
         returning id;
     </select>
