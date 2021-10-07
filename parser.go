@@ -70,8 +70,6 @@ func parseMapper(file, content string) (fs []*fragment, err error) {
 				throw(file, v.ctx, parseFragmentErr).with(err)
 			}
 			fs = append(fs, f)
-			//default:
-			//	throw(file, v.ctx, parseFragmentErr).format("unknown element: %s", v.Name)
 		}
 	}
 	return
