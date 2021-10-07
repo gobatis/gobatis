@@ -20,7 +20,7 @@ func newRowMap(columns []string, values []interface{}) rowMap {
 
 type rowMap map[string]interface{}
 
-type queryResult struct {
+type queryScanner struct {
 	rows     *sql.Rows
 	first    bool
 	reflect  bool
@@ -30,11 +30,11 @@ type queryResult struct {
 	tag      string
 }
 
-func (p *queryResult) Rows() *sql.Rows {
+func (p *queryScanner) Rows() *sql.Rows {
 	return p.rows
 }
 
-func (p *queryResult) setSelected(rt int, params []*param, values []reflect.Value) error {
+func (p *queryScanner) setSelected(rt int, params []*param, values []reflect.Value) error {
 	
 	p.values = values
 	p.reflect = len(params) == 0
@@ -72,7 +72,7 @@ func (p *queryResult) setSelected(rt int, params []*param, values []reflect.Valu
 	return nil
 }
 
-func (p *queryResult) addSelected(index int, name string) error {
+func (p *queryScanner) addSelected(index int, name string) error {
 	if p.selected == nil {
 		p.selected = map[string]int{}
 	}
@@ -82,7 +82,7 @@ func (p *queryResult) addSelected(index int, name string) error {
 	p.selected[name] = index
 	return nil
 }
-func (p *queryResult) isSelected(field string) bool {
+func (p *queryScanner) isSelected(field string) bool {
 	if p.selected == nil {
 		return false
 	}
@@ -90,7 +90,7 @@ func (p *queryResult) isSelected(field string) bool {
 	return ok
 }
 
-func (p *queryResult) scan() (err error) {
+func (p *queryScanner) scan() (err error) {
 	columns, err := p.rows.Columns()
 	if err != nil {
 		return
@@ -125,7 +125,7 @@ func (p *queryResult) scan() (err error) {
 	return
 }
 
-func (p *queryResult) reflectRow(columns []string, row []interface{}) error {
+func (p *queryScanner) reflectRow(columns []string, row []interface{}) error {
 	if p.reflect {
 		if p.values[0].Elem().Kind() == reflect.Slice {
 			return p.reflectStructs(newRowMap(columns, row))
@@ -146,7 +146,7 @@ func (p *queryResult) reflectRow(columns []string, row []interface{}) error {
 	return nil
 }
 
-func (p *queryResult) reflectStruct(r rowMap) error {
+func (p *queryScanner) reflectStruct(r rowMap) error {
 	dv := p.values[0]
 	if dv.Kind() == reflect.Ptr {
 		dv = dv.Elem()
@@ -170,7 +170,7 @@ func (p *queryResult) reflectStruct(r rowMap) error {
 	return nil
 }
 
-func (p *queryResult) trimComma(field string) string {
+func (p *queryScanner) trimComma(field string) string {
 	// TODO 也许可以更加优化
 	if strings.Contains(field, ",") {
 		return strings.TrimSpace(strings.Split(field, ",")[0])
@@ -178,7 +178,7 @@ func (p *queryResult) trimComma(field string) string {
 	return field
 }
 
-func (p *queryResult) reflectStructs(r rowMap) error {
+func (p *queryScanner) reflectStructs(r rowMap) error {
 	var _type reflect.Type
 	if p.values[0].Type().Elem().Elem().Kind() != reflect.Ptr {
 		// var test []Test => Test
@@ -210,7 +210,7 @@ func (p *queryResult) reflectStructs(r rowMap) error {
 	return nil
 }
 
-func (p *queryResult) reflectValue(column string, dest reflect.Value, value interface{}) error {
+func (p *queryScanner) reflectValue(column string, dest reflect.Value, value interface{}) error {
 	var err error
 	dv := reflectValueElem(dest)
 	dt := reflectTypeElem(dest.Type())
@@ -339,7 +339,7 @@ func (p *queryResult) reflectValue(column string, dest reflect.Value, value inte
 	return fmt.Errorf("can't scan field '%s' type '%s' to '%s'", column, reflect.TypeOf(value), dest.Type())
 }
 
-func (p *queryResult) set(dest reflect.Value, r interface{}) error {
+func (p *queryScanner) set(dest reflect.Value, r interface{}) error {
 	if dest.Kind() == reflect.Slice {
 		if dest.Type().Elem().Kind() == reflect.Ptr {
 			v := reflect.New(dest.Type().Elem().Elem())
@@ -354,71 +354,74 @@ func (p *queryResult) set(dest reflect.Value, r interface{}) error {
 	return nil
 }
 
-type execResult struct {
+type execScanner struct {
 	affected int64
 	values   []reflect.Value
 }
 
-func (p *execResult) scan() error {
-	if len(p.values) > 0 {
-		switch p.values[0].Elem().Kind() {
-		case reflect.Int:
-			r, e := cast.ToIntE(p.affected)
-			if e != nil {
-				return e
-			}
-			p.values[0].Elem().SetInt(int64(r))
-		case reflect.Int8:
-			r, e := cast.ToInt8E(p.affected)
-			if e != nil {
-				return e
-			}
-			p.values[0].Elem().SetInt(int64(r))
-		case reflect.Int16:
-			r, e := cast.ToInt16E(p.affected)
-			if e != nil {
-				return e
-			}
-			p.values[0].Elem().SetInt(int64(r))
-		case reflect.Int32:
-			r, e := cast.ToInt32E(p.affected)
-			if e != nil {
-				return e
-			}
-			p.values[0].Elem().SetInt(int64(r))
-		case reflect.Int64:
-			p.values[0].Elem().SetInt(p.affected)
-		case reflect.Uint:
-			r, e := cast.ToUintE(p.affected)
-			if e != nil {
-				return e
-			}
-			p.values[0].Elem().SetUint(uint64(r))
-		case reflect.Uint8:
-			r, e := cast.ToUint8E(p.affected)
-			if e != nil {
-				return e
-			}
-			p.values[0].Elem().SetUint(uint64(r))
-		case reflect.Uint16:
-			r, e := cast.ToUint16E(p.affected)
-			if e != nil {
-				return e
-			}
-			p.values[0].Elem().SetUint(uint64(r))
-		case reflect.Uint32:
-			r, e := cast.ToUint32E(p.affected)
-			if e != nil {
-				return e
-			}
-			p.values[0].Elem().SetUint(uint64(r))
-		case reflect.Uint64:
-			r, e := cast.ToUint64E(p.affected)
-			if e != nil {
-				return e
-			}
-			p.values[0].Elem().SetUint(r)
-		}
+func (p *execScanner) scan() error {
+	if len(p.values) != 0 {
+		return fmt.Errorf("exec scanner: illegal values length %d", len(p.values))
 	}
+	
+	switch p.values[0].Elem().Kind() {
+	case reflect.Int:
+		r, e := cast.ToIntE(p.affected)
+		if e != nil {
+			return e
+		}
+		p.values[0].Elem().SetInt(int64(r))
+	case reflect.Int8:
+		r, e := cast.ToInt8E(p.affected)
+		if e != nil {
+			return e
+		}
+		p.values[0].Elem().SetInt(int64(r))
+	case reflect.Int16:
+		r, e := cast.ToInt16E(p.affected)
+		if e != nil {
+			return e
+		}
+		p.values[0].Elem().SetInt(int64(r))
+	case reflect.Int32:
+		r, e := cast.ToInt32E(p.affected)
+		if e != nil {
+			return e
+		}
+		p.values[0].Elem().SetInt(int64(r))
+	case reflect.Int64:
+		p.values[0].Elem().SetInt(p.affected)
+	case reflect.Uint:
+		r, e := cast.ToUintE(p.affected)
+		if e != nil {
+			return e
+		}
+		p.values[0].Elem().SetUint(uint64(r))
+	case reflect.Uint8:
+		r, e := cast.ToUint8E(p.affected)
+		if e != nil {
+			return e
+		}
+		p.values[0].Elem().SetUint(uint64(r))
+	case reflect.Uint16:
+		r, e := cast.ToUint16E(p.affected)
+		if e != nil {
+			return e
+		}
+		p.values[0].Elem().SetUint(uint64(r))
+	case reflect.Uint32:
+		r, e := cast.ToUint32E(p.affected)
+		if e != nil {
+			return e
+		}
+		p.values[0].Elem().SetUint(uint64(r))
+	case reflect.Uint64:
+		r, e := cast.ToUint64E(p.affected)
+		if e != nil {
+			return e
+		}
+		p.values[0].Elem().SetUint(r)
+	}
+	
 	return nil
 }

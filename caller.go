@@ -278,7 +278,8 @@ func (p *caller) parseResult(res sql.Result, values []reflect.Value) error {
 	if p.fragment.must && affected != 1 {
 		return fmt.Errorf("expect affect 1 row, got %d", affected)
 	}
-	return (&execResult{affected: affected, values: values}).scan()
+	scanner := execScanner{affected: affected, values: values}
+	return scanner.scan()
 }
 
 func (p caller) parseRows(rt int, params []*param, rows *sql.Rows, values ...reflect.Value) (err error) {
@@ -287,10 +288,10 @@ func (p caller) parseRows(rt int, params []*param, rows *sql.Rows, values ...ref
 			p.logger.Errorf("[gobatis] [%s] close rows error: %s", p.fragment.id, _err)
 		}
 	}()
-	res := queryResult{rows: rows, tag: p.fragment.tag()}
-	err = res.setSelected(rt, params, values)
+	scanner := queryScanner{rows: rows, tag: p.fragment.tag()}
+	err = scanner.setSelected(rt, params, values)
 	if err != nil {
 		return err
 	}
-	return res.scan()
+	return scanner.scan()
 }
