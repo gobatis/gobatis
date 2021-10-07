@@ -9,10 +9,13 @@ import (
 	"strings"
 )
 
+const (
+	json_tag    = "json"
+	default_tag = "sql"
+)
+
 var errorType reflect.Type
 var scannerType reflect.Type
-
-//var valuerType reflect.Type
 
 type Valuer interface {
 	Value() (driver.Value, error)
@@ -21,7 +24,6 @@ type Valuer interface {
 func init() {
 	errorType = reflect.TypeOf((*error)(nil)).Elem()
 	scannerType = reflect.TypeOf((*sql.Scanner)(nil)).Elem()
-	//valuerType = reflect.TypeOf((*Valuer)(nil)).Elem()
 }
 
 func isCtx(v reflect.Type) bool {

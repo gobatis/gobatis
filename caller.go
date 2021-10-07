@@ -19,50 +19,26 @@ type conn interface {
 	Close() error
 }
 
-//type execer interface {
-//	PrepareContext(ctx context.Context, query string) (*sql.Stmt, error)
-//	ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
-//}
-//
-//type queryer interface {
-//	QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error)
-//	PrepareContext(ctx context.Context, query string) (*sql.Stmt, error)
-//}
-
-type segment struct {
-	query   bool
-	sql     string
-	in      []reflect.Value
-	vars    []interface{}
-	dynamic bool
+type stmt struct {
 	ctx     context.Context
+	in      []reflect.Value
+	sql     string
+	vars    []interface{}
+	query   bool
+	dynamic bool
+	strict  bool
 	conn    conn
 	rows    *sql.Rows
 	result  sql.Result
 }
 
-func (p segment) close() {
+func (p stmt) close() {
 	if p.conn != nil {
 		_ = p.conn.Close()
 	}
 }
 
-func (p *segment) merge(s ...*segment) {
-	for _, v := range s {
-		p.sql += " " + strings.TrimSpace(v.sql)
-		if !p.dynamic && v.dynamic {
-			p.dynamic = v.dynamic
-		}
-	}
-}
-
-func (p segment) printLog() {
-	//p.logger.Errorf("[gobatis] [%s] exec statement: %s", p.method.id, s)
-	//p.logger.Errorf("[gobatis] [%s] exec parameter: %s", p.method.id, printVars(vars))
-	//p.logger.Errorf("[gobatis] [%s] prepare error: %v", p.method.id, err)
-}
-
-func (p segment) realSQL() string {
+func (p stmt) realSQL() string {
 	s := p.sql
 	for i, v := range p.vars {
 		s = strings.Replace(s, fmt.Sprintf("$%d", i+1), p.realValue(v), 1)
@@ -71,7 +47,7 @@ func (p segment) realSQL() string {
 	return s
 }
 
-func (p segment) realValue(v interface{}) string {
+func (p stmt) realValue(v interface{}) string {
 	vv := cast.IndirectToStringerOrError(v)
 	switch s := vv.(type) {
 	case string:
@@ -115,7 +91,7 @@ func (p segment) realValue(v interface{}) string {
 	}
 }
 
-func (p *segment) concatSQL(s string) {
+func (p *stmt) concatSQL(s string) {
 	if p.sql == "" {
 		p.sql = s
 	} else {
@@ -174,7 +150,55 @@ func (p *caller) exec(in []reflect.Value) error {
 	return p.parseExecResult(s.result, p.result)
 }
 
-func (p caller) run(s *segment) (err error) {
+func (p *caller) query(in []reflect.Value) (err error) {
+	
+	//TODO 检查 Out 类型
+	
+	ss, err := p.method.buildQuery(in)
+	if err != nil {
+		return
+	}
+	
+	defer func() {
+		if ss[0] != nil {
+			ss[0].close()
+		}
+		if ss[1] != nil {
+			ss[1].close()
+		}
+	}()
+	
+	if ss[0] != nil {
+		err = p.run(ss[0])
+		if err != nil {
+			return
+		}
+		err = p.parseQueryResult(result_result, []*param{{name: "count"}}, ss[0].rows, p.result[0])
+		if err != nil {
+			return
+		}
+	}
+	
+	if ss[1] != nil {
+		err = p.run(ss[1])
+		if err != nil {
+			return
+		}
+		err = p.parseQueryResult(result_none, nil, ss[1].rows, p.result[1])
+		if err != nil {
+			return
+		}
+	}
+	
+	return
+}
+
+func (p *caller) save(in []reflect.Value) (err error) {
+	
+	return
+}
+
+func (p caller) run(s *stmt) (err error) {
 	
 	if s.conn == nil {
 		s.conn, err = p.method.db.Conn(s.ctx)
@@ -240,140 +264,6 @@ func (p *caller) convertResult(err error) {
 	}
 }
 
-func (p *caller) query(in []reflect.Value) (err error) {
-	
-	// TODO 检查 Out 类型
-	
-	ss, err := p.method.buildQuery(in)
-	if err != nil {
-		return
-	}
-	
-	defer func() {
-		if ss[0] != nil {
-			ss[0].close()
-		}
-		if ss[1] != nil {
-			ss[1].close()
-		}
-	}()
-	
-	if ss[0] != nil {
-		err = p.run(ss[0])
-		if err != nil {
-			return
-		}
-		err = p.parseQueryResult(result_result, []*param{{name: "count"}}, ss[0].rows, p.result[0])
-		if err != nil {
-			return
-		}
-	}
-	
-	if ss[1] != nil {
-		err = p.run(ss[1])
-		if err != nil {
-			return
-		}
-		err = p.parseQueryResult(result_none, nil, ss[1].rows, p.result[1])
-		if err != nil {
-			return
-		}
-	}
-	
-	return
-}
-
-func (p *caller) save(in []reflect.Value) (err error) {
-	
-	return
-}
-
-//func (p *caller) exec(in ...reflect.Value) (err error) {
-//
-//	_execer, index := p.execer(in)
-//	if index > -1 {
-//		in = p.removeParam(in, index)
-//	}
-//	ctx, index := p.context(in)
-//	if index > -1 {
-//		in = p.removeParam(in, index)
-//	}
-//
-//	tx, _ := _execer.(*Tx)
-//	if tx != nil {
-//		stmt := tx.getStmt(p.method.id)
-//		if stmt != nil {
-//			return stmt.exec(true, ctx, in)
-//		}
-//	}
-//
-//	if p.method._stmt != nil {
-//		return p.method._stmt.exec(false, ctx, in)
-//	}
-//
-//	var conn *sql.Conn
-//	if _execer == nil {
-//		conn, err = p.method.db.Conn(ctx)
-//		if err != nil {
-//			return
-//		}
-//		_execer = conn
-//	}
-//	defer func() {
-//		if conn != nil && p.method._stmt == nil {
-//			if _err := conn.Close(); _err != nil {
-//				p.logger.Errorf("[gobatis] [%s] close conn error: %s", p.method.id, err)
-//			}
-//		}
-//	}()
-//
-//	s, exprs, vars, dynamic, err := p.method.buildSegment(in...)
-//	if err != nil {
-//		return
-//	}
-//
-//	p.logger.Debugf("[gobatis] [%s] exec statement: %s", p.method.id, s)
-//	p.logger.Debugf("[gobatis] [%s] exec parameter: %s", p.method.id, printVars(vars))
-//
-//	var res sql.Result
-//	if p.method.stmt {
-//		var _stmt *sql.Stmt
-//		_stmt, err = _execer.PrepareContext(ctx, s)
-//		if err != nil {
-//			p.logger.Errorf("[gobatis] [%s] exec statement: %s", p.method.id, s)
-//			p.logger.Errorf("[gobatis] [%s] exec parameter: %s", p.method.id, printVars(vars))
-//			p.logger.Errorf("[gobatis] [%s] prepare error: %v", p.method.id, err)
-//			return err
-//		}
-//
-//		if !dynamic {
-//			stmt := &Stmt{
-//				stmt:   _stmt,
-//				exprs:  exprs,
-//				sql:    s,
-//				conn:   conn,
-//				caller: p,
-//			}
-//			if tx != nil {
-//				tx.addStmt(stmt)
-//			} else {
-//				p.method._stmt = stmt
-//			}
-//		}
-//		res, err = _stmt.ExecContext(ctx, vars...)
-//	} else {
-//		res, err = _execer.ExecContext(ctx, s, vars...)
-//	}
-//	if err != nil {
-//		p.logger.Errorf("[gobatis] [%s] exec statement: %s", p.method.id, s)
-//		p.logger.Errorf("[gobatis] [%s] exec parameter: %s", p.method.id, printVars(vars))
-//		p.logger.Errorf("[gobatis] [%s] exec error: %v", p.method.id, err)
-//		return
-//	}
-//
-//	return p.parseExecResult(res, p.result)
-//}
-
 func (p *caller) parseExecResult(res sql.Result, values []reflect.Value) error {
 	// ignore RowsAffected to support database that not support
 	affected, _ := res.RowsAffected()
@@ -383,139 +273,16 @@ func (p *caller) parseExecResult(res sql.Result, values []reflect.Value) error {
 	return (&execResult{affected: affected, values: values}).scan()
 }
 
-//func (p *caller) query(in ...reflect.Value) (err error) {
-//
-//	ctx, index := p.context(in)
-//	if index > -1 {
-//		in = p.removeParam(in, index)
-//	}
-//
-//	_queryer, index := p.queryer(in)
-//	if index > -1 {
-//		in = p.removeParam(in, index)
-//	}
-//
-//	tx, _ := _queryer.(*Tx)
-//	if tx != nil {
-//		stmt := tx.getStmt(p.method.id)
-//		if stmt != nil {
-//			err = stmt.query(true, ctx, in, p.result)
-//			if err != nil {
-//				return
-//			}
-//			return
-//		}
-//	}
-//
-//	if p.method._stmt != nil {
-//		err = p.method._stmt.query(false, ctx, in, p.result)
-//		if err != nil {
-//			return
-//		}
-//		return
-//	}
-//
-//	var conn *sql.Conn
-//	if _queryer == nil {
-//		conn, err = p.method.db.Conn(ctx)
-//		if err != nil {
-//			return
-//		}
-//		_queryer = conn
-//	}
-//	defer func() {
-//		if conn != nil && p.method._stmt == nil {
-//			if _err := conn.Close(); _err != nil {
-//				p.logger.Errorf("[gobatis] [%s] close conn error: %s", p.method.id, err)
-//			}
-//		}
-//	}()
-//
-//	s, exprs, vars, dynamic, err := p.method.buildSegment(in...)
-//	if err != nil {
-//		return
-//	}
-//
-//	p.logger.Debugf("[gobatis] [%s] query statement: %s", p.method.id, s)
-//	p.logger.Debugf("[gobatis] [%s] query parameter: [%+v]", p.method.id, printVars(vars))
-//
-//	var rows *sql.Rows
-//	if p.method.stmt {
-//		var _stmt *sql.Stmt
-//		_stmt, err = _queryer.PrepareContext(ctx, s)
-//		if err != nil {
-//			p.logger.Errorf("[gobatis] [%s] exec statement: %s", p.method.id, s)
-//			p.logger.Errorf("[gobatis] [%s] exec parameter: %s", p.method.id, printVars(vars))
-//			p.logger.Errorf("[gobatis] [%s] prepare error: %v", p.method.id, err)
-//			return err
-//		}
-//
-//		if p.method.stmt && !dynamic {
-//			stmt := &Stmt{
-//				stmt:   _stmt,
-//				exprs:  exprs,
-//				sql:    s,
-//				conn:   conn,
-//				caller: p,
-//			}
-//			if tx != nil {
-//				tx.addStmt(stmt)
-//			} else {
-//				p.method._stmt = stmt
-//			}
-//		}
-//
-//		rows, err = _stmt.QueryContext(ctx, vars...)
-//	} else {
-//		rows, err = _queryer.QueryContext(ctx, s, vars...)
-//	}
-//	if err != nil {
-//		p.logger.Errorf("[gobatis] [%s] query statement: %s", p.method.id, s)
-//		p.logger.Errorf("[gobatis] [%s] query parameter: [%+v]", p.method.id, printVars(vars))
-//		p.logger.Errorf("[gobatis] [%s] query error: %v", p.method.id, err)
-//		return
-//	}
-//	err = p.parseQueryResult(rows, p.result)
-//	if err != nil {
-//		return
-//	}
-//	return
-//}
-
 func (p caller) parseQueryResult(rt int, params []*param, rows *sql.Rows, values ...reflect.Value) (err error) {
 	defer func() {
 		if _err := rows.Close(); _err != nil {
 			p.logger.Errorf("[gobatis] [%s] close rows error: %s", p.method.id, _err)
 		}
 	}()
-	res := queryResult{rows: rows}
+	res := queryResult{rows: rows, tag: p.method.tag()}
 	err = res.setSelected(rt, params, values)
 	if err != nil {
 		return err
 	}
 	return res.scan()
 }
-
-//func (p *caller) execer(in []reflect.Value) (execer, int) {
-//	if len(in) > 0 {
-//		t := reflect.TypeOf(new(execer)).Elem()
-//		for i, v := range in {
-//			if v.Type().Implements(t) {
-//				return v.Interface().(execer), i
-//			}
-//		}
-//	}
-//	return nil, -1
-//}
-//
-//func (p *caller) queryer(in []reflect.Value) (queryer, int) {
-//	if len(in) > 0 {
-//		t := reflect.TypeOf(new(queryer)).Elem()
-//		for i, v := range in {
-//			if v.Type().Implements(t) {
-//				return v.Interface().(queryer), i
-//			}
-//		}
-//	}
-//	return nil, -1
-//}

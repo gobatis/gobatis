@@ -13,7 +13,7 @@ var _builtin *builtin
 func init() {
 	_builtin = &builtin{
 		mu: sync.RWMutex{},
-		_map: map[string]interface{}{
+		mapping: map[string]interface{}{
 			"len":     _len,
 			"int":     _int,
 			"int8":    _int8,
@@ -35,21 +35,21 @@ func init() {
 }
 
 type builtin struct {
-	mu   sync.RWMutex
-	_map map[string]interface{}
+	mu      sync.RWMutex
+	mapping map[string]interface{}
 }
 
 func (p *builtin) get(name string) interface{} {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
-	v, _ := p._map[name]
+	v, _ := p.mapping[name]
 	return v
 }
 
 func (p *builtin) is(name string) bool {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
-	_, ok := p._map[name]
+	_, ok := p.mapping[name]
 	return ok
 }
 

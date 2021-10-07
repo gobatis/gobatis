@@ -294,7 +294,7 @@ var testParseDeleteCases = []testParseMapperCase{
 	},
 }
 
-func (p testParseMapperCaseSql) check(t *testing.T, c *testParseMapperCase, s *segment) bool {
+func (p testParseMapperCaseSql) check(t *testing.T, c *testParseMapperCase, s *stmt) bool {
 	require.Equal(t, p.stmtSQL, s.sql, c)
 	require.Equal(t, p.realSQL, s.realSQL(), c)
 	require.Equal(t, len(p.values), len(s.vars), c)
@@ -310,7 +310,7 @@ func TestParseSelectCases(t *testing.T) {
 		fs  []*method
 		f   *method
 		c   *caller
-		s   *segment
+		s   *stmt
 		err error
 	)
 	
@@ -415,8 +415,8 @@ func TestParseQueryCases(t *testing.T) {
 		fs []*method
 		f  *method
 		c  *caller
-		//s  *segment
-		ss []*segment
+		//s  *stmt
+		ss []*stmt
 		//parser *exprParser
 		err error
 	)

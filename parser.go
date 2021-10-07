@@ -37,7 +37,7 @@ func parseConfig(engine *Engine, file, content string) (err error) {
 	return
 }
 
-func parseMapper(file, content string) (fs []*method, err error) {
+func parseMapper(file, content string) (ms []*method, err error) {
 	defer func() {
 		e := recover()
 		err = catch(file, e)
@@ -57,7 +57,7 @@ func parseMapper(file, content string) (fs []*method, err error) {
 	if l.rootNode == nil {
 		return
 	}
-	var f *method
+	var m *method
 	for _, v := range l.rootNode.Nodes {
 		switch v.Name {
 		case dtd.SELECT, dtd.INSERT, dtd.DELETE, dtd.UPDATE, dtd.SQL, dtd.SAVE, dtd.QUERY:
@@ -65,11 +65,11 @@ func parseMapper(file, content string) (fs []*method, err error) {
 			if id == "" {
 				throw(file, v.ctx, parseMapperErr).format("method: %s miss id", v.Name)
 			}
-			f, err = parseFragment(file, id, v)
+			m, err = parseMethod(file, id, v)
 			if err != nil {
 				throw(file, v.ctx, parseFragmentErr).with(err)
 			}
-			fs = append(fs, f)
+			ms = append(ms, m)
 			//default:
 			//	throw(file, v.ctx, parseFragmentErr).format("unknown element: %s", v.Name)
 		}
@@ -101,7 +101,7 @@ func initExprParser(tokens string) (parser *expr.ExprParser) {
 	return
 }
 
-func parseFragment(file, id string, node *xmlNode) (f *method, err error) {
+func parseMethod(file, id string, node *xmlNode) (f *method, err error) {
 	defer func() {
 		e := recover()
 		err = catch(file, e)

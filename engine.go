@@ -31,6 +31,7 @@ type Engine struct {
 	logger          Logger
 	bundle          http.FileSystem
 	fragmentManager *methodManager
+	tag             string
 }
 
 func (p *Engine) Master() *DB {
@@ -38,11 +39,18 @@ func (p *Engine) Master() *DB {
 }
 
 func (p *Engine) SetTag(tag string) {
-	reflect_tag = tag
+	p.tag = tag
+}
+
+func (p *Engine) Tag() string {
+	if p.tag == "" {
+		return default_tag
+	}
+	return p.tag
 }
 
 func (p *Engine) UseJsonTag() {
-	reflect_tag = "json"
+	p.tag = json_tag
 }
 
 func (p *Engine) SetLoggerLevel(level Level) {
@@ -82,14 +90,14 @@ func (p *Engine) Init(bundle Bundle) (err error) {
 
 func (p *Engine) Close() {
 	if p.fragmentManager != nil {
-		for _, v := range p.fragmentManager.all() {
-			if v._stmt != nil {
-				err := v._stmt.Close()
-				if err != nil {
-					p.logger.Errorf("[gobatis] close stmt error: %s", err)
-				}
-			}
-		}
+		//for _, v := range p.fragmentManager.all() {
+		//	if v._stmt != nil {
+		//		err := v._stmt.Close()
+		//		if err != nil {
+		//			p.logger.Errorf("[gobatis] close stmt error: %s", err)
+		//		}
+		//	}
+		//}
 	}
 	for _, v := range p.slaves {
 		err := v.Close()
@@ -161,7 +169,7 @@ func (p *Engine) bindMapper(mapper interface{}) (err error) {
 			continue
 		}
 		must := false
-		stmt := false
+		//stmt := false
 		id := rt.Field(i).Name
 		if strings.HasPrefix(id, must_prefix) {
 			id = strings.TrimPrefix(id, must_prefix)
@@ -169,7 +177,7 @@ func (p *Engine) bindMapper(mapper interface{}) (err error) {
 		}
 		if strings.HasSuffix(id, stmt_suffix) {
 			id = strings.TrimSuffix(id, stmt_suffix)
-			stmt = true
+			//stmt = true
 		}
 		if strings.HasSuffix(id, tx_suffix) {
 			id = strings.TrimSuffix(id, tx_suffix)
@@ -183,7 +191,7 @@ func (p *Engine) bindMapper(mapper interface{}) (err error) {
 		}
 		m = m.fork()
 		m.must = must
-		m.stmt = stmt
+		//m.stmt = stmt
 		m.id = rt.Field(i).Name
 		ft := rv.Field(i).Type()
 		m.checkParameter(ft, rt.Name(), rv.Type().Field(i).Name)
@@ -241,7 +249,7 @@ func (p *Engine) parseMappers() (err error) {
 	if err != nil {
 		return
 	}
-	var fs []*method
+	var ms []*method
 	for _, v := range files {
 		var bs []byte
 		bs, err = p.readBundleFile(v)
@@ -249,19 +257,20 @@ func (p *Engine) parseMappers() (err error) {
 			return
 		}
 		p.logger.Debugf("[gobatis] register: %s.xml", v)
-		fs, err = parseMapper(v, string(bs))
+		ms, err = parseMapper(v, string(bs))
 		if err != nil {
 			return
 		}
-		p.registerMapper(fs)
+		p.registerMapper(ms)
 	}
 	
 	return
 }
 
-func (p *Engine) registerMapper(fs []*method) {
+func (p *Engine) registerMapper(ms []*method) {
 	var err error
-	for _, v := range fs {
+	for _, v := range ms {
+		v.engine = p
 		v.db = p.Master()
 		err = p.fragmentManager.add(v)
 		if err != nil {

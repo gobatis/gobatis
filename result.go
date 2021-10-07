@@ -10,10 +10,6 @@ import (
 	"time"
 )
 
-var (
-	reflect_tag = "sql"
-)
-
 type queryResult struct {
 	rows     *sql.Rows
 	first    bool
@@ -21,10 +17,7 @@ type queryResult struct {
 	all      bool
 	selected map[string]int
 	values   []reflect.Value
-}
-
-func (p *queryResult) Tag() string {
-	return reflect_tag
+	tag      string
 }
 
 func (p *queryResult) Rows() *sql.Rows {
@@ -151,7 +144,7 @@ func (p *queryResult) reflectStruct(r rowMap) error {
 	_type := dv.Type()
 	
 	for i := 0; i < _type.NumField(); i++ {
-		field := _type.Field(i).Tag.Get(p.Tag())
+		field := _type.Field(i).Tag.Get(p.tag)
 		field = p.trimComma(field)
 		v, ok := r[field]
 		if ok && v != nil {
@@ -186,7 +179,7 @@ func (p *queryResult) reflectStructs(r rowMap) error {
 	}
 	elem := reflect.New(_type)
 	for i := 0; i < _type.NumField(); i++ {
-		field := _type.Field(i).Tag.Get(p.Tag())
+		field := _type.Field(i).Tag.Get(p.tag)
 		field = p.trimComma(field)
 		v, ok := r[field]
 		if ok && v != nil {

@@ -112,13 +112,13 @@ func (p *DB) BeginTx(ctx context.Context, opts *sql.TxOptions) (*sql.Tx, error) 
 	return p.db.BeginTx(ctx, opts)
 }
 
-func (p *DB) Begin() (*Tx, error) {
-	tx, err := p.db.Begin()
-	if err != nil {
-		return nil, err
-	}
-	return NewTx(tx), nil
-}
+//func (p *DB) Begin() (*Tx, error) {
+//	tx, err := p.db.Begin()
+//	if err != nil {
+//		return nil, err
+//	}
+//	return NewTx(tx), nil
+//}
 
 func (p *DB) Driver() driver.Driver {
 	return p.db.Driver()

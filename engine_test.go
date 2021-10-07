@@ -1,7 +1,6 @@
 package gobatis
 
 import (
-	"context"
 	"fmt"
 	"github.com/AlekSi/pointer"
 	"github.com/gobatis/gobatis/test"
@@ -18,12 +17,12 @@ var (
 	pwd string
 )
 
-type StmtMapper struct {
-	TestInsertStmtTx  func(tx *Tx, user *test.User) error
-	TestInsertStmt2Tx func(tx *Tx, user *test.User) error
-	TestQueryStmtTx   func(tx *Tx, name string, age int64) ([]*test.User, error)
-	TestQueryStmt2Tx  func(tx *Tx, name string, age int64) ([]*test.User, error)
-}
+//type StmtMapper struct {
+//	TestInsertStmtTx  func(tx *Tx, user *test.User) error
+//	TestInsertStmt2Tx func(tx *Tx, user *test.User) error
+//	TestQueryStmtTx   func(tx *Tx, name string, age int64) ([]*test.User, error)
+//	TestQueryStmt2Tx  func(tx *Tx, name string, age int64) ([]*test.User, error)
+//}
 
 func init() {
 	var err error
@@ -63,7 +62,7 @@ func TestEngine(t *testing.T) {
 	testSelectInsertForeachMapPointer(t, _testMapper)
 	testSelectInsertForeachStruct(t, _testMapper)
 	testSelectInsertForeachStructPointer(t, _testMapper)
-	testSelectInsertContextTx(t, engine, _testMapper)
+	//testSelectInsertContextTx(t, engine, _testMapper)
 	testInsert(t, _testMapper)
 	testSelectRow(t, _testMapper)
 	testSelectRowPointer(t, _testMapper)
@@ -142,67 +141,67 @@ func TestStmt(t *testing.T) {
 	t.Log(users[0].Name, users[0].Age)
 }
 
-func TestStmtTx(t *testing.T) {
-	engine := NewPostgresql("postgresql://postgres:postgres@127.0.0.1:5432/gobatis?connect_timeout=10&sslmode=disable")
-	err := engine.Init(NewBundle("test/sql"))
-	require.NoError(t, err)
-	err = engine.master.Ping()
-	require.NoError(t, err)
-	engine.SetLoggerLevel(DebugLevel)
-	defer func() {
-		engine.Close()
-	}()
-	
-	stmtMapper := new(StmtMapper)
-	err = engine.BindMapper(stmtMapper)
-	require.NoError(t, err)
-	
-	tx, err := engine.Master().Begin()
-	require.NoError(t, err)
-	defer func() {
-		if err != nil {
-			err = tx.Rollback()
-			require.NoError(t, err)
-		} else {
-			err = tx.Commit()
-			require.NoError(t, err)
-		}
-	}()
-	
-	err = stmtMapper.TestInsertStmtTx(tx, &test.User{
-		Name: "tom_tx",
-		Age:  18,
-	})
-	require.NoError(t, err)
-	
-	err = stmtMapper.TestInsertStmtTx(tx, &test.User{
-		Name: "michael_tx",
-		Age:  8,
-	})
-	require.NoError(t, err)
-	
-	err = stmtMapper.TestInsertStmt2Tx(tx, &test.User{
-		Name: "default_tx",
-		Age:  8,
-	})
-	require.NoError(t, err)
-	
-	err = stmtMapper.TestInsertStmt2Tx(tx, &test.User{
-		Name: "default_tx",
-		Age:  9,
-	})
-	require.NoError(t, err)
-	
-	users, err := stmtMapper.TestQueryStmtTx(tx, "tom_tx", 18)
-	require.NoError(t, err)
-	require.True(t, len(users) > 0, len(users))
-	t.Log(users[0].Name, users[0].Age)
-	
-	users, err = stmtMapper.TestQueryStmtTx(tx, "default_tx", 8)
-	require.NoError(t, err)
-	require.True(t, len(users) > 0, len(users))
-	t.Log(users[0].Name, users[0].Age)
-}
+//func TestStmtTx(t *testing.T) {
+//	engine := NewPostgresql("postgresql://postgres:postgres@127.0.0.1:5432/gobatis?connect_timeout=10&sslmode=disable")
+//	err := engine.Init(NewBundle("test/sql"))
+//	require.NoError(t, err)
+//	err = engine.master.Ping()
+//	require.NoError(t, err)
+//	engine.SetLoggerLevel(DebugLevel)
+//	defer func() {
+//		engine.Close()
+//	}()
+//
+//	stmtMapper := new(StmtMapper)
+//	err = engine.BindMapper(stmtMapper)
+//	require.NoError(t, err)
+//
+//	tx, err := engine.Master().Begin()
+//	require.NoError(t, err)
+//	defer func() {
+//		if err != nil {
+//			err = tx.Rollback()
+//			require.NoError(t, err)
+//		} else {
+//			err = tx.Commit()
+//			require.NoError(t, err)
+//		}
+//	}()
+//
+//	err = stmtMapper.TestInsertStmtTx(tx, &test.User{
+//		Name: "tom_tx",
+//		Age:  18,
+//	})
+//	require.NoError(t, err)
+//
+//	err = stmtMapper.TestInsertStmtTx(tx, &test.User{
+//		Name: "michael_tx",
+//		Age:  8,
+//	})
+//	require.NoError(t, err)
+//
+//	err = stmtMapper.TestInsertStmt2Tx(tx, &test.User{
+//		Name: "default_tx",
+//		Age:  8,
+//	})
+//	require.NoError(t, err)
+//
+//	err = stmtMapper.TestInsertStmt2Tx(tx, &test.User{
+//		Name: "default_tx",
+//		Age:  9,
+//	})
+//	require.NoError(t, err)
+//
+//	users, err := stmtMapper.TestQueryStmtTx(tx, "tom_tx", 18)
+//	require.NoError(t, err)
+//	require.True(t, len(users) > 0, len(users))
+//	t.Log(users[0].Name, users[0].Age)
+//
+//	users, err = stmtMapper.TestQueryStmtTx(tx, "default_tx", 8)
+//	require.NoError(t, err)
+//	require.True(t, len(users) > 0, len(users))
+//	t.Log(users[0].Name, users[0].Age)
+//}
 
 func TestStringArray(t *testing.T) {
 	engine := NewPostgresql("postgresql://postgres:postgres@127.0.0.1:5432/gobatis?connect_timeout=10&sslmode=disable")
@@ -371,21 +370,21 @@ func testSelectInsertForeachStructPointer(t *testing.T, _testMapper *test.TestMa
 	}
 }
 
-func testSelectInsertContextTx(t *testing.T, engine *Engine, _testMapper *test.TestMapper) {
-	ctx := context.WithValue(context.Background(), "name", "gobatis")
-	tx, err := engine.Master().Begin()
-	require.NoError(t, err)
-	t.Log(_testMapper.SelectInsertContextTx == nil)
-	id, err := _testMapper.SelectInsertContextTx(ctx, tx.Tx(), test.Entity{
-		Char: "hello",
-	})
-	require.NoError(t, err)
-	err = tx.Commit()
-	require.NoError(t, err)
-	if id <= 0 {
-		require.Error(t, fmt.Errorf("returning id should greater 0"))
-	}
-}
+//func testSelectInsertContextTx(t *testing.T, engine *Engine, _testMapper *test.TestMapper) {
+//	ctx := context.WithValue(context.Background(), "name", "gobatis")
+//	tx, err := engine.Master().Begin()
+//	require.NoError(t, err)
+//	t.Log(_testMapper.SelectInsertContextTx == nil)
+//	id, err := _testMapper.SelectInsertContextTx(ctx, tx.Tx(), test.Entity{
+//		Char: "hello",
+//	})
+//	require.NoError(t, err)
+//	err = tx.Commit()
+//	require.NoError(t, err)
+//	if id <= 0 {
+//		require.Error(t, fmt.Errorf("returning id should greater 0"))
+//	}
+//}
 
 func testInsert(t *testing.T, _testMapper *test.TestMapper) {
 	rows, err := _testMapper.Insert("Insert", "red", "yellow", "blue")
