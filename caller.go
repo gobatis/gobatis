@@ -144,9 +144,9 @@ func (p *caller) exec(in []reflect.Value) error {
 		return err
 	}
 	if s.query {
-		return p.parseRows(p.fragment.rt, p.fragment.out, s.rows, p.result...)
+		return p.scanRows(p.fragment.rt, p.fragment.out, s.rows, p.result...)
 	}
-	return p.parseResult(s.result, p.result)
+	return p.scanResult(s.result, p.result)
 }
 
 func (p *caller) query(in []reflect.Value) (err error) {
@@ -171,7 +171,7 @@ func (p *caller) query(in []reflect.Value) (err error) {
 		if err != nil {
 			return
 		}
-		err = p.parseRows(result_result, []*param{{name: "count"}}, ss[0].rows, p.result[0])
+		err = p.scanRows(result_result, []*param{{name: "count"}}, ss[0].rows, p.result[0])
 		if err != nil {
 			return
 		}
@@ -182,7 +182,7 @@ func (p *caller) query(in []reflect.Value) (err error) {
 		if err != nil {
 			return
 		}
-		err = p.parseRows(result_none, nil, ss[1].rows, p.result[1])
+		err = p.scanRows(result_none, nil, ss[1].rows, p.result[1])
 		if err != nil {
 			return
 		}
@@ -203,7 +203,7 @@ func (p *caller) save(in []reflect.Value) (err error) {
 		return
 	}
 	
-	return p.parseResult(s.result, p.result)
+	return p.scanResult(s.result, p.result)
 }
 
 func (p caller) run(s *stmt) (err error) {
@@ -272,7 +272,7 @@ func (p *caller) export(err error) {
 	}
 }
 
-func (p *caller) parseResult(res sql.Result, values []reflect.Value) error {
+func (p *caller) scanResult(res sql.Result, values []reflect.Value) error {
 	// ignore RowsAffected to support database that not support
 	affected, _ := res.RowsAffected()
 	if p.fragment.must && affected != 1 {
@@ -282,7 +282,7 @@ func (p *caller) parseResult(res sql.Result, values []reflect.Value) error {
 	return scanner.scan()
 }
 
-func (p caller) parseRows(rt int, params []*param, rows *sql.Rows, values ...reflect.Value) (err error) {
+func (p caller) scanRows(rt int, params []*param, rows *sql.Rows, values ...reflect.Value) (err error) {
 	defer func() {
 		if _err := rows.Close(); _err != nil {
 			p.logger.Errorf("[gobatis] [%s] close rows error: %s", p.fragment.id, _err)
