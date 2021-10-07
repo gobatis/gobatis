@@ -10,6 +10,16 @@ import (
 	"time"
 )
 
+func newRowMap(columns []string, values []interface{}) rowMap {
+	m := rowMap{}
+	for i, v := range columns {
+		m[v] = values[i]
+	}
+	return m
+}
+
+type rowMap map[string]interface{}
+
 type queryResult struct {
 	rows     *sql.Rows
 	first    bool
@@ -343,16 +353,6 @@ func (p *queryResult) set(dest reflect.Value, r interface{}) error {
 	}
 	return nil
 }
-
-func newRowMap(columns []string, values []interface{}) rowMap {
-	m := rowMap{}
-	for i, v := range columns {
-		m[v] = values[i]
-	}
-	return m
-}
-
-type rowMap map[string]interface{}
 
 type execResult struct {
 	affected int64

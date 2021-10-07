@@ -164,7 +164,7 @@ func (p fragment) fork() *fragment {
 }
 
 func (p fragment) newCaller(mt reflect.Type) *caller {
-	c := &caller{mt: mt, method: &p}
+	c := &caller{mt: mt, fragment: &p}
 	if p.db != nil {
 		c.logger = p.db.logger
 	}

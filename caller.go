@@ -100,25 +100,25 @@ func (p *stmt) concatSQL(s string) {
 }
 
 type caller struct {
-	mt     reflect.Type
-	method *fragment
-	logger Logger
-	result []reflect.Value
+	mt       reflect.Type
+	fragment *fragment
+	logger   Logger
+	result   []reflect.Value
 }
 
 func (p *caller) call(in []reflect.Value) *caller {
 	
 	start := time.Now()
 	defer func() {
-		p.logger.Debugf("[gobatis] [%s] cost: %s", p.method.id, time.Since(start))
+		p.logger.Debugf("[gobatis] [%s] cost: %s", p.fragment.id, time.Since(start))
 	}()
 	
 	var err error
 	defer func() {
-		p.convertResult(err)
+		p.export(err)
 	}()
 	
-	switch p.method.node.Name {
+	switch p.fragment.node.Name {
 	case dtd.SELECT, dtd.INSERT, dtd.DELETE, dtd.UPDATE:
 		err = p.exec(in)
 	case dtd.SAVE:
@@ -126,14 +126,13 @@ func (p *caller) call(in []reflect.Value) *caller {
 	case dtd.QUERY:
 		err = p.query(in)
 	default:
-		throw(p.method.node.File, p.method.node.ctx, callerErr).
-			format("unsupported call fragment '%s'", p.method.node.Name)
+		err = fmt.Errorf("unsupported fragment %s<%s>", p.fragment.node.Name, p.fragment.id)
 	}
 	return p
 }
 
 func (p *caller) exec(in []reflect.Value) error {
-	s, err := p.method.buildSegment(in)
+	s, err := p.fragment.buildSegment(in)
 	if err != nil {
 		return err
 	}
@@ -145,16 +144,15 @@ func (p *caller) exec(in []reflect.Value) error {
 		return err
 	}
 	if s.query {
-		return p.parseQueryResult(p.method.rt, p.method.out, s.rows, p.result...)
+		return p.parseRows(p.fragment.rt, p.fragment.out, s.rows, p.result...)
 	}
-	return p.parseExecResult(s.result, p.result)
+	return p.parseResult(s.result, p.result)
 }
 
 func (p *caller) query(in []reflect.Value) (err error) {
 	
 	//TODO 检查 Out 类型
-	
-	ss, err := p.method.buildQuery(in)
+	ss, err := p.fragment.buildQuery(in)
 	if err != nil {
 		return
 	}
@@ -173,7 +171,7 @@ func (p *caller) query(in []reflect.Value) (err error) {
 		if err != nil {
 			return
 		}
-		err = p.parseQueryResult(result_result, []*param{{name: "count"}}, ss[0].rows, p.result[0])
+		err = p.parseRows(result_result, []*param{{name: "count"}}, ss[0].rows, p.result[0])
 		if err != nil {
 			return
 		}
@@ -184,7 +182,7 @@ func (p *caller) query(in []reflect.Value) (err error) {
 		if err != nil {
 			return
 		}
-		err = p.parseQueryResult(result_none, nil, ss[1].rows, p.result[1])
+		err = p.parseRows(result_none, nil, ss[1].rows, p.result[1])
 		if err != nil {
 			return
 		}
@@ -195,13 +193,23 @@ func (p *caller) query(in []reflect.Value) (err error) {
 
 func (p *caller) save(in []reflect.Value) (err error) {
 	
-	return
+	s, err := p.fragment.buildSave(in)
+	if err != nil {
+		return
+	}
+	
+	err = p.run(s)
+	if err != nil {
+		return
+	}
+	
+	return p.parseResult(s.result, p.result)
 }
 
 func (p caller) run(s *stmt) (err error) {
 	
 	if s.conn == nil {
-		s.conn, err = p.method.db.Conn(s.ctx)
+		s.conn, err = p.fragment.db.Conn(s.ctx)
 		if err != nil {
 			return
 		}
@@ -210,10 +218,10 @@ func (p caller) run(s *stmt) (err error) {
 	defer func() {
 		if err != nil {
 			p.logger.Errorf("[gobatis] [%s] exec error\n[sql]: %s\n[vars]: %v\n[detail]: %s",
-				p.method.id, s.sql, s.vars, err)
+				p.fragment.id, s.sql, s.vars, err)
 		} else {
 			if p.logger.Level() == DebugLevel {
-				p.logger.Debugf("[gobatis] [%s] exec '%s'", p.method.id, s.sql)
+				p.logger.Debugf("[gobatis] [%s] exec '%s'", p.fragment.id, s.sql)
 			}
 		}
 	}()
@@ -237,10 +245,10 @@ func (p caller) run(s *stmt) (err error) {
 	return
 }
 
-func (p *caller) convertResult(err error) {
+func (p *caller) export(err error) {
 	if err != nil {
 		if err == sql.ErrNoRows {
-			if p.method.must {
+			if p.fragment.must {
 				p.result = append(p.result, reflect.ValueOf(err))
 			} else {
 				p.result = append(p.result, reflect.Zero(errorType))
@@ -264,22 +272,22 @@ func (p *caller) convertResult(err error) {
 	}
 }
 
-func (p *caller) parseExecResult(res sql.Result, values []reflect.Value) error {
+func (p *caller) parseResult(res sql.Result, values []reflect.Value) error {
 	// ignore RowsAffected to support database that not support
 	affected, _ := res.RowsAffected()
-	if p.method.must && affected != 1 {
+	if p.fragment.must && affected != 1 {
 		return fmt.Errorf("expect affect 1 row, got %d", affected)
 	}
 	return (&execResult{affected: affected, values: values}).scan()
 }
 
-func (p caller) parseQueryResult(rt int, params []*param, rows *sql.Rows, values ...reflect.Value) (err error) {
+func (p caller) parseRows(rt int, params []*param, rows *sql.Rows, values ...reflect.Value) (err error) {
 	defer func() {
 		if _err := rows.Close(); _err != nil {
-			p.logger.Errorf("[gobatis] [%s] close rows error: %s", p.method.id, _err)
+			p.logger.Errorf("[gobatis] [%s] close rows error: %s", p.fragment.id, _err)
 		}
 	}()
-	res := queryResult{rows: rows, tag: p.method.tag()}
+	res := queryResult{rows: rows, tag: p.fragment.tag()}
 	err = res.setSelected(rt, params, values)
 	if err != nil {
 		return err
