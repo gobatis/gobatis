@@ -101,7 +101,7 @@ func (p *stmt) concatSQL(s string) {
 
 type caller struct {
 	mt     reflect.Type
-	method *method
+	method *fragment
 	logger Logger
 	result []reflect.Value
 }
@@ -127,7 +127,7 @@ func (p *caller) call(in []reflect.Value) *caller {
 		err = p.query(in)
 	default:
 		throw(p.method.node.File, p.method.node.ctx, callerErr).
-			format("unsupported call method '%s'", p.method.node.Name)
+			format("unsupported call fragment '%s'", p.method.node.Name)
 	}
 	return p
 }

@@ -21,20 +21,20 @@ func NewMySQL(dsn string) *Engine {
 }
 
 func NewEngine(db *DB) *Engine {
-	engine := &Engine{master: db, fragmentManager: &methodManager{}}
+	engine := &Engine{master: db, fm: fragmentManager{}}
 	return engine
 }
 
 type Engine struct {
-	master          *DB
-	slaves          []*DB
-	logger          Logger
-	bundle          http.FileSystem
-	fragmentManager *methodManager
-	tag             string
+	master *DB
+	slaves []*DB
+	logger Logger
+	bundle http.FileSystem
+	fm     fragmentManager
+	tag    string
 }
 
-func (p *Engine) Master() *DB {
+func (p Engine) Master() *DB {
 	return p.master
 }
 
@@ -42,7 +42,7 @@ func (p *Engine) SetTag(tag string) {
 	p.tag = tag
 }
 
-func (p *Engine) Tag() string {
+func (p Engine) Tag() string {
 	if p.tag == "" {
 		return default_tag
 	}
@@ -89,16 +89,16 @@ func (p *Engine) Init(bundle Bundle) (err error) {
 }
 
 func (p *Engine) Close() {
-	if p.fragmentManager != nil {
-		//for _, v := range p.fragmentManager.all() {
-		//	if v._stmt != nil {
-		//		err := v._stmt.Close()
-		//		if err != nil {
-		//			p.logger.Errorf("[gobatis] close stmt error: %s", err)
-		//		}
-		//	}
-		//}
-	}
+	//if p.fm != nil {
+	//for _, v := range p.fm.all() {
+	//	if v._stmt != nil {
+	//		err := v._stmt.Close()
+	//		if err != nil {
+	//			p.logger.Errorf("[gobatis] close stmt error: %s", err)
+	//		}
+	//	}
+	//}
+	//}
 	for _, v := range p.slaves {
 		err := v.Close()
 		if err != nil {
@@ -112,26 +112,6 @@ func (p *Engine) Close() {
 		}
 	}
 }
-
-func (p *Engine) SQL(name string, args ...interface{}) {
-
-}
-
-func (p *Engine) Call(name string, args ...interface{}) {
-	//f, ok := p.methodManager.get(name)
-	//if !ok {
-	//	panic(fmt.Errorf("method '%s' not exist", name))
-	//}
-	//return &caller{method: f, args: args, logger: p.logger}
-}
-
-//func (p *Engine) Call(name string, args ...reflect.Value) *caller {
-//	f, ok := p.methodManager.get(name)
-//	if !ok {
-//		panic(fmt.Errorf("method '%s' not exist", name))
-//	}
-//	return &caller{method: f, args: args, logger: p.logger}
-//}
 
 func (p *Engine) parseBundle() (err error) {
 	err = p.parseConfig()
@@ -182,7 +162,7 @@ func (p *Engine) bindMapper(mapper interface{}) (err error) {
 		if strings.HasSuffix(id, tx_suffix) {
 			id = strings.TrimSuffix(id, tx_suffix)
 		}
-		m, ok := p.fragmentManager.get(id)
+		m, ok := p.fm.get(id)
 		if !ok {
 			if must {
 				return fmt.Errorf("%s.(Must)%s statement not defined", rt.Name(), id)
@@ -249,7 +229,7 @@ func (p *Engine) parseMappers() (err error) {
 	if err != nil {
 		return
 	}
-	var ms []*method
+	var fs []*fragment
 	for _, v := range files {
 		var bs []byte
 		bs, err = p.readBundleFile(v)
@@ -257,22 +237,22 @@ func (p *Engine) parseMappers() (err error) {
 			return
 		}
 		p.logger.Debugf("[gobatis] register: %s.xml", v)
-		ms, err = parseMapper(v, string(bs))
+		fs, err = parseMapper(v, string(bs))
 		if err != nil {
 			return
 		}
-		p.registerMapper(ms)
+		p.registerMapper(fs)
 	}
 	
 	return
 }
 
-func (p *Engine) registerMapper(ms []*method) {
+func (p *Engine) registerMapper(ms []*fragment) {
 	var err error
 	for _, v := range ms {
 		v.engine = p
 		v.db = p.Master()
-		err = p.fragmentManager.add(v)
+		err = p.fm.add(v)
 		if err != nil {
 			throw(v.node.File, v.node.ctx, registerFragmentErr).with(err)
 		}

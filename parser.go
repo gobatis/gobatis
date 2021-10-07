@@ -37,7 +37,7 @@ func parseConfig(engine *Engine, file, content string) (err error) {
 	return
 }
 
-func parseMapper(file, content string) (ms []*method, err error) {
+func parseMapper(file, content string) (fs []*fragment, err error) {
 	defer func() {
 		e := recover()
 		err = catch(file, e)
@@ -57,19 +57,19 @@ func parseMapper(file, content string) (ms []*method, err error) {
 	if l.rootNode == nil {
 		return
 	}
-	var m *method
+	var f *fragment
 	for _, v := range l.rootNode.Nodes {
 		switch v.Name {
 		case dtd.SELECT, dtd.INSERT, dtd.DELETE, dtd.UPDATE, dtd.SQL, dtd.SAVE, dtd.QUERY:
 			id := v.GetAttribute(dtd.ID)
 			if id == "" {
-				throw(file, v.ctx, parseMapperErr).format("method: %s miss id", v.Name)
+				throw(file, v.ctx, parseMapperErr).format("fragment: %s miss id", v.Name)
 			}
-			m, err = parseMethod(file, id, v)
+			f, err = parseFragment(file, id, v)
 			if err != nil {
 				throw(file, v.ctx, parseFragmentErr).with(err)
 			}
-			ms = append(ms, m)
+			fs = append(fs, f)
 			//default:
 			//	throw(file, v.ctx, parseFragmentErr).format("unknown element: %s", v.Name)
 		}
@@ -101,13 +101,13 @@ func initExprParser(tokens string) (parser *expr.ExprParser) {
 	return
 }
 
-func parseMethod(file, id string, node *xmlNode) (f *method, err error) {
+func parseFragment(file, id string, node *xmlNode) (f *fragment, err error) {
 	defer func() {
 		e := recover()
 		err = catch(file, e)
 	}()
 	
-	f = &method{
+	f = &fragment{
 		id:   id,
 		node: node,
 	}
@@ -685,7 +685,7 @@ func (p *paramParser) walkMethods(parser *expr.ExprParser) {
 	antlr.ParseTreeWalkerDefault.Walk(p, parser.Parameters())
 	if !p.coverage.covered() {
 		throw(p.file, nil, parseCoveredErr).
-			format("parse mapper method not covered: %d/%d", p.coverage.len(), p.coverage.total)
+			format("parse mapper fragment not covered: %d/%d", p.coverage.len(), p.coverage.total)
 	}
 }
 

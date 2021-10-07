@@ -307,8 +307,8 @@ func (p testParseMapperCaseSql) check(t *testing.T, c *testParseMapperCase, s *s
 // test parse mappers
 func TestParseSelectCases(t *testing.T) {
 	var (
-		fs  []*method
-		f   *method
+		fs  []*fragment
+		f   *fragment
 		c   *caller
 		s   *stmt
 		err error
@@ -412,8 +412,8 @@ var testParseQueryCases = []testParseMapperCase{
 // test parse mappers
 func TestParseQueryCases(t *testing.T) {
 	var (
-		fs []*method
-		f  *method
+		fs []*fragment
+		f  *fragment
 		c  *caller
 		//s  *stmt
 		ss []*stmt
@@ -433,9 +433,9 @@ func TestParseQueryCases(t *testing.T) {
 		for _, sql := range item.sqls {
 			c = f.newCaller(nil)
 			ss, err = c.method.buildQuery(sql.in)
-			//parser, err = c.method.prepareParser(s.in)
+			//parser, err = c.fragment.prepareParser(s.in)
 			require.NoError(t, err)
-			//err = c.method.buildSegment(parser, s, c.method.node)
+			//err = c.fragment.buildSegment(parser, s, c.fragment.node)
 			if sql.error {
 				require.Equal(t, true, err != nil)
 				continue

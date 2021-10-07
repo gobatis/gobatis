@@ -259,7 +259,7 @@ func execTestFragment(t *testing.T, engine *Engine, tests []testFragment) {
 	//		vars = append(vars, rv(v))
 	//	}
 	//
-	//	frag, ok := engine.methodManager.get(test.Id)
+	//	frag, ok := engine.fm.get(test.Id)
 	//	require.True(t, ok, test)
 	//	sql, exprs, _vars, dynamic, err := frag.buildSegment(vars...)
 	//	require.NoError(t, err)
@@ -325,6 +325,6 @@ func testParseParams(tokens string) (params []*param, err error) {
 		e := recover()
 		err = catch("", e)
 	}()
-	params = (&method{node: new(xmlNode)}).parseParams(tokens)
+	params = (&fragment{node: new(xmlNode)}).parseParams(tokens)
 	return
 }
