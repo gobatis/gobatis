@@ -41,13 +41,11 @@ type segment struct {
 	result  sql.Result
 }
 
-//func (p segment) fork() *segment {
-//	return &segment{
-//		ctx:  p.ctx,
-//		conn: p.conn,
-//		in:   p.in,
-//	}
-//}
+func (p segment) close() {
+	if p.conn != nil {
+		_ = p.conn.Close()
+	}
+}
 
 func (p *segment) merge(s ...*segment) {
 	for _, v := range s {
@@ -133,6 +131,7 @@ type caller struct {
 }
 
 func (p *caller) call(in []reflect.Value) *caller {
+	
 	start := time.Now()
 	defer func() {
 		p.logger.Debugf("[gobatis] [%s] cost: %s", p.method.id, time.Since(start))
@@ -163,23 +162,19 @@ func (p *caller) exec(in []reflect.Value) error {
 		return err
 	}
 	defer func() {
-		if s.conn != nil {
-			if _err := s.conn.Close(); _err != nil {
-				p.logger.Errorf("[gobatis] [%s] close conn error: %s", p.method.id, err)
-			}
-		}
+		s.close()
 	}()
 	err = p.run(s)
 	if err != nil {
 		return err
 	}
 	if s.query {
-		return p.parseQueryResult(p.method.rt, p.method.out, s.rows, p.result)
+		return p.parseQueryResult(p.method.rt, p.method.out, s.rows, p.result...)
 	}
 	return p.parseExecResult(s.result, p.result)
 }
 
-func (p *caller) run(s *segment) (err error) {
+func (p caller) run(s *segment) (err error) {
 	
 	if s.conn == nil {
 		s.conn, err = p.method.db.Conn(s.ctx)
@@ -246,41 +241,43 @@ func (p *caller) convertResult(err error) {
 }
 
 func (p *caller) query(in []reflect.Value) (err error) {
-	fmt.Println("ok-1")
+	
+	// TODO 检查 Out 类型
+	
 	ss, err := p.method.buildQuery(in)
 	if err != nil {
 		return
 	}
-	fmt.Println("ok0")
+	
+	defer func() {
+		if ss[0] != nil {
+			ss[0].close()
+		}
+		if ss[1] != nil {
+			ss[1].close()
+		}
+	}()
+	
 	if ss[0] != nil {
-		defer func() {
-			if ss[0].conn != nil {
-				if _err := ss[0].conn.Close(); _err != nil {
-					p.logger.Errorf("[gobatis] [%s] close conn error: %s", p.method.id, err)
-				}
-			}
-		}()
-		c1 := &caller{
-			method: p.method,
-			logger: p.logger,
-		}
-		fmt.Println("ok1")
-		err = c1.run(ss[0])
+		err = p.run(ss[0])
 		if err != nil {
 			return
 		}
-		fmt.Println("ok2")
-		var count int64
-		c1.result = []reflect.Value{
-			reflect.ValueOf(&count),
-		}
-		err = c1.parseQueryResult(result_result, []*param{{
-			name: "count",
-		}}, ss[0].rows, c1.result)
+		err = p.parseQueryResult(result_result, []*param{{name: "count"}}, ss[0].rows, p.result[0])
 		if err != nil {
 			return
 		}
-		fmt.Println("c1.result", c1.result[0].Elem().Interface(), len(c1.result))
+	}
+	
+	if ss[1] != nil {
+		err = p.run(ss[1])
+		if err != nil {
+			return
+		}
+		err = p.parseQueryResult(result_none, nil, ss[1].rows, p.result[1])
+		if err != nil {
+			return
+		}
 	}
 	
 	return
@@ -485,7 +482,7 @@ func (p *caller) parseExecResult(res sql.Result, values []reflect.Value) error {
 //	return
 //}
 
-func (p *caller) parseQueryResult(rt int, params []*param, rows *sql.Rows, values []reflect.Value) (err error) {
+func (p caller) parseQueryResult(rt int, params []*param, rows *sql.Rows, values ...reflect.Value) (err error) {
 	defer func() {
 		if _err := rows.Close(); _err != nil {
 			p.logger.Errorf("[gobatis] [%s] close rows error: %s", p.method.id, _err)

@@ -8,7 +8,7 @@
             select count(1)
         </block>
         <block type="SELECT">
-            select id,username,status
+            select *
         </block>
         <block type="SOURCE">
             from members

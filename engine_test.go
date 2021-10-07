@@ -535,8 +535,12 @@ func InsertR012(t *testing.T) {
 }
 
 func QueryR001(t *testing.T) {
-	count, members, err := queryMapper.QueryR001(1, 2, 0)
+	count, members, err := queryMapper.QueryR001(2, 2, 0)
 	require.NoError(t, err)
 	require.True(t, count > 0)
 	require.True(t, len(members) > 0)
+	//t.Log("count:", count)
+	//fmt.Println("members:")
+	//d, _ := json.MarshalIndent(members, "", "\t")
+	//fmt.Println(string(d))
 }
