@@ -34,15 +34,15 @@ type Engine struct {
 	tag    string
 }
 
-func (p Engine) Master() *DB {
+func (p *Engine) Master() *DB {
 	return p.master
 }
 
-func (p *Engine) SetTag(tag string) {
+func (p *Engine) SetReflectTag(tag string) {
 	p.tag = tag
 }
 
-func (p Engine) Tag() string {
+func (p *Engine) ReflectTag() string {
 	if p.tag == "" {
 		return default_tag
 	}

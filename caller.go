@@ -132,7 +132,7 @@ func (p *caller) call(in []reflect.Value) *caller {
 }
 
 func (p *caller) exec(in []reflect.Value) error {
-	s, err := p.fragment.buildSegment(in)
+	s, err := p.fragment.buildStmt(in)
 	if err != nil {
 		return err
 	}
@@ -227,22 +227,17 @@ func (p caller) run(s *stmt) (err error) {
 	}()
 	
 	if s.query {
-		var rows *sql.Rows
-		//_s := s.conn.PrepareContext()
-		rows, err = s.conn.QueryContext(s.ctx, s.sql, s.vars...)
+		s.rows, err = s.conn.QueryContext(s.ctx, s.sql, s.vars...)
 		if err != nil {
 			return
 		}
-		s.rows = rows
 		return
 	}
 	
-	var r sql.Result
-	r, err = s.conn.ExecContext(s.ctx, s.sql, s.vars...)
+	s.result, err = s.conn.ExecContext(s.ctx, s.sql, s.vars...)
 	if err != nil {
 		return
 	}
-	s.result = r
 	return
 }
 
@@ -273,6 +268,20 @@ func (p *caller) export(err error) {
 	}
 }
 
+func (p caller) scanRows(rt int, params []*param, rows *sql.Rows, values ...reflect.Value) (err error) {
+	defer func() {
+		if _err := rows.Close(); _err != nil {
+			p.logger.Errorf("[gobatis] [%s] close rows error: %s", p.fragment.id, _err)
+		}
+	}()
+	scanner := queryScanner{rows: rows, tag: p.fragment.reflectTag()}
+	err = scanner.setSelected(rt, params, values)
+	if err != nil {
+		return err
+	}
+	return scanner.scan()
+}
+
 func (p *caller) scanResult(res sql.Result, values []reflect.Value) error {
 	// ignore RowsAffected to support database that not support
 	affected, _ := res.RowsAffected()
@@ -280,19 +289,5 @@ func (p *caller) scanResult(res sql.Result, values []reflect.Value) error {
 		return fmt.Errorf("expect affect 1 row, got %d", affected)
 	}
 	scanner := execScanner{affected: affected, values: values}
-	return scanner.scan()
-}
-
-func (p caller) scanRows(rt int, params []*param, rows *sql.Rows, values ...reflect.Value) (err error) {
-	defer func() {
-		if _err := rows.Close(); _err != nil {
-			p.logger.Errorf("[gobatis] [%s] close rows error: %s", p.fragment.id, _err)
-		}
-	}()
-	scanner := queryScanner{rows: rows, tag: p.fragment.tag()}
-	err = scanner.setSelected(rt, params, values)
-	if err != nil {
-		return err
-	}
 	return scanner.scan()
 }

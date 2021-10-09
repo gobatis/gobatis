@@ -332,7 +332,7 @@ func TestParseSelectCases(t *testing.T) {
 		f = fs[0]
 		for _, sql := range item.sqls {
 			c = f.newCaller(nil)
-			s, err = c.fragment.buildSegment(sql.in)
+			s, err = c.fragment.buildStmt(sql.in)
 			if sql.error {
 				require.Equal(t, true, err != nil)
 				continue
@@ -436,7 +436,7 @@ func TestParseQueryCases(t *testing.T) {
 			ss, err = c.fragment.buildQuery(sql.in)
 			//parser, err = c.fragment.prepareParser(s.in)
 			require.NoError(t, err)
-			//err = c.fragment.buildSegment(parser, s, c.fragment.node)
+			//err = c.fragment.buildStmt(parser, s, c.fragment.node)
 			if sql.error {
 				require.Equal(t, true, err != nil)
 				continue

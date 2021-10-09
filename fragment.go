@@ -163,6 +163,12 @@ func (p fragment) fork() *fragment {
 	return n
 }
 
+func (p fragment) proxy(mt reflect.Value) {
+	mt.Set(reflect.MakeFunc(mt.Type(), func(in []reflect.Value) []reflect.Value {
+		return p.newCaller(mt.Type()).call(in).result
+	}))
+}
+
 func (p fragment) newCaller(mt reflect.Type) *caller {
 	c := &caller{mt: mt, fragment: &p}
 	if p.db != nil {
@@ -178,12 +184,6 @@ func (p fragment) newCaller(mt reflect.Type) *caller {
 		}
 	}
 	return c
-}
-
-func (p fragment) proxy(mt reflect.Value) {
-	mt.Set(reflect.MakeFunc(mt.Type(), func(in []reflect.Value) []reflect.Value {
-		return p.newCaller(mt.Type()).call(in).result
-	}))
 }
 
 func (p *fragment) setResultAttribute() {
@@ -366,7 +366,7 @@ func (p fragment) prepareParser(in []reflect.Value) (parser *exprParser, err err
 	return
 }
 
-func (p fragment) buildSegment(in []reflect.Value) (s *stmt, err error) {
+func (p fragment) buildStmt(in []reflect.Value) (s *stmt, err error) {
 	defer func() {
 		err = catch(p.node.File, recover())
 	}()
@@ -374,6 +374,9 @@ func (p fragment) buildSegment(in []reflect.Value) (s *stmt, err error) {
 	s.query = p.node.Name == dtd.SELECT
 	var parser *exprParser
 	parser, err = p.prepareParser(s.in)
+	if err != nil {
+		return
+	}
 	err = p.parseStmt(parser, s, p.node)
 	if err != nil {
 		return
@@ -830,7 +833,7 @@ func (p fragment) quoteFiled(s string) string {
 // if tag found, use tag
 // or use lower_snake_name
 func (p fragment) extractFiledName(field reflect.StructField) string {
-	tag := field.Tag.Get(p.tag())
+	tag := field.Tag.Get(p.reflectTag())
 	if strings.Contains(tag, ",") {
 		tag = strings.TrimSpace(strings.Split(tag, ",")[0])
 	}
@@ -840,9 +843,9 @@ func (p fragment) extractFiledName(field reflect.StructField) string {
 	return snake(field.Name)
 }
 
-func (p fragment) tag() string {
+func (p fragment) reflectTag() string {
 	if p.engine != nil {
-		return p.engine.Tag()
+		return p.engine.ReflectTag()
 	}
 	return default_tag
 }

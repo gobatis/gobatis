@@ -261,7 +261,7 @@ func execTestFragment(t *testing.T, engine *Engine, tests []testFragment) {
 	//
 	//	frag, ok := engine.fm.get(test.Id)
 	//	require.True(t, ok, test)
-	//	sql, exprs, _vars, dynamic, err := frag.buildSegment(vars...)
+	//	sql, exprs, _vars, dynamic, err := frag.buildStmt(vars...)
 	//	require.NoError(t, err)
 	//	_ = dynamic
 	//	_ = exprs
