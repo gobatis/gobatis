@@ -228,6 +228,7 @@ func (p caller) run(s *stmt) (err error) {
 	
 	if s.query {
 		var rows *sql.Rows
+		//_s := s.conn.PrepareContext()
 		rows, err = s.conn.QueryContext(s.ctx, s.sql, s.vars...)
 		if err != nil {
 			return

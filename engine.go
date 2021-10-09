@@ -241,13 +241,13 @@ func (p *Engine) parseMappers() (err error) {
 		if err != nil {
 			return
 		}
-		p.registerMapper(fs)
+		p.registerFragments(fs)
 	}
 	
 	return
 }
 
-func (p *Engine) registerMapper(ms []*fragment) {
+func (p *Engine) registerFragments(ms []*fragment) {
 	var err error
 	for _, v := range ms {
 		v.engine = p

@@ -737,15 +737,6 @@ func (p fragment) bindForeachParams(parser *exprParser, indexParam, itemParam *p
 	}
 }
 
-func (p fragment) parseParams(tokens string) []*param {
-	if tokens == "" {
-		return []*param{}
-	}
-	parser := newParamParser(p.node.File)
-	parser.walkMethods(initExprParser(tokens))
-	return parser.params
-}
-
 func (p fragment) parseForeachChild(parser *exprParser, parent, node *xmlNode, frags *[]string) {
 	r := ""
 	for _, child := range node.Nodes {

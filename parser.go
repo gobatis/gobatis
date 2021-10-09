@@ -99,6 +99,15 @@ func initExprParser(tokens string) (parser *expr.ExprParser) {
 	return
 }
 
+func parseParams(file, tokens string) []*param {
+	if tokens == "" {
+		return []*param{}
+	}
+	parser := newParamParser(file)
+	parser.walkMethods(initExprParser(tokens))
+	return parser.params
+}
+
 func parseFragment(file, id string, node *xmlNode) (f *fragment, err error) {
 	defer func() {
 		e := recover()
@@ -112,10 +121,10 @@ func parseFragment(file, id string, node *xmlNode) (f *fragment, err error) {
 	f.setResultAttribute()
 	
 	if node.HasAttribute(dtd.PARAMETER) {
-		f.in = f.parseParams(node.GetAttribute(dtd.PARAMETER))
+		f.in = parseParams(f.node.File, node.GetAttribute(dtd.PARAMETER))
 	}
 	if node.HasAttribute(dtd.RESULT) {
-		f.out = f.parseParams(node.GetAttribute(dtd.RESULT))
+		f.out = parseParams(f.node.File, node.GetAttribute(dtd.RESULT))
 	}
 	return
 }
@@ -269,11 +278,6 @@ func (p *xmlNode) GetAttribute(name string) string {
 		return v.Value
 	}
 	return ""
-}
-
-func (p *xmlNode) GetNode(name string) *xmlNode {
-	
-	return nil
 }
 
 func (p *xmlNode) AddAttribute(name string, value *xmlNodeAttribute) {

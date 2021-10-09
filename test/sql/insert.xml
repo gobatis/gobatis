@@ -33,7 +33,7 @@
         ) returning id;
     </select>
 
-    <insert id="InsertR011" parameter="member">
+    <insert id="InsertR011" parameter="member" statementType="PREPARED">
         <inserter table="'members'" entity="member">
             <field name="*"/>
             <exclude name="'id'"/>

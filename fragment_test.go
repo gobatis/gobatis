@@ -45,6 +45,7 @@ type testParseMapperCaseSql struct {
 
 var testParseSelectCases = []testParseMapperCase{
 	{
+		// SelectP001 func(id int64)
 		definition: `
 		<select id="SelectP001" parameter="id">
 			select * from users where id = #{id};
@@ -53,8 +54,8 @@ var testParseSelectCases = []testParseMapperCase{
 		sqls: []*testParseMapperCaseSql{
 			{
 				in:      []reflect.Value{rv(1)},
-				stmtSQL: `select * from users where id = $1;`,
 				realSQL: `select * from users where id = 1;`,
+				stmtSQL: `select * from users where id = $1;`,
 				values:  []interface{}{1},
 			},
 		},
@@ -354,10 +355,10 @@ var testParseQueryCases = []testParseMapperCase{
 			<block type="SELECT">
 				select username,email,status
 			</block>
-			<block type="FROM">
+			<block type="SOURCE">
 				from users where age >= #{age}
 			</block>
-			<block type="LIMIT">
+			<block type="PAGING">
 				order by age desc limit #{limit} offset #{ paging(page,limit)}
 			</block>
 		</query>`,
@@ -383,13 +384,13 @@ var testParseQueryCases = []testParseMapperCase{
 			<block type="SELECT">
 				select username,email,status
 			</block>
-			<block type="FROM">
+			<block type="SOURCE">
 				from users
 				<where>
 				age &lt;= #{age}
 				</where>
 			</block>
-			<block type="LIMIT">
+			<block type="PAGING">
 				order by age desc
 				limit #{limit} offset #{ paging(page,limit)}
 			</block>
