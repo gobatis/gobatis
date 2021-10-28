@@ -14,4 +14,5 @@ require (
 	github.com/shurcooL/vfsgen v0.0.0-20200824052919-0d455de96546
 	github.com/stretchr/testify v1.7.0
 	github.com/ttacon/chalk v0.0.0-20160626202418-22c06c80ed31
+	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519
 )
