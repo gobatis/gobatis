@@ -199,7 +199,7 @@ func (p *fragment) setResultAttribute() {
 func (p fragment) checkParameter(ft reflect.Type, mn, fn string) {
 	ac := 0
 	for i := 0; i < ft.NumIn(); i++ {
-		if isCtx(ft.In(i)) || isTx(ft.In(i)) || isDB(ft.In(i)) {
+		if isContext(ft.In(i)) || isTx(ft.In(i)) || isDB(ft.In(i)) {
 			continue
 		}
 		ac++
@@ -282,7 +282,7 @@ func (p fragment) checkResult(ft reflect.Type, mn, fn string) {
 
 func (p fragment) context(in []reflect.Value) (context.Context, int) {
 	for i, v := range in {
-		if isCtx(v.Type()) {
+		if isContext(v.Type()) {
 			return v.Interface().(context.Context), i
 		}
 	}

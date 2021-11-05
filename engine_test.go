@@ -17,6 +17,27 @@ var (
 	pwd string
 )
 
+type Shop struct {
+	Id        int64      `sql:"id"`
+	Name      string     `sql:"name"`
+	Products  int        `sql:"products"`
+	Opening   bool       `sql:"opening"`
+	CreatedAt time.Time  `sql:"created_at"`
+	UpdatedAt *time.Time `sql:"updated_at"`
+}
+
+type Product struct {
+	Id          uint64          `sql:"id"`
+	ShopId      int64           `sql:"shop_id"`
+	Name        string          `sql:"name"`
+	Cover       string          `sql:"cover"`
+	Description string          `sql:"description"`
+	Price       decimal.Decimal `sql:"price"`
+	Stock       int32           `sql:"stock"`
+	CreatedAt   time.Time       `sql:"created_at"`
+	UpdatedAt   *time.Time      `sql:"updated_at"`
+}
+
 //type StmtMapper struct {
 //	TestInsertStmtTx  func(tx *Tx, user *test.User) error
 //	TestInsertStmt2Tx func(tx *Tx, user *test.User) error

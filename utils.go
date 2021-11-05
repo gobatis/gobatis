@@ -26,7 +26,7 @@ func init() {
 	scannerType = reflect.TypeOf((*sql.Scanner)(nil)).Elem()
 }
 
-func isCtx(v reflect.Type) bool {
+func isContext(v reflect.Type) bool {
 	if v.Name() == "Context" && v.PkgPath() == "context" {
 		return true
 	}
