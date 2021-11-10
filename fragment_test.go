@@ -393,7 +393,7 @@ var testParseQueryCases = []testParseMapperCase{
 			<block type="PAGING">
 				order by age desc
 				limit #{limit} offset #{ paging(page,limit)}
-			</block>
+			
 		</query>`,
 		method: rv(func(row string) (err error) { return }),
 		sqls: []*testParseMapperCaseSql{
@@ -422,7 +422,7 @@ func TestParseQueryCases(t *testing.T) {
 		err error
 	)
 	for _, item := range testParseQueryCases {
-		fs, err = parseMapper("", wrapMapperSchema(item.definition))
+		fs, err = parseMapper("fragment_test.go", wrapMapperSchema(item.definition))
 		if item.error {
 			require.Equal(t, true, err != nil)
 			continue

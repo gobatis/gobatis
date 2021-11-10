@@ -29,7 +29,7 @@ func parseConfig(engine *Engine, file, content string) (err error) {
 		rootElement:   dtd.Configuration,
 		elementGetter: dtd.ConfigElement,
 	}
-	walkXMLNodes(l, content)
+	walkXMLNodes(l, file, content)
 	if !l.coverage.covered() {
 		throw(file, nil, parseCoveredErr).
 			format("parse config token not coverd: %d/%d", l.coverage.len(), l.coverage.total)
@@ -49,7 +49,7 @@ func parseMapper(file, content string) (fs []*fragment, err error) {
 		rootElement:   dtd.Mapper,
 		elementGetter: dtd.MapperElement,
 	}
-	walkXMLNodes(l, content)
+	walkXMLNodes(l, file, content)
 	if !l.coverage.covered() {
 		throw(file, nil, parseCoveredErr).
 			format("parse mapper token not covered: %d/%d", l.coverage.len(), l.coverage.total)
@@ -75,26 +75,26 @@ func parseMapper(file, content string) (fs []*fragment, err error) {
 	return
 }
 
-func walkXMLNodes(listener antlr.ParseTreeListener, tokens string) {
+func walkXMLNodes(listener antlr.ParseTreeListener, file, tokens string) {
 	lexer := xml.NewXMLLexer(antlr.NewInputStream(strings.TrimSpace(tokens)))
 	lexer.RemoveErrorListeners()
-	lexer.AddErrorListener(newErrorListener())
+	//lexer.AddErrorListener(newLexerErrorListener())
 	stream := antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel)
 	parser := xml.NewXMLParser(stream)
 	parser.BuildParseTrees = true
-	parser.AddErrorListener(antlr.NewDiagnosticErrorListener(false))
-	parser.SetErrorHandler(newXmlErrorStrategy())
+	//parser.AddErrorListener(antlr.NewDiagnosticErrorListener(false))
+	parser.SetErrorHandler(newXmlErrorStrategy(file))
 	antlr.ParseTreeWalkerDefault.Walk(listener, parser.Document())
 }
 
 func initExprParser(tokens string) (parser *expr.ExprParser) {
 	lexer := expr.NewExprLexer(antlr.NewInputStream(tokens))
 	lexer.RemoveErrorListeners()
-	lexer.AddErrorListener(newErrorListener())
+	//lexer.AddErrorListener(newLexerErrorListener())
 	stream := antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel)
 	parser = expr.NewExprParser(stream)
 	parser.BuildParseTrees = true
-	parser.AddErrorListener(antlr.NewDiagnosticErrorListener(false))
+	//parser.AddErrorListener(antlr.NewDiagnosticErrorListener(false))
 	parser.SetErrorHandler(newParserErrorStrategy())
 	return
 }
@@ -477,14 +477,17 @@ func (p *xmlParser) enterElement(c *xml.ElementContext) {
 	p.depth++
 }
 
-func (p *xmlParser) exitElement(_ *xml.ElementContext) {
+func (p *xmlParser) exitElement(c *xml.ElementContext) {
 	if p.stack.Peak() == nil {
 		return
 	}
 	p.depth--
 	child := p.stack.Pop()
 	child.trimTexts()
-	
+	// check tag match
+	if c.Name(1) != nil && c.Name(1).GetText() != child.Name {
+		throw(p.file, c, tagNotMatch).format("end tag '%s' not match start tag: '%s'", c.Name(1).GetText(), child.Name)
+	}
 	if p.stack.Len() > 0 {
 		p.stack.Peak().AddNode(child)
 	} else {
@@ -580,7 +583,7 @@ func (p *xmlParser) EnterEveryRule(ctx antlr.ParserRuleContext) {
 func (p *xmlParser) ExitEveryRule(ctx antlr.ParserRuleContext) {
 	switch ctx.GetRuleIndex() {
 	case xml.XMLParserRULE_element:
-		p.exitElement(nil)
+		p.exitElement(ctx.(*xml.ElementContext))
 	}
 }
 

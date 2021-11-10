@@ -58,14 +58,13 @@ func TestParseTertiary(t *testing.T) {
 	antlr.ParseTreeWalkerDefault.Walk(&testListener{}, p.Expressions())
 }
 
-
 type expressionListener struct {
 	*antlr.BaseParseTreeListener
 }
 
 func (p *expressionListener) EnterEveryRule(ctx antlr.ParserRuleContext) {
 	if ctx.GetRuleIndex() == ExprParserRULE_expressions {
-		fmt.Println("总TOKEN:", ctx.GetStop().GetTokenIndex())
+		fmt.Println("total tokens:", ctx.GetStop().GetTokenIndex())
 	}
 }
 

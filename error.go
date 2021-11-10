@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/antlr/antlr4/runtime/Go/antlr"
 	"github.com/gobatis/gobatis/parser/xml"
+	"reflect"
 )
 
 const (
@@ -47,6 +48,7 @@ const (
 	castBoolErr
 	parseInserterErr
 	parseQueryErr
+	tagNotMatch
 )
 
 func throw(file string, ctx antlr.ParserRuleContext, code int) *_error {
@@ -58,6 +60,7 @@ type _error struct {
 	file    string
 	parent  antlr.ParserRuleContext
 	ctx     antlr.ParserRuleContext
+	line    string
 	message string
 }
 
@@ -76,6 +79,11 @@ func (p *_error) with(err error) {
 	panic(p)
 }
 
+func (p *_error) setLine(line string) *_error {
+	p.line = line
+	return p
+}
+
 func (p *_error) Error() string {
 	msg := fmt.Sprintf("[ERROR %d]: %s", p.code, p.message)
 	line := 0
@@ -92,6 +100,8 @@ func (p *_error) Error() string {
 	}
 	if p.ctx != nil {
 		msg += fmt.Sprintf("\n[file]: %s near line %d column %d:\n[context]: %s", p.file, line, column+1, ctx)
+	} else {
+		msg += fmt.Sprintf("\n[file]: %s near line %d column %d:\n[location]: %s", p.file, line, column+1, p.line)
 	}
 	
 	return msg
@@ -143,41 +153,65 @@ type parserErrorStrategy struct {
 	*antlr.BailErrorStrategy
 }
 
+// Recover 直接抛出语法异常
 func (p *parserErrorStrategy) Recover(recognizer antlr.Parser, e antlr.RecognitionException) {
 	// TODO handle syntax error detail
-	context := recognizer.GetParserRuleContext()
-	throw("", context, syntaxErr).format("express syntax error: %s", e.GetMessage())
+	//context := recognizer.GetParserRuleContext()
+	throw("", nil, syntaxErr).
+		setLine(getLine(e.GetInputStream().(antlr.CharStream))).
+		format("express syntax error: %s", e.GetMessage())
 }
 
+// RecoverInline 确保不会试图执行行内恢复
 func (p *parserErrorStrategy) RecoverInline(recognizer antlr.Parser) antlr.Token {
-	p.Recover(recognizer, antlr.NewInputMisMatchException(recognizer))
+	//p.Recover(recognizer, antlr.NewBaseRecognitionException("", recognizer, recognizer.GetInputStream(), recognizer.GetParserRuleContext()))
+	p.BailErrorStrategy.RecoverInline(recognizer)
 	return nil
 }
 
+// Sync 确保不会试图从子规则中恢复
 func (p *parserErrorStrategy) Sync(recognizer antlr.Parser) {
 	// pass
 }
 
-func (p *parserErrorStrategy) ReportError(antlr.Parser, antlr.RecognitionException) {
+func (p *parserErrorStrategy) ReportError(parser antlr.Parser, e antlr.RecognitionException) {
 	// pass
+	p.BailErrorStrategy.ReportError(parser, e)
 }
 
-func (p *parserErrorStrategy) ReportMatch(antlr.Parser) {
+func (p *parserErrorStrategy) ReportMatch(parser antlr.Parser) {
 	// pass
+	p.BailErrorStrategy.ReportMatch(parser)
 }
 
-func newXmlErrorStrategy() *xmlErrorStrategy {
-	return &xmlErrorStrategy{BailErrorStrategy: antlr.NewBailErrorStrategy()}
+func newXmlErrorStrategy(file string) *xmlErrorStrategy {
+	return &xmlErrorStrategy{
+		file:              file,
+		BailErrorStrategy: antlr.NewBailErrorStrategy(),
+	}
 }
 
 type xmlErrorStrategy struct {
+	file string
 	*antlr.BailErrorStrategy
 }
 
 func (p *xmlErrorStrategy) Recover(recognizer antlr.Parser, e antlr.RecognitionException) {
-	// TODO handle syntax error detail
-	context := recognizer.GetParserRuleContext()
-	throw("", context, syntaxErr).format("xml syntax error")
+	var cs antlr.CharStream
+	switch e.GetInputStream().(type) {
+	case antlr.TokenStream:
+		cs = e.GetInputStream().(antlr.TokenStream).GetTokenSource().GetInputStream()
+	case antlr.CharStream:
+		cs = e.GetInputStream().(antlr.CharStream)
+	default:
+		// TODO 处理 unknown stream
+	}
+	fmt.Println(reflect.TypeOf(e).String())
+	//fmt.Println(recognizer.GetCurrentToken().GetLine(), recognizer.GetCurrentToken().GetColumn())
+	throw(p.file, nil, syntaxErr).
+		setLine(getLine(cs)).
+		format("xml syntax error")
+	
 }
 
 func (p *xmlErrorStrategy) RecoverInline(recognizer antlr.Parser) antlr.Token {
@@ -186,36 +220,61 @@ func (p *xmlErrorStrategy) RecoverInline(recognizer antlr.Parser) antlr.Token {
 }
 
 func (p *xmlErrorStrategy) Sync(recognizer antlr.Parser) {
+	//fmt.Println("func (p *xmlErrorStrategy) Sync:", recognizer.GetParserRuleContext().GetText())
 	// pass
 }
 
-func (p *xmlErrorStrategy) ReportError(antlr.Parser, antlr.RecognitionException) {
+func (p *xmlErrorStrategy) ReportError(parser antlr.Parser, err antlr.RecognitionException) {
+	fmt.Println("*xmlErrorStrategy.ReportError", parser.GetParserRuleContext().GetText(), err)
 	// pass
 }
 
-func (p *xmlErrorStrategy) ReportMatch(antlr.Parser) {
+func (p *xmlErrorStrategy) ReportMatch(parser antlr.Parser) {
 	// pass
+	//fmt.Println("func (p *xmlErrorStrategy) ReportMatch", parser.GetParserRuleContext().GetText())
 }
 
-func newErrorListener() *errorListener {
-	return new(errorListener)
+func getLine(s antlr.CharStream) string {
+	start := s.Index()
+	for i := s.Index() - 1; i >= 0; i-- {
+		if s.GetText(i, i) == "\n" {
+			break
+		}
+		start = i
+	}
+	end := s.Index()
+	for i := s.Index(); i < s.Size(); i++ {
+		if s.GetText(i, i) == "\n" {
+			break
+		}
+		end = i
+	}
+	return s.GetText(start, end)
 }
 
-type errorListener struct {
-}
+//func newLexerErrorListener() *lexerErrorListener {
+//	return new(lexerErrorListener)
+//}
+//
+//type lexerErrorListener struct {
+//}
+//
+//func (p *lexerErrorListener) SyntaxError(recognizer antlr.Recognizer, offendingSymbol interface{}, line, column int, msg string, e antlr.RecognitionException) {
+//	throw("", nil, syntaxErr).
+//		setLine(getLine(e.GetInputStream().(antlr.CharStream))).
+//		format("lexer syntax error")
+//}
+//
 
-func (p *errorListener) SyntaxError(recognizer antlr.Recognizer, offendingSymbol interface{}, line, column int, msg string, e antlr.RecognitionException) {
-	throw("", nil, syntaxErr).format("syntax error")
-}
-
-func (p *errorListener) ReportAmbiguity(recognizer antlr.Parser, dfa *antlr.DFA, startIndex, stopIndex int, exact bool, ambigAlts *antlr.BitSet, configs antlr.ATNConfigSet) {
-	// pass
-}
-
-func (p *errorListener) ReportAttemptingFullContext(recognizer antlr.Parser, dfa *antlr.DFA, startIndex, stopIndex int, conflictingAlts *antlr.BitSet, configs antlr.ATNConfigSet) {
-	// pass
-}
-
-func (p *errorListener) ReportContextSensitivity(recognizer antlr.Parser, dfa *antlr.DFA, startIndex, stopIndex, prediction int, configs antlr.ATNConfigSet) {
-	// pass
-}
+//
+//func (p *lexerErrorListener) ReportAmbiguity(recognizer antlr.Parser, dfa *antlr.DFA, startIndex, stopIndex int, exact bool, ambigAlts *antlr.BitSet, configs antlr.ATNConfigSet) {
+//	// pass
+//}
+//
+//func (p *lexerErrorListener) ReportAttemptingFullContext(recognizer antlr.Parser, dfa *antlr.DFA, startIndex, stopIndex int, conflictingAlts *antlr.BitSet, configs antlr.ATNConfigSet) {
+//	// pass
+//}
+//
+//func (p *lexerErrorListener) ReportContextSensitivity(recognizer antlr.Parser, dfa *antlr.DFA, startIndex, stopIndex, prediction int, configs antlr.ATNConfigSet) {
+//	// pass
+//}
