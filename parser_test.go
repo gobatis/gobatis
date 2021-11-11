@@ -254,14 +254,26 @@ func TestCorrectParseExprExpression(t *testing.T) {
 		
 		// test ternary start
 		{In: []interface{}{true, 1, 2}, Parameter: "a,b,c", Expr: "a ? b : c", Result: 1},
-		{In: []interface{}{1, 1, 2}, Parameter: "a,b,c", Expr: "a>0 ? b : c", Result: 1},
+		{In: []interface{}{false, 1, 2}, Parameter: "a,b,c", Expr: "a ? b : c", Result: 2},
+		{In: []interface{}{0, 1, 2}, Parameter: "a,b,c", Expr: "a ? b : c", Result: 2},
+		{In: []interface{}{1, 1, 2}, Parameter: "a,b,c", Expr: "a ? b : c", Result: 1},
+		{In: []interface{}{-1, 1, 2}, Parameter: "a,b,c", Expr: "a ? b : c", Result: 1},
+		{In: []interface{}{uint(0), 1, 2}, Parameter: "a,b,c", Expr: "a ? b : c", Result: 2},
+		{In: []interface{}{uint(1), 1, 2}, Parameter: "a,b,c", Expr: "a ? b : c", Result: 1},
+		{In: []interface{}{0.0, 1, 2}, Parameter: "a,b,c", Expr: "a ? b : c", Err: expr_syntax_err},
+		{In: []interface{}{float32(0), 1, 2}, Parameter: "a,b,c", Expr: "a ? b : c", Err: expr_syntax_err},
+		{In: []interface{}{float64(0), 1, 2}, Parameter: "a,b,c", Expr: "a ? b : c", Err: expr_syntax_err},
+		{In: []interface{}{nil, 1, 2}, Parameter: "a,b,c", Expr: "a ? b : c", Result: 2},
+		{In: []interface{}{struct{}{}, 1, 2}, Parameter: "a,b,c", Expr: "a ? b : c", Err: expr_syntax_err},
+		{In: []interface{}{map[string]int{}, 1, 2}, Parameter: "a,b,c", Expr: "a ? b : c", Err: expr_syntax_err},
+		{In: []interface{}{"", 1, 2}, Parameter: "a,b,c", Expr: "a ? b : c", Err: expr_syntax_err},
+		{In: []interface{}{" ", 1, 2}, Parameter: "a,b,c", Expr: "a ? b : c", Err: expr_syntax_err},
+		
 		{In: []interface{}{"", 1, 2}, Parameter: "a,b,c", Expr: "a == '' ? b : c", Result: 1},
 		{In: []interface{}{"", 1, 2}, Parameter: "a,b,c", Expr: "a != '' ? b : c", Result: 2},
 		{In: []interface{}{"ok", 1, 2}, Parameter: "a,b,c", Expr: "a =='ok' ? b+10 : c", Result: 11},
-		//{In: []interface{}{"ok", 1, 2}, Parameter: "a,b,c", Expr: "a != nil ? b+10 : c", Result: 11},
+		{In: []interface{}{"ok", 1, 2}, Parameter: "a,b,c", Expr: "a != nil ? b+10 : c", Result: 11},
 		{In: []interface{}{map[string]int{}, 1, 2}, Parameter: "a,b,c", Expr: "a != nil ? b+10 : c", Result: 11},
-		
-		// TODO fix nil check
 		{In: []interface{}{nil, 1, 2}, Parameter: "a,b,c", Expr: "a == nil ? b+10 : c", Result: 11},
 		// test ternary end
 		
