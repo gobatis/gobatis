@@ -95,7 +95,7 @@ func initExprParser(tokens string) (parser *expr.ExprParser) {
 	parser = expr.NewExprParser(stream)
 	parser.BuildParseTrees = true
 	//parser.AddErrorListener(antlr.NewDiagnosticErrorListener(false))
-	parser.SetErrorHandler(newParserErrorStrategy())
+	parser.SetErrorHandler(newExprErrorStrategy())
 	return
 }
 

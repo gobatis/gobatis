@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"github.com/antlr/antlr4/runtime/Go/antlr"
 	"github.com/gobatis/gobatis/parser/xml"
-	"reflect"
+	"strconv"
+	"strings"
 )
 
 const (
@@ -51,8 +52,64 @@ const (
 	tag_not_match_err
 )
 
-func throw(file string, ctx antlr.ParserRuleContext, code int) *_error {
-	return &_error{file: file, ctx: ctx, code: code}
+type ErrorMessage struct {
+	File    string `json:"file"`
+	Line    int    `json:"line"`
+	Column  int    `json:"column"`
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+	Context string `json:"context,omitempty"`
+}
+
+func (p ErrorMessage) Error() string {
+	return fmt.Sprintf("%s line %d:%d [%d] %s at '%s'", p.File, p.Line, p.Column, p.Code, p.Message, p.Context)
+}
+
+func ParseErrorMessage(msg string) ErrorMessage {
+	r := ErrorMessage{}
+	sc := 0
+	chars := ""
+	for i := 0; i < len(msg); i++ {
+		v := msg[i]
+		if sc < 7 && v == 32 {
+			sc++
+		} else {
+			chars += fmt.Sprintf("%c", v)
+		}
+		switch sc {
+		case 1:
+			r.File = chars
+			chars = ""
+			sc++
+		case 3:
+			chars = ""
+			sc++
+		case 5:
+			items := strings.Split(chars, ":")
+			if len(items) == 2 {
+				r.Line, _ = strconv.Atoi(items[0])
+				r.Column, _ = strconv.Atoi(items[1])
+			}
+			chars = ""
+			sc++
+		case 7:
+			r.Code, _ = strconv.Atoi(strings.TrimLeft(strings.TrimRight(chars, "]"), "["))
+			chars = ""
+			sc++
+		default:
+			if sc > 7 && v == 32 && i+5 <= len(msg) && msg[i:i+5] == " at '" {
+				r.Message = chars
+				r.Context = strings.TrimRight(msg[i+5:], "'")
+				chars = ""
+				
+				break
+			}
+		}
+	}
+	if r.Message == "" {
+		r.Message = chars
+	}
+	return r
 }
 
 type _error struct {
@@ -85,7 +142,6 @@ func (p *_error) setLine(line string) *_error {
 }
 
 func (p *_error) Error() string {
-	msg := fmt.Sprintf("[ERROR %d]: %s", p.code, p.message)
 	line := 0
 	column := 0
 	ctx := ""
@@ -99,12 +155,27 @@ func (p *_error) Error() string {
 		ctx = getText(p.ctx)
 	}
 	if p.ctx != nil {
-		msg += fmt.Sprintf("\n[file]: %s near line %d column %d:\n[context]: %s", p.file, line, column+1, ctx)
+		column += 1
 	} else {
-		msg += fmt.Sprintf("\n[file]: %s near line %d column %d:\n[location]: %s", p.file, line, column+1, p.line)
+		ctx = p.line
+		column += 1
 	}
-	
-	return msg
+	return ErrorMessage{
+		File:    p.file,
+		Line:    line,
+		Column:  column,
+		Code:    p.code,
+		Message: p.message,
+		Context: ctx,
+	}.Error()
+}
+
+func throw(file string, ctx antlr.ParserRuleContext, code int) *_error {
+	return &_error{
+		file: file,
+		ctx:  ctx,
+		code: code,
+	}
 }
 
 func catch(file string, e interface{}) error {
@@ -142,44 +213,37 @@ func getText(ctx antlr.ParserRuleContext) string {
 		}
 	}
 	
-	return s
+	return strings.TrimSpace(s)
 }
 
-func newParserErrorStrategy() *parserErrorStrategy {
-	return &parserErrorStrategy{BailErrorStrategy: antlr.NewBailErrorStrategy()}
+func newExprErrorStrategy() *exprErrorStrategy {
+	return &exprErrorStrategy{BailErrorStrategy: antlr.NewBailErrorStrategy()}
 }
 
-type parserErrorStrategy struct {
+type exprErrorStrategy struct {
 	*antlr.BailErrorStrategy
 }
 
-// Recover 直接抛出语法异常
-func (p *parserErrorStrategy) Recover(recognizer antlr.Parser, e antlr.RecognitionException) {
-	// TODO handle syntax error detail
-	//context := recognizer.GetParserRuleContext()
+func (p *exprErrorStrategy) Recover(recognizer antlr.Parser, e antlr.RecognitionException) {
 	throw("", nil, syntax_err).
 		setLine(getLine(e.GetInputStream().(antlr.CharStream))).
 		format("express syntax error: %s", e.GetMessage())
 }
 
-// RecoverInline 确保不会试图执行行内恢复
-func (p *parserErrorStrategy) RecoverInline(recognizer antlr.Parser) antlr.Token {
-	//p.Recover(recognizer, antlr.NewBaseRecognitionException("", recognizer, recognizer.GetInputStream(), recognizer.GetParserRuleContext()))
-	p.BailErrorStrategy.RecoverInline(recognizer)
+func (p *exprErrorStrategy) RecoverInline(recognizer antlr.Parser) antlr.Token {
+	p.Recover(recognizer, antlr.NewInputMisMatchException(recognizer))
 	return nil
 }
 
-// Sync 确保不会试图从子规则中恢复
-func (p *parserErrorStrategy) Sync(recognizer antlr.Parser) {
+func (p *exprErrorStrategy) Sync(recognizer antlr.Parser) {
 	// pass
 }
 
-func (p *parserErrorStrategy) ReportError(parser antlr.Parser, e antlr.RecognitionException) {
+func (p *exprErrorStrategy) ReportError(parser antlr.Parser, e antlr.RecognitionException) {
 	// pass
-	p.BailErrorStrategy.ReportError(parser, e)
 }
 
-func (p *parserErrorStrategy) ReportMatch(parser antlr.Parser) {
+func (p *exprErrorStrategy) ReportMatch(parser antlr.Parser) {
 	// pass
 	p.BailErrorStrategy.ReportMatch(parser)
 }
@@ -206,8 +270,6 @@ func (p *xmlErrorStrategy) Recover(recognizer antlr.Parser, e antlr.RecognitionE
 	default:
 		// TODO 处理 unknown stream
 	}
-	fmt.Println(reflect.TypeOf(e).String())
-	//fmt.Println(recognizer.GetCurrentToken().GetLine(), recognizer.GetCurrentToken().GetColumn())
 	throw(p.file, nil, syntax_err).
 		setLine(getLine(cs)).
 		format("xml syntax error")
@@ -220,18 +282,15 @@ func (p *xmlErrorStrategy) RecoverInline(recognizer antlr.Parser) antlr.Token {
 }
 
 func (p *xmlErrorStrategy) Sync(recognizer antlr.Parser) {
-	//fmt.Println("func (p *xmlErrorStrategy) Sync:", recognizer.GetParserRuleContext().GetText())
 	// pass
 }
 
 func (p *xmlErrorStrategy) ReportError(parser antlr.Parser, err antlr.RecognitionException) {
-	fmt.Println("*xmlErrorStrategy.ReportError", parser.GetParserRuleContext().GetText(), err)
 	// pass
 }
 
 func (p *xmlErrorStrategy) ReportMatch(parser antlr.Parser) {
 	// pass
-	//fmt.Println("func (p *xmlErrorStrategy) ReportMatch", parser.GetParserRuleContext().GetText())
 }
 
 func getLine(s antlr.CharStream) string {
@@ -251,30 +310,3 @@ func getLine(s antlr.CharStream) string {
 	}
 	return s.GetText(start, end)
 }
-
-//func newLexerErrorListener() *lexerErrorListener {
-//	return new(lexerErrorListener)
-//}
-//
-//type lexerErrorListener struct {
-//}
-//
-//func (p *lexerErrorListener) SyntaxError(recognizer antlr.Recognizer, offendingSymbol interface{}, line, column int, msg string, e antlr.RecognitionException) {
-//	throw("", nil, syntax_err).
-//		setLine(getLine(e.GetInputStream().(antlr.CharStream))).
-//		format("lexer syntax error")
-//}
-//
-
-//
-//func (p *lexerErrorListener) ReportAmbiguity(recognizer antlr.Parser, dfa *antlr.DFA, startIndex, stopIndex int, exact bool, ambigAlts *antlr.BitSet, configs antlr.ATNConfigSet) {
-//	// pass
-//}
-//
-//func (p *lexerErrorListener) ReportAttemptingFullContext(recognizer antlr.Parser, dfa *antlr.DFA, startIndex, stopIndex int, conflictingAlts *antlr.BitSet, configs antlr.ATNConfigSet) {
-//	// pass
-//}
-//
-//func (p *lexerErrorListener) ReportContextSensitivity(recognizer antlr.Parser, dfa *antlr.DFA, startIndex, stopIndex, prediction int, configs antlr.ATNConfigSet) {
-//	// pass
-//}
