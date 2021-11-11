@@ -937,9 +937,15 @@ func (p *exprParams) set(name string, param exprValue) {
 func (p *exprParams) init(params ...reflect.Value) {
 	p.values = make([]exprValue, 0)
 	for _, v := range params {
-		p.values = append(p.values, exprValue{
-			value: v.Interface(),
-		})
+		if !v.IsValid() {
+			p.values = append(p.values, exprValue{
+				value: nil,
+			})
+		} else {
+			p.values = append(p.values, exprValue{
+				value: v.Interface(),
+			})
+		}
 	}
 }
 

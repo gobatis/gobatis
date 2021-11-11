@@ -141,6 +141,130 @@ func TestErrorParseMapper(t *testing.T) {
 func TestCorrectParseExprExpression(t *testing.T) {
 	
 	testCorrectParseExprExpression(t, []testExpression{
+		
+		// test variable visit
+		{In: []interface{}{1, 2}, Parameter: "a,b", Expr: "a + b", Result: 3},
+		{In: []interface{}{1, 2}, Parameter: "a:int,b", Expr: "a + b", Result: 3},
+		{In: []interface{}{1, 2}, Parameter: "a,b:int", Expr: "a + b", Result: 3},
+		{In: []interface{}{1, 2}, Parameter: "a:int,b:int", Expr: "a + b", Result: 3},
+		// TODO Check must export
+		{In: []interface{}{struct{ b int }{b: 1}}, Parameter: "a", Expr: "a.b", Result: 1, Err: expr_syntax_err},
+		
+		{In: []interface{}{struct{ B int }{B: 1}}, Parameter: "a", Expr: "a.B", Result: 1},
+		{In: []interface{}{[]int{1}}, Parameter: "a", Expr: "a[0]", Result: 1},
+		{In: []interface{}{map[string]int{"b": 1}}, Parameter: "a", Expr: `a["b"]`, Result: 1},
+		{In: []interface{}{func() int { return 1 }}, Parameter: "a", Expr: `a()`, Result: 1},
+		
+		// test number add calc
+		{In: []interface{}{1, 1}, Parameter: "a,b", Expr: "a + b", Result: 2},
+		{In: []interface{}{int8(1), 1}, Parameter: "a,b", Expr: "a + b", Result: int8(2)},
+		{In: []interface{}{int16(1), 1}, Parameter: "a,b", Expr: "a + b", Result: int16(2)},
+		{In: []interface{}{int32(1), 1}, Parameter: "a,b", Expr: "a + b", Result: int32(2)},
+		{In: []interface{}{int64(1), 1}, Parameter: "a,b", Expr: "a + b", Result: int64(2)},
+		{In: []interface{}{uint(1), 1}, Parameter: "a,b", Expr: "a + b", Result: uint(2)},
+		{In: []interface{}{uint8(1), 1}, Parameter: "a,b", Expr: "a + b", Result: uint8(2)},
+		{In: []interface{}{uint16(1), 1}, Parameter: "a,b", Expr: "a + b", Result: uint16(2)},
+		{In: []interface{}{uint32(1), 1}, Parameter: "a,b", Expr: "a + b", Result: uint32(2)},
+		{In: []interface{}{uint64(1), 1}, Parameter: "a,b", Expr: "a + b", Result: uint64(2)},
+		
+		{In: []interface{}{1, int8(1)}, Parameter: "a,b", Expr: "a + b", Result: 2},
+		{In: []interface{}{1, int16(1)}, Parameter: "a,b", Expr: "a + b", Result: 2},
+		{In: []interface{}{1, int32(1)}, Parameter: "a,b", Expr: "a + b", Result: 2},
+		{In: []interface{}{1, int64(1)}, Parameter: "a,b", Expr: "a + b", Result: 2},
+		{In: []interface{}{1, uint(1)}, Parameter: "a,b", Expr: "a + b", Result: 2},
+		{In: []interface{}{1, uint8(1)}, Parameter: "a,b", Expr: "a + b", Result: 2},
+		{In: []interface{}{1, uint16(1)}, Parameter: "a,b", Expr: "a + b", Result: 2},
+		{In: []interface{}{1, uint32(1)}, Parameter: "a,b", Expr: "a + b", Result: 2},
+		{In: []interface{}{1, uint64(1)}, Parameter: "a,b", Expr: "a + b", Result: 2},
+		// TODO FIX
+		{In: []interface{}{float32(1), 1}, Parameter: "a,b", Expr: "a + b", Result: float32(2), Err: expr_syntax_err},
+		{In: []interface{}{float64(1), 1}, Parameter: "a,b", Expr: "a + b", Result: float64(2), Err: expr_syntax_err},
+		
+		{In: []interface{}{1, float32(1)}, Parameter: "a,b", Expr: "a + b", Result: 2},
+		{In: []interface{}{1, float64(1)}, Parameter: "a,b", Expr: "a + b", Result: 2},
+		
+		// test logic calc start
+		{In: []interface{}{true, true}, Parameter: "a,b", Expr: "a && b", Result: true},
+		{In: []interface{}{true, false}, Parameter: "a,b", Expr: "a && b", Result: false},
+		{In: []interface{}{false, true}, Parameter: "a,b", Expr: "a && b", Result: false},
+		{In: []interface{}{true, true}, Parameter: "a,b", Expr: "a || b", Result: true},
+		{In: []interface{}{true, false}, Parameter: "a,b", Expr: "a || b", Result: true},
+		{In: []interface{}{false, true}, Parameter: "a,b", Expr: "a || b", Result: true},
+		
+		{In: []interface{}{true, true}, Parameter: "a,b", Expr: "a and b", Result: true},
+		{In: []interface{}{true, false}, Parameter: "a,b", Expr: "a and b", Result: false},
+		{In: []interface{}{false, true}, Parameter: "a,b", Expr: "a and b", Result: false},
+		{In: []interface{}{true, true}, Parameter: "a,b", Expr: "a or b", Result: true},
+		{In: []interface{}{true, false}, Parameter: "a,b", Expr: "a or b", Result: true},
+		{In: []interface{}{false, true}, Parameter: "a,b", Expr: "a or b", Result: true},
+		
+		{In: []interface{}{true, true, true}, Parameter: "a,b,c", Expr: "a && b and c", Result: true},
+		{In: []interface{}{true, true, false}, Parameter: "a,b,c", Expr: "a && b and c", Result: false},
+		{In: []interface{}{true, false, false}, Parameter: "a,b,c", Expr: "a && b and c", Result: false},
+		{In: []interface{}{false, true, true}, Parameter: "a,b,c", Expr: "a && b and c", Result: false},
+		{In: []interface{}{false, true, false}, Parameter: "a,b,c", Expr: "a && b and c", Result: false},
+		{In: []interface{}{false, true, false}, Parameter: "a,b,c", Expr: "a && b and c", Result: false},
+		{In: []interface{}{false, false, true}, Parameter: "a,b,c", Expr: "a && b and c", Result: false},
+		{In: []interface{}{false, false, false}, Parameter: "a,b,c", Expr: "a && b and c", Result: false},
+		
+		{In: []interface{}{true, true, true}, Parameter: "a,b,c", Expr: "a or b || c", Result: true},
+		{In: []interface{}{true, true, false}, Parameter: "a,b,c", Expr: "a or b || c", Result: true},
+		{In: []interface{}{true, false, false}, Parameter: "a,b,c", Expr: "a or b || c", Result: true},
+		{In: []interface{}{false, true, true}, Parameter: "a,b,c", Expr: "a or b || c", Result: true},
+		{In: []interface{}{false, true, false}, Parameter: "a,b,c", Expr: "a or b || c", Result: true},
+		{In: []interface{}{false, true, false}, Parameter: "a,b,c", Expr: "a or b || c", Result: true},
+		{In: []interface{}{false, false, true}, Parameter: "a,b,c", Expr: "a or b || c", Result: true},
+		{In: []interface{}{false, false, false}, Parameter: "a,b,c", Expr: "a or b || c", Result: false},
+		
+		{In: []interface{}{true, true, true}, Parameter: "a,b,c", Expr: "a and b or c", Result: true},
+		{In: []interface{}{true, true, false}, Parameter: "a,b,c", Expr: "a and b or c", Result: true},
+		{In: []interface{}{true, false, false}, Parameter: "a,b,c", Expr: "a and b or c", Result: false},
+		{In: []interface{}{false, true, true}, Parameter: "a,b,c", Expr: "a and b or c", Result: true},
+		{In: []interface{}{false, true, false}, Parameter: "a,b,c", Expr: "a and b or c", Result: false},
+		{In: []interface{}{false, true, false}, Parameter: "a,b,c", Expr: "a and b or c", Result: false},
+		{In: []interface{}{false, false, true}, Parameter: "a,b,c", Expr: "a and b or c", Result: true},
+		{In: []interface{}{false, false, false}, Parameter: "a,b,c", Expr: "a and b or c", Result: false},
+		
+		{In: []interface{}{true, true, true}, Parameter: "a,b,c", Expr: "a or b and c", Result: true},
+		{In: []interface{}{true, true, false}, Parameter: "a,b,c", Expr: "a or b and c", Result: false},
+		{In: []interface{}{true, false, false}, Parameter: "a,b,c", Expr: "a or b and c", Result: false},
+		{In: []interface{}{false, true, true}, Parameter: "a,b,c", Expr: "a or b and c", Result: true},
+		{In: []interface{}{false, true, false}, Parameter: "a,b,c", Expr: "a or b and c", Result: false},
+		{In: []interface{}{false, true, false}, Parameter: "a,b,c", Expr: "a or b and c", Result: false},
+		{In: []interface{}{false, false, true}, Parameter: "a,b,c", Expr: "a or b and c", Result: false},
+		{In: []interface{}{false, false, false}, Parameter: "a,b,c", Expr: "a or b and c", Result: false},
+		// test logic calc end
+		
+		// test unary calc start
+		{In: []interface{}{true}, Parameter: "a", Expr: "!a", Result: false},
+		{In: []interface{}{true}, Parameter: "a", Expr: "!!a", Result: true},
+		{In: []interface{}{true}, Parameter: "a", Expr: "!!!a", Result: false},
+		{In: []interface{}{false}, Parameter: "a", Expr: "!a", Result: true},
+		{In: []interface{}{false}, Parameter: "a", Expr: "!!a", Result: false},
+		{In: []interface{}{false}, Parameter: "a", Expr: "!!!a", Result: true},
+		{In: []interface{}{true, false, false}, Parameter: "a,b,c", Expr: "!!a and !!!b and !c", Result: true},
+		
+		{In: []interface{}{1}, Parameter: "a", Expr: "+1", Result: 1},
+		{In: []interface{}{1}, Parameter: "a", Expr: "++1", Result: 1, Err: expr_syntax_err},
+		{In: []interface{}{1}, Parameter: "a", Expr: "+++1", Result: 1, Err: expr_syntax_err},
+		{In: []interface{}{1}, Parameter: "a", Expr: "-1", Result: -1},
+		{In: []interface{}{1}, Parameter: "a", Expr: "--1", Result: -1, Err: expr_syntax_err},
+		{In: []interface{}{1}, Parameter: "a", Expr: "---1", Result: -1, Err: expr_syntax_err},
+		// test unary calc end
+		
+		// test ternary start
+		{In: []interface{}{true, 1, 2}, Parameter: "a,b,c", Expr: "a ? b : c", Result: 1},
+		{In: []interface{}{1, 1, 2}, Parameter: "a,b,c", Expr: "a>0 ? b : c", Result: 1},
+		{In: []interface{}{"", 1, 2}, Parameter: "a,b,c", Expr: "a == '' ? b : c", Result: 1},
+		{In: []interface{}{"", 1, 2}, Parameter: "a,b,c", Expr: "a != '' ? b : c", Result: 2},
+		{In: []interface{}{"ok", 1, 2}, Parameter: "a,b,c", Expr: "a =='ok' ? b+10 : c", Result: 11},
+		//{In: []interface{}{"ok", 1, 2}, Parameter: "a,b,c", Expr: "a != nil ? b+10 : c", Result: 11},
+		{In: []interface{}{map[string]int{}, 1, 2}, Parameter: "a,b,c", Expr: "a != nil ? b+10 : c", Result: 11},
+		
+		// TODO fix nil check
+		{In: []interface{}{nil, 1, 2}, Parameter: "a,b,c", Expr: "a == nil ? b+10 : c", Result: 11},
+		// test ternary end
+		
 		{In: []interface{}{2, 4}, Parameter: "a,b", Expr: "a + b", Result: 6},
 		{In: []interface{}{2, 4}, Parameter: "a:int, b", Expr: "a + b", Result: 6},
 		{In: []interface{}{2, 4}, Parameter: "a:int, b:int", Expr: "a + b", Result: 6},
@@ -276,33 +400,32 @@ func execTestFragment(t *testing.T, engine *Engine, tests []testFragment) {
 }
 
 func testCorrectParseExprExpression(t *testing.T, tests []testExpression) {
-	for i, test := range tests {
+	for i, item := range tests {
 		vars := make([]reflect.Value, 0)
-		for _, v := range test.In {
+		for _, v := range item.In {
 			vars = append(vars, rv(v))
 		}
 		_expr := newExprParser(vars...)
-		_expr.file = "tmp.xml"
+		_expr.file = "expr.xml"
 		
-		params, err := testParseParams(test.Parameter)
-		require.NoError(t, err, test)
+		params, err := testParseParams(_expr.file, item.Parameter)
+		require.NoError(t, err, item)
 		
 		for ii, vv := range params {
 			err = _expr.paramsStack.list.Front().Next().Value.(*exprParams).bind(vv, ii)
-			require.NoError(t, err, test, ii, vv)
+			require.NoError(t, err, item)
 		}
-		
-		result, _, err := _expr.parseExpression(nil, test.Expr)
-		if test.Err > 0 {
-			require.Error(t, err, test)
-			writeError(t, fmt.Sprintf("test parse expression: %d", i), test, err)
+		result, _, err := _expr.parseExpression(nil, item.Expr)
+		if item.Err > 0 {
+			require.Error(t, err, item)
+			writeError(t, fmt.Sprintf("test parse expression: %d", i), item, err)
 		} else {
-			require.NoError(t, err, test)
+			require.NoError(t, err, item)
 			dr, ok := result.(decimal.Decimal)
 			if ok {
-				require.Equal(t, test.Result, dr.String(), test)
+				require.Equal(t, item.Result, dr.String(), item)
 			} else {
-				require.Equal(t, test.Result, result, test)
+				require.Equal(t, item.Result, result, item)
 			}
 		}
 	}
@@ -314,17 +437,17 @@ func testErrorParseExprParameter(t *testing.T, tests []testExpression) {
 		for _, v := range test.In {
 			vars = append(vars, rv(v))
 		}
-		_, err := testParseParams(test.Parameter)
+		_, err := testParseParams("exprs", test.Parameter)
 		require.Error(t, err, test)
 		writeError(t, fmt.Sprintf("test error parse parameter: %d", i), test, err)
 	}
 }
 
-func testParseParams(tokens string) (params []*param, err error) {
+func testParseParams(file, tokens string) (params []*param, err error) {
 	defer func() {
 		e := recover()
-		err = catch("", e)
+		err = catch(file, e)
 	}()
-	//params = (&fragment{node: new(xmlNode)}).parseParams(tokens)
+	params = parseParams(file, tokens)
 	return
 }
