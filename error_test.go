@@ -42,15 +42,20 @@ func TestXMLParseError(t *testing.T) {
 type errorCase struct {
 	definition   string
 	in           []reflect.Value
-	syntaxError  string
-	runtimeError string
+	message      string
+	context      string
+	syntaxError  int
+	runtimeError int
 }
 
 func testError(t *testing.T, item errorCase) {
 	fs, err := parseMapper("test_error.xml", wrapMapperSchema(item.definition))
-	if item.syntaxError != "" {
+	if item.syntaxError > 0 {
 		require.Error(t, err, item)
-		//require.Equal(t, item.syntaxError, err.Error(), item)
+		em := ParseErrorMessage(err.Error())
+		require.Equal(t, item.syntaxError, em.Code, item)
+		require.Equal(t, item.message, em.Message, item)
+		require.Equal(t, item.context, em.Context, item)
 		t.Log(err.Error())
 	} else {
 		require.NoError(t, err, item)
@@ -59,45 +64,169 @@ func testError(t *testing.T, item errorCase) {
 		
 		c := f.newCaller(nil)
 		_, err = c.fragment.buildStmt(item.in)
-		t.Log(err)
+		if item.runtimeError > 0 {
+			require.Error(t, err, item)
+			em := ParseErrorMessage(err.Error())
+			require.Equal(t, item.runtimeError, em.Code, item)
+			require.Equal(t, item.message, em.Message, item)
+			require.Equal(t, item.context, em.Context, item)
+			t.Log(err)
+		} else {
+			require.NoError(t, err, item)
+		}
 	}
 	
 }
 
+var xmlSyntaxTestCases = []errorCase{
+	{
+		definition: `
+				<a
+			`,
+		syntaxError: xml_syntax_err,
+		message:     "xml syntax error",
+		context:     "</mapper>",
+	},
+	{
+		definition: `
+				<aa
+			`,
+		syntaxError: xml_syntax_err,
+		message:     "xml syntax error",
+		context:     "</mapper>",
+	},
+	{
+		definition: `
+				<aa b
+			`,
+		syntaxError: xml_syntax_err,
+		message:     "xml syntax error",
+		context:     "</mapper>",
+	},
+	{
+		definition: `
+				<aa b=
+			`,
+		syntaxError: xml_syntax_err,
+		message:     "xml syntax error",
+		context:     "</mapper>",
+	},
+	{
+		definition: `
+				<aa b='
+			`,
+		syntaxError: xml_syntax_err,
+		message:     "xml syntax error",
+		context:     "</mapper>",
+	},
+	{
+		definition: `
+				<aa b="
+			`,
+		syntaxError: xml_syntax_err,
+		message:     "xml syntax error",
+		context:     "</mapper>",
+	},
+	{
+		definition: `
+				<aa b=""
+			`,
+		syntaxError: xml_syntax_err,
+		message:     "xml syntax error",
+		context:     "</mapper>",
+	},
+	{
+		definition: `
+				<aa b="">c
+			`,
+		syntaxError: xml_syntax_err,
+		message:     "xml syntax error",
+		context:     "</mapper>",
+	},
+	{
+		definition: `
+				<aa b="">c<
+			`,
+		syntaxError: xml_syntax_err,
+		message:     "xml syntax error",
+		context:     "</mapper>",
+	},
+	{
+		definition: `
+				<aa b="">c</
+			`,
+		syntaxError: xml_syntax_err,
+		message:     "xml syntax error",
+		context:     "</mapper>",
+	},
+	{
+		definition: `
+				<aa b="">c</d
+			`,
+		syntaxError: xml_syntax_err,
+		message:     "xml syntax error",
+		context:     "</mapper>",
+	},
+	{
+		definition: `
+				<aa b="">c</dd
+			`,
+		syntaxError: xml_syntax_err,
+		message:     "xml syntax error",
+		context:     "</mapper>",
+	},
+	{
+		definition: `
+				<aa b="" c />
+			`,
+		syntaxError: xml_syntax_err,
+		message:     "xml syntax error",
+		context:     `<aa b="" c />`,
+	},
+	{
+		definition: `
+				<aa b="" ' />
+			`,
+		syntaxError: xml_syntax_err,
+		message:     "xml syntax error",
+		context:     "</mapper>",
+	},
+	{
+		definition: `
+				<aa b="" c " />
+			`,
+		syntaxError: xml_syntax_err,
+		message:     "xml syntax error",
+		context:     `</mapper>`,
+	},
+	{
+		definition: `
+				<aa b="" " />
+			`,
+		syntaxError: xml_syntax_err,
+		message:     "xml syntax error",
+		context:     "</mapper>",
+	},
+	{
+		definition: `
+				<aa b="" / />
+			`,
+		syntaxError: xml_syntax_err,
+		message:     "xml syntax error",
+		context:     `<aa b="" / />`,
+	},
+	{
+		definition: `
+				<aa b="" //>
+			`,
+		syntaxError: xml_syntax_err,
+		message:     "xml syntax error",
+		context:     `<aa b="" //>`,
+	},
+}
+
 func TestXMLErrors(t *testing.T) {
-	errors := []errorCase{
-		{
-			definition: `
-				<insert></insert>
-			`,
-			syntaxError: "[ERROR 32]",
-		},
-		{
-			definition: `
-				<insert id=""></insert>
-			`,
-			syntaxError: "[ERROR 32]",
-		},
-		{
-			definition: `
-				<insert id=''></insert>
-			`,
-			syntaxError: "[ERROR 32]",
-		},
-		{
-			definition: `
-				<insert id=''>/insert>
-			`,
-			syntaxError: "[ERROR 32]",
-		},
-		{
-			definition: `
-				<insert id=''></ok>
-			`,
-			syntaxError: "[ERROR 32]",
-		},
-	}
-	for _, v := range errors {
+	for _, v := range xmlSyntaxTestCases {
 		testError(t, v)
 	}
 }
@@ -110,7 +239,52 @@ func TestExprErrors(t *testing.T) {
 					a + #{a}
 				</insert>
 			`,
-			runtimeError: "[ERROR 32]",
+			runtimeError: expr_syntax_err,
+		},
+		{
+			definition: `
+				<insert id="TestExpr1" parameter="user">
+					a + #{user.Sex}
+				</insert>
+			`,
+			in: []reflect.Value{rv(struct {
+				Name string
+				Age  int
+			}{
+				Name: "tom",
+				Age:  18,
+			})},
+			runtimeError: expr_syntax_err,
+		},
+		{
+			definition: `
+				<insert id="TestExpr1" parameter="user">
+					a + #{user[0]}
+				</insert>
+			`,
+			in: []reflect.Value{rv(struct {
+				Name string
+				Age  int
+			}{
+				Name: "tom",
+				Age:  18,
+			})},
+			runtimeError: expr_syntax_err,
+		},
+		{
+			definition: `
+				<insert id="TestExpr1" parameter="user">
+					#{1 + user.Name}
+				</insert>
+			`,
+			in: []reflect.Value{rv(struct {
+				Name string
+				Age  int
+			}{
+				Name: "tom",
+				Age:  18,
+			})},
+			runtimeError: expr_syntax_err,
 		},
 	}
 	for _, v := range errors {

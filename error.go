@@ -44,7 +44,8 @@ const (
 	paras_fragment_err
 	parser_bind_err
 	caller_err
-	syntax_err
+	expr_syntax_err
+	xml_syntax_err
 	result_attribute_conflict_err
 	cast_bool_err
 	parse_inserter_err
@@ -98,7 +99,7 @@ func ParseErrorMessage(msg string) ErrorMessage {
 			sc++
 		default:
 			if sc > 7 && v == 32 && i+5 <= len(msg) && msg[i:i+5] == " at '" {
-				r.Message = chars
+				r.Message = strings.TrimSuffix(chars, " ")
 				r.Context = strings.TrimRight(msg[i+5:], "'")
 				chars = ""
 				
@@ -225,7 +226,7 @@ type exprErrorStrategy struct {
 }
 
 func (p *exprErrorStrategy) Recover(recognizer antlr.Parser, e antlr.RecognitionException) {
-	throw("", nil, syntax_err).
+	throw("", nil, expr_syntax_err).
 		setLine(getLine(e.GetInputStream().(antlr.CharStream))).
 		format("express syntax error: %s", e.GetMessage())
 }
@@ -270,7 +271,7 @@ func (p *xmlErrorStrategy) Recover(recognizer antlr.Parser, e antlr.RecognitionE
 	default:
 		// TODO 处理 unknown stream
 	}
-	throw(p.file, nil, syntax_err).
+	throw(p.file, nil, xml_syntax_err).
 		setLine(getLine(cs)).
 		format("xml syntax error")
 	
@@ -308,5 +309,5 @@ func getLine(s antlr.CharStream) string {
 		}
 		end = i
 	}
-	return s.GetText(start, end)
+	return strings.TrimSpace(s.GetText(start, end))
 }
