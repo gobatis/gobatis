@@ -8,47 +8,47 @@ import (
 )
 
 const (
-	unknownErr = iota + 1
-	parameterTypeErr
-	parameterConflictWithBuiltInErr
-	parameterNotFoundErr
-	varToReflectKindErr
-	varBindErr
-	popValueStackErr
-	popParamsStackErr
-	popBinaryOperandsErr
-	popTertiaryOperandsErr
-	popResultErr
-	unsupportedRelationCalcErr
-	unsupportedUnaryCalc
-	unsupportedNumericCalc
-	numericCalcErr
-	unaryCalcError
-	relationCalcError
-	logicCalcErr
-	visitMemberErr
-	visitMapErr
-	visitArrayErr
-	indexErr
-	callErr
-	parseIntegerErr
-	parseDecimalErr
-	parseCoveredErr
-	checkParameterErr
-	checkResultErr
-	parseMapperErr
-	registerFragmentErr
-	parseFragmentErr
-	validateXMLNodeErr
-	parasFragmentErr
-	parserBindErr
-	callerErr
-	syntaxErr
-	resultAttributeConflictErr
-	castBoolErr
-	parseInserterErr
-	parseQueryErr
-	tagNotMatch
+	unknown_err = iota + 1
+	parameter_type_err
+	parameter_conflict_with_builtin_err
+	parameter_not_found_err
+	var_to_reflect_kind_err
+	var_bind_err
+	pop_value_err
+	pop_params_err
+	pop_binary_operands_err
+	pop_tertiary_operands_err
+	pop_result_err
+	unsupported_relation_calc_err
+	unsupported_unary_calc
+	unsupported_numeric_calc
+	numeric_calc_err
+	unary_calc_err
+	relation_calc_error
+	logic_calc_err
+	visit_member_err
+	visit_map_err
+	visit_array_err
+	index_err
+	call_err
+	parse_integer_err
+	parse_decimal_err
+	parse_covered_err
+	check_parameter_err
+	check_result_err
+	parse_mapper_err
+	register_fragment_err
+	parse_fragment_err
+	validate_xml_node_err
+	paras_fragment_err
+	parser_bind_err
+	caller_err
+	syntax_err
+	result_attribute_conflict_err
+	cast_bool_err
+	parse_inserter_err
+	parse_query_err
+	tag_not_match_err
 )
 
 func throw(file string, ctx antlr.ParserRuleContext, code int) *_error {
@@ -118,7 +118,7 @@ func catch(file string, e interface{}) error {
 			return _e
 		}
 		return &_error{
-			code:    unknownErr,
+			code:    unknown_err,
 			file:    file,
 			message: fmt.Sprintf("%v", e),
 		}
@@ -157,7 +157,7 @@ type parserErrorStrategy struct {
 func (p *parserErrorStrategy) Recover(recognizer antlr.Parser, e antlr.RecognitionException) {
 	// TODO handle syntax error detail
 	//context := recognizer.GetParserRuleContext()
-	throw("", nil, syntaxErr).
+	throw("", nil, syntax_err).
 		setLine(getLine(e.GetInputStream().(antlr.CharStream))).
 		format("express syntax error: %s", e.GetMessage())
 }
@@ -208,7 +208,7 @@ func (p *xmlErrorStrategy) Recover(recognizer antlr.Parser, e antlr.RecognitionE
 	}
 	fmt.Println(reflect.TypeOf(e).String())
 	//fmt.Println(recognizer.GetCurrentToken().GetLine(), recognizer.GetCurrentToken().GetColumn())
-	throw(p.file, nil, syntaxErr).
+	throw(p.file, nil, syntax_err).
 		setLine(getLine(cs)).
 		format("xml syntax error")
 	
@@ -260,7 +260,7 @@ func getLine(s antlr.CharStream) string {
 //}
 //
 //func (p *lexerErrorListener) SyntaxError(recognizer antlr.Recognizer, offendingSymbol interface{}, line, column int, msg string, e antlr.RecognitionException) {
-//	throw("", nil, syntaxErr).
+//	throw("", nil, syntax_err).
 //		setLine(getLine(e.GetInputStream().(antlr.CharStream))).
 //		format("lexer syntax error")
 //}

@@ -131,10 +131,10 @@ func TestCorrectParseFragment(t *testing.T) {
 func TestErrorParseMapper(t *testing.T) {
 	engine := NewEngine(&DB{})
 	execTestErrorMapper(t, engine, []testMapper{
-		{Err: syntaxErr, File: "mapper.xml", Content: `<mapper>...</mapper`},
-		{Err: syntaxErr, File: "mapper.xml", Content: `<mapper</mapper`},
-		{Err: syntaxErr, File: "mapper.xml", Content: `mapper>...</mapper`},
-		{Err: syntaxErr, File: "mapper.xml", Content: `mapper>.../mapper>`},
+		{Err: syntax_err, File: "mapper.xml", Content: `<mapper>...</mapper`},
+		{Err: syntax_err, File: "mapper.xml", Content: `<mapper</mapper`},
+		{Err: syntax_err, File: "mapper.xml", Content: `mapper>...</mapper`},
+		{Err: syntax_err, File: "mapper.xml", Content: `mapper>.../mapper>`},
 	})
 }
 

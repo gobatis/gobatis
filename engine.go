@@ -254,7 +254,7 @@ func (p *Engine) registerFragments(ms []*fragment) {
 		v.db = p.Master()
 		err = p.fm.add(v)
 		if err != nil {
-			throw(v.node.File, v.node.ctx, registerFragmentErr).with(err)
+			throw(v.node.File, v.node.ctx, register_fragment_err).with(err)
 		}
 	}
 }

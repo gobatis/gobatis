@@ -205,14 +205,14 @@ func (p fragment) checkParameter(ft reflect.Type, mn, fn string) {
 		ac++
 	}
 	if len(p.in) != ac {
-		throw(p.node.File, p.node.ctx, checkParameterErr).
+		throw(p.node.File, p.node.ctx, check_parameter_err).
 			format("%s.%s expected %d bind parameter, got %d", mn, fn, len(p.in), ac)
 	}
 }
 
 func (p fragment) checkResult(ft reflect.Type, mn, fn string) {
 	if ft.NumOut() == 0 || !isError(ft.Out(ft.NumOut()-1)) {
-		throw(p.node.File, p.node.ctx, checkResultErr).
+		throw(p.node.File, p.node.ctx, check_result_err).
 			format("out expect error at last, got %s", ft.Out(ft.NumOut()-1).String())
 	}
 	
@@ -241,13 +241,13 @@ func (p fragment) checkResult(ft reflect.Type, mn, fn string) {
 					case reflect.Struct, reflect.Map:
 						return
 					}
-					throw(p.node.File, p.node.ctx, checkResultErr).
+					throw(p.node.File, p.node.ctx, check_result_err).
 						format("%s.%s out[0] expect (struct | []struct | map | []map), got: %s", mn, fn, ft.Out(0))
 				}
 			} else {
 				for i, v := range p.out {
 					if !v.expected(ft.Out(i)) {
-						throw(p.node.File, p.node.ctx, varBindErr).
+						throw(p.node.File, p.node.ctx, var_bind_err).
 							format("%s.%s bind result '%s' expect '%s', got '%s'", mn, fn, v.name, v.Type(), ft.Out(i))
 					}
 				}
@@ -273,7 +273,7 @@ func (p fragment) checkResult(ft reflect.Type, mn, fn string) {
 				reflect.Uint64:
 				return
 			default:
-				throw(p.node.File, p.node.ctx, checkResultErr).
+				throw(p.node.File, p.node.ctx, check_result_err).
 					format("%s.%s out[0] expect integer, got: %s", mn, fn, ft.Out(0).Name())
 			}
 		}
@@ -330,7 +330,7 @@ func (p fragment) prepareBlocks() *blocks {
 		if v.Name == dtd.BLOCK {
 			bs.items[v.GetAttribute(dtd.TYPE)] = v
 		} else if !v.EmptyText() {
-			throw(p.node.File, p.node.ctx, parseFragmentErr).
+			throw(p.node.File, p.node.ctx, parse_fragment_err).
 				with(fmt.Errorf("unsupported ohter element"))
 		}
 	}
@@ -353,14 +353,14 @@ func (p fragment) parseStmt(parser *exprParser, s *stmt, nodes ...*xmlNode) (err
 
 func (p fragment) prepareParser(in []reflect.Value) (parser *exprParser, err error) {
 	if len(p.in) != len(in) {
-		throw(p.node.File, p.node.ctx, parasFragmentErr).
+		throw(p.node.File, p.node.ctx, paras_fragment_err).
 			format("expect %d args, got %d", len(p.in), len(in))
 	}
 	parser = newExprParser(in...)
 	for i, v := range p.in {
 		err = parser.paramsStack.list.Front().Next().Value.(*exprParams).bind(v, i)
 		if err != nil {
-			throw(p.node.File, p.node.ctx, parasFragmentErr).with(err)
+			throw(p.node.File, p.node.ctx, paras_fragment_err).with(err)
 		}
 	}
 	return
@@ -506,7 +506,7 @@ func (p fragment) parseElement(parser *exprParser, parent, node *xmlNode, s *stm
 		case dtd.BLOCK:
 			// pass
 		default:
-			throw(node.File, node.ctx, parasFragmentErr).with(fmt.Errorf("unknown tag: %s", node.Name))
+			throw(node.File, node.ctx, paras_fragment_err).with(fmt.Errorf("unknown tag: %s", node.Name))
 		}
 	}
 }
@@ -571,7 +571,7 @@ func (p fragment) parseBind(parser *exprParser, node *xmlNode) {
 	// TODO check var rule
 	value, _, err := parser.parseExpression(node.ctx, node.GetAttribute(dtd.VALUE))
 	if err != nil {
-		throw(node.File, node.ctx, parserBindErr).with(err)
+		throw(node.File, node.ctx, parser_bind_err).with(err)
 	}
 	parser.paramsStack.peak().set(name, exprValue{
 		value: value,
@@ -585,11 +585,11 @@ func (p fragment) parseSelectKey(parser *exprParser, node *xmlNode) {
 func (p fragment) parseTest(parser *exprParser, node *xmlNode, s *stmt) bool {
 	v, _, err := parser.parseExpression(node.ctx, node.GetAttribute(dtd.TEST))
 	if err != nil {
-		throw(p.node.File, p.node.ctx, parasFragmentErr).with(err)
+		throw(p.node.File, p.node.ctx, paras_fragment_err).with(err)
 	}
 	b, err := cast.ToBoolE(v)
 	if err != nil {
-		throw(p.node.File, p.node.ctx, parasFragmentErr).with(err)
+		throw(p.node.File, p.node.ctx, paras_fragment_err).with(err)
 	}
 	if !b {
 		return false
@@ -627,12 +627,12 @@ func (p fragment) parseChoose(parser *exprParser, node *xmlNode, s *stmt) {
 				}
 				child.Name = "TEXT"
 			}
-			throw(parser.file, child.ctx, parasFragmentErr).
+			throw(parser.file, child.ctx, paras_fragment_err).
 				format("unsupported element '%s' element in choose", child.Name)
 		}
 	}
 	if oc != 1 {
-		throw(parser.file, node.ctx, parasFragmentErr).format("choose except 1 otherwise, got %d", oc)
+		throw(parser.file, node.ctx, paras_fragment_err).format("choose except 1 otherwise, got %d", oc)
 	}
 }
 
@@ -649,7 +649,7 @@ func (p fragment) trimPrefixOverrides(parser *exprParser, node *xmlNode, res *st
 	for _, v := range filters {
 		s, err = p.trimPrefixOverride(s, v)
 		if err != nil {
-			throw(p.node.File, p.node.ctx, parasFragmentErr).format("regexp compile error: %s", err)
+			throw(p.node.File, p.node.ctx, paras_fragment_err).format("regexp compile error: %s", err)
 		}
 	}
 	if s != "" {
@@ -666,7 +666,7 @@ func (p fragment) parseForeach(parser *exprParser, parent, node *xmlNode, s *stm
 	ca := node.GetAttribute(dtd.COLLECTION)
 	cv, ok := parser.paramsStack.getVar(ca)
 	if !ok {
-		throw(p.node.File, p.node.ctx, parasFragmentErr).
+		throw(p.node.File, p.node.ctx, paras_fragment_err).
 			format("can't get foreach collection '%s' value", ca)
 	}
 	index := node.GetAttribute(dtd.INDEX)
@@ -717,11 +717,11 @@ func (p fragment) parseForeach(parser *exprParser, parent, node *xmlNode, s *stm
 			p.parseForeachChild(parser, parent, node, &frags)
 		}
 	default:
-		throw(parser.file, node.ctx, parasFragmentErr).format("foreach collection type '%s' can't range", elem.Type())
+		throw(parser.file, node.ctx, paras_fragment_err).format("foreach collection type '%s' can't range", elem.Type())
 	}
 	_, err := parser.paramsStack.pop()
 	if err != nil {
-		throw(parser.file, node.ctx, popParamsStackErr).with(err)
+		throw(parser.file, node.ctx, pop_params_err).with(err)
 	}
 	if len(frags) > 0 {
 		s.concatSQL(oa + strings.Join(frags, separator) + cla)
@@ -732,11 +732,11 @@ func (p fragment) bindForeachParams(parser *exprParser, indexParam, itemParam *p
 	parser.paramsStack.peak().check = map[string]int{}
 	err := parser.paramsStack.peak().bind(indexParam, 0)
 	if err != nil {
-		throw(p.node.File, p.node.ctx, varBindErr).with(err)
+		throw(p.node.File, p.node.ctx, var_bind_err).with(err)
 	}
 	err = parser.paramsStack.peak().bind(itemParam, 1)
 	if err != nil {
-		throw(p.node.File, p.node.ctx, varBindErr).with(err)
+		throw(p.node.File, p.node.ctx, var_bind_err).with(err)
 	}
 }
 
@@ -755,7 +755,7 @@ func (p fragment) parseInserter(parser *exprParser, node *xmlNode, s *stmt) {
 	var err error
 	table, _, err := parser.parseExpression(node.ctx, node.GetAttribute(dtd.TABLE))
 	if err != nil {
-		throw(p.node.File, node.ctx, parseInserterErr).with(err)
+		throw(p.node.File, node.ctx, parse_inserter_err).with(err)
 	}
 	it.table = table.(string)
 	p.parseInserterFields(parser, node, it)
@@ -773,7 +773,7 @@ func (p fragment) parseInserterFields(parser *exprParser, node *xmlNode, it *ins
 			if fn == "*" {
 				entity, ok := parser.paramsStack.getVar(node.GetAttribute(dtd.ENTITY))
 				if !ok {
-					throw(p.node.File, node.ctx, parseInserterErr).
+					throw(p.node.File, node.ctx, parse_inserter_err).
 						with(fmt.Errorf("inserter entity attribute not defined"))
 				}
 				if it.empty() {
@@ -783,7 +783,7 @@ func (p fragment) parseInserterFields(parser *exprParser, node *xmlNode, it *ins
 			} else {
 				fv, _, err = parser.parseExpression(node.ctx, fn)
 				if err != nil {
-					throw(p.node.File, node.ctx, parseInserterErr).with(err)
+					throw(p.node.File, node.ctx, parse_inserter_err).with(err)
 				}
 				name := fv.(string)
 				if !it.hasField(name) {
@@ -793,7 +793,7 @@ func (p fragment) parseInserterFields(parser *exprParser, node *xmlNode, it *ins
 		case dtd.EXCLUDE:
 			fv, _, err = parser.parseExpression(node.ctx, v.GetAttribute(dtd.NAME))
 			if err != nil {
-				throw(p.node.File, node.ctx, parseInserterErr).with(err)
+				throw(p.node.File, node.ctx, parse_inserter_err).with(err)
 			}
 			name := fv.(string)
 			it.removeField(name)
@@ -820,7 +820,7 @@ func (p fragment) extractInserterFields(parser *exprParser, dv reflect.Value, it
 			it.addField(name, innerExpr(iv))
 		}
 	default:
-		throw(p.node.File, p.node.ctx, parseInserterErr).with(fmt.Errorf("unsuport inserter data type"))
+		throw(p.node.File, p.node.ctx, parse_inserter_err).with(fmt.Errorf("unsuport inserter data type"))
 	}
 	return
 }
