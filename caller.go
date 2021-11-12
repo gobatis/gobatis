@@ -4,11 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"github.com/gobatis/gobatis/cast"
 	"github.com/gobatis/gobatis/dtd"
 	"reflect"
-	"strconv"
-	"strings"
 	"time"
 )
 
@@ -17,86 +14,6 @@ type conn interface {
 	ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
 	QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error)
 	Close() error
-}
-
-type stmt struct {
-	ctx     context.Context
-	in      []reflect.Value
-	sql     string
-	vars    []interface{}
-	query   bool
-	dynamic bool
-	strict  bool
-	conn    conn
-	rows    *sql.Rows
-	result  sql.Result
-}
-
-func (p stmt) close() {
-	if p.conn != nil {
-		_ = p.conn.Close()
-	}
-}
-
-func (p stmt) realSQL() string {
-	s := p.sql
-	for i, v := range p.vars {
-		s = strings.Replace(s, fmt.Sprintf("$%d", i+1), p.realValue(v), 1)
-		//s = strings.Replace(s, fmt.Sprintf("$%d", i+1), fmt.Sprintf("$%d[%v]", i+1, v), 1)
-	}
-	return s
-}
-
-func (p stmt) realValue(v interface{}) string {
-	vv := cast.IndirectToStringerOrError(v)
-	switch s := vv.(type) {
-	case string:
-		return fmt.Sprintf("'%s'", v)
-	case bool:
-		return fmt.Sprintf("%v", v)
-	case float64:
-		return strconv.FormatFloat(s, 'f', -1, 64)
-	case float32:
-		return strconv.FormatFloat(float64(s), 'f', -1, 32)
-	case int:
-		return strconv.Itoa(s)
-	case int64:
-		return strconv.FormatInt(s, 10)
-	case int32:
-		return strconv.Itoa(int(s))
-	case int16:
-		return strconv.FormatInt(int64(s), 10)
-	case int8:
-		return strconv.FormatInt(int64(s), 10)
-	case uint:
-		return strconv.FormatUint(uint64(s), 10)
-	case uint64:
-		return strconv.FormatUint(uint64(s), 10)
-	case uint32:
-		return strconv.FormatUint(uint64(s), 10)
-	case uint16:
-		return strconv.FormatUint(uint64(s), 10)
-	case uint8:
-		return strconv.FormatUint(uint64(s), 10)
-	case []byte:
-		return fmt.Sprintf("'%s'", v)
-	case nil:
-		return ""
-	case fmt.Stringer:
-		return fmt.Sprintf("'%s'", v)
-	case error:
-		return fmt.Sprintf("'%s'", v)
-	default:
-		return ""
-	}
-}
-
-func (p *stmt) concatSQL(s string) {
-	if p.sql == "" {
-		p.sql = s
-	} else {
-		p.sql += " " + s
-	}
 }
 
 type caller struct {
@@ -135,6 +52,10 @@ func (p *caller) exec(in []reflect.Value) error {
 	s, err := p.fragment.buildStmt(in)
 	if err != nil {
 		return err
+	}
+	if p.fragment.stmt {
+		p.result[0] = reflect.ValueOf(s)
+		return nil
 	}
 	defer func() {
 		s.close()
@@ -206,7 +127,7 @@ func (p *caller) save(in []reflect.Value) (err error) {
 	return p.scanResult(s.result, p.result)
 }
 
-func (p caller) run(s *stmt) (err error) {
+func (p caller) run(s *Stmt) (err error) {
 	
 	if s.conn == nil {
 		s.conn, err = p.fragment.db.Conn(s.ctx)

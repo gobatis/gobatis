@@ -295,9 +295,9 @@ var testParseDeleteCases = []testParseMapperCase{
 	},
 }
 
-func (p testParseMapperCaseSql) check(t *testing.T, c *testParseMapperCase, s *stmt) bool {
+func (p testParseMapperCaseSql) check(t *testing.T, c *testParseMapperCase, s *Stmt) bool {
 	require.Equal(t, p.stmtSQL, s.sql, c)
-	require.Equal(t, p.realSQL, s.realSQL(), c)
+	require.Equal(t, p.realSQL, s.RealSQL(), c)
 	require.Equal(t, len(p.values), len(s.vars), c)
 	for i, v := range s.vars {
 		require.Equal(t, p.values[i], v, c)
@@ -311,7 +311,7 @@ func TestParseSelectCases(t *testing.T) {
 		fs  []*fragment
 		f   *fragment
 		c   *caller
-		s   *stmt
+		s   *Stmt
 		err error
 	)
 	
@@ -340,7 +340,7 @@ func TestParseSelectCases(t *testing.T) {
 				require.NoError(t, err)
 			}
 			sql.check(t, &item, s)
-			t.Log(fmt.Sprintf("[%s]", f.id), s.realSQL())
+			t.Log(fmt.Sprintf("[%s]", f.id), s.RealSQL())
 		}
 	}
 }
@@ -417,7 +417,7 @@ func TestParseQueryCases(t *testing.T) {
 		f  *fragment
 		c  *caller
 		//s  *stmt
-		ss []*stmt
+		ss []*Stmt
 		//parser *exprParser
 		err error
 	)
@@ -443,12 +443,12 @@ func TestParseQueryCases(t *testing.T) {
 			} else {
 				require.NoError(t, err)
 			}
-			t.Log(f.id, ss[0].realSQL())
+			t.Log(f.id, ss[0].RealSQL())
 			//t.Log(f.id, ss[0].sql)
 			//d, _ := json.Marshal(ss[0].vars)
 			//t.Log(f.id, string(d))
 			//
-			t.Log(f.id, ss[1].realSQL())
+			t.Log(f.id, ss[1].RealSQL())
 			//d, _ = json.Marshal(ss[1].vars)
 			//t.Log(f.id, string(d))
 		}

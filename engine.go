@@ -67,18 +67,28 @@ func (p *Engine) SetLogger(logger Logger) {
 	}
 }
 
-func (p *Engine) Init(bundle Bundle) (err error) {
-	
+func (p *Engine) InitLogger() {
 	if p.logger == nil {
 		p.logger = _log.NewStdLogger()
 		p.logger.SetLevel(InfoLevel)
+		p.SetLogger(p.logger)
 	}
-	
+}
+
+func (p *Engine) RegisterBundle(bundle Bundle) error {
 	p.bundle = bundle
-	err = p.parseBundle()
+	return p.parseBundle()
+}
+
+func (p *Engine) Init(bundle Bundle) (err error) {
+	
+	p.InitLogger()
+	
+	err = p.RegisterBundle(bundle)
 	if err != nil {
 		return
 	}
+	
 	err = p.master.initDB()
 	p.master.logger = p.logger
 	if err != nil {
@@ -149,7 +159,7 @@ func (p *Engine) bindMapper(mapper interface{}) (err error) {
 			continue
 		}
 		must := false
-		//stmt := false
+		stmt := false
 		id := rt.Field(i).Name
 		if strings.HasPrefix(id, must_prefix) {
 			id = strings.TrimPrefix(id, must_prefix)
@@ -157,7 +167,7 @@ func (p *Engine) bindMapper(mapper interface{}) (err error) {
 		}
 		if strings.HasSuffix(id, stmt_suffix) {
 			id = strings.TrimSuffix(id, stmt_suffix)
-			//stmt = true
+			stmt = true
 		}
 		if strings.HasSuffix(id, tx_suffix) {
 			id = strings.TrimSuffix(id, tx_suffix)
@@ -171,7 +181,7 @@ func (p *Engine) bindMapper(mapper interface{}) (err error) {
 		}
 		m = m.fork()
 		m.must = must
-		//m.stmt = stmt
+		m.stmt = stmt
 		m.id = rt.Field(i).Name
 		ft := rv.Field(i).Type()
 		m.checkParameter(ft, rt.Name(), rv.Type().Field(i).Name)

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//gobatis.co//DTD Mapper 1.0//EN" "gobatis.co/dtd/mapper.dtd">
+<mapper>
+    <insert id="InsertS001">
+        insert into a(b,c) values ('b','c');
+    </insert>
+
+    <insert id="InsertS002">
+        <bind name="table" value="'a'"/>
+        insert into ${table}(b,c) values ('b','c');
+    </insert>
+
+    <insert id="InsertS003">
+        insert into a(b,c)
+        values(
+        'b',
+        <if test="false">
+            'c1'
+        </if>
+        <if test="true">
+            'c2'
+        </if>
+        )
+    </insert>
+
+    <insert id="InsertS004">
+        insert into a(b,c)
+        values(
+        'b',
+        <choose>
+            <when test="true">
+                'c1'
+            </when>
+            <otherwise>
+                'c2'
+            </otherwise>
+        </choose>
+        )
+    </insert>
+
+    <insert id="InsertS005" parameter="items:array">
+        insert into a(b,c) values <foreach collection="items" item="item" separator=",">
+            (#{item.B},#{item.C})
+        </foreach>
+    </insert>
+</mapper>

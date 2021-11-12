@@ -149,6 +149,7 @@ type fragment struct {
 	out    []*param
 	rt     int
 	must   bool
+	stmt   bool
 }
 
 func (p fragment) fork() *fragment {
@@ -257,24 +258,33 @@ func (p fragment) checkResult(ft reflect.Type, mn, fn string) {
 	case dtd.INSERT, dtd.UPDATE, dtd.DELETE:
 		if ft.NumOut() > 1 {
 			elem := ft.Out(0)
-			if elem.Kind() == reflect.Ptr {
-				elem = elem.Elem()
-			}
-			switch elem.Kind() {
-			case reflect.Int,
-				reflect.Int8,
-				reflect.Int16,
-				reflect.Int32,
-				reflect.Int64,
-				reflect.Uint,
-				reflect.Uint8,
-				reflect.Uint16,
-				reflect.Uint32,
-				reflect.Uint64:
-				return
-			default:
-				throw(p.node.File, p.node.ctx, check_result_err).
-					format("%s.%s out[0] expect integer, got: %s", mn, fn, ft.Out(0).Name())
+			if p.stmt {
+				if elem.Kind() != reflect.Ptr ||
+					elem.Elem().Name() != "Stmt" ||
+					elem.Elem().PkgPath() != "github.com/gobatis/gobatis" {
+					throw(p.node.File, p.node.ctx, check_result_err).
+						format("%s.%s out[0] expect *gobatis.Stmt, got: %s", mn, fn, ft.Out(0).Name())
+				}
+			} else {
+				if elem.Kind() == reflect.Ptr {
+					elem = elem.Elem()
+				}
+				switch elem.Kind() {
+				case reflect.Int,
+					reflect.Int8,
+					reflect.Int16,
+					reflect.Int32,
+					reflect.Int64,
+					reflect.Uint,
+					reflect.Uint8,
+					reflect.Uint16,
+					reflect.Uint32,
+					reflect.Uint64:
+					return
+				default:
+					throw(p.node.File, p.node.ctx, check_result_err).
+						format("%s.%s out[0] expect integer, got: %s", mn, fn, ft.Out(0).Name())
+				}
 			}
 		}
 	}
@@ -305,9 +315,9 @@ func (p fragment) removeParam(a []reflect.Value, i int) []reflect.Value {
 	return append(a[:i], a[i+1:]...)
 }
 
-func (p fragment) prepareStmt(in []reflect.Value) (s *stmt) {
+func (p fragment) prepareStmt(in []reflect.Value) (s *Stmt) {
 	var index int
-	s = &stmt{
+	s = &Stmt{
 		in: in,
 	}
 	s.ctx, index = p.context(in)
@@ -337,7 +347,7 @@ func (p fragment) prepareBlocks() *blocks {
 	return bs
 }
 
-func (p fragment) parseStmt(parser *exprParser, s *stmt, nodes ...*xmlNode) (err error) {
+func (p fragment) parseStmt(parser *exprParser, s *Stmt, nodes ...*xmlNode) (err error) {
 	for _, node := range nodes {
 		if node == nil {
 			continue
@@ -366,7 +376,7 @@ func (p fragment) prepareParser(in []reflect.Value) (parser *exprParser, err err
 	return
 }
 
-func (p fragment) buildStmt(in []reflect.Value) (s *stmt, err error) {
+func (p fragment) buildStmt(in []reflect.Value) (s *Stmt, err error) {
 	defer func() {
 		err = catch(p.node.File, recover())
 	}()
@@ -384,12 +394,12 @@ func (p fragment) buildStmt(in []reflect.Value) (s *stmt, err error) {
 	return
 }
 
-func (p fragment) buildQuery(in []reflect.Value) (ss []*stmt, err error) {
+func (p fragment) buildQuery(in []reflect.Value) (ss []*Stmt, err error) {
 	defer func() {
 		err = catch(p.node.File, recover())
 	}()
 	var parser *exprParser
-	ss = make([]*stmt, 2)
+	ss = make([]*Stmt, 2)
 	bs := p.prepareBlocks()
 	cn := bs.get(dtd.BLOCK_COUNT)
 	if cn != nil {
@@ -426,7 +436,7 @@ func (p fragment) buildQuery(in []reflect.Value) (ss []*stmt, err error) {
 	return
 }
 
-func (p fragment) buildSave(in []reflect.Value) (s *stmt, err error) {
+func (p fragment) buildSave(in []reflect.Value) (s *Stmt, err error) {
 	defer func() {
 		err = catch(p.node.File, recover())
 	}()
@@ -469,21 +479,21 @@ func (p fragment) buildSave(in []reflect.Value) (s *stmt, err error) {
 	return
 }
 
-func (p fragment) parseElements(parser *exprParser, node *xmlNode, s *stmt) {
+func (p fragment) parseElements(parser *exprParser, node *xmlNode, s *Stmt) {
 	for _, child := range node.Nodes {
 		p.parseElement(parser, node, child, s)
 	}
 	return
 }
 
-func (p fragment) parseElement(parser *exprParser, parent, node *xmlNode, s *stmt) {
+func (p fragment) parseElement(parser *exprParser, parent, node *xmlNode, s *Stmt) {
 	if node.plain {
 		p.parseSQL(parser, node.ctx, node.Text, s)
 	} else {
 		s.dynamic = true
 		switch node.Name {
 		case dtd.IF:
-			_s := new(stmt)
+			_s := new(Stmt)
 			if p.parseTest(parser, node, _s) {
 				s.concatSQL(_s.sql)
 			}
@@ -520,7 +530,7 @@ func (p fragment) trimPrefixOverride(sql, prefix string) (r string, err error) {
 	return
 }
 
-func (p fragment) parseSQL(parser *exprParser, ctx antlr.ParserRuleContext, text string, s *stmt) {
+func (p fragment) parseSQL(parser *exprParser, ctx antlr.ParserRuleContext, text string, s *Stmt) {
 	if text == "" {
 		return
 	}
@@ -582,7 +592,7 @@ func (p fragment) parseSelectKey(parser *exprParser, node *xmlNode) {
 	// TODO implements
 }
 
-func (p fragment) parseTest(parser *exprParser, node *xmlNode, s *stmt) bool {
+func (p fragment) parseTest(parser *exprParser, node *xmlNode, s *Stmt) bool {
 	v, _, err := parser.parseExpression(node.ctx, node.GetAttribute(dtd.TEST))
 	if err != nil {
 		throw(p.node.File, p.node.ctx, paras_fragment_err).with(err)
@@ -598,11 +608,11 @@ func (p fragment) parseTest(parser *exprParser, node *xmlNode, s *stmt) bool {
 	return true
 }
 
-func (p fragment) parseWhere(parser *exprParser, node *xmlNode, s *stmt) {
+func (p fragment) parseWhere(parser *exprParser, node *xmlNode, s *Stmt) {
 	p.trimPrefixOverrides(parser, node, s, dtd.WHERE, "AND |OR ")
 }
 
-func (p fragment) parseChoose(parser *exprParser, node *xmlNode, s *stmt) {
+func (p fragment) parseChoose(parser *exprParser, node *xmlNode, s *Stmt) {
 	var pass bool
 	var oc int
 	for _, child := range node.Nodes {
@@ -611,7 +621,7 @@ func (p fragment) parseChoose(parser *exprParser, node *xmlNode, s *stmt) {
 		}
 		switch child.Name {
 		case dtd.WHEN:
-			_s := new(stmt)
+			_s := new(Stmt)
 			if p.parseTest(parser, child, _s) {
 				s.concatSQL(_s.sql)
 				return
@@ -636,12 +646,12 @@ func (p fragment) parseChoose(parser *exprParser, node *xmlNode, s *stmt) {
 	}
 }
 
-func (p fragment) parseTrim(parser *exprParser, node *xmlNode, s *stmt) {
+func (p fragment) parseTrim(parser *exprParser, node *xmlNode, s *Stmt) {
 	p.trimPrefixOverrides(parser, node, s, node.GetAttribute(dtd.PREFIX), node.GetAttribute(dtd.PREFIX_OVERRIDES))
 }
 
-func (p fragment) trimPrefixOverrides(parser *exprParser, node *xmlNode, res *stmt, tag, prefixes string) {
-	wr := new(stmt)
+func (p fragment) trimPrefixOverrides(parser *exprParser, node *xmlNode, res *Stmt, tag, prefixes string) {
+	wr := new(Stmt)
 	p.parseElements(parser, node, wr)
 	var err error
 	s := strings.TrimSpace(wr.sql)
@@ -657,11 +667,11 @@ func (p fragment) trimPrefixOverrides(parser *exprParser, node *xmlNode, res *st
 	}
 }
 
-func (p fragment) parseSet(parser *exprParser, node *xmlNode, res *stmt) {
+func (p fragment) parseSet(parser *exprParser, node *xmlNode, res *Stmt) {
 	p.trimPrefixOverrides(parser, node, res, dtd.SET, ",")
 }
 
-func (p fragment) parseForeach(parser *exprParser, parent, node *xmlNode, s *stmt) {
+func (p fragment) parseForeach(parser *exprParser, parent, node *xmlNode, s *Stmt) {
 	
 	ca := node.GetAttribute(dtd.COLLECTION)
 	cv, ok := parser.paramsStack.getVar(ca)
@@ -743,14 +753,14 @@ func (p fragment) bindForeachParams(parser *exprParser, indexParam, itemParam *p
 func (p fragment) parseForeachChild(parser *exprParser, parent, node *xmlNode, frags *[]string) {
 	r := ""
 	for _, child := range node.Nodes {
-		br := new(stmt)
+		br := new(Stmt)
 		p.parseElement(parser, parent, child, br)
 		r += br.sql
 	}
 	*frags = append(*frags, r)
 }
 
-func (p fragment) parseInserter(parser *exprParser, node *xmlNode, s *stmt) {
+func (p fragment) parseInserter(parser *exprParser, node *xmlNode, s *Stmt) {
 	var it = new(inserter)
 	var err error
 	table, _, err := parser.parseExpression(node.ctx, node.GetAttribute(dtd.TABLE))
@@ -851,7 +861,7 @@ func (p fragment) reflectTag() string {
 }
 
 // build inserter sql
-func (p fragment) buildInserterSQL(parser *exprParser, ctx antlr.ParserRuleContext, it *inserter, s *stmt) {
+func (p fragment) buildInserterSQL(parser *exprParser, ctx antlr.ParserRuleContext, it *inserter, s *Stmt) {
 	fl := make([]string, len(it.fl))
 	for i, v := range it.fl {
 		fl[i] = p.quoteFiled(v)

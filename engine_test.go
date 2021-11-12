@@ -3,7 +3,7 @@ package gobatis
 import (
 	"fmt"
 	"github.com/AlekSi/pointer"
-	"github.com/gobatis/gobatis/test"
+	"github.com/gobatis/gobatis/test/postgresql"
 	"github.com/jackc/pgtype"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/require"
@@ -39,10 +39,10 @@ type Product struct {
 }
 
 //type StmtMapper struct {
-//	TestInsertStmtTx  func(tx *Tx, user *test.User) error
-//	TestInsertStmt2Tx func(tx *Tx, user *test.User) error
-//	TestQueryStmtTx   func(tx *Tx, name string, age int64) ([]*test.User, error)
-//	TestQueryStmt2Tx  func(tx *Tx, name string, age int64) ([]*test.User, error)
+//	TestInsertStmtTx  func(tx *Tx, user *postgresql.User) error
+//	TestInsertStmt2Tx func(tx *Tx, user *postgresql.User) error
+//	TestQueryStmtTx   func(tx *Tx, name string, age int64) ([]*postgresql.User, error)
+//	TestQueryStmt2Tx  func(tx *Tx, name string, age int64) ([]*postgresql.User, error)
 //}
 
 func init() {
@@ -71,7 +71,7 @@ func TestEngine(t *testing.T) {
 		require.NoError(t, err)
 	}()
 	
-	_testMapper := new(test.TestMapper)
+	_testMapper := new(postgresql.TestMapper)
 	err = engine.BindMapper(_testMapper)
 	require.NoError(t, err)
 	
@@ -104,47 +104,47 @@ func TestStmt(t *testing.T) {
 		engine.Close()
 	}()
 	
-	stmtMapper := new(test.StmtMapper)
+	stmtMapper := new(postgresql.StmtMapper)
 	err = engine.BindMapper(stmtMapper)
 	require.NoError(t, err)
 	
-	err = stmtMapper.TestInsertStmt(&test.User{
+	err = stmtMapper.TestInsertStmt(&postgresql.User{
 		Name: "tom",
 		Age:  18,
 	})
 	require.NoError(t, err)
 	
-	err = stmtMapper.TestInsertStmt(&test.User{
+	err = stmtMapper.TestInsertStmt(&postgresql.User{
 		Name: "michael",
 		Age:  8,
 	})
 	require.NoError(t, err)
 	
-	err = stmtMapper.TestInsertStmt2(&test.User{
+	err = stmtMapper.TestInsertStmt2(&postgresql.User{
 		Name: "jack",
 		Age:  2,
 	})
 	require.NoError(t, err)
 	
-	err = stmtMapper.TestInsertStmt2(&test.User{
+	err = stmtMapper.TestInsertStmt2(&postgresql.User{
 		Name: "jack",
 		Age:  3,
 	})
 	require.NoError(t, err)
 	
-	err = stmtMapper.TestInsertStmt2(&test.User{
+	err = stmtMapper.TestInsertStmt2(&postgresql.User{
 		Name: "jack",
 		Age:  4,
 	})
 	require.NoError(t, err)
 	
-	err = stmtMapper.TestInsertStmt2(&test.User{
+	err = stmtMapper.TestInsertStmt2(&postgresql.User{
 		Name: "default",
 		Age:  8,
 	})
 	require.NoError(t, err)
 	
-	err = stmtMapper.TestInsertStmt2(&test.User{
+	err = stmtMapper.TestInsertStmt2(&postgresql.User{
 		Name: "default",
 		Age:  9,
 		From: "usa",
@@ -189,25 +189,25 @@ func TestStmt(t *testing.T) {
 //		}
 //	}()
 //
-//	err = stmtMapper.TestInsertStmtTx(tx, &test.User{
+//	err = stmtMapper.TestInsertStmtTx(tx, &postgresql.User{
 //		Name: "tom_tx",
 //		Age:  18,
 //	})
 //	require.NoError(t, err)
 //
-//	err = stmtMapper.TestInsertStmtTx(tx, &test.User{
+//	err = stmtMapper.TestInsertStmtTx(tx, &postgresql.User{
 //		Name: "michael_tx",
 //		Age:  8,
 //	})
 //	require.NoError(t, err)
 //
-//	err = stmtMapper.TestInsertStmt2Tx(tx, &test.User{
+//	err = stmtMapper.TestInsertStmt2Tx(tx, &postgresql.User{
 //		Name: "default_tx",
 //		Age:  8,
 //	})
 //	require.NoError(t, err)
 //
-//	err = stmtMapper.TestInsertStmt2Tx(tx, &test.User{
+//	err = stmtMapper.TestInsertStmt2Tx(tx, &postgresql.User{
 //		Name: "default_tx",
 //		Age:  9,
 //	})
@@ -233,14 +233,14 @@ func TestStringArray(t *testing.T) {
 	defer func() {
 		engine.Close()
 	}()
-	m := new(test.StmtMapper)
+	m := new(postgresql.StmtMapper)
 	err = engine.BindMapper(m)
 	require.NoError(t, err)
 	
 	tags := pgtype.TextArray{}
 	err = tags.Set([]string{"a", "b"})
 	require.NoError(t, err)
-	err = m.InsertStringArray(&test.User{
+	err = m.InsertStringArray(&postgresql.User{
 		Id:   0,
 		Name: "tags",
 		Tags: tags,
@@ -254,8 +254,8 @@ func TestStringArray(t *testing.T) {
 	//}
 }
 
-func testSelectInsert(t *testing.T, _testMapper *test.TestMapper) {
-	id, err := _testMapper.SelectInsert(test.Entity{
+func testSelectInsert(t *testing.T, _testMapper *postgresql.TestMapper) {
+	id, err := _testMapper.SelectInsert(postgresql.Entity{
 		Int8:                     1,
 		BigInt:                   2,
 		Int:                      3,
@@ -284,12 +284,12 @@ func testSelectInsert(t *testing.T, _testMapper *test.TestMapper) {
 	}
 }
 
-func testSelectInsertPointer(t *testing.T, _testMapper *test.TestMapper) {
+func testSelectInsertPointer(t *testing.T, _testMapper *postgresql.TestMapper) {
 	dec := decimal.NewFromFloat(3.14)
 	now := time.Now()
 	interval := 100 * time.Second
 	
-	id, err := _testMapper.SelectInsertPointer(&test.EntityPointer{
+	id, err := _testMapper.SelectInsertPointer(&postgresql.EntityPointer{
 		Int8:                     pointer.ToInt8(1),
 		BigInt:                   pointer.ToInt64(2),
 		Int:                      pointer.ToInt(3),
@@ -318,8 +318,8 @@ func testSelectInsertPointer(t *testing.T, _testMapper *test.TestMapper) {
 	}
 }
 
-func testSelectInsertForeachSlice(t *testing.T, _testMapper *test.TestMapper) {
-	id, err := _testMapper.SelectInsertForeachSlice(test.Entity{
+func testSelectInsertForeachSlice(t *testing.T, _testMapper *postgresql.TestMapper) {
+	id, err := _testMapper.SelectInsertForeachSlice(postgresql.Entity{
 		Int8: 1,
 	}, []string{"tom", "alice"})
 	require.NoError(t, err)
@@ -328,12 +328,12 @@ func testSelectInsertForeachSlice(t *testing.T, _testMapper *test.TestMapper) {
 	}
 }
 
-func testSelectInsertForeachSlicePointer(t *testing.T, _testMapper *test.TestMapper) {
+func testSelectInsertForeachSlicePointer(t *testing.T, _testMapper *postgresql.TestMapper) {
 	enums := [][]*string{
 		{pointer.ToString("tom1"), pointer.ToString("alice1")},
 		{pointer.ToString("tom2"), pointer.ToString("alice2")},
 	}
-	id, err := _testMapper.SelectInsertForeachSlicePointer(&test.EntityPointer{
+	id, err := _testMapper.SelectInsertForeachSlicePointer(&postgresql.EntityPointer{
 		Int8: pointer.ToInt8(1),
 	}, &enums)
 	require.NoError(t, err)
@@ -342,12 +342,12 @@ func testSelectInsertForeachSlicePointer(t *testing.T, _testMapper *test.TestMap
 	}
 }
 
-func testSelectInsertForeachMap(t *testing.T, _testMapper *test.TestMapper) {
+func testSelectInsertForeachMap(t *testing.T, _testMapper *postgresql.TestMapper) {
 	enums := map[string][]string{
 		"first":  {"f1", "f2"},
 		"second": {"fs", "s2"},
 	}
-	id, err := _testMapper.SelectInsertForeachMap(test.Entity{
+	id, err := _testMapper.SelectInsertForeachMap(postgresql.Entity{
 		Int8: 1,
 	}, enums)
 	require.NoError(t, err)
@@ -356,12 +356,12 @@ func testSelectInsertForeachMap(t *testing.T, _testMapper *test.TestMapper) {
 	}
 }
 
-func testSelectInsertForeachMapPointer(t *testing.T, _testMapper *test.TestMapper) {
+func testSelectInsertForeachMapPointer(t *testing.T, _testMapper *postgresql.TestMapper) {
 	enums := map[string][]*string{
 		"first":  {pointer.ToString("f1"), pointer.ToString("f2")},
 		"second": {pointer.ToString("fs"), pointer.ToString("s2")},
 	}
-	id, err := _testMapper.SelectInsertForeachMapPointer(&test.EntityPointer{
+	id, err := _testMapper.SelectInsertForeachMapPointer(&postgresql.EntityPointer{
 		Int8: pointer.ToInt8(1),
 	}, &enums)
 	require.NoError(t, err)
@@ -370,8 +370,8 @@ func testSelectInsertForeachMapPointer(t *testing.T, _testMapper *test.TestMappe
 	}
 }
 
-func testSelectInsertForeachStruct(t *testing.T, _testMapper *test.TestMapper) {
-	id, err := _testMapper.SelectInsertForeachStruct(test.Entity{
+func testSelectInsertForeachStruct(t *testing.T, _testMapper *postgresql.TestMapper) {
+	id, err := _testMapper.SelectInsertForeachStruct(postgresql.Entity{
 		Int8: 1,
 		Char: "Hello",
 	})
@@ -381,8 +381,8 @@ func testSelectInsertForeachStruct(t *testing.T, _testMapper *test.TestMapper) {
 	}
 }
 
-func testSelectInsertForeachStructPointer(t *testing.T, _testMapper *test.TestMapper) {
-	id, err := _testMapper.SelectInsertForeachStructPointer(&test.EntityPointer{
+func testSelectInsertForeachStructPointer(t *testing.T, _testMapper *postgresql.TestMapper) {
+	id, err := _testMapper.SelectInsertForeachStructPointer(&postgresql.EntityPointer{
 		Char: pointer.ToString("Hello"),
 	})
 	require.NoError(t, err)
@@ -391,12 +391,12 @@ func testSelectInsertForeachStructPointer(t *testing.T, _testMapper *test.TestMa
 	}
 }
 
-//func testSelectInsertContextTx(t *testing.T, engine *Engine, _testMapper *test.TestMapper) {
+//func testSelectInsertContextTx(t *testing.T, engine *Engine, _testMapper *postgresql.TestMapper) {
 //	ctx := context.WithValue(context.Background(), "name", "gobatis")
 //	tx, err := engine.Master().Begin()
 //	require.NoError(t, err)
 //	t.Log(_testMapper.SelectInsertContextTx == nil)
-//	id, err := _testMapper.SelectInsertContextTx(ctx, tx.Tx(), test.Entity{
+//	id, err := _testMapper.SelectInsertContextTx(ctx, tx.Tx(), postgresql.Entity{
 //		Char: "hello",
 //	})
 //	require.NoError(t, err)
@@ -407,7 +407,7 @@ func testSelectInsertForeachStructPointer(t *testing.T, _testMapper *test.TestMa
 //	}
 //}
 
-func testInsert(t *testing.T, _testMapper *test.TestMapper) {
+func testInsert(t *testing.T, _testMapper *postgresql.TestMapper) {
 	rows, err := _testMapper.Insert("Insert", "red", "yellow", "blue")
 	require.NoError(t, err)
 	if rows != 1 {
@@ -415,21 +415,21 @@ func testInsert(t *testing.T, _testMapper *test.TestMapper) {
 	}
 }
 
-func testSelectRow(t *testing.T, _testMapper *test.TestMapper) {
+func testSelectRow(t *testing.T, _testMapper *postgresql.TestMapper) {
 	tChar, tText, err := _testMapper.SelectRow(950)
 	require.NoError(t, err)
 	require.Equal(t, tChar, "hello")
 	require.Equal(t, tText, "world")
 }
 
-func testSelectRowPointer(t *testing.T, _testMapper *test.TestMapper) {
+func testSelectRowPointer(t *testing.T, _testMapper *postgresql.TestMapper) {
 	tChar, tText, err := _testMapper.SelectRowPointer(pointer.ToInt(950))
 	require.NoError(t, err)
 	require.Equal(t, *tChar, "hello")
 	require.Equal(t, *tText, "world")
 }
 
-func testSelectRows(t *testing.T, _testMapper *test.TestMapper) {
+func testSelectRows(t *testing.T, _testMapper *postgresql.TestMapper) {
 	tChar, tText, err := _testMapper.SelectRows(363, 364)
 	require.NoError(t, err)
 	for _, v := range tChar {
@@ -442,7 +442,7 @@ func testSelectRows(t *testing.T, _testMapper *test.TestMapper) {
 	}
 }
 
-func testSelectRowsPointer(t *testing.T, _testMapper *test.TestMapper) {
+func testSelectRowsPointer(t *testing.T, _testMapper *postgresql.TestMapper) {
 	tChar, tText, err := _testMapper.SelectRowsPointer(pointer.ToInt(47), pointer.ToInt(50))
 	require.NoError(t, err)
 	for _, v := range tChar {
@@ -453,7 +453,7 @@ func testSelectRowsPointer(t *testing.T, _testMapper *test.TestMapper) {
 	}
 }
 
-func testSelectStruct(t *testing.T, _testMapper *test.TestMapper) {
+func testSelectStruct(t *testing.T, _testMapper *postgresql.TestMapper) {
 	item, err := _testMapper.SelectStruct(47)
 	_ = item
 	require.NoError(t, err)
@@ -469,7 +469,7 @@ func testSelectStruct(t *testing.T, _testMapper *test.TestMapper) {
 	//fmt.Println(string(d))
 }
 
-func testSelectStructs(t *testing.T, _testMapper *test.TestMapper) {
+func testSelectStructs(t *testing.T, _testMapper *postgresql.TestMapper) {
 	item, err := _testMapper.SelectStructs(47)
 	_ = item
 	require.NoError(t, err)
@@ -485,8 +485,8 @@ func testSelectStructs(t *testing.T, _testMapper *test.TestMapper) {
 	//fmt.Println(string(d))
 }
 
-var insertMapper = new(test.InsertMapper)
-var queryMapper = new(test.QueryMapper)
+var insertMapper = new(postgresql.InsertMapper)
+var queryMapper = new(postgresql.QueryMapper)
 
 func TestRunning(t *testing.T) {
 	engine := NewPostgresql("postgresql://postgres:postgres@127.0.0.1:5432/gobatis?connect_timeout=10&sslmode=disable")
@@ -517,7 +517,7 @@ func TestRunning(t *testing.T) {
 }
 
 func InsertR001(t *testing.T) {
-	err := insertMapper.InsertR001(&test.Member{
+	err := insertMapper.InsertR001(&postgresql.Member{
 		Username: "InsertR001",
 		Password: "123456",
 		Status:   1,
@@ -526,7 +526,7 @@ func InsertR001(t *testing.T) {
 }
 
 func InsertR002(t *testing.T) {
-	id, err := insertMapper.InsertR002(&test.Member{
+	id, err := insertMapper.InsertR002(&postgresql.Member{
 		Username: "InsertR002",
 		Password: "123456",
 		Status:   1,
@@ -536,7 +536,7 @@ func InsertR002(t *testing.T) {
 }
 
 func InsertR011(t *testing.T) {
-	err := insertMapper.InsertR011(&test.Member{
+	err := insertMapper.InsertR011(&postgresql.Member{
 		Username: "InsertR011",
 		Password: "123456",
 		Status:   1,
@@ -545,7 +545,7 @@ func InsertR011(t *testing.T) {
 }
 
 func InsertR012(t *testing.T) {
-	id, err := insertMapper.InsertR012(&test.Member{
+	id, err := insertMapper.InsertR012(&postgresql.Member{
 		Username: "InsertR012",
 		Password: "123456",
 		Status:   1,

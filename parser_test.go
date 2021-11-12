@@ -118,16 +118,6 @@ func TestParseConfig(t *testing.T) {
 	require.NoError(t, parseConfig(engine, "gobatis.xml", defaultConfigXML))
 }
 
-func TestCorrectParseFragment(t *testing.T) {
-	//engine := NewEngine(&DB{})
-	//err := parseMapper(engine, "defaultCorrectTestMapper", defaultCorrectTestMapper)
-	//require.NoError(t, err)
-	//
-	//execTestFragment(t, engine, []testFragment{
-	//	{Id: "QueryTestByStatues", Parameter: []interface{}{[]string{"ok", "success"}}, SQL: "select * from test where status in('$1','$2') and name > 1 and names in('$3','$4')", Vars: 4},
-	//})
-}
-
 func TestErrorParseMapper(t *testing.T) {
 	engine := NewEngine(&DB{})
 	execTestErrorMapper(t, engine, []testMapper{
@@ -147,6 +137,7 @@ func TestCorrectParseExprExpression(t *testing.T) {
 		{In: []interface{}{1, 2}, Parameter: "a:int,b", Expr: "a + b", Result: 3},
 		{In: []interface{}{1, 2}, Parameter: "a,b:int", Expr: "a + b", Result: 3},
 		{In: []interface{}{1, 2}, Parameter: "a:int,b:int", Expr: "a + b", Result: 3},
+		
 		// TODO Check must export
 		{In: []interface{}{struct{ b int }{b: 1}}, Parameter: "a", Expr: "a.b", Result: 1, Err: expr_syntax_err},
 		
@@ -176,6 +167,7 @@ func TestCorrectParseExprExpression(t *testing.T) {
 		{In: []interface{}{1, uint16(1)}, Parameter: "a,b", Expr: "a + b", Result: 2},
 		{In: []interface{}{1, uint32(1)}, Parameter: "a,b", Expr: "a + b", Result: 2},
 		{In: []interface{}{1, uint64(1)}, Parameter: "a,b", Expr: "a + b", Result: 2},
+		
 		// TODO FIX
 		{In: []interface{}{float32(1), 1}, Parameter: "a,b", Expr: "a + b", Result: float32(2), Err: expr_syntax_err},
 		{In: []interface{}{float64(1), 1}, Parameter: "a,b", Expr: "a + b", Result: float64(2), Err: expr_syntax_err},
