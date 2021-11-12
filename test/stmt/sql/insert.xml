@@ -11,16 +11,11 @@
     </insert>
 
     <insert id="InsertS003">
-        insert into a(b,c)
-        values(
-        'b',
-        <if test="false">
+        insert into a(b,c) values( 'b',<if test="0">
+            'c0'
+        </if><if test="1">
             'c1'
-        </if>
-        <if test="true">
-            'c2'
-        </if>
-        )
+        </if>)
     </insert>
 
     <insert id="InsertS004">

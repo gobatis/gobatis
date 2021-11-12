@@ -80,6 +80,15 @@ func (p *Engine) RegisterBundle(bundle Bundle) error {
 	return p.parseBundle()
 }
 
+func (p *Engine) RegisterNamespaceBundle(namespace string, bundle Bundle) error {
+	p.bundle = bundle
+	return p.parseBundle()
+}
+
+func (p *Engine) BindNamespaceMapper(namespace string, ptr ...interface{}) (err error) {
+	return
+}
+
 func (p *Engine) Init(bundle Bundle) (err error) {
 	
 	p.InitLogger()
@@ -146,49 +155,64 @@ func (p *Engine) BindMapper(ptr ...interface{}) (err error) {
 	return
 }
 
-func (p *Engine) bindMapper(mapper interface{}) (err error) {
-	
-	rv := reflect.ValueOf(mapper)
-	if rv.Kind() != reflect.Ptr || rv.Elem().Kind() != reflect.Struct {
-		return fmt.Errorf("exptect *struct, got: %s", rv.Type())
+func (p *Engine) bindMapper(mapper interface{}) error {
+	pv := reflect.ValueOf(mapper)
+	if pv.Kind() != reflect.Ptr || pv.Elem().Kind() != reflect.Struct {
+		return fmt.Errorf("exptect *struct, got: %s", pv.Type())
 	}
-	rv = rv.Elem()
-	rt := rv.Type()
-	for i := 0; i < rt.NumField(); i++ {
-		if rv.Field(i).Kind() != reflect.Func {
+	return p.proxyMapper(pv.Elem(), pv.Elem().Type())
+}
+
+func (p *Engine) proxyMapper(pv reflect.Value, pt reflect.Type) (err error) {
+	for i := 0; i < pt.NumField(); i++ {
+		if pv.Field(i).Kind() != reflect.Func {
+			if pv.Field(i).Kind() == reflect.Ptr && pv.Field(i).Elem().Kind() == reflect.Struct {
+				err = p.proxyMapper(pv.Field(i).Elem(), pv.Field(i).Elem().Type())
+				if err != nil {
+					return
+				}
+			}
 			continue
 		}
-		must := false
-		stmt := false
-		id := rt.Field(i).Name
-		if strings.HasPrefix(id, must_prefix) {
-			id = strings.TrimPrefix(id, must_prefix)
-			must = true
+		err = p.proxyMethod(pt, pt.Field(i), pv.Field(i))
+		if err != nil {
+			return
 		}
-		if strings.HasSuffix(id, stmt_suffix) {
-			id = strings.TrimSuffix(id, stmt_suffix)
-			stmt = true
-		}
-		if strings.HasSuffix(id, tx_suffix) {
-			id = strings.TrimSuffix(id, tx_suffix)
-		}
-		m, ok := p.fm.get(id)
-		if !ok {
-			if must {
-				return fmt.Errorf("%s.(Must)%s statement not defined", rt.Name(), id)
-			}
-			return fmt.Errorf("%s.%s statement not defined", rt.Name(), id)
-		}
-		m = m.fork()
-		m.must = must
-		m.stmt = stmt
-		m.id = rt.Field(i).Name
-		ft := rv.Field(i).Type()
-		m.checkParameter(ft, rt.Name(), rv.Type().Field(i).Name)
-		m.checkResult(ft, rt.Name(), rv.Type().Field(i).Name)
-		m.proxy(rv.Field(i))
 	}
 	return
+}
+
+func (p *Engine) proxyMethod(pt reflect.Type, t reflect.StructField, v reflect.Value) error {
+	must := false
+	stmt := false
+	id := t.Name
+	if strings.HasPrefix(id, must_prefix) {
+		id = strings.TrimPrefix(id, must_prefix)
+		must = true
+	}
+	if strings.HasSuffix(id, stmt_suffix) {
+		id = strings.TrimSuffix(id, stmt_suffix)
+		stmt = true
+	}
+	if strings.HasSuffix(id, tx_suffix) {
+		id = strings.TrimSuffix(id, tx_suffix)
+	}
+	m, ok := p.fm.get(id)
+	if !ok {
+		if must {
+			return fmt.Errorf("%s.(Must)%s statement not defined", pt.Name(), id)
+		}
+		return fmt.Errorf("%s.%s statement not defined", pt.Name(), id)
+	}
+	m = m.fork()
+	m.must = must
+	m.stmt = stmt
+	m.id = t.Name
+	ft := v.Type()
+	m.checkParameter(ft, pt.Name(), t.Name)
+	m.checkResult(ft, pt.Name(), t.Name)
+	m.proxy(v)
+	return nil
 }
 
 func (p *Engine) parseConfig() (err error) {

@@ -1,4 +1,41 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//gobatis.co//DTD Mapper 1.0//EN" "gobatis.co/dtd/mapper.dtd">
 <mapper>
+    <update id="UpdateS001">
+        update a set b='b', c='c' where id = 1;
+    </update>
+
+    <update id="UpdateS002">
+        <bind name="table" value="'a'"/>
+        update ${table} set b='b', c='c' where id = 1;
+    </update>
+
+    <update id="UpdateS003">
+        update a set  b = 'b', c =<if test="0">
+            'c0'
+        </if><if test="1">
+            'c1'
+        </if> where id = 1;
+    </update>
+
+    <update id="UpdateS004">
+        update into a(b,c)
+        values(
+        'b',
+        <choose>
+            <when test="true">
+                'c1'
+            </when>
+            <otherwise>
+                'c2'
+            </otherwise>
+        </choose>
+        )
+    </update>
+
+    <update id="UpdateS005" parameter="items:array">
+        update into a(b,c) values <foreach collection="items" item="item" separator=",">
+            (#{item.B},#{item.C})
+        </foreach>
+    </update>
 </mapper>
