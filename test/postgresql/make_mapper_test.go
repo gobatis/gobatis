@@ -29,16 +29,34 @@ func TestInsert(t *testing.T) {
 		err = mapper.InsertParameterBigintInt64PointerOriginal(pointer.ToInt64(_mock.Int64()))
 		require.NoError(t, err)
 
+		err = mapper.InsertArrayParameterBigintInt64([]int64{_mock.Int64(), _mock.Int64(), _mock.Int64()})
+		require.NoError(t, err)
+
+		err = mapper.InsertArrayParameterBigintInt64PointerOriginal([]*int64{pointer.ToInt64(_mock.Int64()), pointer.ToInt64(_mock.Int64()), pointer.ToInt64(_mock.Int64())})
+		require.NoError(t, err)
+
 		err = mapper.InsertParameterCharacterString(_mock.String())
 		require.NoError(t, err)
 
 		err = mapper.InsertParameterCharacterStringPointerOriginal(pointer.ToString(_mock.String()))
 		require.NoError(t, err)
 
+		err = mapper.InsertArrayParameterCharacterString([]string{_mock.String(), _mock.String(), _mock.String()})
+		require.NoError(t, err)
+
+		err = mapper.InsertArrayParameterCharacterStringPointerOriginal([]*string{pointer.ToString(_mock.String()), pointer.ToString(_mock.String()), pointer.ToString(_mock.String())})
+		require.NoError(t, err)
+
 		err = mapper.InsertParameterCharacterVaryingString(_mock.String())
 		require.NoError(t, err)
 
 		err = mapper.InsertParameterCharacterVaryingStringPointerOriginal(pointer.ToString(_mock.String()))
+		require.NoError(t, err)
+
+		err = mapper.InsertArrayParameterCharacterVaryingString([]string{_mock.String(), _mock.String(), _mock.String()})
+		require.NoError(t, err)
+
+		err = mapper.InsertArrayParameterCharacterVaryingStringPointerOriginal([]*string{pointer.ToString(_mock.String()), pointer.ToString(_mock.String()), pointer.ToString(_mock.String())})
 		require.NoError(t, err)
 
 	}

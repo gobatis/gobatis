@@ -22,6 +22,26 @@
     insert into types(t_bigint) values(${var_bigint});
 </insert>
 
+<insert id="InsertArrayParameterBigintInt64" parameter="var_bigint">
+    insert into array_types(t_bigint) values(#{var_bigint});
+</insert>
+
+<insert id="InsertArrayParameterBigintInt64PointerOriginal" parameter="var_bigint">
+    insert into array_types(t_bigint) values(#{var_bigint});
+</insert>
+
+<insert id="InsertArrayEntityBigintInt64" parameter="var_bigint">
+    insert into array_types(t_bigint) values(#{var_bigint});
+</insert>
+
+<insert id="InsertArrayEntityBigintInt64PointerOriginal" parameter="var_bigint">
+    insert into array_types(t_bigint) values(#{var_bigint});
+</insert>
+
+<insert id="InsertArrayParameterBigintInt64Embed" parameter="var_bigint">
+    insert into array_types(t_bigint) values(#{var_bigint});
+</insert>
+
 <insert id="InsertParameterCharacterString" parameter="var_character">
     insert into types(t_character) values(#{var_character});
 </insert>
@@ -42,6 +62,26 @@
     insert into types(t_character) values(${var_character});
 </insert>
 
+<insert id="InsertArrayParameterCharacterString" parameter="var_character">
+    insert into array_types(t_character) values(#{var_character});
+</insert>
+
+<insert id="InsertArrayParameterCharacterStringPointerOriginal" parameter="var_character">
+    insert into array_types(t_character) values(#{var_character});
+</insert>
+
+<insert id="InsertArrayEntityCharacterString" parameter="var_character">
+    insert into array_types(t_character) values(#{var_character});
+</insert>
+
+<insert id="InsertArrayEntityCharacterStringPointerOriginal" parameter="var_character">
+    insert into array_types(t_character) values(#{var_character});
+</insert>
+
+<insert id="InsertArrayParameterCharacterStringEmbed" parameter="var_character">
+    insert into array_types(t_character) values(#{var_character});
+</insert>
+
 <insert id="InsertParameterCharacterVaryingString" parameter="var_character_varying">
     insert into types(t_character_varying) values(#{var_character_varying});
 </insert>
@@ -60,6 +100,26 @@
 
 <insert id="InsertParameterCharacterVaryingStringEmbed" parameter="var_character_varying">
     insert into types(t_character_varying) values(${var_character_varying});
+</insert>
+
+<insert id="InsertArrayParameterCharacterVaryingString" parameter="var_character_varying">
+    insert into array_types(t_character_varying) values(#{var_character_varying});
+</insert>
+
+<insert id="InsertArrayParameterCharacterVaryingStringPointerOriginal" parameter="var_character_varying">
+    insert into array_types(t_character_varying) values(#{var_character_varying});
+</insert>
+
+<insert id="InsertArrayEntityCharacterVaryingString" parameter="var_character_varying">
+    insert into array_types(t_character_varying) values(#{var_character_varying});
+</insert>
+
+<insert id="InsertArrayEntityCharacterVaryingStringPointerOriginal" parameter="var_character_varying">
+    insert into array_types(t_character_varying) values(#{var_character_varying});
+</insert>
+
+<insert id="InsertArrayParameterCharacterVaryingStringEmbed" parameter="var_character_varying">
+    insert into array_types(t_character_varying) values(#{var_character_varying});
 </insert>
 
 </mapper>

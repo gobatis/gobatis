@@ -31,3 +31,7 @@ func gofmt(buf string) string {
 	}
 	return string(formatted)
 }
+
+func arrayType(t string) string {
+	return "[]" + t
+}

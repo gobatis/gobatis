@@ -20,12 +20,10 @@ func makePostgresqlEntity() {
 	var entities []*Entity
 	entities = append(entities, &Entity{Name: "TypeOriginal"})
 	entities = append(entities, &Entity{Name: "TypePointer"})
+	entities = append(entities, &Entity{Name: "ArrayTypeOriginal"})
+	entities = append(entities, &Entity{Name: "ArrayTypePointer"})
 	for _, v := range PostgresqlTypes {
-		param := &Param{
-			Name: fmt.Sprintf("T%s", strcase.ToCamel(v.Type)),
-			Type: v.Default,
-			Tag:  fmt.Sprintf("t_%s", v.Type),
-		}
+		param := &Param{Name: fmt.Sprintf("T%s", strcase.ToCamel(v.Type)), Type: v.Default, Tag: fmt.Sprintf("t_%s", v.Type)}
 		entities[0].Params = append(entities[0].Params, param)
 		entities[1].Params = append(entities[1].Params, param.forkType("*"+param.Type))
 		entities = append(entities, &Entity{
@@ -47,16 +45,15 @@ func makePostgresqlXML() {
 		insertStatements []*Statement
 		selectStatements []*Statement
 	)
-	
 	for _, v := range PostgresqlTypes {
-		iname := SName{
+		iName := SName{
 			Action: "Insert",
 			Name:   strcase.ToCamel(v.Type),
 			Type:   strcase.ToCamel(v.Default),
 		}
 		insert := &Statement{
 			Tag:           "insert",
-			Id:            iname.ParameterOriginal(),
+			Id:            iName.ParameterOriginal(false),
 			ShowParameter: true,
 			Params: []Param{
 				{
@@ -65,14 +62,14 @@ func makePostgresqlXML() {
 			},
 			Sql: fmt.Sprintf("insert into types(%s) values(#{%s});", fmt.Sprintf("t_%s", v.Type), fmt.Sprintf("var_%s", v.Type)),
 		}
-		sname := SName{
+		sName := SName{
 			Action: "Select",
 			Name:   strcase.ToCamel(v.Type),
 			Type:   strcase.ToCamel(v.Default),
 		}
 		_select := &Statement{
 			Tag:           "select",
-			Id:            sname.ParameterOriginal(),
+			Id:            sName.ParameterOriginal(false),
 			ShowParameter: true,
 			Params: []Param{
 				{
@@ -83,16 +80,30 @@ func makePostgresqlXML() {
 		}
 		insertStatements = append(insertStatements,
 			insert,
-			insert.ForkId(iname.ParameterPointerOriginal()),
-			insert.ForkId(iname.EntityOriginal()),
-			insert.ForkId(iname.EntityPointerOriginal()),
-			insert.ForkId(iname.ParameterEmbed()).ForkSql(fmt.Sprintf("insert into types(%s) values(${%s});", fmt.Sprintf("t_%s", v.Type), fmt.Sprintf("var_%s", v.Type))),
+			insert.ForkId(iName.ParameterPointerOriginal(false)),
+			insert.ForkId(iName.EntityOriginal(false)),
+			insert.ForkId(iName.EntityPointerOriginal(false)),
+			insert.ForkId(iName.ParameterEmbed(false)).ForkSql(
+				fmt.Sprintf("insert into types(%s) values(${%s});", fmt.Sprintf("t_%s", v.Type), fmt.Sprintf("var_%s", v.Type)),
+			),
 		)
+		if v.Array {
+			insert = insert.ForkSql(
+				fmt.Sprintf("insert into array_types(%s) values(#{%s});", fmt.Sprintf("t_%s", v.Type), fmt.Sprintf("var_%s", v.Type)),
+			)
+			insertStatements = append(insertStatements,
+				insert.ForkId(iName.ParameterOriginal(true)),
+				insert.ForkId(iName.ParameterPointerOriginal(true)),
+				insert.ForkId(iName.EntityOriginal(true)),
+				insert.ForkId(iName.EntityPointerOriginal(true)),
+				insert.ForkId(iName.ParameterEmbed(true)),
+			)
+		}
 		selectStatements = append(selectStatements,
 			_select,
-			_select.ForkId(sname.ParameterPointerOriginal()),
-			_select.ForkId(sname.EntityOriginal()),
-			_select.ForkId(sname.EntityPointerOriginal()),
+			_select.ForkId(sName.ParameterPointerOriginal(false)),
+			_select.ForkId(sName.EntityOriginal(false)),
+			_select.ForkId(sName.EntityPointerOriginal(false)),
 		)
 	}
 	RenderStatements("./test/postgresql/sql/make_insert.xml", insertStatements)
@@ -108,26 +119,38 @@ func makePostgresqlMapper() {
 			"context",
 		},
 	}
-	var methods []*Method
+	var (
+		insertMethods []*Method
+		selectMethods []*Method
+	)
 	for _, v := range PostgresqlTypes {
-		sname := SName{
-			Action: "Insert",
-			Name:   strcase.ToCamel(v.Type),
-			Type:   strcase.ToCamel(v.Default),
+		iName := SName{Action: "Insert", Name: strcase.ToCamel(v.Type), Type: strcase.ToCamel(v.Default)}
+		sName := SName{Action: "Select", Name: strcase.ToCamel(v.Type), Type: strcase.ToCamel(v.Default)}
+		insertMethods = append(insertMethods,
+			&Method{Name: iName.ParameterOriginal(false), In: []Param{{Name: fmt.Sprintf("var_%s", v.Type), Type: v.Default}}, Out: []Param{{Type: "error"}}},
+			&Method{Name: iName.ParameterPointerOriginal(false), In: []Param{{Name: fmt.Sprintf("var_%s", v.Type), Type: "*" + v.Default}}, Out: []Param{{Type: "error"}}},
+			//&Method{Name: iName.EntityOriginal(false), In: []Param{{Name: fmt.Sprintf("var_%s", v.Type), Type: v.Default}}, Out: []Param{{Type: "error"}}},
+			//&Method{Name: iName.EntityPointerOriginal(false), In: []Param{{Name: fmt.Sprintf("var_%s", v.Type), Type: "*" + v.Default}}, Out: []Param{{Type: "error"}}},
+			//&Method{Name: iName.ParameterTx(false), In: []Param{{Name: "tx", Type: "sql.Tx"}, {Name: fmt.Sprintf("var_%s", v.Type), Type: v.Default}}, Out: []Param{{Type: "error"}}},
+			//&Method{Name: iName.ParameterRows(false), In: []Param{{Name: fmt.Sprintf("var_%s", v.Type), Type: v.Default}}, Out: []Param{{Type: "int"}, {Type: "error"}}},
+			//&Method{Name: iName.ParameterContext(false), In: []Param{{Name: "ctx", Type: "context.Context"}, {Name: fmt.Sprintf("var_%s", v.Type), Type: v.Default}}, Out: []Param{{Type: "error"}}},
+			//&Method{Name: iName.ParameterStmt(false), In: []Param{{Name: fmt.Sprintf("var_%s", v.Type), Type: v.Default}}, Out: []Param{{Name: "stmt", Type: "*gobatis.Stmt"}, {Name: "err", Type: "error"}}},
+			//&Method{Name: iName.ParameterMust(false), In: []Param{{Name: fmt.Sprintf("var_%s", v.Type), Type: v.Default}}, Out: []Param{{Type: "error"}}},
+			//&Method{Name: iName.ParameterEmbed(false), In: []Param{{Name: fmt.Sprintf("var_%s", v.Type), Type: v.Default}}, Out: []Param{{Type: "error"}}},
+		)
+		if v.Array {
+			insertMethods = append(insertMethods,
+				&Method{Name: iName.ParameterOriginal(true), In: []Param{{Name: "items", Type: arrayType(v.Default)}}, Out: []Param{{Type: "error"}}},
+				&Method{Name: iName.ParameterPointerOriginal(true), In: []Param{{Name: "items", Type: arrayType("*" + v.Default)}}, Out: []Param{{Type: "error"}}},
+			)
 		}
-		methods = append(methods,
-			&Method{Name: sname.ParameterOriginal(), In: []Param{{Name: fmt.Sprintf("var_%s", v.Type), Type: v.Default}}, Out: []Param{{Type: "error"}}},
-			&Method{Name: sname.ParameterPointerOriginal(), In: []Param{{Name: fmt.Sprintf("var_%s", v.Type), Type: "*" + v.Default}}, Out: []Param{{Type: "error"}}},
-			//&Method{Name: sname.EntityOriginal(), In: []Param{{Name: fmt.Sprintf("var_%s", v.Type), Type: v.Default}}, Out: []Param{{Type: "error"}}},
-			//&Method{Name: sname.EntityPointerOriginal(), In: []Param{{Name: fmt.Sprintf("var_%s", v.Type), Type: "*" + v.Default}}, Out: []Param{{Type: "error"}}},
-			//&Method{Name: sname.ParameterTx(), In: []Param{{Name: "tx", Type: "sql.Tx"}, {Name: fmt.Sprintf("var_%s", v.Type), Type: v.Default}}, Out: []Param{{Type: "error"}}},
-			//&Method{Name: sname.ParameterRows(), In: []Param{{Name: fmt.Sprintf("var_%s", v.Type), Type: v.Default}}, Out: []Param{{Type: "int"}, {Type: "error"}}},
-			//&Method{Name: sname.ParameterContext(), In: []Param{{Name: "ctx", Type: "context.Context"}, {Name: fmt.Sprintf("var_%s", v.Type), Type: v.Default}}, Out: []Param{{Type: "error"}}},
-			//&Method{Name: sname.ParameterStmt(), In: []Param{{Name: fmt.Sprintf("var_%s", v.Type), Type: v.Default}}, Out: []Param{{Name: "stmt", Type: "*gobatis.Stmt"}, {Name: "err", Type: "error"}}},
-			//&Method{Name: sname.ParameterMust(), In: []Param{{Name: fmt.Sprintf("var_%s", v.Type), Type: v.Default}}, Out: []Param{{Type: "error"}}},
-			//&Method{Name: sname.ParameterEmbed(), In: []Param{{Name: fmt.Sprintf("var_%s", v.Type), Type: v.Default}}, Out: []Param{{Type: "error"}}},
+		selectMethods = append(selectMethods,
+			&Method{Name: sName.ParameterOriginal(false), In: []Param{{Name: "id", Type: "int"}}, Out: []Param{{Type: v.Default}, {Type: "error"}}},
 		)
 	}
+	var methods []*Method
+	methods = append(methods, insertMethods...)
+	methods = append(methods, selectMethods...)
 	RenderMapper("./test/postgresql/make_mapper.go", header, methods)
 }
 
@@ -144,7 +167,7 @@ func makePostgresqlCases() {
 	}
 	var testCacses []*TestCase
 	for _, v := range PostgresqlTypes {
-		sname := SName{
+		sName := SName{
 			Action: "Insert",
 			Name:   strcase.ToCamel(v.Type),
 			Type:   strcase.ToCamel(v.Default),
@@ -152,13 +175,40 @@ func makePostgresqlCases() {
 		testCacses = append(testCacses,
 			&TestCase{
 				Code: fmt.Sprintf("err = mapper.%s(_mock.%s())\n%4srequire.NoError(t, err)",
-					sname.ParameterOriginal(), strcase.ToCamel(v.Default), " "),
+					sName.ParameterOriginal(false), strcase.ToCamel(v.Default), " "),
 			},
 			&TestCase{
 				Code: fmt.Sprintf("err = mapper.%s(pointer.To%s(_mock.%s()))\n%4srequire.NoError(t, err)",
-					sname.ParameterPointerOriginal(), strcase.ToCamel(v.Default), strcase.ToCamel(v.Default), " "),
+					sName.ParameterPointerOriginal(false), strcase.ToCamel(v.Default), strcase.ToCamel(v.Default), " "),
 			},
 		)
+		if v.Array {
+			testCacses = append(testCacses,
+				&TestCase{
+					Code: fmt.Sprintf("err = mapper.%s([]%s{_mock.%s(),_mock.%s(),_mock.%s()})\n%4srequire.NoError(t, err)",
+						sName.ParameterOriginal(true),
+						v.Default,
+						strcase.ToCamel(v.Default),
+						strcase.ToCamel(v.Default),
+						strcase.ToCamel(v.Default),
+						" ",
+					),
+				},
+				&TestCase{
+					Code: fmt.Sprintf("err = mapper.%s([]*%s{pointer.To%s(_mock.%s()),pointer.To%s(_mock.%s()),pointer.To%s(_mock.%s()),})\n%4srequire.NoError(t, err)",
+						sName.ParameterPointerOriginal(true),
+						v.Default,
+						strcase.ToCamel(v.Default),
+						strcase.ToCamel(v.Default),
+						strcase.ToCamel(v.Default),
+						strcase.ToCamel(v.Default),
+						strcase.ToCamel(v.Default),
+						strcase.ToCamel(v.Default),
+						" ",
+					),
+				},
+			)
+		}
 	}
 	RenderTestcases("./test/postgresql/make_mapper_test.go", header, testCacses)
 }

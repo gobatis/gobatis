@@ -12,6 +12,12 @@ type TypePointer struct {
 	TCharacterVarying *string `sql:"t_character_varying"`
 }
 
+type ArrayTypeOriginal struct {
+}
+
+type ArrayTypePointer struct {
+}
+
 type BigintOriginal struct {
 	TBigint *int64 `sql:"t_bigint"`
 }
