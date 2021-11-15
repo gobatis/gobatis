@@ -166,6 +166,7 @@ func (p *Engine) bindMapper(mapper interface{}) error {
 func (p *Engine) proxyMapper(pv reflect.Value, pt reflect.Type) (err error) {
 	for i := 0; i < pt.NumField(); i++ {
 		if pv.Field(i).Kind() != reflect.Func {
+			// TODO check nested mapper is nil and return err
 			if pv.Field(i).Kind() == reflect.Ptr && pv.Field(i).Elem().Kind() == reflect.Struct {
 				err = p.proxyMapper(pv.Field(i).Elem(), pv.Field(i).Elem().Type())
 				if err != nil {
@@ -205,9 +206,9 @@ func (p *Engine) proxyMethod(pt reflect.Type, t reflect.StructField, v reflect.V
 		return fmt.Errorf("%s.%s statement not defined", pt.Name(), id)
 	}
 	m = m.fork()
+	m.id = t.Name
 	m.must = must
 	m.stmt = stmt
-	m.id = t.Name
 	ft := v.Type()
 	m.checkParameter(ft, pt.Name(), t.Name)
 	m.checkResult(ft, pt.Name(), t.Name)

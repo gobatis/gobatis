@@ -6,31 +6,16 @@
     </update>
 
     <update id="UpdateS002">
-        <bind name="table" value="'a'"/>
+        <bind name="table" value="'abc'"/>
         update ${table} set b='b', c='c' where id = 1;
     </update>
 
     <update id="UpdateS003">
-        update a set  b = 'b', c =<if test="0">
-            'c0'
-        </if><if test="1">
-            'c1'
-        </if> where id = 1;
+        update a set  b = 'b', c =<if test="0">'c0'</if><if test="1">'c1'</if> where id = 1;
     </update>
 
     <update id="UpdateS004">
-        update into a(b,c)
-        values(
-        'b',
-        <choose>
-            <when test="true">
-                'c1'
-            </when>
-            <otherwise>
-                'c2'
-            </otherwise>
-        </choose>
-        )
+        update a set b='b', c=<choose><when test="true">'c1'</when><otherwise>'c2'</otherwise></choose> where id = 1;
     </update>
 
     <update id="UpdateS005" parameter="items:array">

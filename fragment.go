@@ -318,6 +318,7 @@ func (p fragment) removeParam(a []reflect.Value, i int) []reflect.Value {
 func (p fragment) prepareStmt(in []reflect.Value) (s *Stmt) {
 	var index int
 	s = &Stmt{
+		id: p.id,
 		in: in,
 	}
 	s.ctx, index = p.context(in)

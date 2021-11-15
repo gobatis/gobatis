@@ -6,22 +6,16 @@
     </insert>
 
     <insert id="InsertS002">
-        <bind name="table" value="'a'"/>
+        <bind name="table" value='"a"'/>
         insert into ${table}(b,c) values ('b','c');
     </insert>
 
     <insert id="InsertS003">
-        insert into a(b,c) values( 'b',<if test="0">
-            'c0'
-        </if><if test="1">
-            'c1'
-        </if>)
+        insert into a(b,c) values('b',<if test="0">'c0'</if><if test="1">'c1'</if>);
     </insert>
 
     <insert id="InsertS004">
-        insert into a(b,c)
-        values(
-        'b',
+        insert into a(b,c) values( 'b',
         <choose>
             <when test="true">
                 'c1'
@@ -29,8 +23,7 @@
             <otherwise>
                 'c2'
             </otherwise>
-        </choose>
-        )
+        </choose>);
     </insert>
 
     <insert id="InsertS005" parameter="items:array">

@@ -14,6 +14,8 @@ func init() {
 	_builtin = &builtin{
 		mu: sync.RWMutex{},
 		mapping: map[string]interface{}{
+			"true":    true,
+			"false":   false,
 			"len":     _len,
 			"int":     _int,
 			"int8":    _int8,

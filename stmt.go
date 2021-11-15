@@ -21,12 +21,17 @@ type Stmt struct {
 	conn    conn
 	rows    *sql.Rows
 	result  sql.Result
+	id      string
 }
 
 func (p Stmt) close() {
 	if p.conn != nil {
 		_ = p.conn.Close()
 	}
+}
+
+func (p Stmt) ID() string {
+	return p.id
 }
 
 func (p Stmt) RealSQL() string {

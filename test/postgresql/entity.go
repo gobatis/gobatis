@@ -77,7 +77,7 @@ type Member struct {
 
 type GoType struct {
 	Id                     int64           `sql:"id"`
-	TBigint                int64           `sql:"t_bigint"`
+	TBigint                int64           `sql:"t_bigint" accept:"int*,uint*" reject:"float*,string"`
 	TInt8                  int8            `sql:"t_int8"`
 	TBigserial             int64           `sql:"t_bigserial"`
 	TSerial8               int64           `sql:"t_serial8"`
