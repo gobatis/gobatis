@@ -1,9 +1,11 @@
-package make
+package generator
 
 import (
 	"fmt"
 	"github.com/iancoleman/strcase"
 	"io/ioutil"
+	"os"
+	"path/filepath"
 )
 
 type Database struct {
@@ -61,8 +63,17 @@ func makeTestCase() {
 
 }
 
-func writeFile(path, content string) (err error) {
-	err = ioutil.WriteFile(path, []byte(content), 0644)
+func resolve(path string) string {
+	wd, err := os.Getwd()
+	if err != nil {
+		panic(err)
+	}
+	return filepath.Join(wd, path)
+}
+
+
+func writeFile(relativePath, content string) (err error) {
+	err = ioutil.WriteFile(resolve(relativePath), []byte(content), 0644)
 	if err != nil {
 		return
 	}

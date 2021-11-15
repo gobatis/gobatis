@@ -1,4 +1,4 @@
-package make
+package generator
 
 type Render interface {
 	MakeFieldEntity(field Field) []string
@@ -48,11 +48,12 @@ func (P PGRender) MakeFieldMapperFunc(field Field) []string {
 	
 	// InsertParameterBigintInt64OriginalOriginalTx
 	// InsertParameterBigintInt64OriginalOriginalRows
+	// InsertParameterBigintInt64OriginalOriginalContext
+	// InsertParameterBigintInt64OriginalOriginalStmt
+	
 	// MustInsertParameterBigintInt64OriginalOriginal
 	
 	// EmbedInsertParameterBigintInt64
-	// InsertParameterBigintInt64OriginalOriginalContext
-	// InsertParameterBigintInt64OriginalOriginalStmt
 	
 	// InsertParameterBigintInt8
 	// InsertParameterBigintInt16
