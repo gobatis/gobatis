@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//gobatis.co//DTD Mapper 1.0//EN" "gobatis.co/dtd/mapper.dtd">
+<mapper>
+
+<insert id="InsertParameterBigintInt64" parameter="var_bigint">
+    insert into types(t_bigint) values(#{var_bigint});
+</insert>
+
+<insert id="InsertParameterBigintInt64PointerOriginal" parameter="var_bigint">
+    insert into types(t_bigint) values(#{var_bigint});
+</insert>
+
+<insert id="InsertEntityBigintInt64" parameter="var_bigint">
+    insert into types(t_bigint) values(#{var_bigint});
+</insert>
+
+<insert id="InsertEntityBigintInt64PointerOriginal" parameter="var_bigint">
+    insert into types(t_bigint) values(#{var_bigint});
+</insert>
+
+<insert id="InsertParameterBigintInt64Embed" parameter="var_bigint">
+    insert into types(t_bigint) values(${var_bigint});
+</insert>
+
+<insert id="InsertParameterCharacterString" parameter="var_character">
+    insert into types(t_character) values(#{var_character});
+</insert>
+
+<insert id="InsertParameterCharacterStringPointerOriginal" parameter="var_character">
+    insert into types(t_character) values(#{var_character});
+</insert>
+
+<insert id="InsertEntityCharacterString" parameter="var_character">
+    insert into types(t_character) values(#{var_character});
+</insert>
+
+<insert id="InsertEntityCharacterStringPointerOriginal" parameter="var_character">
+    insert into types(t_character) values(#{var_character});
+</insert>
+
+<insert id="InsertParameterCharacterStringEmbed" parameter="var_character">
+    insert into types(t_character) values(${var_character});
+</insert>
+
+<insert id="InsertParameterCharacterVaryingString" parameter="var_character_varying">
+    insert into types(t_character_varying) values(#{var_character_varying});
+</insert>
+
+<insert id="InsertParameterCharacterVaryingStringPointerOriginal" parameter="var_character_varying">
+    insert into types(t_character_varying) values(#{var_character_varying});
+</insert>
+
+<insert id="InsertEntityCharacterVaryingString" parameter="var_character_varying">
+    insert into types(t_character_varying) values(#{var_character_varying});
+</insert>
+
+<insert id="InsertEntityCharacterVaryingStringPointerOriginal" parameter="var_character_varying">
+    insert into types(t_character_varying) values(#{var_character_varying});
+</insert>
+
+<insert id="InsertParameterCharacterVaryingStringEmbed" parameter="var_character_varying">
+    insert into types(t_character_varying) values(${var_character_varying});
+</insert>
+
+</mapper>

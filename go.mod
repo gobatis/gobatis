@@ -3,16 +3,17 @@ module github.com/gobatis/gobatis
 go 1.13
 
 require (
-	github.com/AlekSi/pointer v1.1.0
+	github.com/AlekSi/pointer v1.2.0
 	github.com/antlr/antlr4 v0.0.0-20210311221813-5e5b6d35b418
 	github.com/fatih/structs v1.1.0
 	github.com/flosch/pongo2/v4 v4.0.2
 	github.com/go-sql-driver/mysql v1.5.0
 	github.com/gofrs/uuid v4.0.0+incompatible // indirect
-	github.com/gozelle/_mock v0.0.0-20211114021104-dc75ce553720 // indirect
+	github.com/gozelle/_mock v0.0.0-20211114021104-dc75ce553720
 	github.com/iancoleman/strcase v0.2.0
 	github.com/jackc/pgtype v1.7.0
 	github.com/jackc/pgx/v4 v4.11.0
+	github.com/jinzhu/copier v0.3.2
 	github.com/koyeo/_log v0.0.0-20211006130730-4b7537dd3986
 	github.com/kr/pretty v0.2.0 // indirect
 	github.com/lib/pq v1.10.1 // indirect
@@ -28,3 +29,5 @@ require (
 	golang.org/x/tools v0.0.0-20201125231158-b5590deeca9b // indirect
 	gopkg.in/osteele/liquid.v1 v1.2.4 // indirect
 )
+
+replace github.com/gozelle/_mock v0.0.0-20211114021104-dc75ce553720 => ../_mock

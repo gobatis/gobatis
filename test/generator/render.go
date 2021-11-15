@@ -1,40 +1,40 @@
 package generator
 
 type Render interface {
-	MakeFieldEntity(field Field) []string
-	MakeFieldParamFuncXML(field Field) []string
-	MakeFieldEntityFuncXML(field Field) []string
-	MakeEntityFuncXML(fields []Field) []string
-	MakeParamsFuncXML(fields []Field) []string
-	MakeFieldMapperFunc(field Field) []string
-	MakeEntityMapperFunc(fields []Field) []string
-	MakeTestCases(fields []Field) []string
+	MakeFieldEntity(field Type) []string
+	MakeFieldParamFuncXML(field Type) []string
+	MakeFieldEntityFuncXML(field Type) []string
+	MakeEntityFuncXML(fields []Type) []string
+	MakeParamsFuncXML(fields []Type) []string
+	MakeFieldMapperFunc(field Type) []string
+	MakeEntityMapperFunc(fields []Type) []string
+	MakeTestCases(fields []Type) []string
 }
 
 type PGRender struct {
 }
 
-func (P PGRender) MakeFieldEntity(field Field) []string {
+func (P PGRender) MakeFieldEntity(field Type) []string {
 	panic("implement me")
 }
 
-func (P PGRender) MakeFieldParamFuncXML(field Field) []string {
+func (P PGRender) MakeFieldParamFuncXML(field Type) []string {
 	panic("implement me")
 }
 
-func (P PGRender) MakeFieldEntityFuncXML(field Field) []string {
+func (P PGRender) MakeFieldEntityFuncXML(field Type) []string {
 	panic("implement me")
 }
 
-func (P PGRender) MakeEntityFuncXML(field Field) []string {
+func (P PGRender) MakeEntityFuncXML(field Type) []string {
 	panic("implement me")
 }
 
-func (P PGRender) MakeParamsFuncXML(field Field) []string {
+func (P PGRender) MakeParamsFuncXML(field Type) []string {
 	panic("implement me")
 }
 
-func (P PGRender) MakeFieldMapperFunc(field Field) []string {
+func (P PGRender) MakeFieldMapperFunc(field Type) []string {
 	var fs []string
 	// InsertParameterBigintInt64
 	// InsertParameterBigintInt64OriginalPointer
@@ -61,7 +61,7 @@ func (P PGRender) MakeFieldMapperFunc(field Field) []string {
 	return fs
 }
 
-func (P PGRender) MakeEntityMapperFunc(field Field) []string {
+func (P PGRender) MakeEntityMapperFunc(field Type) []string {
 	var fs []string
 	
 	return fs

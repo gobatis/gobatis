@@ -64,10 +64,13 @@ func (p *caller) exec(in []reflect.Value) error {
 	if err != nil {
 		return err
 	}
-	if s.query {
+	if s.query && len(p.result) > 0 {
 		return p.scanRows(p.fragment.rt, p.fragment.out, s.rows, p.result...)
 	}
-	return p.scanResult(s.result, p.result)
+	if len(p.result) > 0 {
+		return p.scanResult(s.result, p.result)
+	}
+	return nil
 }
 
 func (p *caller) query(in []reflect.Value) (err error) {

@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//gobatis.co//DTD Mapper 1.0//EN" "gobatis.co/dtd/mapper.dtd">
+<mapper>
+
+<select id="SelectParameterBigintInt64" parameter="id">
+    select t_bigint from types where id = #{id};
+</select>
+
+<select id="SelectParameterBigintInt64PointerOriginal" parameter="id">
+    select t_bigint from types where id = #{id};
+</select>
+
+<select id="SelectEntityBigintInt64" parameter="id">
+    select t_bigint from types where id = #{id};
+</select>
+
+<select id="SelectEntityBigintInt64PointerOriginal" parameter="id">
+    select t_bigint from types where id = #{id};
+</select>
+
+<select id="SelectParameterCharacterString" parameter="id">
+    select t_character from types where id = #{id};
+</select>
+
+<select id="SelectParameterCharacterStringPointerOriginal" parameter="id">
+    select t_character from types where id = #{id};
+</select>
+
+<select id="SelectEntityCharacterString" parameter="id">
+    select t_character from types where id = #{id};
+</select>
+
+<select id="SelectEntityCharacterStringPointerOriginal" parameter="id">
+    select t_character from types where id = #{id};
+</select>
+
+<select id="SelectParameterCharacterVaryingString" parameter="id">
+    select t_character_varying from types where id = #{id};
+</select>
+
+<select id="SelectParameterCharacterVaryingStringPointerOriginal" parameter="id">
+    select t_character_varying from types where id = #{id};
+</select>
+
+<select id="SelectEntityCharacterVaryingString" parameter="id">
+    select t_character_varying from types where id = #{id};
+</select>
+
+<select id="SelectEntityCharacterVaryingStringPointerOriginal" parameter="id">
+    select t_character_varying from types where id = #{id};
+</select>
+
+</mapper>

@@ -9,7 +9,7 @@ func TestRenderEntity(t *testing.T) {
 	},
 		[]*Entity{{
 			Name: "GoType",
-			Params: []Param{
+			Params: []*Param{
 				{
 					Name: "TBigint",
 					Type: "int64",

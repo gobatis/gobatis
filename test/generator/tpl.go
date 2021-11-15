@@ -2,6 +2,7 @@ package generator
 
 import (
 	"github.com/flosch/pongo2/v4"
+	"github.com/jinzhu/copier"
 )
 
 type GoHeader struct {
@@ -15,6 +16,16 @@ type Param struct {
 	Tag  string
 }
 
+func (p Param) forkType(t string) *Param {
+	n := new(Param)
+	err := copier.Copy(n, p)
+	if err != nil {
+		panic(err)
+	}
+	n.Type = t
+	return n
+}
+
 type Statement struct {
 	Tag           string
 	Id            string
@@ -25,30 +36,30 @@ type Statement struct {
 
 func (p Statement) ForkId(id string) *Statement {
 	n := new(Statement)
-	n.Tag = p.Tag
-	n.ShowParameter = p.ShowParameter
-	n.Params = p.Params
-	n.Sql = p.Sql
+	err := copier.Copy(n, p)
+	if err != nil {
+		panic(err)
+	}
 	n.Id = id
 	return n
 }
 
 func (p Statement) ForkSql(sql string) *Statement {
 	n := new(Statement)
-	n.Id = p.Id
-	n.Tag = p.Tag
-	n.ShowParameter = p.ShowParameter
-	n.Params = p.Params
+	err := copier.Copy(n, p)
+	if err != nil {
+		panic(err)
+	}
 	n.Sql = sql
 	return n
 }
 
 func (p Statement) ForkParams(params []Param) *Statement {
 	n := new(Statement)
-	n.Id = p.Id
-	n.Tag = p.Tag
-	n.ShowParameter = p.ShowParameter
-	n.Sql = p.Sql
+	err := copier.Copy(n, p)
+	if err != nil {
+		panic(err)
+	}
 	n.Params = params
 	return n
 }
@@ -86,7 +97,7 @@ type TestCase struct {
 
 type Entity struct {
 	Name   string
-	Params []Param
+	Params []*Param
 }
 
 func RenderEntity(dist string, header GoHeader, entities []*Entity) {
@@ -101,7 +112,7 @@ func RenderEntity(dist string, header GoHeader, entities []*Entity) {
 	if err != nil {
 		panic(err)
 	}
-	err = writeFile(dist, res)
+	err = writeFile(dist, gofmt(res))
 	if err != nil {
 		panic(err)
 	}
@@ -119,7 +130,7 @@ func RenderMapper(dist string, header GoHeader, methods []*Method) {
 	if err != nil {
 		panic(err)
 	}
-	err = writeFile(dist, res)
+	err = writeFile(dist, gofmt(res))
 	if err != nil {
 		panic(err)
 	}
@@ -137,7 +148,7 @@ func RenderTestcases(dist string, header GoHeader, testCases []*TestCase) {
 	if err != nil {
 		panic(err)
 	}
-	err = writeFile(dist, res)
+	err = writeFile(dist, gofmt(res))
 	if err != nil {
 		panic(err)
 	}
