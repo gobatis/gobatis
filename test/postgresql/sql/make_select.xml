@@ -18,6 +18,34 @@
     select t_bigint from types where id = #{id};
 </select>
 
+<select id="SelectArrayParameterBigintInt64" parameter="id">
+    select t_bigint from array_types where id = #{id};
+</select>
+
+<select id="SelectArrayParameterBigintInt64PointerOriginal" parameter="id">
+    select t_bigint from array_types where id = #{id};
+</select>
+
+<select id="SelectArrayParameterBigintInt64OriginalPointer" parameter="id">
+    select t_bigint from array_types where id = #{id};
+</select>
+
+<select id="SelectArrayParameterBigintInt64PointerPointer" parameter="id">
+    select t_bigint from array_types where id = #{id};
+</select>
+
+<select id="SelectArrayEntityBigintInt64" parameter="id">
+    select t_bigint from array_types where id = #{id};
+</select>
+
+<select id="SelectArrayEntityBigintInt64PointerOriginal" parameter="id">
+    select t_bigint from array_types where id = #{id};
+</select>
+
+<select id="SelectArrayEntityBigintInt64OriginalPointer" parameter="id">
+    select t_bigint from array_types where id = #{id};
+</select>
+
 <select id="SelectParameterCharacterString" parameter="id">
     select t_character from types where id = #{id};
 </select>
@@ -34,6 +62,34 @@
     select t_character from types where id = #{id};
 </select>
 
+<select id="SelectArrayParameterCharacterString" parameter="id">
+    select t_character from array_types where id = #{id};
+</select>
+
+<select id="SelectArrayParameterCharacterStringPointerOriginal" parameter="id">
+    select t_character from array_types where id = #{id};
+</select>
+
+<select id="SelectArrayParameterCharacterStringOriginalPointer" parameter="id">
+    select t_character from array_types where id = #{id};
+</select>
+
+<select id="SelectArrayParameterCharacterStringPointerPointer" parameter="id">
+    select t_character from array_types where id = #{id};
+</select>
+
+<select id="SelectArrayEntityCharacterString" parameter="id">
+    select t_character from array_types where id = #{id};
+</select>
+
+<select id="SelectArrayEntityCharacterStringPointerOriginal" parameter="id">
+    select t_character from array_types where id = #{id};
+</select>
+
+<select id="SelectArrayEntityCharacterStringOriginalPointer" parameter="id">
+    select t_character from array_types where id = #{id};
+</select>
+
 <select id="SelectParameterCharacterVaryingString" parameter="id">
     select t_character_varying from types where id = #{id};
 </select>
@@ -48,6 +104,34 @@
 
 <select id="SelectEntityCharacterVaryingStringPointerOriginal" parameter="id">
     select t_character_varying from types where id = #{id};
+</select>
+
+<select id="SelectArrayParameterCharacterVaryingString" parameter="id">
+    select t_character_varying from array_types where id = #{id};
+</select>
+
+<select id="SelectArrayParameterCharacterVaryingStringPointerOriginal" parameter="id">
+    select t_character_varying from array_types where id = #{id};
+</select>
+
+<select id="SelectArrayParameterCharacterVaryingStringOriginalPointer" parameter="id">
+    select t_character_varying from array_types where id = #{id};
+</select>
+
+<select id="SelectArrayParameterCharacterVaryingStringPointerPointer" parameter="id">
+    select t_character_varying from array_types where id = #{id};
+</select>
+
+<select id="SelectArrayEntityCharacterVaryingString" parameter="id">
+    select t_character_varying from array_types where id = #{id};
+</select>
+
+<select id="SelectArrayEntityCharacterVaryingStringPointerOriginal" parameter="id">
+    select t_character_varying from array_types where id = #{id};
+</select>
+
+<select id="SelectArrayEntityCharacterVaryingStringOriginalPointer" parameter="id">
+    select t_character_varying from array_types where id = #{id};
 </select>
 
 </mapper>

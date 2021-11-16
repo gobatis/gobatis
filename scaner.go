@@ -95,6 +95,13 @@ func (p *queryScanner) scan() (err error) {
 	if err != nil {
 		return
 	}
+	types, _ := p.rows.ColumnTypes()
+	for _, v := range types {
+		fmt.Println(v.Name())
+		fmt.Println(v.ScanType().Name())
+		fmt.Println(v.DatabaseTypeName())
+	}
+	fmt.Println(columns)
 	l := len(columns)
 	c := 0
 	for p.rows.Next() {
@@ -188,6 +195,7 @@ func (p *queryScanner) reflectStructs(r rowMap) error {
 		_type = p.values[0].Type().Elem().Elem().Elem()
 	}
 	elem := reflect.New(_type)
+	
 	for i := 0; i < _type.NumField(); i++ {
 		field := _type.Field(i).Tag.Get(p.tag)
 		field = p.trimComma(field)

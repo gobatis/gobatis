@@ -55,11 +55,9 @@ func makePostgresqlXML() {
 			Tag:           "insert",
 			Id:            iName.ParameterOriginal(false),
 			ShowParameter: true,
-			Params: []Param{
-				{
-					Name: fmt.Sprintf("var_%s", v.Type),
-				},
-			},
+			Params: []Param{{
+				Name: fmt.Sprintf("var_%s", v.Type),
+			}},
 			Sql: fmt.Sprintf("insert into types(%s) values(#{%s});", fmt.Sprintf("t_%s", v.Type), fmt.Sprintf("var_%s", v.Type)),
 		}
 		sName := SName{
@@ -71,11 +69,9 @@ func makePostgresqlXML() {
 			Tag:           "select",
 			Id:            sName.ParameterOriginal(false),
 			ShowParameter: true,
-			Params: []Param{
-				{
-					Name: "id",
-				},
-			},
+			Params: []Param{{
+				Name: "id",
+			}},
 			Sql: fmt.Sprintf("select t_%s from types where id = #{id};", v.Type),
 		}
 		insertStatements = append(insertStatements,
@@ -87,23 +83,34 @@ func makePostgresqlXML() {
 				fmt.Sprintf("insert into types(%s) values(${%s});", fmt.Sprintf("t_%s", v.Type), fmt.Sprintf("var_%s", v.Type)),
 			),
 		)
-		if v.Array {
-			insert = insert.ForkSql(
-				fmt.Sprintf("insert into array_types(%s) values(#{%s});", fmt.Sprintf("t_%s", v.Type), fmt.Sprintf("var_%s", v.Type)),
-			)
-			insertStatements = append(insertStatements,
-				insert.ForkId(iName.ParameterOriginal(true)),
-				insert.ForkId(iName.ParameterPointerOriginal(true)),
-				insert.ForkId(iName.EntityOriginal(true)),
-				insert.ForkId(iName.EntityPointerOriginal(true)),
-				insert.ForkId(iName.ParameterEmbed(true)),
-			)
-		}
 		selectStatements = append(selectStatements,
 			_select,
 			_select.ForkId(sName.ParameterPointerOriginal(false)),
 			_select.ForkId(sName.EntityOriginal(false)),
 			_select.ForkId(sName.EntityPointerOriginal(false)),
+		)
+		if !v.Array {
+			continue
+		}
+		insert = insert.ForkSql(
+			fmt.Sprintf("insert into array_types(%s) values(#{%s});", fmt.Sprintf("t_%s", v.Type), fmt.Sprintf("var_%s", v.Type)),
+		)
+		_select = _select.ForkSql(fmt.Sprintf("select t_%s from array_types where id = #{id};", v.Type))
+		insertStatements = append(insertStatements,
+			insert.ForkId(iName.ParameterOriginal(true)),
+			insert.ForkId(iName.ParameterPointerOriginal(true)),
+			insert.ForkId(iName.EntityOriginal(true)),
+			insert.ForkId(iName.EntityPointerOriginal(true)),
+			insert.ForkId(iName.ParameterEmbed(true)),
+		)
+		selectStatements = append(selectStatements,
+			_select.ForkId(sName.ParameterOriginal(true)),
+			_select.ForkId(sName.ParameterPointerOriginal(true)),
+			_select.ForkId(sName.ParameterOriginalPointer(true)),
+			_select.ForkId(sName.ParameterPointerPointer(true)),
+			_select.ForkId(sName.EntityOriginal(true)),
+			_select.ForkId(sName.EntityPointerOriginal(true)),
+			_select.ForkId(sName.EntityOriginalPointer(true)),
 		)
 	}
 	RenderStatements("./test/postgresql/sql/make_insert.xml", insertStatements)
@@ -138,16 +145,22 @@ func makePostgresqlMapper() {
 			//&Method{Name: iName.ParameterMust(false), In: []Param{{Name: fmt.Sprintf("var_%s", v.Type), Type: v.Default}}, Out: []Param{{Type: "error"}}},
 			//&Method{Name: iName.ParameterEmbed(false), In: []Param{{Name: fmt.Sprintf("var_%s", v.Type), Type: v.Default}}, Out: []Param{{Type: "error"}}},
 		)
-		if v.Array {
-			insertMethods = append(insertMethods,
-				&Method{Name: iName.ParameterOriginal(true), In: []Param{{Name: "items", Type: arrayType(v.Default)}}, Out: []Param{{Type: "error"}}},
-				&Method{Name: iName.ParameterPointerOriginal(true), In: []Param{{Name: "items", Type: arrayType("*" + v.Default)}}, Out: []Param{{Type: "error"}}},
-			)
-		}
 		selectMethods = append(selectMethods,
 			&Method{Name: sName.ParameterOriginal(false), In: []Param{{Name: "id", Type: "int"}}, Out: []Param{{Type: v.Default}, {Type: "error"}}},
 		)
+		if !v.Array {
+			continue
+		}
+		insertMethods = append(insertMethods,
+			&Method{Name: iName.ParameterOriginal(true), In: []Param{{Name: "items", Type: arrayType(v.Default)}}, Out: []Param{{Type: "error"}}},
+			&Method{Name: iName.ParameterPointerOriginal(true), In: []Param{{Name: "items", Type: arrayType("*" + v.Default)}}, Out: []Param{{Type: "error"}}},
+		)
+		selectMethods = append(selectMethods,
+			&Method{Name: sName.ParameterOriginal(true), In: []Param{{Name: "id", Type: "int"}}, Out: []Param{{Type: arrayType(v.Default)}, {Type: "error"}}},
+			&Method{Name: sName.ParameterOriginalPointer(true), In: []Param{{Name: "id", Type: "int"}}, Out: []Param{{Type: arrayType("*" + v.Default)}, {Type: "error"}}},
+		)
 	}
+	
 	var methods []*Method
 	methods = append(methods, insertMethods...)
 	methods = append(methods, selectMethods...)
