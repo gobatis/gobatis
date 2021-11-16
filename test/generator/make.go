@@ -3,6 +3,7 @@ package generator
 import (
 	"fmt"
 	"github.com/iancoleman/strcase"
+	"strings"
 )
 
 func MakePostgresqlTestCases() {
@@ -194,14 +195,32 @@ func makePostgresqlMapper() {
 }
 
 type SelectCaseData struct {
-	Name string
+	MockFunc       string
+	InsertOriginal string
+	SelectOriginal string
 }
 
 const selectCaseTpl = `
-id := dm.NextId()
-res,err := mapper.{{ Name }}(id)
+
+id1 := dm.NextId()
+v1 := _mock.{{ MockFunc }}()
+err := mapper.{{ InsertOriginal }}(v1)
+require.NoError(t, err, val)
+
+r1,err := mapper.{{ SelectOriginal }}(id1)
 require.NoError(t, err, id)
-t.Log(id, res)
+require.Equal(t, v1, r1)
+
+id2 := dm.NextId()
+v2 := _mock.{{ MockFunc }}()
+err := mapper.{{ InsertPointer }}(&v2)
+require.NoError(t, err, val1)
+
+r2,err := mapper.{{ SelectOriginalPointer }}(id2)
+require.NoError(t, err, id2)
+require.Equal(t, val, r2)
+
+
 `
 
 func makePostgresqlCases() {
@@ -223,21 +242,10 @@ func makePostgresqlCases() {
 		sName := SName{Action: "Select", Name: strcase.ToCamel(v.Type), Type: strcase.ToCamel(v.Default)}
 		testCacses = append(testCacses,
 			&TestCase{
-				Code: fmt.Sprintf("err = mapper.%s(_mock.%s())\n%4srequire.NoError(t, err)",
-					iName.ParameterOriginal(false), strcase.ToCamel(v.Default), " "),
-			},
-			&TestCase{
 				Code: RenderTpl(selectCaseTpl, SelectCaseData{
-					Name: sName.ParameterOriginal(false),
-				}),
-			},
-			&TestCase{
-				Code: fmt.Sprintf("err = mapper.%s(pointer.To%s(_mock.%s()))\n%4srequire.NoError(t, err)",
-					iName.ParameterPointerOriginal(false), strcase.ToCamel(v.Default), strcase.ToCamel(v.Default), " "),
-			},
-			&TestCase{
-				Code: RenderTpl(selectCaseTpl, SelectCaseData{
-					Name: sName.ParameterOriginalPointer(false),
+					MockFunc:       strings.Title(v.Default),
+					InsertOriginal: iName.ParameterOriginal(false),
+					SelectOriginal: sName.ParameterOriginal(false),
 				}),
 			},
 		)

@@ -25,11 +25,11 @@ func TestInsert(t *testing.T) {
 	dm := generator.NewDataManager()
 	// adm := generator.NewDataManager()
 
-    for i:=0;i<10;i++{
+    //for i:=0;i<10;i++{
     {% for testCase in Cases %}{
         {{ testCase.Code }}
     }
     {% endfor %}
-    }
+    // }
 }
 

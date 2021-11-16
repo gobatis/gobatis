@@ -43,7 +43,7 @@ type Scanner struct {
 }
 
 func (s *Scanner) Scan(rows *sql.Rows, ct *sql.ColumnType, value reflect.Value) (err error) {
-	var assigner Assigner
+	var assigner pgtype.Value
 	
 	switch ct.DatabaseTypeName() {
 	case "INT8":
@@ -67,12 +67,12 @@ func (s *Scanner) Scan(rows *sql.Rows, ct *sql.ColumnType, value reflect.Value) 
 		err = fmt.Errorf("scan %s err: %s", ct.Name(), err)
 		return
 	}
-	
-	err = assigner.AssignTo(value.Interface())
-	if err != nil {
-		err = fmt.Errorf("assign %s err: %s", ct.Name(), err)
-		return
+	if assigner.Get() != nil {
+		err = assigner.AssignTo(value.Interface())
+		if err != nil {
+			err = fmt.Errorf("assign %s err: %s", ct.Name(), err)
+			return
+		}
 	}
-	
 	return
 }
