@@ -20,7 +20,7 @@ type DataManager struct {
 	rows map[int]*DataRow
 }
 
-func (p *DataManager) NextID() int {
+func (p *DataManager) NextId() int {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	p.id++

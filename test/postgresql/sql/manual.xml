@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//gobatis.co//DTD Mapper 1.0//EN" "gobatis.co/dtd/mapper.dtd">
 <mapper>
-
+    <update id="ResetTable">
+        truncate types;
+        truncate array_types;
+        ALTER SEQUENCE types_id_seq RESTART WITH 1;
+        ALTER SEQUENCE array_types_id_seq RESTART WITH 1;
+    </update>
 </mapper>

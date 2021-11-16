@@ -7,7 +7,6 @@ import (
 	"github.com/jackc/pgtype"
 	_ "github.com/jackc/pgx/v4/stdlib"
 	"reflect"
-	"strings"
 )
 
 const PGX = "pgx"
@@ -44,32 +43,36 @@ type Scanner struct {
 }
 
 func (s *Scanner) Scan(rows *sql.Rows, ct *sql.ColumnType, value reflect.Value) (err error) {
-	if !strings.HasPrefix(ct.DatabaseTypeName(), "_") {
-		err = rows.Scan(value.Interface())
-		if err != nil {
-			return
-		}
-	} else {
-		var assigner Assigner
-		switch ct.DatabaseTypeName() {
-		case "_INT8":
-			assigner = new(pgtype.Int8Array)
-		case "_VARCHAR":
-			assigner = new(pgtype.VarcharArray)
-		case "_BPCHAR":
-			assigner = new(pgtype.BPCharArray)
-		default:
-			err = fmt.Errorf("unsupport scan type: %s(%s)", ct.Name(), ct.DatabaseTypeName())
-			return
-		}
-		err = rows.Scan(assigner)
-		if err != nil {
-			return
-		}
-		err = assigner.AssignTo(value.Interface())
-		if err != nil {
-			return
-		}
+	var assigner Assigner
+	
+	switch ct.DatabaseTypeName() {
+	case "INT8":
+		assigner = new(pgtype.Int8)
+	case "VARCHAR":
+		assigner = new(pgtype.Varchar)
+	case "BPCHAR":
+		assigner = new(pgtype.BPChar)
+	case "_INT8":
+		assigner = new(pgtype.Int8Array)
+	case "_VARCHAR":
+		assigner = new(pgtype.VarcharArray)
+	case "_BPCHAR":
+		assigner = new(pgtype.BPCharArray)
+	default:
+		err = fmt.Errorf("unsupport scan type: %s(%s)", ct.Name(), ct.DatabaseTypeName())
+		return
 	}
+	err = rows.Scan(assigner)
+	if err != nil {
+		err = fmt.Errorf("scan %s err: %s", ct.Name(), err)
+		return
+	}
+	
+	err = assigner.AssignTo(value.Interface())
+	if err != nil {
+		err = fmt.Errorf("assign %s err: %s", ct.Name(), err)
+		return
+	}
+	
 	return
 }

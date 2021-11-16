@@ -14,12 +14,15 @@ type MakeMapper struct {
 	InsertArrayParameterCharacterVaryingString                func(items []string) error
 	InsertArrayParameterCharacterVaryingStringPointerOriginal func(items []*string) error
 	SelectParameterBigintInt64                                func(id int) (int64, error)
+	SelectParameterBigintInt64OriginalPointer                 func(id int) (*int64, error)
 	SelectArrayParameterBigintInt64                           func(id int) ([]int64, error)
 	SelectArrayParameterBigintInt64OriginalPointer            func(id int) ([]*int64, error)
 	SelectParameterCharacterString                            func(id int) (string, error)
+	SelectParameterCharacterStringOriginalPointer             func(id int) (*string, error)
 	SelectArrayParameterCharacterString                       func(id int) ([]string, error)
 	SelectArrayParameterCharacterStringOriginalPointer        func(id int) ([]*string, error)
 	SelectParameterCharacterVaryingString                     func(id int) (string, error)
+	SelectParameterCharacterVaryingStringOriginalPointer      func(id int) (*string, error)
 	SelectArrayParameterCharacterVaryingString                func(id int) ([]string, error)
 	SelectArrayParameterCharacterVaryingStringOriginalPointer func(id int) ([]*string, error)
 }

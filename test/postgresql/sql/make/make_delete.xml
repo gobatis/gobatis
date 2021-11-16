@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//gobatis.co//DTD Mapper 1.0//EN" "gobatis.co/dtd/mapper.dtd">
+<mapper>
+
+<delete id="DeleteParameterBigintInt64" parameter="id" >
+    delete from types where id = #{id};
+</delete>
+
+<delete id="DeleteParameterBigintInt64PointerOriginal" parameter="id" >
+    delete from types where id = #{id};
+</delete>
+
+<delete id="DeleteEntityBigintInt64" parameter="id" >
+    delete from types where id = #{id};
+</delete>
+
+<delete id="DeleteEntityBigintInt64PointerOriginal" parameter="id" >
+    delete from types where id = #{id};
+</delete>
+
+<delete id="DeleteParameterCharacterString" parameter="id" >
+    delete from types where id = #{id};
+</delete>
+
+<delete id="DeleteParameterCharacterStringPointerOriginal" parameter="id" >
+    delete from types where id = #{id};
+</delete>
+
+<delete id="DeleteEntityCharacterString" parameter="id" >
+    delete from types where id = #{id};
+</delete>
+
+<delete id="DeleteEntityCharacterStringPointerOriginal" parameter="id" >
+    delete from types where id = #{id};
+</delete>
+
+<delete id="DeleteParameterCharacterVaryingString" parameter="id" >
+    delete from types where id = #{id};
+</delete>
+
+<delete id="DeleteParameterCharacterVaryingStringPointerOriginal" parameter="id" >
+    delete from types where id = #{id};
+</delete>
+
+<delete id="DeleteEntityCharacterVaryingString" parameter="id" >
+    delete from types where id = #{id};
+</delete>
+
+<delete id="DeleteEntityCharacterVaryingStringPointerOriginal" parameter="id" >
+    delete from types where id = #{id};
+</delete>
+
+</mapper>

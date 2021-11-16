@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//gobatis.co//DTD Mapper 1.0//EN" "gobatis.co/dtd/mapper.dtd">
+<mapper>
+
+<update id="UpdateParameterBigintInt64" parameter="id,val" >
+    update types set t_bigint = #{ val } from types where id = #{id};
+</update>
+
+<update id="UpdateParameterBigintInt64PointerOriginal" parameter="id,val" >
+    update types set t_bigint = #{ val } from types where id = #{id};
+</update>
+
+<update id="UpdateEntityBigintInt64" parameter="id,val" >
+    update types set t_bigint = #{ val } from types where id = #{id};
+</update>
+
+<update id="UpdateEntityBigintInt64PointerOriginal" parameter="id,val" >
+    update types set t_bigint = #{ val } from types where id = #{id};
+</update>
+
+<update id="UpdateParameterCharacterString" parameter="id,val" >
+    update types set t_character = #{ val } from types where id = #{id};
+</update>
+
+<update id="UpdateParameterCharacterStringPointerOriginal" parameter="id,val" >
+    update types set t_character = #{ val } from types where id = #{id};
+</update>
+
+<update id="UpdateEntityCharacterString" parameter="id,val" >
+    update types set t_character = #{ val } from types where id = #{id};
+</update>
+
+<update id="UpdateEntityCharacterStringPointerOriginal" parameter="id,val" >
+    update types set t_character = #{ val } from types where id = #{id};
+</update>
+
+<update id="UpdateParameterCharacterVaryingString" parameter="id,val" >
+    update types set t_character_varying = #{ val } from types where id = #{id};
+</update>
+
+<update id="UpdateParameterCharacterVaryingStringPointerOriginal" parameter="id,val" >
+    update types set t_character_varying = #{ val } from types where id = #{id};
+</update>
+
+<update id="UpdateEntityCharacterVaryingString" parameter="id,val" >
+    update types set t_character_varying = #{ val } from types where id = #{id};
+</update>
+
+<update id="UpdateEntityCharacterVaryingStringPointerOriginal" parameter="id,val" >
+    update types set t_character_varying = #{ val } from types where id = #{id};
+</update>
+
+</mapper>

@@ -1,8 +1,11 @@
 package generator
 
 import (
+	"fmt"
+	"github.com/fatih/structs"
 	"github.com/flosch/pongo2/v4"
 	"github.com/jinzhu/copier"
+	"strings"
 )
 
 type GoHeader struct {
@@ -76,6 +79,18 @@ func (p Statement) ForkResult(params []Param) *Statement {
 	return n
 }
 
+func RenderTpl(tpl string, data interface{}) string {
+	t, err := pongo2.FromString(strings.TrimSpace(tpl))
+	if err != nil {
+		panic(err)
+	}
+	r, err := t.Execute(structs.Map(data))
+	if err != nil {
+		panic(err)
+	}
+	return r
+}
+
 func RenderStatements(dist string, data []*Statement) {
 	tpl, err := pongo2.FromFile(resolve("./test/generator/tpl/statement.tpl"))
 	if err != nil {
@@ -83,6 +98,18 @@ func RenderStatements(dist string, data []*Statement) {
 	}
 	res, err := tpl.Execute(map[string]interface{}{
 		"Statements": data,
+		"RenderParams": func(params []Param) string {
+			r := ""
+			for _, v := range params {
+				r += fmt.Sprintf("%s", v.Name)
+				if v.Type != "" {
+					r += fmt.Sprintf(":%s", v.Type)
+				}
+				r += ","
+			}
+			r = strings.TrimSuffix(r, ",")
+			return r
+		},
 	})
 	if err != nil {
 		panic(err)

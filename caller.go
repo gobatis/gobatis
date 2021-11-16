@@ -24,7 +24,6 @@ type caller struct {
 }
 
 func (p *caller) call(in []reflect.Value) *caller {
-	
 	start := time.Now()
 	defer func() {
 		p.logger.Debugf("[gobatis] [%s] cost: %s", p.fragment.id, time.Since(start))
@@ -207,7 +206,12 @@ func (p caller) scanRows(rt int, params []*param, rows *sql.Rows, values ...refl
 	if err != nil {
 		return err
 	}
-	return scanner.scan()
+	err = scanner.scan()
+	if err != nil {
+		return
+	}
+	
+	return
 }
 
 func (p *caller) scanResult(res sql.Result, values []reflect.Value) error {

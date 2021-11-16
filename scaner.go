@@ -100,9 +100,12 @@ func (p *queryScanner) scan() (err error) {
 	if err != nil {
 		return
 	}
-	i := 0
+	i := -1
+	
 	if p.mapping {
+		
 		for p.rows.Next() {
+			i++
 			if p.isSelected(cts[i].Name()) {
 				err = p.scanner.Scan(p.rows, cts[i], p.values[p.selected[cts[i].Name()]])
 				if err != nil {
@@ -112,10 +115,11 @@ func (p *queryScanner) scan() (err error) {
 					break
 				}
 			}
-			i++
+			
 		}
 	} else {
 		for p.rows.Next() {
+			i++
 			err = p.scanner.Scan(p.rows, cts[i], p.values[i])
 			if err != nil {
 				return
@@ -123,10 +127,9 @@ func (p *queryScanner) scan() (err error) {
 			if p.first {
 				break
 			}
-			i++
 		}
 	}
-	if len(p.values) > 0 && i == 0 {
+	if len(p.values) > 0 && i == -1 {
 		err = sql.ErrNoRows
 		return
 	}
@@ -142,6 +145,7 @@ func (p *execScanner) scan() error {
 	if len(p.values) != 1 {
 		return fmt.Errorf("scan rows: illegal values length %d", len(p.values))
 	}
+	// TODO handle pointer
 	p.values[0].SetInt(p.affected)
 	//switch p.values[0].Elem().Kind() {
 	//case reflect.Int:

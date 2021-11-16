@@ -1,17 +1,21 @@
 package postgresql
 
 import (
+	"github.com/AlekSi/pointer"
 	"github.com/gobatis/gobatis"
 	"github.com/gobatis/gobatis/driver/postgresql"
+	"github.com/gobatis/gobatis/test/generator"
+	"github.com/gozelle/_mock"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
 
 func TestInsert(t *testing.T) {
-	var err error
-	mapper := new(MakeMapper)
+	mapper := &Mapper{
+		MakeMapper: &MakeMapper{},
+	}
 	engine := postgresql.NewEngine("postgresql://postgres:postgres@127.0.0.1:5432/gobatis?connect_timeout=10&sslmode=disable")
-	err = engine.Init(gobatis.NewBundle("./sql"))
+	err := engine.Init(gobatis.NewBundle("./sql"))
 	require.NoError(t, err)
 	err = engine.BindMapper(mapper)
 	require.NoError(t, err)
@@ -20,57 +24,73 @@ func TestInsert(t *testing.T) {
 		engine.Close()
 	}()
 	
+	err = mapper.ResetTable()
+	require.NoError(t, err)
+	
+	dm := generator.NewDataManager()
+	// adm := generator.NewDataManager()
+	
 	//for i := 0; i < 10; i++ {
-	//	err = mapper.InsertParameterBigintInt64(_mock.Int64())
-	//	require.NoError(t, err)
-	//
-	//	err = mapper.InsertParameterBigintInt64PointerOriginal(pointer.ToInt64(_mock.Int64()))
-	//	require.NoError(t, err)
-	//
-	//	err = mapper.InsertArrayParameterBigintInt64([]int64{_mock.Int64(), _mock.Int64(), _mock.Int64()})
-	//	require.NoError(t, err)
-	//
-	//	err = mapper.InsertArrayParameterBigintInt64PointerOriginal([]*int64{pointer.ToInt64(_mock.Int64()), pointer.ToInt64(_mock.Int64()), pointer.ToInt64(_mock.Int64())})
-	//	require.NoError(t, err)
-	//
-	//	err = mapper.InsertParameterCharacterString(_mock.String())
-	//	require.NoError(t, err)
-	//
-	//	err = mapper.InsertParameterCharacterStringPointerOriginal(pointer.ToString(_mock.String()))
-	//	require.NoError(t, err)
-	//
-	//	err = mapper.InsertArrayParameterCharacterString([]string{_mock.String(), _mock.String(), _mock.String()})
-	//	require.NoError(t, err)
-	//
-	//	err = mapper.InsertArrayParameterCharacterStringPointerOriginal([]*string{pointer.ToString(_mock.String()), pointer.ToString(_mock.String()), pointer.ToString(_mock.String())})
-	//	require.NoError(t, err)
-	//
-	//	err = mapper.InsertParameterCharacterVaryingString(_mock.String())
-	//	require.NoError(t, err)
-	//
-	//	err = mapper.InsertParameterCharacterVaryingStringPointerOriginal(pointer.ToString(_mock.String()))
-	//	require.NoError(t, err)
-	//
-	//	err = mapper.InsertArrayParameterCharacterVaryingString([]string{_mock.String(), _mock.String(), _mock.String()})
-	//	require.NoError(t, err)
-	//
-	//	err = mapper.InsertArrayParameterCharacterVaryingStringPointerOriginal([]*string{pointer.ToString(_mock.String()), pointer.ToString(_mock.String()), pointer.ToString(_mock.String())})
-	//	require.NoError(t, err)
+	{
+		err = mapper.InsertParameterBigintInt64(_mock.Int64())
+		require.NoError(t, err)
+	}
+	{
+		id := dm.NextId()
+		res, err := mapper.SelectParameterBigintInt64(id)
+		require.NoError(t, err, id)
+		t.Log(id, res, err)
+	}
+	{
+		err = mapper.InsertParameterBigintInt64PointerOriginal(pointer.ToInt64(_mock.Int64()))
+		require.NoError(t, err)
+	}
+	{
+		id := dm.NextId()
+		res, err := mapper.SelectParameterBigintInt64OriginalPointer(id)
+		require.NoError(t, err, id)
+		t.Log(id, *res, err)
+	}
+	{
+		err = mapper.InsertParameterCharacterString(_mock.String())
+		require.NoError(t, err)
+	}
+	{
+		id := dm.NextId()
+		res, err := mapper.SelectParameterCharacterString(id)
+		require.NoError(t, err, id)
+		t.Log(id, res, err)
+	}
+	{
+		err = mapper.InsertParameterCharacterStringPointerOriginal(pointer.ToString(_mock.String()))
+		require.NoError(t, err)
+	}
+	{
+		id := dm.NextId()
+		res, err := mapper.SelectParameterCharacterStringOriginalPointer(id)
+		require.NoError(t, err, id)
+		t.Log(id, res)
+	}
+	{
+		err = mapper.InsertParameterCharacterVaryingString(_mock.String())
+		require.NoError(t, err)
+	}
+	{
+		id := dm.NextId()
+		res, err := mapper.SelectParameterCharacterVaryingString(id)
+		require.NoError(t, err, id)
+		t.Log(id, res)
+	}
+	{
+		err = mapper.InsertParameterCharacterVaryingStringPointerOriginal(pointer.ToString(_mock.String()))
+		require.NoError(t, err)
+	}
+	{
+		id := dm.NextId()
+		res, err := mapper.SelectParameterCharacterVaryingStringOriginalPointer(id)
+		require.NoError(t, err, id)
+		t.Log(id, res)
+	}
+	
 	//}
-	
-	res, err := mapper.SelectArrayParameterBigintInt64(1)
-	require.NoError(t, err)
-	t.Log(res)
-	
-	res2, err := mapper.SelectArrayParameterBigintInt64OriginalPointer(1)
-	require.NoError(t, err)
-	for _, v := range res2 {
-		t.Log(*v)
-	}
-	
-	res3, err := mapper.SelectArrayParameterCharacterStringOriginalPointer(53)
-	require.NoError(t, err)
-	for _, v := range res3 {
-		t.Log(*v)
-	}
 }

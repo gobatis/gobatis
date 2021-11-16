@@ -44,13 +44,11 @@ func makePostgresqlXML() {
 	var (
 		insertStatements []*Statement
 		selectStatements []*Statement
+		updateStatements []*Statement
+		deleteStatements []*Statement
 	)
 	for _, v := range PostgresqlTypes {
-		iName := SName{
-			Action: "Insert",
-			Name:   strcase.ToCamel(v.Type),
-			Type:   strcase.ToCamel(v.Default),
-		}
+		iName := SName{Action: "Insert", Name: strcase.ToCamel(v.Type), Type: strcase.ToCamel(v.Default)}
 		insert := &Statement{
 			Tag:           "insert",
 			Id:            iName.ParameterOriginal(false),
@@ -58,11 +56,7 @@ func makePostgresqlXML() {
 			Params:        []Param{{Name: fmt.Sprintf("var_%s", v.Type)}},
 			Sql:           fmt.Sprintf("insert into types(%s) values(#{%s});", fmt.Sprintf("t_%s", v.Type), fmt.Sprintf("var_%s", v.Type)),
 		}
-		sName := SName{
-			Action: "Select",
-			Name:   strcase.ToCamel(v.Type),
-			Type:   strcase.ToCamel(v.Default),
-		}
+		sName := SName{Action: "Select", Name: strcase.ToCamel(v.Type), Type: strcase.ToCamel(v.Default)}
 		_select := &Statement{
 			Tag:           "select",
 			Id:            sName.ParameterOriginal(false),
@@ -71,6 +65,23 @@ func makePostgresqlXML() {
 			Params:        []Param{{Name: "id"}},
 			Result:        []Param{{Name: fmt.Sprintf("t_%s", v.Type)}},
 			Sql:           fmt.Sprintf("select t_%s from types where id = #{id};", v.Type),
+		}
+		uName := SName{Action: "Update", Name: strcase.ToCamel(v.Type), Type: strcase.ToCamel(v.Default)}
+		update := &Statement{
+			Tag:           "update",
+			Id:            uName.ParameterOriginal(false),
+			ShowParameter: true,
+			Params:        []Param{{Name: "id"}, {Name: "val"}},
+			Result:        []Param{{Name: fmt.Sprintf("t_%s", v.Type)}},
+			Sql:           fmt.Sprintf("update types set t_%s = #{ val } from types where id = #{id};", v.Type),
+		}
+		dName := SName{Action: "Delete", Name: strcase.ToCamel(v.Type), Type: strcase.ToCamel(v.Default)}
+		_delete := &Statement{
+			Tag:           "delete",
+			Id:            dName.ParameterOriginal(false),
+			ShowParameter: true,
+			Params:        []Param{{Name: "id"}},
+			Sql:           fmt.Sprintf("delete from types where id = #{id};"),
 		}
 		insertStatements = append(insertStatements,
 			insert,
@@ -84,8 +95,22 @@ func makePostgresqlXML() {
 		selectStatements = append(selectStatements,
 			_select,
 			_select.ForkId(sName.ParameterPointerOriginal(false)),
+			_select.ForkId(sName.ParameterOriginalPointer(false)),
+			_select.ForkId(sName.ParameterPointerPointer(false)),
 			_select.ForkId(sName.EntityOriginal(false)),
 			_select.ForkId(sName.EntityPointerOriginal(false)),
+		)
+		updateStatements = append(updateStatements,
+			update,
+			update.ForkId(uName.ParameterPointerOriginal(false)),
+			update.ForkId(uName.EntityOriginal(false)),
+			update.ForkId(uName.EntityPointerOriginal(false)),
+		)
+		deleteStatements = append(deleteStatements,
+			_delete,
+			_delete.ForkId(dName.ParameterPointerOriginal(false)),
+			_delete.ForkId(dName.EntityOriginal(false)),
+			_delete.ForkId(dName.EntityPointerOriginal(false)),
 		)
 		if !v.Array {
 			continue
@@ -113,6 +138,8 @@ func makePostgresqlXML() {
 	}
 	RenderStatements("./test/postgresql/sql/make/make_insert.xml", insertStatements)
 	RenderStatements("./test/postgresql/sql/make/make_select.xml", selectStatements)
+	RenderStatements("./test/postgresql/sql/make/make_update.xml", updateStatements)
+	RenderStatements("./test/postgresql/sql/make/make_delete.xml", deleteStatements)
 }
 
 func makePostgresqlMapper() {
@@ -145,6 +172,7 @@ func makePostgresqlMapper() {
 		)
 		selectMethods = append(selectMethods,
 			&Method{Name: sName.ParameterOriginal(false), In: []Param{{Name: "id", Type: "int"}}, Out: []Param{{Type: v.Default}, {Type: "error"}}},
+			&Method{Name: sName.ParameterOriginalPointer(false), In: []Param{{Name: "id", Type: "int"}}, Out: []Param{{Type: "*" + v.Default}, {Type: "error"}}},
 		)
 		if !v.Array {
 			continue
@@ -165,6 +193,17 @@ func makePostgresqlMapper() {
 	RenderMapper("./test/postgresql/make_mapper.go", header, methods)
 }
 
+type SelectCaseData struct {
+	Name string
+}
+
+const selectCaseTpl = `
+id := dm.NextId()
+res,err := mapper.{{ Name }}(id)
+require.NoError(t, err, id)
+t.Log(id, res)
+`
+
 func makePostgresqlCases() {
 	header := GoHeader{
 		Package: "postgresql",
@@ -175,52 +214,70 @@ func makePostgresqlCases() {
 			"github.com/gobatis/gobatis",
 			"github.com/gobatis/gobatis/driver/postgresql",
 			"github.com/AlekSi/pointer",
+			"github.com/gobatis/gobatis/test/generator",
 		},
 	}
 	var testCacses []*TestCase
 	for _, v := range PostgresqlTypes {
-		sName := SName{
-			Action: "Insert",
-			Name:   strcase.ToCamel(v.Type),
-			Type:   strcase.ToCamel(v.Default),
-		}
+		iName := SName{Action: "Insert", Name: strcase.ToCamel(v.Type), Type: strcase.ToCamel(v.Default)}
+		sName := SName{Action: "Select", Name: strcase.ToCamel(v.Type), Type: strcase.ToCamel(v.Default)}
 		testCacses = append(testCacses,
 			&TestCase{
 				Code: fmt.Sprintf("err = mapper.%s(_mock.%s())\n%4srequire.NoError(t, err)",
-					sName.ParameterOriginal(false), strcase.ToCamel(v.Default), " "),
+					iName.ParameterOriginal(false), strcase.ToCamel(v.Default), " "),
+			},
+			&TestCase{
+				Code: RenderTpl(selectCaseTpl, SelectCaseData{
+					Name: sName.ParameterOriginal(false),
+				}),
 			},
 			&TestCase{
 				Code: fmt.Sprintf("err = mapper.%s(pointer.To%s(_mock.%s()))\n%4srequire.NoError(t, err)",
-					sName.ParameterPointerOriginal(false), strcase.ToCamel(v.Default), strcase.ToCamel(v.Default), " "),
+					iName.ParameterPointerOriginal(false), strcase.ToCamel(v.Default), strcase.ToCamel(v.Default), " "),
+			},
+			&TestCase{
+				Code: RenderTpl(selectCaseTpl, SelectCaseData{
+					Name: sName.ParameterOriginalPointer(false),
+				}),
 			},
 		)
-		if v.Array {
-			testCacses = append(testCacses,
-				&TestCase{
-					Code: fmt.Sprintf("err = mapper.%s([]%s{_mock.%s(),_mock.%s(),_mock.%s()})\n%4srequire.NoError(t, err)",
-						sName.ParameterOriginal(true),
-						v.Default,
-						strcase.ToCamel(v.Default),
-						strcase.ToCamel(v.Default),
-						strcase.ToCamel(v.Default),
-						" ",
-					),
-				},
-				&TestCase{
-					Code: fmt.Sprintf("err = mapper.%s([]*%s{pointer.To%s(_mock.%s()),pointer.To%s(_mock.%s()),pointer.To%s(_mock.%s()),})\n%4srequire.NoError(t, err)",
-						sName.ParameterPointerOriginal(true),
-						v.Default,
-						strcase.ToCamel(v.Default),
-						strcase.ToCamel(v.Default),
-						strcase.ToCamel(v.Default),
-						strcase.ToCamel(v.Default),
-						strcase.ToCamel(v.Default),
-						strcase.ToCamel(v.Default),
-						" ",
-					),
-				},
-			)
-		}
+		//if v.Array {
+		//	testCacses = append(testCacses,
+		//		&TestCase{
+		//			Code: fmt.Sprintf("err = mapper.%s([]%s{_mock.%s(),_mock.%s(),_mock.%s()})\n%4srequire.NoError(t, err)",
+		//				iName.ParameterOriginal(true),
+		//				v.Default,
+		//				strcase.ToCamel(v.Default),
+		//				strcase.ToCamel(v.Default),
+		//				strcase.ToCamel(v.Default),
+		//				" ",
+		//			),
+		//		},
+		//		&TestCase{
+		//			Code: fmt.Sprintf("err = mapper.%s([]%s{_mock.%s(),_mock.%s(),_mock.%s()})\n%4srequire.NoError(t, err)",
+		//				iName.ParameterOriginal(true),
+		//				v.Default,
+		//				strcase.ToCamel(v.Default),
+		//				strcase.ToCamel(v.Default),
+		//				strcase.ToCamel(v.Default),
+		//				" ",
+		//			),
+		//		},
+		//		&TestCase{
+		//			Code: fmt.Sprintf("err = mapper.%s([]*%s{pointer.To%s(_mock.%s()),pointer.To%s(_mock.%s()),pointer.To%s(_mock.%s()),})\n%4srequire.NoError(t, err)",
+		//				iName.ParameterPointerOriginal(true),
+		//				v.Default,
+		//				strcase.ToCamel(v.Default),
+		//				strcase.ToCamel(v.Default),
+		//				strcase.ToCamel(v.Default),
+		//				strcase.ToCamel(v.Default),
+		//				strcase.ToCamel(v.Default),
+		//				strcase.ToCamel(v.Default),
+		//				" ",
+		//			),
+		//		},
+		//	)
+		//}
 	}
 	RenderTestcases("./test/postgresql/make_mapper_test.go", header, testCacses)
 }

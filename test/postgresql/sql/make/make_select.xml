@@ -10,6 +10,14 @@
     select t_bigint from types where id = #{id};
 </select>
 
+<select id="SelectParameterBigintInt64OriginalPointer" parameter="id" result="t_bigint">
+    select t_bigint from types where id = #{id};
+</select>
+
+<select id="SelectParameterBigintInt64PointerPointer" parameter="id" result="t_bigint">
+    select t_bigint from types where id = #{id};
+</select>
+
 <select id="SelectEntityBigintInt64" parameter="id" result="t_bigint">
     select t_bigint from types where id = #{id};
 </select>
@@ -54,6 +62,14 @@
     select t_character from types where id = #{id};
 </select>
 
+<select id="SelectParameterCharacterStringOriginalPointer" parameter="id" result="t_character">
+    select t_character from types where id = #{id};
+</select>
+
+<select id="SelectParameterCharacterStringPointerPointer" parameter="id" result="t_character">
+    select t_character from types where id = #{id};
+</select>
+
 <select id="SelectEntityCharacterString" parameter="id" result="t_character">
     select t_character from types where id = #{id};
 </select>
@@ -95,6 +111,14 @@
 </select>
 
 <select id="SelectParameterCharacterVaryingStringPointerOriginal" parameter="id" result="t_character_varying">
+    select t_character_varying from types where id = #{id};
+</select>
+
+<select id="SelectParameterCharacterVaryingStringOriginalPointer" parameter="id" result="t_character_varying">
+    select t_character_varying from types where id = #{id};
+</select>
+
+<select id="SelectParameterCharacterVaryingStringPointerPointer" parameter="id" result="t_character_varying">
     select t_character_varying from types where id = #{id};
 </select>
 
