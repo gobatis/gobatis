@@ -1,15 +1,10 @@
 package gobatis
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/require"
-	"os"
-	"path/filepath"
 	"reflect"
-	"strings"
 	"testing"
 )
 
@@ -104,19 +99,16 @@ const (
 	errLogFile = "err.md"
 )
 
-func init() {
-	
-	logPath := filepath.Join(pwd, errLogFile)
-	_, err := os.Stat(logPath)
-	if !os.IsNotExist(err) {
-		_ = os.Remove(logPath)
-	}
-}
+//func init() {
+//
+//	logPath := filepath.Join(pwd, errLogFile)
+//	_, err := os.Stat(logPath)
+//	if !os.IsNotExist(err) {
+//		_ = os.Remove(logPath)
+//	}
+//}
 
-func TestParseConfig(t *testing.T) {
-	engine := NewEngine(NewDB("nil", "nil"))
-	require.NoError(t, parseConfig(engine, "gobatis.xml", defaultConfigXML))
-}
+
 
 func TestErrorParseMapper(t *testing.T) {
 	engine := NewEngine(&DB{})
@@ -358,11 +350,11 @@ func TestCorrectParseExprExpression(t *testing.T) {
 	})
 }
 
-func TestErrorParseExprExpression(t *testing.T) {
-	testErrorParseExprParameter(t, []testExpression{
-		//{In: []interface{}{2, 4}, Parameter: `a:int64,b`, Expr: "a + b", Result: 6, Err: 1},
-	})
-}
+//func TestErrorParseExprExpression(t *testing.T) {
+//	testErrorParseExprParameter(t, []testExpression{
+//		//{In: []interface{}{2, 4}, Parameter: `a:int64,b`, Expr: "a + b", Result: 6, Err: 1},
+//	})
+//}
 
 func TestAnyExprParam(t *testing.T) {
 	params, err := testAnyExprParam(" * ")
@@ -403,31 +395,31 @@ func execTestErrorMapper(t *testing.T, engine *Engine, tests []testMapper) {
 	//}
 }
 
-func writeError(t *testing.T, title string, test interface{}, _err error) {
-	f, err := os.OpenFile(filepath.Join(pwd, errLogFile), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	require.NoError(t, err)
-	defer func() {
-		_ = f.Close()
-	}()
-	td := bytes.NewBuffer([]byte{})
-	jsonEncoder := json.NewEncoder(td)
-	jsonEncoder.SetEscapeHTML(false)
-	jsonEncoder.SetIndent("", " ")
-	err = jsonEncoder.Encode(test)
-	require.NoError(t, err)
-	//td, err := json.MarshalIndent(test, "", "")
-	require.NoError(t, err)
-	tds := td.String()
-	if !strings.HasSuffix(tds, "\n") {
-		tds += "\n"
-	}
-	es := _err.Error()
-	if !strings.HasSuffix(es, "\n") {
-		es += "\n"
-	}
-	_, err = f.WriteString(fmt.Sprintf("**%s**\n\ndata:\n```\n%s```\nerror:\n```\n%s```\n", title, tds, es))
-	require.NoError(t, err)
-}
+//func writeError(t *testing.T, title string, test interface{}, _err error) {
+//	f, err := os.OpenFile(filepath.Join(pwd, errLogFile), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+//	require.NoError(t, err)
+//	defer func() {
+//		_ = f.Close()
+//	}()
+//	td := bytes.NewBuffer([]byte{})
+//	jsonEncoder := json.NewEncoder(td)
+//	jsonEncoder.SetEscapeHTML(false)
+//	jsonEncoder.SetIndent("", " ")
+//	err = jsonEncoder.Encode(test)
+//	require.NoError(t, err)
+//	//td, err := json.MarshalIndent(test, "", "")
+//	require.NoError(t, err)
+//	tds := td.String()
+//	if !strings.HasSuffix(tds, "\n") {
+//		tds += "\n"
+//	}
+//	es := _err.Error()
+//	if !strings.HasSuffix(es, "\n") {
+//		es += "\n"
+//	}
+//	_, err = f.WriteString(fmt.Sprintf("**%s**\n\ndata:\n```\n%s```\nerror:\n```\n%s```\n", title, tds, es))
+//	require.NoError(t, err)
+//}
 
 func execTestFragment(t *testing.T, engine *Engine, tests []testFragment) {
 	//reg := regexp.MustCompile(`\s+`)
@@ -454,7 +446,7 @@ func execTestFragment(t *testing.T, engine *Engine, tests []testFragment) {
 }
 
 func testCorrectParseExprExpression(t *testing.T, tests []testExpression) {
-	for i, item := range tests {
+	for _, item := range tests {
 		vars := make([]reflect.Value, 0)
 		for _, v := range item.In {
 			vars = append(vars, rv(v))
@@ -472,7 +464,7 @@ func testCorrectParseExprExpression(t *testing.T, tests []testExpression) {
 		result, _, err := _expr.parseExpression(nil, item.Expr)
 		if item.Err > 0 {
 			require.Error(t, err, item)
-			writeError(t, fmt.Sprintf("test parse expression: %d", i), item, err)
+			//writeError(t, fmt.Sprintf("test parse expression: %d", i), item, err)
 		} else {
 			require.NoError(t, err, item)
 			dr, ok := result.(decimal.Decimal)
@@ -485,17 +477,17 @@ func testCorrectParseExprExpression(t *testing.T, tests []testExpression) {
 	}
 }
 
-func testErrorParseExprParameter(t *testing.T, tests []testExpression) {
-	for i, test := range tests {
-		vars := make([]reflect.Value, 0)
-		for _, v := range test.In {
-			vars = append(vars, rv(v))
-		}
-		_, err := testParseParams("exprs", test.Parameter)
-		require.Error(t, err, test)
-		writeError(t, fmt.Sprintf("test error parse parameter: %d", i), test, err)
-	}
-}
+//func testErrorParseExprParameter(t *testing.T, tests []testExpression) {
+//	for i, test := range tests {
+//		vars := make([]reflect.Value, 0)
+//		for _, v := range test.In {
+//			vars = append(vars, rv(v))
+//		}
+//		_, err := testParseParams("exprs", test.Parameter)
+//		require.Error(t, err, test)
+//		writeError(t, fmt.Sprintf("test error parse parameter: %d", i), test, err)
+//	}
+//}
 
 func testParseParams(file, tokens string) (params []*param, err error) {
 	defer func() {

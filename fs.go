@@ -13,7 +13,7 @@ const suffix = ".xml"
 
 type fsDir string
 
-// mapDirOpenError maps the provided non-nil error from opening name
+// maps the provided non-nil error from opening name
 // to a possibly better non-nil error. In particular, it turns OS-specific errors
 // about opening files in non-directories into os.ErrNotExist. See Issue 18984.
 func mapDirOpenError(originalErr error, name string) error {

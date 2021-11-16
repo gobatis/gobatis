@@ -200,7 +200,7 @@ func (p caller) scanRows(rt int, params []*param, rows *sql.Rows, values ...refl
 	}()
 	scanner := queryScanner{
 		rows:    rows,
-		tag:     p.fragment.scanTag(),
+		scanTag: p.fragment.scanTag(),
 		scanner: p.fragment.engine.scannerFactory(),
 	}
 	err = scanner.setSelected(rt, params, values)

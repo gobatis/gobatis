@@ -35,6 +35,10 @@ func ScannerFactory() gobatis.Scanner {
 	return new(Scanner)
 }
 
+type Assigner interface {
+	AssignTo(interface{}) error
+}
+
 type Scanner struct {
 	fields map[string]*sql.ColumnType
 }
@@ -46,19 +50,14 @@ func (s *Scanner) Scan(rows *sql.Rows, ct *sql.ColumnType, value reflect.Value) 
 			return
 		}
 	} else {
-		//at := new(pgtype.ArrayType)
-		//err = rows.Scan(at)
-		//if err != nil {
-		//	return
-		//}
-		//err = at.AssignTo(value.Interface())
-		//if err != nil {
-		//	return
-		//}
-		var assigner gobatis.Assigner
+		var assigner Assigner
 		switch ct.DatabaseTypeName() {
 		case "_INT8":
 			assigner = new(pgtype.Int8Array)
+		case "_VARCHAR":
+			assigner = new(pgtype.VarcharArray)
+		case "_BPCHAR":
+			assigner = new(pgtype.BPCharArray)
 		default:
 			err = fmt.Errorf("unsupport scan type: %s(%s)", ct.Name(), ct.DatabaseTypeName())
 			return

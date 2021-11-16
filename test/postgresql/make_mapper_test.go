@@ -21,7 +21,6 @@ func TestInsert(t *testing.T) {
 	}()
 	
 	//for i := 0; i < 10; i++ {
-	//
 	//	err = mapper.InsertParameterBigintInt64(_mock.Int64())
 	//	require.NoError(t, err)
 	//
@@ -57,7 +56,6 @@ func TestInsert(t *testing.T) {
 	//
 	//	err = mapper.InsertArrayParameterCharacterVaryingStringPointerOriginal([]*string{pointer.ToString(_mock.String()), pointer.ToString(_mock.String()), pointer.ToString(_mock.String())})
 	//	require.NoError(t, err)
-	//
 	//}
 	
 	res, err := mapper.SelectArrayParameterBigintInt64(1)
@@ -67,6 +65,12 @@ func TestInsert(t *testing.T) {
 	res2, err := mapper.SelectArrayParameterBigintInt64OriginalPointer(1)
 	require.NoError(t, err)
 	for _, v := range res2 {
+		t.Log(*v)
+	}
+	
+	res3, err := mapper.SelectArrayParameterCharacterStringOriginalPointer(53)
+	require.NoError(t, err)
+	for _, v := range res3 {
 		t.Log(*v)
 	}
 }

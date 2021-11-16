@@ -3,9 +3,7 @@ package gobatis
 import (
 	"database/sql"
 	"fmt"
-	"github.com/gobatis/gobatis/cast"
 	"reflect"
-	"strings"
 )
 
 type Scanner interface {
@@ -17,11 +15,10 @@ type ScannerFactory func() Scanner
 type queryScanner struct {
 	rows     *sql.Rows
 	first    bool
-	reflect  bool
-	all      bool
+	mapping  bool
 	selected map[string]int
 	values   []reflect.Value
-	tag      string
+	scanTag  string
 	scanner  Scanner
 }
 
@@ -32,14 +29,14 @@ func (p *queryScanner) Rows() *sql.Rows {
 func (p *queryScanner) setSelected(rt int, params []*param, values []reflect.Value) error {
 	
 	p.values = values
-	p.reflect = len(params) == 0
+	p.mapping = len(params) == 0
 	
 	if rt != result_result {
 		return nil
 	}
 	
 	var el int
-	if p.reflect {
+	if p.mapping {
 		el = 1
 	} else {
 		el = len(params)
@@ -49,13 +46,26 @@ func (p *queryScanner) setSelected(rt int, params []*param, values []reflect.Val
 		return fmt.Errorf("expected to receive %d result filed(s), got %d (except error)", el, len(values))
 	}
 	
-	if p.reflect {
+	var err error
+	if p.mapping {
+		elem := reflectValueElem(p.values[0])
+		if elem.Kind() == reflect.Struct {
+			for i := 0; i < elem.NumField(); i++ {
+				field := trimScanComma(elem.Type().Field(i).Tag.Get(p.scanTag))
+				if field != "" {
+					p.values = append(p.values, elem.Field(i))
+					err = p.addSelected(len(p.values)-1, field)
+					if err != nil {
+						return err
+					}
+				}
+			}
+		}
 		return nil
 	}
-	
 	p.first = true
 	for i, v := range params {
-		err := p.addSelected(i, v.name)
+		err = p.addSelected(i, v.name)
 		if err != nil {
 			return err
 		}
@@ -63,7 +73,6 @@ func (p *queryScanner) setSelected(rt int, params []*param, values []reflect.Val
 			p.first = false
 		}
 	}
-	
 	return nil
 }
 
@@ -86,17 +95,13 @@ func (p *queryScanner) isSelected(field string) bool {
 	return ok
 }
 
-type Assigner interface {
-	AssignTo(interface{}) error
-}
-
 func (p *queryScanner) scan() (err error) {
 	cts, err := p.rows.ColumnTypes()
 	if err != nil {
 		return
 	}
 	i := 0
-	if p.reflect {
+	if p.mapping {
 		for p.rows.Next() {
 			if p.isSelected(cts[i].Name()) {
 				err = p.scanner.Scan(p.rows, cts[i], p.values[p.selected[cts[i].Name()]])
@@ -128,81 +133,73 @@ func (p *queryScanner) scan() (err error) {
 	return
 }
 
-func (p *queryScanner) trimComma(field string) string {
-	// TODO 也许可以更加优化
-	if strings.Contains(field, ",") {
-		return strings.TrimSpace(strings.Split(field, ",")[0])
-	}
-	return field
-}
-
 type execScanner struct {
 	affected int64
 	values   []reflect.Value
 }
 
 func (p *execScanner) scan() error {
-	if len(p.values) != 0 {
+	if len(p.values) != 1 {
 		return fmt.Errorf("scan rows: illegal values length %d", len(p.values))
 	}
-	switch p.values[0].Elem().Kind() {
-	case reflect.Int:
-		r, e := cast.ToIntE(p.affected)
-		if e != nil {
-			return e
-		}
-		p.values[0].Elem().SetInt(int64(r))
-	case reflect.Int8:
-		r, e := cast.ToInt8E(p.affected)
-		if e != nil {
-			return e
-		}
-		p.values[0].Elem().SetInt(int64(r))
-	case reflect.Int16:
-		r, e := cast.ToInt16E(p.affected)
-		if e != nil {
-			return e
-		}
-		p.values[0].Elem().SetInt(int64(r))
-	case reflect.Int32:
-		r, e := cast.ToInt32E(p.affected)
-		if e != nil {
-			return e
-		}
-		p.values[0].Elem().SetInt(int64(r))
-	case reflect.Int64:
-		p.values[0].Elem().SetInt(p.affected)
-	case reflect.Uint:
-		r, e := cast.ToUintE(p.affected)
-		if e != nil {
-			return e
-		}
-		p.values[0].Elem().SetUint(uint64(r))
-	case reflect.Uint8:
-		r, e := cast.ToUint8E(p.affected)
-		if e != nil {
-			return e
-		}
-		p.values[0].Elem().SetUint(uint64(r))
-	case reflect.Uint16:
-		r, e := cast.ToUint16E(p.affected)
-		if e != nil {
-			return e
-		}
-		p.values[0].Elem().SetUint(uint64(r))
-	case reflect.Uint32:
-		r, e := cast.ToUint32E(p.affected)
-		if e != nil {
-			return e
-		}
-		p.values[0].Elem().SetUint(uint64(r))
-	case reflect.Uint64:
-		r, e := cast.ToUint64E(p.affected)
-		if e != nil {
-			return e
-		}
-		p.values[0].Elem().SetUint(r)
-	}
-	
+	p.values[0].SetInt(p.affected)
+	//switch p.values[0].Elem().Kind() {
+	//case reflect.Int:
+	//	r, e := cast.ToIntE(p.affected)
+	//	if e != nil {
+	//		return e
+	//	}
+	//	p.values[0].Elem().SetInt(int64(r))
+	//case reflect.Int8:
+	//	r, e := cast.ToInt8E(p.affected)
+	//	if e != nil {
+	//		return e
+	//	}
+	//	p.values[0].Elem().SetInt(int64(r))
+	//case reflect.Int16:
+	//	r, e := cast.ToInt16E(p.affected)
+	//	if e != nil {
+	//		return e
+	//	}
+	//	p.values[0].Elem().SetInt(int64(r))
+	//case reflect.Int32:
+	//	r, e := cast.ToInt32E(p.affected)
+	//	if e != nil {
+	//		return e
+	//	}
+	//	p.values[0].Elem().SetInt(int64(r))
+	//case reflect.Int64:
+	//	p.values[0].Elem().SetInt(p.affected)
+	//case reflect.Uint:
+	//	r, e := cast.ToUintE(p.affected)
+	//	if e != nil {
+	//		return e
+	//	}
+	//	p.values[0].Elem().SetUint(uint64(r))
+	//case reflect.Uint8:
+	//	r, e := cast.ToUint8E(p.affected)
+	//	if e != nil {
+	//		return e
+	//	}
+	//	p.values[0].Elem().SetUint(uint64(r))
+	//case reflect.Uint16:
+	//	r, e := cast.ToUint16E(p.affected)
+	//	if e != nil {
+	//		return e
+	//	}
+	//	p.values[0].Elem().SetUint(uint64(r))
+	//case reflect.Uint32:
+	//	r, e := cast.ToUint32E(p.affected)
+	//	if e != nil {
+	//		return e
+	//	}
+	//	p.values[0].Elem().SetUint(uint64(r))
+	//case reflect.Uint64:
+	//	r, e := cast.ToUint64E(p.affected)
+	//	if e != nil {
+	//		return e
+	//	}
+	//	p.values[0].Elem().SetUint(r)
+	//}
 	return nil
 }

@@ -128,3 +128,10 @@ func snake(s string) string {
 	}
 	return strings.ToLower(string(data[:]))
 }
+
+func trimScanComma(tag string) string {
+	if strings.Contains(tag, ",") {
+		return strings.TrimSpace(strings.Split(tag, ",")[0])
+	}
+	return tag
+}

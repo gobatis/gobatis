@@ -111,8 +111,8 @@ func makePostgresqlXML() {
 			_select.ForkId(sName.EntityOriginalPointer(true)),
 		)
 	}
-	RenderStatements("./test/postgresql/sql/make_insert.xml", insertStatements)
-	RenderStatements("./test/postgresql/sql/make_select.xml", selectStatements)
+	RenderStatements("./test/postgresql/sql/make/make_insert.xml", insertStatements)
+	RenderStatements("./test/postgresql/sql/make/make_select.xml", selectStatements)
 }
 
 func makePostgresqlMapper() {

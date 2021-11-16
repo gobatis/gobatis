@@ -1,5 +1,7 @@
 package gobatis
 
+import "reflect"
+
 //var (
 //	pwd string
 //)
@@ -40,9 +42,9 @@ package gobatis
 //	}
 //}
 //
-//func rv(v interface{}) reflect.Value {
-//	return reflect.ValueOf(v)
-//}
+func rv(v interface{}) reflect.Value {
+	return reflect.ValueOf(v)
+}
 //
 //func TestEngine(t *testing.T) {
 //
