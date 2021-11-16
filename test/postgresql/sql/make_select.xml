@@ -2,135 +2,135 @@
 <!DOCTYPE mapper PUBLIC "-//gobatis.co//DTD Mapper 1.0//EN" "gobatis.co/dtd/mapper.dtd">
 <mapper>
 
-<select id="SelectParameterBigintInt64" parameter="id">
+<select id="SelectParameterBigintInt64" parameter="id" result="t_bigint">
     select t_bigint from types where id = #{id};
 </select>
 
-<select id="SelectParameterBigintInt64PointerOriginal" parameter="id">
+<select id="SelectParameterBigintInt64PointerOriginal" parameter="id" result="t_bigint">
     select t_bigint from types where id = #{id};
 </select>
 
-<select id="SelectEntityBigintInt64" parameter="id">
+<select id="SelectEntityBigintInt64" parameter="id" result="t_bigint">
     select t_bigint from types where id = #{id};
 </select>
 
-<select id="SelectEntityBigintInt64PointerOriginal" parameter="id">
+<select id="SelectEntityBigintInt64PointerOriginal" parameter="id" result="t_bigint">
     select t_bigint from types where id = #{id};
 </select>
 
-<select id="SelectArrayParameterBigintInt64" parameter="id">
+<select id="SelectArrayParameterBigintInt64" parameter="id" result="t_bigint">
     select t_bigint from array_types where id = #{id};
 </select>
 
-<select id="SelectArrayParameterBigintInt64PointerOriginal" parameter="id">
+<select id="SelectArrayParameterBigintInt64PointerOriginal" parameter="id" result="t_bigint">
     select t_bigint from array_types where id = #{id};
 </select>
 
-<select id="SelectArrayParameterBigintInt64OriginalPointer" parameter="id">
+<select id="SelectArrayParameterBigintInt64OriginalPointer" parameter="id" result="t_bigint">
     select t_bigint from array_types where id = #{id};
 </select>
 
-<select id="SelectArrayParameterBigintInt64PointerPointer" parameter="id">
+<select id="SelectArrayParameterBigintInt64PointerPointer" parameter="id" result="t_bigint">
     select t_bigint from array_types where id = #{id};
 </select>
 
-<select id="SelectArrayEntityBigintInt64" parameter="id">
+<select id="SelectArrayEntityBigintInt64" parameter="id" result="t_bigint">
     select t_bigint from array_types where id = #{id};
 </select>
 
-<select id="SelectArrayEntityBigintInt64PointerOriginal" parameter="id">
+<select id="SelectArrayEntityBigintInt64PointerOriginal" parameter="id" result="t_bigint">
     select t_bigint from array_types where id = #{id};
 </select>
 
-<select id="SelectArrayEntityBigintInt64OriginalPointer" parameter="id">
+<select id="SelectArrayEntityBigintInt64OriginalPointer" parameter="id" result="t_bigint">
     select t_bigint from array_types where id = #{id};
 </select>
 
-<select id="SelectParameterCharacterString" parameter="id">
+<select id="SelectParameterCharacterString" parameter="id" result="t_character">
     select t_character from types where id = #{id};
 </select>
 
-<select id="SelectParameterCharacterStringPointerOriginal" parameter="id">
+<select id="SelectParameterCharacterStringPointerOriginal" parameter="id" result="t_character">
     select t_character from types where id = #{id};
 </select>
 
-<select id="SelectEntityCharacterString" parameter="id">
+<select id="SelectEntityCharacterString" parameter="id" result="t_character">
     select t_character from types where id = #{id};
 </select>
 
-<select id="SelectEntityCharacterStringPointerOriginal" parameter="id">
+<select id="SelectEntityCharacterStringPointerOriginal" parameter="id" result="t_character">
     select t_character from types where id = #{id};
 </select>
 
-<select id="SelectArrayParameterCharacterString" parameter="id">
+<select id="SelectArrayParameterCharacterString" parameter="id" result="t_character">
     select t_character from array_types where id = #{id};
 </select>
 
-<select id="SelectArrayParameterCharacterStringPointerOriginal" parameter="id">
+<select id="SelectArrayParameterCharacterStringPointerOriginal" parameter="id" result="t_character">
     select t_character from array_types where id = #{id};
 </select>
 
-<select id="SelectArrayParameterCharacterStringOriginalPointer" parameter="id">
+<select id="SelectArrayParameterCharacterStringOriginalPointer" parameter="id" result="t_character">
     select t_character from array_types where id = #{id};
 </select>
 
-<select id="SelectArrayParameterCharacterStringPointerPointer" parameter="id">
+<select id="SelectArrayParameterCharacterStringPointerPointer" parameter="id" result="t_character">
     select t_character from array_types where id = #{id};
 </select>
 
-<select id="SelectArrayEntityCharacterString" parameter="id">
+<select id="SelectArrayEntityCharacterString" parameter="id" result="t_character">
     select t_character from array_types where id = #{id};
 </select>
 
-<select id="SelectArrayEntityCharacterStringPointerOriginal" parameter="id">
+<select id="SelectArrayEntityCharacterStringPointerOriginal" parameter="id" result="t_character">
     select t_character from array_types where id = #{id};
 </select>
 
-<select id="SelectArrayEntityCharacterStringOriginalPointer" parameter="id">
+<select id="SelectArrayEntityCharacterStringOriginalPointer" parameter="id" result="t_character">
     select t_character from array_types where id = #{id};
 </select>
 
-<select id="SelectParameterCharacterVaryingString" parameter="id">
+<select id="SelectParameterCharacterVaryingString" parameter="id" result="t_character_varying">
     select t_character_varying from types where id = #{id};
 </select>
 
-<select id="SelectParameterCharacterVaryingStringPointerOriginal" parameter="id">
+<select id="SelectParameterCharacterVaryingStringPointerOriginal" parameter="id" result="t_character_varying">
     select t_character_varying from types where id = #{id};
 </select>
 
-<select id="SelectEntityCharacterVaryingString" parameter="id">
+<select id="SelectEntityCharacterVaryingString" parameter="id" result="t_character_varying">
     select t_character_varying from types where id = #{id};
 </select>
 
-<select id="SelectEntityCharacterVaryingStringPointerOriginal" parameter="id">
+<select id="SelectEntityCharacterVaryingStringPointerOriginal" parameter="id" result="t_character_varying">
     select t_character_varying from types where id = #{id};
 </select>
 
-<select id="SelectArrayParameterCharacterVaryingString" parameter="id">
+<select id="SelectArrayParameterCharacterVaryingString" parameter="id" result="t_character_varying">
     select t_character_varying from array_types where id = #{id};
 </select>
 
-<select id="SelectArrayParameterCharacterVaryingStringPointerOriginal" parameter="id">
+<select id="SelectArrayParameterCharacterVaryingStringPointerOriginal" parameter="id" result="t_character_varying">
     select t_character_varying from array_types where id = #{id};
 </select>
 
-<select id="SelectArrayParameterCharacterVaryingStringOriginalPointer" parameter="id">
+<select id="SelectArrayParameterCharacterVaryingStringOriginalPointer" parameter="id" result="t_character_varying">
     select t_character_varying from array_types where id = #{id};
 </select>
 
-<select id="SelectArrayParameterCharacterVaryingStringPointerPointer" parameter="id">
+<select id="SelectArrayParameterCharacterVaryingStringPointerPointer" parameter="id" result="t_character_varying">
     select t_character_varying from array_types where id = #{id};
 </select>
 
-<select id="SelectArrayEntityCharacterVaryingString" parameter="id">
+<select id="SelectArrayEntityCharacterVaryingString" parameter="id" result="t_character_varying">
     select t_character_varying from array_types where id = #{id};
 </select>
 
-<select id="SelectArrayEntityCharacterVaryingStringPointerOriginal" parameter="id">
+<select id="SelectArrayEntityCharacterVaryingStringPointerOriginal" parameter="id" result="t_character_varying">
     select t_character_varying from array_types where id = #{id};
 </select>
 
-<select id="SelectArrayEntityCharacterVaryingStringOriginalPointer" parameter="id">
+<select id="SelectArrayEntityCharacterVaryingStringOriginalPointer" parameter="id" result="t_character_varying">
     select t_character_varying from array_types where id = #{id};
 </select>
 

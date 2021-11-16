@@ -1,8 +1,8 @@
 package postgresql
 
 import (
-	"fmt"
 	"github.com/gobatis/gobatis"
+	"github.com/gobatis/gobatis/driver/postgresql"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
@@ -10,7 +10,7 @@ import (
 func TestInsert(t *testing.T) {
 	var err error
 	mapper := new(MakeMapper)
-	engine := gobatis.NewPostgresql("postgresql://postgres:postgres@127.0.0.1:5432/gobatis?connect_timeout=10&sslmode=disable")
+	engine := postgresql.NewEngine("postgresql://postgres:postgres@127.0.0.1:5432/gobatis?connect_timeout=10&sslmode=disable")
 	err = engine.Init(gobatis.NewBundle("./sql"))
 	require.NoError(t, err)
 	err = engine.BindMapper(mapper)
@@ -59,11 +59,14 @@ func TestInsert(t *testing.T) {
 	//	require.NoError(t, err)
 	//
 	//}
-	//
 	
-	_, _ = mapper.SelectParameterBigintInt64(1)
-	fmt.Println("----")
-	items, err := mapper.SelectArrayParameterBigintInt64(1)
+	res, err := mapper.SelectArrayParameterBigintInt64(1)
 	require.NoError(t, err)
-	t.Log(items)
+	t.Log(res)
+	
+	res2, err := mapper.SelectArrayParameterBigintInt64OriginalPointer(1)
+	require.NoError(t, err)
+	for _, v := range res2 {
+		t.Log(*v)
+	}
 }

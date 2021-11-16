@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/gobatis/gobatis"
 )
 
 const MySQL = "mysql"
@@ -15,4 +16,12 @@ func InitDB(dsn string) (db *sql.DB, err error) {
 		return
 	}
 	return
+}
+
+func NewEngine(dsn string) *gobatis.Engine {
+	db, err := InitDB(dsn)
+	if err != nil {
+		panic(err)
+	}
+	return gobatis.NewEngine(gobatis.NewDB(db))
 }

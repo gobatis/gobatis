@@ -161,6 +161,7 @@ func (p fragment) fork() *fragment {
 	n.out = p.out
 	n.rt = p.rt
 	n.must = p.must
+	n.engine = p.engine
 	return n
 }
 
@@ -844,7 +845,7 @@ func (p fragment) quoteFiled(s string) string {
 // if tag found, use tag
 // or use lower_snake_name
 func (p fragment) extractFiledName(field reflect.StructField) string {
-	tag := field.Tag.Get(p.reflectTag())
+	tag := field.Tag.Get(p.scanTag())
 	if strings.Contains(tag, ",") {
 		tag = strings.TrimSpace(strings.Split(tag, ",")[0])
 	}
@@ -854,9 +855,9 @@ func (p fragment) extractFiledName(field reflect.StructField) string {
 	return snake(field.Name)
 }
 
-func (p fragment) reflectTag() string {
+func (p fragment) scanTag() string {
 	if p.engine != nil {
-		return p.engine.ReflectTag()
+		return p.engine.ScanTag()
 	}
 	return default_tag
 }

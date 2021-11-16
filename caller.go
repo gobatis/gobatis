@@ -198,7 +198,11 @@ func (p caller) scanRows(rt int, params []*param, rows *sql.Rows, values ...refl
 			p.logger.Errorf("[gobatis] [%s] close rows error: %s", p.fragment.id, _err)
 		}
 	}()
-	scanner := queryScanner{rows: rows, tag: p.fragment.reflectTag()}
+	scanner := queryScanner{
+		rows:    rows,
+		tag:     p.fragment.scanTag(),
+		scanner: p.fragment.engine.scannerFactory(),
+	}
 	err = scanner.setSelected(rt, params, values)
 	if err != nil {
 		return err

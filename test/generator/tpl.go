@@ -30,7 +30,9 @@ type Statement struct {
 	Tag           string
 	Id            string
 	ShowParameter bool
+	ShowResult    bool
 	Params        []Param
+	Result        []Param
 	Sql           string
 }
 
@@ -61,6 +63,16 @@ func (p Statement) ForkParams(params []Param) *Statement {
 		panic(err)
 	}
 	n.Params = params
+	return n
+}
+
+func (p Statement) ForkResult(params []Param) *Statement {
+	n := new(Statement)
+	err := copier.Copy(n, p)
+	if err != nil {
+		panic(err)
+	}
+	n.Result = params
 	return n
 }
 

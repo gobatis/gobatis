@@ -6,16 +6,13 @@ import (
 	"database/sql/driver"
 	"fmt"
 	"github.com/gobatis/gobatis/cast"
-	"github.com/gobatis/gobatis/driver/mysql"
-	"github.com/gobatis/gobatis/driver/postgresql"
 	"reflect"
 	"time"
 )
 
-func NewDB(driver, dsn string) *DB {
+func NewDB(db *sql.DB) *DB {
 	return &DB{
-		driver: driver,
-		dsn:    dsn,
+		db: db,
 	}
 }
 
@@ -25,27 +22,8 @@ type (
 )
 
 type DB struct {
-	driver string
-	dsn    string
 	db     *sql.DB
 	logger Logger
-}
-
-func (p *DB) initDB() (err error) {
-	switch p.driver {
-	case postgresql.PGX:
-		p.db, err = postgresql.InitDB(p.dsn)
-	case mysql.MySQL:
-		p.db, err = mysql.InitDB(p.dsn)
-	default:
-		p.db, err = sql.Open(p.driver, p.dsn)
-		if err != nil {
-			err = fmt.Errorf("%s connnet error: %s", p.driver, err)
-			return
-		}
-	}
-	p.dsn = ""
-	return
 }
 
 func (p *DB) PingContext(ctx context.Context) error {
@@ -63,15 +41,19 @@ func (p *DB) Close() error {
 func (p *DB) SetMaxIdleConns(n int) {
 	p.db.SetMaxIdleConns(n)
 }
+
 func (p *DB) SetMaxOpenConns(n int) {
 	p.db.SetMaxOpenConns(n)
 }
+
 func (p *DB) SetConnMaxLifetime(d time.Duration) {
 	p.db.SetConnMaxLifetime(d)
 }
+
 func (p *DB) SetConnMaxIdleTime(d time.Duration) {
 	p.db.SetConnMaxIdleTime(d)
 }
+
 func (p *DB) Stats() sql.DBStats {
 	return p.db.Stats()
 }

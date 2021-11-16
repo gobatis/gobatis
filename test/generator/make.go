@@ -55,10 +55,8 @@ func makePostgresqlXML() {
 			Tag:           "insert",
 			Id:            iName.ParameterOriginal(false),
 			ShowParameter: true,
-			Params: []Param{{
-				Name: fmt.Sprintf("var_%s", v.Type),
-			}},
-			Sql: fmt.Sprintf("insert into types(%s) values(#{%s});", fmt.Sprintf("t_%s", v.Type), fmt.Sprintf("var_%s", v.Type)),
+			Params:        []Param{{Name: fmt.Sprintf("var_%s", v.Type)}},
+			Sql:           fmt.Sprintf("insert into types(%s) values(#{%s});", fmt.Sprintf("t_%s", v.Type), fmt.Sprintf("var_%s", v.Type)),
 		}
 		sName := SName{
 			Action: "Select",
@@ -69,10 +67,10 @@ func makePostgresqlXML() {
 			Tag:           "select",
 			Id:            sName.ParameterOriginal(false),
 			ShowParameter: true,
-			Params: []Param{{
-				Name: "id",
-			}},
-			Sql: fmt.Sprintf("select t_%s from types where id = #{id};", v.Type),
+			ShowResult:    true,
+			Params:        []Param{{Name: "id"}},
+			Result:        []Param{{Name: fmt.Sprintf("t_%s", v.Type)}},
+			Sql:           fmt.Sprintf("select t_%s from types where id = #{id};", v.Type),
 		}
 		insertStatements = append(insertStatements,
 			insert,
@@ -175,6 +173,7 @@ func makePostgresqlCases() {
 			"github.com/stretchr/testify/require",
 			"github.com/gozelle/_mock",
 			"github.com/gobatis/gobatis",
+			"github.com/gobatis/gobatis/driver/postgresql",
 			"github.com/AlekSi/pointer",
 		},
 	}

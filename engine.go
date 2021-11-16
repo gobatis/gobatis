@@ -2,8 +2,6 @@ package gobatis
 
 import (
 	"fmt"
-	"github.com/gobatis/gobatis/driver/mysql"
-	"github.com/gobatis/gobatis/driver/postgresql"
 	"github.com/koyeo/_log"
 	"io/ioutil"
 	"net/http"
@@ -12,37 +10,30 @@ import (
 	"strings"
 )
 
-func NewPostgresql(dsn string) *Engine {
-	return NewEngine(NewDB(postgresql.PGX, dsn))
-}
-
-func NewMySQL(dsn string) *Engine {
-	return NewEngine(NewDB(mysql.MySQL, dsn))
-}
-
 func NewEngine(db *DB) *Engine {
 	engine := &Engine{master: db, fm: fragmentManager{}}
 	return engine
 }
 
 type Engine struct {
-	master *DB
-	slaves []*DB
-	logger Logger
-	bundle http.FileSystem
-	fm     fragmentManager
-	tag    string
+	master         *DB
+	slaves         []*DB
+	logger         Logger
+	bundle         http.FileSystem
+	fm             fragmentManager
+	tag            string
+	scannerFactory ScannerFactory
 }
 
 func (p *Engine) Master() *DB {
 	return p.master
 }
 
-func (p *Engine) SetReflectTag(tag string) {
+func (p *Engine) SetScanTag(tag string) {
 	p.tag = tag
 }
 
-func (p *Engine) ReflectTag() string {
+func (p *Engine) ScanTag() string {
 	if p.tag == "" {
 		return default_tag
 	}
@@ -51,6 +42,10 @@ func (p *Engine) ReflectTag() string {
 
 func (p *Engine) UseJsonTag() {
 	p.tag = json_tag
+}
+
+func (p *Engine) SetScannerFactory(sf ScannerFactory) {
+	p.scannerFactory = sf
 }
 
 func (p *Engine) SetLoggerLevel(level Level) {
@@ -98,12 +93,8 @@ func (p *Engine) Init(bundle Bundle) (err error) {
 		return
 	}
 	
-	err = p.master.initDB()
 	p.master.logger = p.logger
-	if err != nil {
-		err = fmt.Errorf("init master db error: %s", err)
-		return
-	}
+	
 	return
 }
 
