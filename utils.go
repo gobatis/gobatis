@@ -15,7 +15,7 @@ const (
 )
 
 var errorType reflect.Type
-var scannerType reflect.Type
+var ScannerType reflect.Type
 
 type Valuer interface {
 	Value() (driver.Value, error)
@@ -23,7 +23,7 @@ type Valuer interface {
 
 func init() {
 	errorType = reflect.TypeOf((*error)(nil)).Elem()
-	scannerType = reflect.TypeOf((*sql.Scanner)(nil)).Elem()
+	ScannerType = reflect.TypeOf((*sql.Scanner)(nil)).Elem()
 }
 
 func isContext(v reflect.Type) bool {

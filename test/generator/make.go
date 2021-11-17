@@ -293,6 +293,7 @@ func makePostgresqlMapper() {
 
 type SelectCaseData struct {
 	MockFunc   string
+	GoType   string
 	OutPointer bool
 	InPointer  bool
 	IsEntity   bool
@@ -310,18 +311,22 @@ rows, err := mapper.{{ InsertFunc }}(sid, "{{ InsertFunc }}",v)
 require.NoError(t, err, v)
 require.Equal(t, 1, {% if OutPointer %}*{%endif%}rows)
 
+{% if GoType != "time" %}
 r, err := mapper.{{ SelectFunc }}(sid)
 require.NoError(t, err, sid)
 require.Equal(t, v, {% if OutPointer %}*{%endif%}r)
+{% endif %}
 
 v = _mock.{{ MockFunc }}()
 rows, err =  mapper.{{ UpdateFunc }}(sid, "{{ UpdateFunc }}", v)
 require.NoError(t, err, sid, v)
 require.Equal(t, 1, {% if OutPointer %}*{%endif%}rows)
 
+{% if GoType != "time" %}
 r, err = mapper.{{ SelectFunc }}(sid)
 require.NoError(t, err, sid)
 require.Equal(t, v, {% if OutPointer %}*{%endif%}r)
+{% endif %}
 
 rows, err = mapper.{{ DeleteFunc }}(sid)
 require.NoError(t, err, sid)
@@ -351,6 +356,7 @@ func makePostgresqlCases() {
 		testCacses = append(testCacses,
 			&TestCase{Code: RenderTpl(selectCaseTpl, SelectCaseData{
 				MockFunc:   strings.Title(v.Default),
+				GoType:       v.Default,
 				InsertFunc: iName.ParameterOriginal(false),
 				SelectFunc: sName.ParameterOriginal(false),
 				UpdateFunc: uName.ParameterOriginal(false),
@@ -359,6 +365,7 @@ func makePostgresqlCases() {
 			&TestCase{Code: RenderTpl(selectCaseTpl, SelectCaseData{
 				MockFunc:   strings.Title(v.Default),
 				OutPointer: true,
+				GoType:       v.Default,
 				InsertFunc: iName.ParameterOriginalPointer(false),
 				SelectFunc: sName.ParameterOriginalPointer(false),
 				UpdateFunc: uName.ParameterOriginalPointer(false),

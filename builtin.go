@@ -2,7 +2,7 @@ package gobatis
 
 import (
 	"github.com/gobatis/gobatis/cast"
-	"github.com/shopspring/decimal"
+	"github.com/gozelle/decimal"
 	"reflect"
 	"strings"
 	"sync"

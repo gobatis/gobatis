@@ -2,7 +2,7 @@ package gobatis
 
 import (
 	"fmt"
-	"github.com/shopspring/decimal"
+	"github.com/gozelle/decimal"
 	"github.com/stretchr/testify/require"
 	"reflect"
 	"testing"

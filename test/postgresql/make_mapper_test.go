@@ -427,6 +427,58 @@ func testScanTypes(t *testing.T, mapper *Mapper, manager *generator.DataManager)
 	{
 
 		sid := manager.NextId()
+		v := _mock.Float32()
+		rows, err := mapper.InsertParameterFloat8Float32(sid, "InsertParameterFloat8Float32", v)
+		require.NoError(t, err, v)
+		require.Equal(t, 1, rows)
+
+		r, err := mapper.SelectParameterFloat8Float32(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, v, r)
+
+		v = _mock.Float32()
+		rows, err = mapper.UpdateParameterFloat8Float32(sid, "UpdateParameterFloat8Float32", v)
+		require.NoError(t, err, sid, v)
+		require.Equal(t, 1, rows)
+
+		r, err = mapper.SelectParameterFloat8Float32(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, v, r)
+
+		rows, err = mapper.DeleteParameterFloat8Float32(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, 1, rows)
+
+	}
+	{
+
+		sid := manager.NextId()
+		v := _mock.Float32()
+		rows, err := mapper.InsertParameterFloat8Float32OriginalPointer(sid, "InsertParameterFloat8Float32OriginalPointer", v)
+		require.NoError(t, err, v)
+		require.Equal(t, 1, *rows)
+
+		r, err := mapper.SelectParameterFloat8Float32OriginalPointer(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, v, *r)
+
+		v = _mock.Float32()
+		rows, err = mapper.UpdateParameterFloat8Float32OriginalPointer(sid, "UpdateParameterFloat8Float32OriginalPointer", v)
+		require.NoError(t, err, sid, v)
+		require.Equal(t, 1, *rows)
+
+		r, err = mapper.SelectParameterFloat8Float32OriginalPointer(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, v, *r)
+
+		rows, err = mapper.DeleteParameterFloat8Float32OriginalPointer(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, 1, *rows)
+
+	}
+	{
+
+		sid := manager.NextId()
 		v := _mock.Int8()
 		rows, err := mapper.InsertParameterIntegerInt8(sid, "InsertParameterIntegerInt8", v)
 		require.NoError(t, err, v)
@@ -583,6 +635,214 @@ func testScanTypes(t *testing.T, mapper *Mapper, manager *generator.DataManager)
 	{
 
 		sid := manager.NextId()
+		v := _mock.Decimal()
+		rows, err := mapper.InsertParameterNumericDecimal(sid, "InsertParameterNumericDecimal", v)
+		require.NoError(t, err, v)
+		require.Equal(t, 1, rows)
+
+		r, err := mapper.SelectParameterNumericDecimal(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, v, r)
+
+		v = _mock.Decimal()
+		rows, err = mapper.UpdateParameterNumericDecimal(sid, "UpdateParameterNumericDecimal", v)
+		require.NoError(t, err, sid, v)
+		require.Equal(t, 1, rows)
+
+		r, err = mapper.SelectParameterNumericDecimal(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, v, r)
+
+		rows, err = mapper.DeleteParameterNumericDecimal(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, 1, rows)
+
+	}
+	{
+
+		sid := manager.NextId()
+		v := _mock.Decimal()
+		rows, err := mapper.InsertParameterNumericDecimalOriginalPointer(sid, "InsertParameterNumericDecimalOriginalPointer", v)
+		require.NoError(t, err, v)
+		require.Equal(t, 1, *rows)
+
+		r, err := mapper.SelectParameterNumericDecimalOriginalPointer(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, v, *r)
+
+		v = _mock.Decimal()
+		rows, err = mapper.UpdateParameterNumericDecimalOriginalPointer(sid, "UpdateParameterNumericDecimalOriginalPointer", v)
+		require.NoError(t, err, sid, v)
+		require.Equal(t, 1, *rows)
+
+		r, err = mapper.SelectParameterNumericDecimalOriginalPointer(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, v, *r)
+
+		rows, err = mapper.DeleteParameterNumericDecimalOriginalPointer(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, 1, *rows)
+
+	}
+	{
+
+		sid := manager.NextId()
+		v := _mock.Decimal()
+		rows, err := mapper.InsertParameterDecimalDecimal(sid, "InsertParameterDecimalDecimal", v)
+		require.NoError(t, err, v)
+		require.Equal(t, 1, rows)
+
+		r, err := mapper.SelectParameterDecimalDecimal(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, v, r)
+
+		v = _mock.Decimal()
+		rows, err = mapper.UpdateParameterDecimalDecimal(sid, "UpdateParameterDecimalDecimal", v)
+		require.NoError(t, err, sid, v)
+		require.Equal(t, 1, rows)
+
+		r, err = mapper.SelectParameterDecimalDecimal(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, v, r)
+
+		rows, err = mapper.DeleteParameterDecimalDecimal(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, 1, rows)
+
+	}
+	{
+
+		sid := manager.NextId()
+		v := _mock.Decimal()
+		rows, err := mapper.InsertParameterDecimalDecimalOriginalPointer(sid, "InsertParameterDecimalDecimalOriginalPointer", v)
+		require.NoError(t, err, v)
+		require.Equal(t, 1, *rows)
+
+		r, err := mapper.SelectParameterDecimalDecimalOriginalPointer(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, v, *r)
+
+		v = _mock.Decimal()
+		rows, err = mapper.UpdateParameterDecimalDecimalOriginalPointer(sid, "UpdateParameterDecimalDecimalOriginalPointer", v)
+		require.NoError(t, err, sid, v)
+		require.Equal(t, 1, *rows)
+
+		r, err = mapper.SelectParameterDecimalDecimalOriginalPointer(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, v, *r)
+
+		rows, err = mapper.DeleteParameterDecimalDecimalOriginalPointer(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, 1, *rows)
+
+	}
+	{
+
+		sid := manager.NextId()
+		v := _mock.Float32()
+		rows, err := mapper.InsertParameterFloat4Float32(sid, "InsertParameterFloat4Float32", v)
+		require.NoError(t, err, v)
+		require.Equal(t, 1, rows)
+
+		r, err := mapper.SelectParameterFloat4Float32(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, v, r)
+
+		v = _mock.Float32()
+		rows, err = mapper.UpdateParameterFloat4Float32(sid, "UpdateParameterFloat4Float32", v)
+		require.NoError(t, err, sid, v)
+		require.Equal(t, 1, rows)
+
+		r, err = mapper.SelectParameterFloat4Float32(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, v, r)
+
+		rows, err = mapper.DeleteParameterFloat4Float32(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, 1, rows)
+
+	}
+	{
+
+		sid := manager.NextId()
+		v := _mock.Float32()
+		rows, err := mapper.InsertParameterFloat4Float32OriginalPointer(sid, "InsertParameterFloat4Float32OriginalPointer", v)
+		require.NoError(t, err, v)
+		require.Equal(t, 1, *rows)
+
+		r, err := mapper.SelectParameterFloat4Float32OriginalPointer(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, v, *r)
+
+		v = _mock.Float32()
+		rows, err = mapper.UpdateParameterFloat4Float32OriginalPointer(sid, "UpdateParameterFloat4Float32OriginalPointer", v)
+		require.NoError(t, err, sid, v)
+		require.Equal(t, 1, *rows)
+
+		r, err = mapper.SelectParameterFloat4Float32OriginalPointer(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, v, *r)
+
+		rows, err = mapper.DeleteParameterFloat4Float32OriginalPointer(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, 1, *rows)
+
+	}
+	{
+
+		sid := manager.NextId()
+		v := _mock.Int8()
+		rows, err := mapper.InsertParameterSmallintInt8(sid, "InsertParameterSmallintInt8", v)
+		require.NoError(t, err, v)
+		require.Equal(t, 1, rows)
+
+		r, err := mapper.SelectParameterSmallintInt8(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, v, r)
+
+		v = _mock.Int8()
+		rows, err = mapper.UpdateParameterSmallintInt8(sid, "UpdateParameterSmallintInt8", v)
+		require.NoError(t, err, sid, v)
+		require.Equal(t, 1, rows)
+
+		r, err = mapper.SelectParameterSmallintInt8(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, v, r)
+
+		rows, err = mapper.DeleteParameterSmallintInt8(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, 1, rows)
+
+	}
+	{
+
+		sid := manager.NextId()
+		v := _mock.Int8()
+		rows, err := mapper.InsertParameterSmallintInt8OriginalPointer(sid, "InsertParameterSmallintInt8OriginalPointer", v)
+		require.NoError(t, err, v)
+		require.Equal(t, 1, *rows)
+
+		r, err := mapper.SelectParameterSmallintInt8OriginalPointer(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, v, *r)
+
+		v = _mock.Int8()
+		rows, err = mapper.UpdateParameterSmallintInt8OriginalPointer(sid, "UpdateParameterSmallintInt8OriginalPointer", v)
+		require.NoError(t, err, sid, v)
+		require.Equal(t, 1, *rows)
+
+		r, err = mapper.SelectParameterSmallintInt8OriginalPointer(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, v, *r)
+
+		rows, err = mapper.DeleteParameterSmallintInt8OriginalPointer(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, 1, *rows)
+
+	}
+	{
+
+		sid := manager.NextId()
 		v := _mock.Int8()
 		rows, err := mapper.InsertParameterInt2Int8(sid, "InsertParameterInt2Int8", v)
 		require.NoError(t, err, v)
@@ -680,6 +940,222 @@ func testScanTypes(t *testing.T, mapper *Mapper, manager *generator.DataManager)
 		require.Equal(t, v, *r)
 
 		rows, err = mapper.DeleteParameterTextStringOriginalPointer(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, 1, *rows)
+
+	}
+	{
+
+		sid := manager.NextId()
+		v := _mock.Time()
+		rows, err := mapper.InsertParameterTimeTime(sid, "InsertParameterTimeTime", v)
+		require.NoError(t, err, v)
+		require.Equal(t, 1, rows)
+
+		v = _mock.Time()
+		rows, err = mapper.UpdateParameterTimeTime(sid, "UpdateParameterTimeTime", v)
+		require.NoError(t, err, sid, v)
+		require.Equal(t, 1, rows)
+
+		rows, err = mapper.DeleteParameterTimeTime(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, 1, rows)
+
+	}
+	{
+
+		sid := manager.NextId()
+		v := _mock.Time()
+		rows, err := mapper.InsertParameterTimeTimeOriginalPointer(sid, "InsertParameterTimeTimeOriginalPointer", v)
+		require.NoError(t, err, v)
+		require.Equal(t, 1, *rows)
+
+		v = _mock.Time()
+		rows, err = mapper.UpdateParameterTimeTimeOriginalPointer(sid, "UpdateParameterTimeTimeOriginalPointer", v)
+		require.NoError(t, err, sid, v)
+		require.Equal(t, 1, *rows)
+
+		rows, err = mapper.DeleteParameterTimeTimeOriginalPointer(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, 1, *rows)
+
+	}
+	{
+
+		sid := manager.NextId()
+		v := _mock.Time()
+		rows, err := mapper.InsertParameterTimeWithTimezoneTime(sid, "InsertParameterTimeWithTimezoneTime", v)
+		require.NoError(t, err, v)
+		require.Equal(t, 1, rows)
+
+		v = _mock.Time()
+		rows, err = mapper.UpdateParameterTimeWithTimezoneTime(sid, "UpdateParameterTimeWithTimezoneTime", v)
+		require.NoError(t, err, sid, v)
+		require.Equal(t, 1, rows)
+
+		rows, err = mapper.DeleteParameterTimeWithTimezoneTime(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, 1, rows)
+
+	}
+	{
+
+		sid := manager.NextId()
+		v := _mock.Time()
+		rows, err := mapper.InsertParameterTimeWithTimezoneTimeOriginalPointer(sid, "InsertParameterTimeWithTimezoneTimeOriginalPointer", v)
+		require.NoError(t, err, v)
+		require.Equal(t, 1, *rows)
+
+		v = _mock.Time()
+		rows, err = mapper.UpdateParameterTimeWithTimezoneTimeOriginalPointer(sid, "UpdateParameterTimeWithTimezoneTimeOriginalPointer", v)
+		require.NoError(t, err, sid, v)
+		require.Equal(t, 1, *rows)
+
+		rows, err = mapper.DeleteParameterTimeWithTimezoneTimeOriginalPointer(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, 1, *rows)
+
+	}
+	{
+
+		sid := manager.NextId()
+		v := _mock.Time()
+		rows, err := mapper.InsertParameterTimetzTime(sid, "InsertParameterTimetzTime", v)
+		require.NoError(t, err, v)
+		require.Equal(t, 1, rows)
+
+		v = _mock.Time()
+		rows, err = mapper.UpdateParameterTimetzTime(sid, "UpdateParameterTimetzTime", v)
+		require.NoError(t, err, sid, v)
+		require.Equal(t, 1, rows)
+
+		rows, err = mapper.DeleteParameterTimetzTime(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, 1, rows)
+
+	}
+	{
+
+		sid := manager.NextId()
+		v := _mock.Time()
+		rows, err := mapper.InsertParameterTimetzTimeOriginalPointer(sid, "InsertParameterTimetzTimeOriginalPointer", v)
+		require.NoError(t, err, v)
+		require.Equal(t, 1, *rows)
+
+		v = _mock.Time()
+		rows, err = mapper.UpdateParameterTimetzTimeOriginalPointer(sid, "UpdateParameterTimetzTimeOriginalPointer", v)
+		require.NoError(t, err, sid, v)
+		require.Equal(t, 1, *rows)
+
+		rows, err = mapper.DeleteParameterTimetzTimeOriginalPointer(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, 1, *rows)
+
+	}
+	{
+
+		sid := manager.NextId()
+		v := _mock.Time()
+		rows, err := mapper.InsertParameterTimestampTime(sid, "InsertParameterTimestampTime", v)
+		require.NoError(t, err, v)
+		require.Equal(t, 1, rows)
+
+		v = _mock.Time()
+		rows, err = mapper.UpdateParameterTimestampTime(sid, "UpdateParameterTimestampTime", v)
+		require.NoError(t, err, sid, v)
+		require.Equal(t, 1, rows)
+
+		rows, err = mapper.DeleteParameterTimestampTime(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, 1, rows)
+
+	}
+	{
+
+		sid := manager.NextId()
+		v := _mock.Time()
+		rows, err := mapper.InsertParameterTimestampTimeOriginalPointer(sid, "InsertParameterTimestampTimeOriginalPointer", v)
+		require.NoError(t, err, v)
+		require.Equal(t, 1, *rows)
+
+		v = _mock.Time()
+		rows, err = mapper.UpdateParameterTimestampTimeOriginalPointer(sid, "UpdateParameterTimestampTimeOriginalPointer", v)
+		require.NoError(t, err, sid, v)
+		require.Equal(t, 1, *rows)
+
+		rows, err = mapper.DeleteParameterTimestampTimeOriginalPointer(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, 1, *rows)
+
+	}
+	{
+
+		sid := manager.NextId()
+		v := _mock.Time()
+		rows, err := mapper.InsertParameterTimestampWithTimezoneTime(sid, "InsertParameterTimestampWithTimezoneTime", v)
+		require.NoError(t, err, v)
+		require.Equal(t, 1, rows)
+
+		v = _mock.Time()
+		rows, err = mapper.UpdateParameterTimestampWithTimezoneTime(sid, "UpdateParameterTimestampWithTimezoneTime", v)
+		require.NoError(t, err, sid, v)
+		require.Equal(t, 1, rows)
+
+		rows, err = mapper.DeleteParameterTimestampWithTimezoneTime(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, 1, rows)
+
+	}
+	{
+
+		sid := manager.NextId()
+		v := _mock.Time()
+		rows, err := mapper.InsertParameterTimestampWithTimezoneTimeOriginalPointer(sid, "InsertParameterTimestampWithTimezoneTimeOriginalPointer", v)
+		require.NoError(t, err, v)
+		require.Equal(t, 1, *rows)
+
+		v = _mock.Time()
+		rows, err = mapper.UpdateParameterTimestampWithTimezoneTimeOriginalPointer(sid, "UpdateParameterTimestampWithTimezoneTimeOriginalPointer", v)
+		require.NoError(t, err, sid, v)
+		require.Equal(t, 1, *rows)
+
+		rows, err = mapper.DeleteParameterTimestampWithTimezoneTimeOriginalPointer(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, 1, *rows)
+
+	}
+	{
+
+		sid := manager.NextId()
+		v := _mock.Time()
+		rows, err := mapper.InsertParameterTimestamptzTime(sid, "InsertParameterTimestamptzTime", v)
+		require.NoError(t, err, v)
+		require.Equal(t, 1, rows)
+
+		v = _mock.Time()
+		rows, err = mapper.UpdateParameterTimestamptzTime(sid, "UpdateParameterTimestamptzTime", v)
+		require.NoError(t, err, sid, v)
+		require.Equal(t, 1, rows)
+
+		rows, err = mapper.DeleteParameterTimestamptzTime(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, 1, rows)
+
+	}
+	{
+
+		sid := manager.NextId()
+		v := _mock.Time()
+		rows, err := mapper.InsertParameterTimestamptzTimeOriginalPointer(sid, "InsertParameterTimestamptzTimeOriginalPointer", v)
+		require.NoError(t, err, v)
+		require.Equal(t, 1, *rows)
+
+		v = _mock.Time()
+		rows, err = mapper.UpdateParameterTimestamptzTimeOriginalPointer(sid, "UpdateParameterTimestamptzTimeOriginalPointer", v)
+		require.NoError(t, err, sid, v)
+		require.Equal(t, 1, *rows)
+
+		rows, err = mapper.DeleteParameterTimestamptzTimeOriginalPointer(sid)
 		require.NoError(t, err, sid)
 		require.Equal(t, 1, *rows)
 

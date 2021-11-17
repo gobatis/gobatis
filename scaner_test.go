@@ -2,7 +2,7 @@ package gobatis
 
 import (
 	"database/sql"
-	"github.com/shopspring/decimal"
+	"github.com/gozelle/decimal"
 	"time"
 )
 

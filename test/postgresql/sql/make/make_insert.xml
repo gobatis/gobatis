@@ -515,6 +515,70 @@
     insert into array_types(sid,source,t_varchar) values(#{sid},#{source},#{var_varchar});
 </insert>
 
+<insert id="InsertParameterFloat8Float32" parameter="sid,source,var_float8" >
+    insert into types(sid,source,t_float8) values(#{sid},#{source},#{var_float8});
+</insert>
+
+<insert id="InsertParameterFloat8Float32OriginalPointer" parameter="sid,source,var_float8" >
+    insert into types(sid,source,t_float8) values(#{sid},#{source},#{var_float8});
+</insert>
+
+<insert id="InsertParameterFloat8Float32PointerOriginal" parameter="sid,source,var_float8" >
+    insert into types(sid,source,t_float8) values(#{sid},#{source},#{var_float8});
+</insert>
+
+<insert id="InsertParameterFloat8Float32PointerPointer" parameter="sid,source,var_float8" >
+    insert into types(sid,source,t_float8) values(#{sid},#{source},#{var_float8});
+</insert>
+
+<insert id="InsertEntityFloat8Float32" parameter="item:struct" >
+    insert into types(sid,source,t_float8) values(#{sid},#{source},#{var_float8});
+</insert>
+
+<insert id="InsertEntityFloat8Float32OriginalPointer" parameter="item:struct" >
+    insert into types(sid,source,t_float8) values(#{sid},#{source},#{var_float8});
+</insert>
+
+<insert id="InsertEntityFloat8Float32PointerOriginal" parameter="item:struct" >
+    insert into types(sid,source,t_float8) values(#{sid},#{source},#{var_float8});
+</insert>
+
+<insert id="InsertEntityFloat8Float32PointerPointer" parameter="item:struct" >
+    insert into types(sid,source,t_float8) values(#{sid},#{source},#{var_float8});
+</insert>
+
+<insert id="InsertArrayParameterFloat8Float32" parameter="sid,source,var_float8" >
+    insert into array_types(sid,source,t_float8) values(#{sid},#{source},#{var_float8});
+</insert>
+
+<insert id="InsertArrayParameterFloat8Float32OriginalPointer" parameter="sid,source,var_float8" >
+    insert into array_types(sid,source,t_float8) values(#{sid},#{source},#{var_float8});
+</insert>
+
+<insert id="InsertArrayParameterFloat8Float32PointerOriginal" parameter="sid,source,var_float8" >
+    insert into array_types(sid,source,t_float8) values(#{sid},#{source},#{var_float8});
+</insert>
+
+<insert id="InsertArrayParameterFloat8Float32PointerPointer" parameter="sid,source,var_float8" >
+    insert into array_types(sid,source,t_float8) values(#{sid},#{source},#{var_float8});
+</insert>
+
+<insert id="InsertArrayEntityFloat8Float32" parameter="sid,source,var_float8" >
+    insert into array_types(sid,source,t_float8) values(#{sid},#{source},#{var_float8});
+</insert>
+
+<insert id="InsertArrayEntityFloat8Float32OriginalPointer" parameter="sid,source,var_float8" >
+    insert into array_types(sid,source,t_float8) values(#{sid},#{source},#{var_float8});
+</insert>
+
+<insert id="InsertArrayEntityFloat8Float32PointerOriginal" parameter="sid,source,var_float8" >
+    insert into array_types(sid,source,t_float8) values(#{sid},#{source},#{var_float8});
+</insert>
+
+<insert id="InsertArrayEntityFloat8Float32PointerPointer" parameter="sid,source,var_float8" >
+    insert into array_types(sid,source,t_float8) values(#{sid},#{source},#{var_float8});
+</insert>
+
 <insert id="InsertParameterIntegerInt8" parameter="sid,source,var_integer" >
     insert into types(sid,source,t_integer) values(#{sid},#{source},#{var_integer});
 </insert>
@@ -707,6 +771,262 @@
     insert into array_types(sid,source,t_int4) values(#{sid},#{source},#{var_int4});
 </insert>
 
+<insert id="InsertParameterNumericDecimal" parameter="sid,source,var_numeric" >
+    insert into types(sid,source,t_numeric) values(#{sid},#{source},#{var_numeric});
+</insert>
+
+<insert id="InsertParameterNumericDecimalOriginalPointer" parameter="sid,source,var_numeric" >
+    insert into types(sid,source,t_numeric) values(#{sid},#{source},#{var_numeric});
+</insert>
+
+<insert id="InsertParameterNumericDecimalPointerOriginal" parameter="sid,source,var_numeric" >
+    insert into types(sid,source,t_numeric) values(#{sid},#{source},#{var_numeric});
+</insert>
+
+<insert id="InsertParameterNumericDecimalPointerPointer" parameter="sid,source,var_numeric" >
+    insert into types(sid,source,t_numeric) values(#{sid},#{source},#{var_numeric});
+</insert>
+
+<insert id="InsertEntityNumericDecimal" parameter="item:struct" >
+    insert into types(sid,source,t_numeric) values(#{sid},#{source},#{var_numeric});
+</insert>
+
+<insert id="InsertEntityNumericDecimalOriginalPointer" parameter="item:struct" >
+    insert into types(sid,source,t_numeric) values(#{sid},#{source},#{var_numeric});
+</insert>
+
+<insert id="InsertEntityNumericDecimalPointerOriginal" parameter="item:struct" >
+    insert into types(sid,source,t_numeric) values(#{sid},#{source},#{var_numeric});
+</insert>
+
+<insert id="InsertEntityNumericDecimalPointerPointer" parameter="item:struct" >
+    insert into types(sid,source,t_numeric) values(#{sid},#{source},#{var_numeric});
+</insert>
+
+<insert id="InsertArrayParameterNumericDecimal" parameter="sid,source,var_numeric" >
+    insert into array_types(sid,source,t_numeric) values(#{sid},#{source},#{var_numeric});
+</insert>
+
+<insert id="InsertArrayParameterNumericDecimalOriginalPointer" parameter="sid,source,var_numeric" >
+    insert into array_types(sid,source,t_numeric) values(#{sid},#{source},#{var_numeric});
+</insert>
+
+<insert id="InsertArrayParameterNumericDecimalPointerOriginal" parameter="sid,source,var_numeric" >
+    insert into array_types(sid,source,t_numeric) values(#{sid},#{source},#{var_numeric});
+</insert>
+
+<insert id="InsertArrayParameterNumericDecimalPointerPointer" parameter="sid,source,var_numeric" >
+    insert into array_types(sid,source,t_numeric) values(#{sid},#{source},#{var_numeric});
+</insert>
+
+<insert id="InsertArrayEntityNumericDecimal" parameter="sid,source,var_numeric" >
+    insert into array_types(sid,source,t_numeric) values(#{sid},#{source},#{var_numeric});
+</insert>
+
+<insert id="InsertArrayEntityNumericDecimalOriginalPointer" parameter="sid,source,var_numeric" >
+    insert into array_types(sid,source,t_numeric) values(#{sid},#{source},#{var_numeric});
+</insert>
+
+<insert id="InsertArrayEntityNumericDecimalPointerOriginal" parameter="sid,source,var_numeric" >
+    insert into array_types(sid,source,t_numeric) values(#{sid},#{source},#{var_numeric});
+</insert>
+
+<insert id="InsertArrayEntityNumericDecimalPointerPointer" parameter="sid,source,var_numeric" >
+    insert into array_types(sid,source,t_numeric) values(#{sid},#{source},#{var_numeric});
+</insert>
+
+<insert id="InsertParameterDecimalDecimal" parameter="sid,source,var_decimal" >
+    insert into types(sid,source,t_decimal) values(#{sid},#{source},#{var_decimal});
+</insert>
+
+<insert id="InsertParameterDecimalDecimalOriginalPointer" parameter="sid,source,var_decimal" >
+    insert into types(sid,source,t_decimal) values(#{sid},#{source},#{var_decimal});
+</insert>
+
+<insert id="InsertParameterDecimalDecimalPointerOriginal" parameter="sid,source,var_decimal" >
+    insert into types(sid,source,t_decimal) values(#{sid},#{source},#{var_decimal});
+</insert>
+
+<insert id="InsertParameterDecimalDecimalPointerPointer" parameter="sid,source,var_decimal" >
+    insert into types(sid,source,t_decimal) values(#{sid},#{source},#{var_decimal});
+</insert>
+
+<insert id="InsertEntityDecimalDecimal" parameter="item:struct" >
+    insert into types(sid,source,t_decimal) values(#{sid},#{source},#{var_decimal});
+</insert>
+
+<insert id="InsertEntityDecimalDecimalOriginalPointer" parameter="item:struct" >
+    insert into types(sid,source,t_decimal) values(#{sid},#{source},#{var_decimal});
+</insert>
+
+<insert id="InsertEntityDecimalDecimalPointerOriginal" parameter="item:struct" >
+    insert into types(sid,source,t_decimal) values(#{sid},#{source},#{var_decimal});
+</insert>
+
+<insert id="InsertEntityDecimalDecimalPointerPointer" parameter="item:struct" >
+    insert into types(sid,source,t_decimal) values(#{sid},#{source},#{var_decimal});
+</insert>
+
+<insert id="InsertArrayParameterDecimalDecimal" parameter="sid,source,var_decimal" >
+    insert into array_types(sid,source,t_decimal) values(#{sid},#{source},#{var_decimal});
+</insert>
+
+<insert id="InsertArrayParameterDecimalDecimalOriginalPointer" parameter="sid,source,var_decimal" >
+    insert into array_types(sid,source,t_decimal) values(#{sid},#{source},#{var_decimal});
+</insert>
+
+<insert id="InsertArrayParameterDecimalDecimalPointerOriginal" parameter="sid,source,var_decimal" >
+    insert into array_types(sid,source,t_decimal) values(#{sid},#{source},#{var_decimal});
+</insert>
+
+<insert id="InsertArrayParameterDecimalDecimalPointerPointer" parameter="sid,source,var_decimal" >
+    insert into array_types(sid,source,t_decimal) values(#{sid},#{source},#{var_decimal});
+</insert>
+
+<insert id="InsertArrayEntityDecimalDecimal" parameter="sid,source,var_decimal" >
+    insert into array_types(sid,source,t_decimal) values(#{sid},#{source},#{var_decimal});
+</insert>
+
+<insert id="InsertArrayEntityDecimalDecimalOriginalPointer" parameter="sid,source,var_decimal" >
+    insert into array_types(sid,source,t_decimal) values(#{sid},#{source},#{var_decimal});
+</insert>
+
+<insert id="InsertArrayEntityDecimalDecimalPointerOriginal" parameter="sid,source,var_decimal" >
+    insert into array_types(sid,source,t_decimal) values(#{sid},#{source},#{var_decimal});
+</insert>
+
+<insert id="InsertArrayEntityDecimalDecimalPointerPointer" parameter="sid,source,var_decimal" >
+    insert into array_types(sid,source,t_decimal) values(#{sid},#{source},#{var_decimal});
+</insert>
+
+<insert id="InsertParameterFloat4Float32" parameter="sid,source,var_float4" >
+    insert into types(sid,source,t_float4) values(#{sid},#{source},#{var_float4});
+</insert>
+
+<insert id="InsertParameterFloat4Float32OriginalPointer" parameter="sid,source,var_float4" >
+    insert into types(sid,source,t_float4) values(#{sid},#{source},#{var_float4});
+</insert>
+
+<insert id="InsertParameterFloat4Float32PointerOriginal" parameter="sid,source,var_float4" >
+    insert into types(sid,source,t_float4) values(#{sid},#{source},#{var_float4});
+</insert>
+
+<insert id="InsertParameterFloat4Float32PointerPointer" parameter="sid,source,var_float4" >
+    insert into types(sid,source,t_float4) values(#{sid},#{source},#{var_float4});
+</insert>
+
+<insert id="InsertEntityFloat4Float32" parameter="item:struct" >
+    insert into types(sid,source,t_float4) values(#{sid},#{source},#{var_float4});
+</insert>
+
+<insert id="InsertEntityFloat4Float32OriginalPointer" parameter="item:struct" >
+    insert into types(sid,source,t_float4) values(#{sid},#{source},#{var_float4});
+</insert>
+
+<insert id="InsertEntityFloat4Float32PointerOriginal" parameter="item:struct" >
+    insert into types(sid,source,t_float4) values(#{sid},#{source},#{var_float4});
+</insert>
+
+<insert id="InsertEntityFloat4Float32PointerPointer" parameter="item:struct" >
+    insert into types(sid,source,t_float4) values(#{sid},#{source},#{var_float4});
+</insert>
+
+<insert id="InsertArrayParameterFloat4Float32" parameter="sid,source,var_float4" >
+    insert into array_types(sid,source,t_float4) values(#{sid},#{source},#{var_float4});
+</insert>
+
+<insert id="InsertArrayParameterFloat4Float32OriginalPointer" parameter="sid,source,var_float4" >
+    insert into array_types(sid,source,t_float4) values(#{sid},#{source},#{var_float4});
+</insert>
+
+<insert id="InsertArrayParameterFloat4Float32PointerOriginal" parameter="sid,source,var_float4" >
+    insert into array_types(sid,source,t_float4) values(#{sid},#{source},#{var_float4});
+</insert>
+
+<insert id="InsertArrayParameterFloat4Float32PointerPointer" parameter="sid,source,var_float4" >
+    insert into array_types(sid,source,t_float4) values(#{sid},#{source},#{var_float4});
+</insert>
+
+<insert id="InsertArrayEntityFloat4Float32" parameter="sid,source,var_float4" >
+    insert into array_types(sid,source,t_float4) values(#{sid},#{source},#{var_float4});
+</insert>
+
+<insert id="InsertArrayEntityFloat4Float32OriginalPointer" parameter="sid,source,var_float4" >
+    insert into array_types(sid,source,t_float4) values(#{sid},#{source},#{var_float4});
+</insert>
+
+<insert id="InsertArrayEntityFloat4Float32PointerOriginal" parameter="sid,source,var_float4" >
+    insert into array_types(sid,source,t_float4) values(#{sid},#{source},#{var_float4});
+</insert>
+
+<insert id="InsertArrayEntityFloat4Float32PointerPointer" parameter="sid,source,var_float4" >
+    insert into array_types(sid,source,t_float4) values(#{sid},#{source},#{var_float4});
+</insert>
+
+<insert id="InsertParameterSmallintInt8" parameter="sid,source,var_smallint" >
+    insert into types(sid,source,t_smallint) values(#{sid},#{source},#{var_smallint});
+</insert>
+
+<insert id="InsertParameterSmallintInt8OriginalPointer" parameter="sid,source,var_smallint" >
+    insert into types(sid,source,t_smallint) values(#{sid},#{source},#{var_smallint});
+</insert>
+
+<insert id="InsertParameterSmallintInt8PointerOriginal" parameter="sid,source,var_smallint" >
+    insert into types(sid,source,t_smallint) values(#{sid},#{source},#{var_smallint});
+</insert>
+
+<insert id="InsertParameterSmallintInt8PointerPointer" parameter="sid,source,var_smallint" >
+    insert into types(sid,source,t_smallint) values(#{sid},#{source},#{var_smallint});
+</insert>
+
+<insert id="InsertEntitySmallintInt8" parameter="item:struct" >
+    insert into types(sid,source,t_smallint) values(#{sid},#{source},#{var_smallint});
+</insert>
+
+<insert id="InsertEntitySmallintInt8OriginalPointer" parameter="item:struct" >
+    insert into types(sid,source,t_smallint) values(#{sid},#{source},#{var_smallint});
+</insert>
+
+<insert id="InsertEntitySmallintInt8PointerOriginal" parameter="item:struct" >
+    insert into types(sid,source,t_smallint) values(#{sid},#{source},#{var_smallint});
+</insert>
+
+<insert id="InsertEntitySmallintInt8PointerPointer" parameter="item:struct" >
+    insert into types(sid,source,t_smallint) values(#{sid},#{source},#{var_smallint});
+</insert>
+
+<insert id="InsertArrayParameterSmallintInt8" parameter="sid,source,var_smallint" >
+    insert into array_types(sid,source,t_smallint) values(#{sid},#{source},#{var_smallint});
+</insert>
+
+<insert id="InsertArrayParameterSmallintInt8OriginalPointer" parameter="sid,source,var_smallint" >
+    insert into array_types(sid,source,t_smallint) values(#{sid},#{source},#{var_smallint});
+</insert>
+
+<insert id="InsertArrayParameterSmallintInt8PointerOriginal" parameter="sid,source,var_smallint" >
+    insert into array_types(sid,source,t_smallint) values(#{sid},#{source},#{var_smallint});
+</insert>
+
+<insert id="InsertArrayParameterSmallintInt8PointerPointer" parameter="sid,source,var_smallint" >
+    insert into array_types(sid,source,t_smallint) values(#{sid},#{source},#{var_smallint});
+</insert>
+
+<insert id="InsertArrayEntitySmallintInt8" parameter="sid,source,var_smallint" >
+    insert into array_types(sid,source,t_smallint) values(#{sid},#{source},#{var_smallint});
+</insert>
+
+<insert id="InsertArrayEntitySmallintInt8OriginalPointer" parameter="sid,source,var_smallint" >
+    insert into array_types(sid,source,t_smallint) values(#{sid},#{source},#{var_smallint});
+</insert>
+
+<insert id="InsertArrayEntitySmallintInt8PointerOriginal" parameter="sid,source,var_smallint" >
+    insert into array_types(sid,source,t_smallint) values(#{sid},#{source},#{var_smallint});
+</insert>
+
+<insert id="InsertArrayEntitySmallintInt8PointerPointer" parameter="sid,source,var_smallint" >
+    insert into array_types(sid,source,t_smallint) values(#{sid},#{source},#{var_smallint});
+</insert>
+
 <insert id="InsertParameterInt2Int8" parameter="sid,source,var_int2" >
     insert into types(sid,source,t_int2) values(#{sid},#{source},#{var_int2});
 </insert>
@@ -833,6 +1153,390 @@
 
 <insert id="InsertArrayEntityTextStringPointerPointer" parameter="sid,source,var_text" >
     insert into array_types(sid,source,t_text) values(#{sid},#{source},#{var_text});
+</insert>
+
+<insert id="InsertParameterTimeTime" parameter="sid,source,var_time" >
+    insert into types(sid,source,t_time) values(#{sid},#{source},#{var_time});
+</insert>
+
+<insert id="InsertParameterTimeTimeOriginalPointer" parameter="sid,source,var_time" >
+    insert into types(sid,source,t_time) values(#{sid},#{source},#{var_time});
+</insert>
+
+<insert id="InsertParameterTimeTimePointerOriginal" parameter="sid,source,var_time" >
+    insert into types(sid,source,t_time) values(#{sid},#{source},#{var_time});
+</insert>
+
+<insert id="InsertParameterTimeTimePointerPointer" parameter="sid,source,var_time" >
+    insert into types(sid,source,t_time) values(#{sid},#{source},#{var_time});
+</insert>
+
+<insert id="InsertEntityTimeTime" parameter="item:struct" >
+    insert into types(sid,source,t_time) values(#{sid},#{source},#{var_time});
+</insert>
+
+<insert id="InsertEntityTimeTimeOriginalPointer" parameter="item:struct" >
+    insert into types(sid,source,t_time) values(#{sid},#{source},#{var_time});
+</insert>
+
+<insert id="InsertEntityTimeTimePointerOriginal" parameter="item:struct" >
+    insert into types(sid,source,t_time) values(#{sid},#{source},#{var_time});
+</insert>
+
+<insert id="InsertEntityTimeTimePointerPointer" parameter="item:struct" >
+    insert into types(sid,source,t_time) values(#{sid},#{source},#{var_time});
+</insert>
+
+<insert id="InsertArrayParameterTimeTime" parameter="sid,source,var_time" >
+    insert into array_types(sid,source,t_time) values(#{sid},#{source},#{var_time});
+</insert>
+
+<insert id="InsertArrayParameterTimeTimeOriginalPointer" parameter="sid,source,var_time" >
+    insert into array_types(sid,source,t_time) values(#{sid},#{source},#{var_time});
+</insert>
+
+<insert id="InsertArrayParameterTimeTimePointerOriginal" parameter="sid,source,var_time" >
+    insert into array_types(sid,source,t_time) values(#{sid},#{source},#{var_time});
+</insert>
+
+<insert id="InsertArrayParameterTimeTimePointerPointer" parameter="sid,source,var_time" >
+    insert into array_types(sid,source,t_time) values(#{sid},#{source},#{var_time});
+</insert>
+
+<insert id="InsertArrayEntityTimeTime" parameter="sid,source,var_time" >
+    insert into array_types(sid,source,t_time) values(#{sid},#{source},#{var_time});
+</insert>
+
+<insert id="InsertArrayEntityTimeTimeOriginalPointer" parameter="sid,source,var_time" >
+    insert into array_types(sid,source,t_time) values(#{sid},#{source},#{var_time});
+</insert>
+
+<insert id="InsertArrayEntityTimeTimePointerOriginal" parameter="sid,source,var_time" >
+    insert into array_types(sid,source,t_time) values(#{sid},#{source},#{var_time});
+</insert>
+
+<insert id="InsertArrayEntityTimeTimePointerPointer" parameter="sid,source,var_time" >
+    insert into array_types(sid,source,t_time) values(#{sid},#{source},#{var_time});
+</insert>
+
+<insert id="InsertParameterTimeWithTimezoneTime" parameter="sid,source,var_time_with_timezone" >
+    insert into types(sid,source,t_time_with_timezone) values(#{sid},#{source},#{var_time_with_timezone});
+</insert>
+
+<insert id="InsertParameterTimeWithTimezoneTimeOriginalPointer" parameter="sid,source,var_time_with_timezone" >
+    insert into types(sid,source,t_time_with_timezone) values(#{sid},#{source},#{var_time_with_timezone});
+</insert>
+
+<insert id="InsertParameterTimeWithTimezoneTimePointerOriginal" parameter="sid,source,var_time_with_timezone" >
+    insert into types(sid,source,t_time_with_timezone) values(#{sid},#{source},#{var_time_with_timezone});
+</insert>
+
+<insert id="InsertParameterTimeWithTimezoneTimePointerPointer" parameter="sid,source,var_time_with_timezone" >
+    insert into types(sid,source,t_time_with_timezone) values(#{sid},#{source},#{var_time_with_timezone});
+</insert>
+
+<insert id="InsertEntityTimeWithTimezoneTime" parameter="item:struct" >
+    insert into types(sid,source,t_time_with_timezone) values(#{sid},#{source},#{var_time_with_timezone});
+</insert>
+
+<insert id="InsertEntityTimeWithTimezoneTimeOriginalPointer" parameter="item:struct" >
+    insert into types(sid,source,t_time_with_timezone) values(#{sid},#{source},#{var_time_with_timezone});
+</insert>
+
+<insert id="InsertEntityTimeWithTimezoneTimePointerOriginal" parameter="item:struct" >
+    insert into types(sid,source,t_time_with_timezone) values(#{sid},#{source},#{var_time_with_timezone});
+</insert>
+
+<insert id="InsertEntityTimeWithTimezoneTimePointerPointer" parameter="item:struct" >
+    insert into types(sid,source,t_time_with_timezone) values(#{sid},#{source},#{var_time_with_timezone});
+</insert>
+
+<insert id="InsertArrayParameterTimeWithTimezoneTime" parameter="sid,source,var_time_with_timezone" >
+    insert into array_types(sid,source,t_time_with_timezone) values(#{sid},#{source},#{var_time_with_timezone});
+</insert>
+
+<insert id="InsertArrayParameterTimeWithTimezoneTimeOriginalPointer" parameter="sid,source,var_time_with_timezone" >
+    insert into array_types(sid,source,t_time_with_timezone) values(#{sid},#{source},#{var_time_with_timezone});
+</insert>
+
+<insert id="InsertArrayParameterTimeWithTimezoneTimePointerOriginal" parameter="sid,source,var_time_with_timezone" >
+    insert into array_types(sid,source,t_time_with_timezone) values(#{sid},#{source},#{var_time_with_timezone});
+</insert>
+
+<insert id="InsertArrayParameterTimeWithTimezoneTimePointerPointer" parameter="sid,source,var_time_with_timezone" >
+    insert into array_types(sid,source,t_time_with_timezone) values(#{sid},#{source},#{var_time_with_timezone});
+</insert>
+
+<insert id="InsertArrayEntityTimeWithTimezoneTime" parameter="sid,source,var_time_with_timezone" >
+    insert into array_types(sid,source,t_time_with_timezone) values(#{sid},#{source},#{var_time_with_timezone});
+</insert>
+
+<insert id="InsertArrayEntityTimeWithTimezoneTimeOriginalPointer" parameter="sid,source,var_time_with_timezone" >
+    insert into array_types(sid,source,t_time_with_timezone) values(#{sid},#{source},#{var_time_with_timezone});
+</insert>
+
+<insert id="InsertArrayEntityTimeWithTimezoneTimePointerOriginal" parameter="sid,source,var_time_with_timezone" >
+    insert into array_types(sid,source,t_time_with_timezone) values(#{sid},#{source},#{var_time_with_timezone});
+</insert>
+
+<insert id="InsertArrayEntityTimeWithTimezoneTimePointerPointer" parameter="sid,source,var_time_with_timezone" >
+    insert into array_types(sid,source,t_time_with_timezone) values(#{sid},#{source},#{var_time_with_timezone});
+</insert>
+
+<insert id="InsertParameterTimetzTime" parameter="sid,source,var_timetz" >
+    insert into types(sid,source,t_timetz) values(#{sid},#{source},#{var_timetz});
+</insert>
+
+<insert id="InsertParameterTimetzTimeOriginalPointer" parameter="sid,source,var_timetz" >
+    insert into types(sid,source,t_timetz) values(#{sid},#{source},#{var_timetz});
+</insert>
+
+<insert id="InsertParameterTimetzTimePointerOriginal" parameter="sid,source,var_timetz" >
+    insert into types(sid,source,t_timetz) values(#{sid},#{source},#{var_timetz});
+</insert>
+
+<insert id="InsertParameterTimetzTimePointerPointer" parameter="sid,source,var_timetz" >
+    insert into types(sid,source,t_timetz) values(#{sid},#{source},#{var_timetz});
+</insert>
+
+<insert id="InsertEntityTimetzTime" parameter="item:struct" >
+    insert into types(sid,source,t_timetz) values(#{sid},#{source},#{var_timetz});
+</insert>
+
+<insert id="InsertEntityTimetzTimeOriginalPointer" parameter="item:struct" >
+    insert into types(sid,source,t_timetz) values(#{sid},#{source},#{var_timetz});
+</insert>
+
+<insert id="InsertEntityTimetzTimePointerOriginal" parameter="item:struct" >
+    insert into types(sid,source,t_timetz) values(#{sid},#{source},#{var_timetz});
+</insert>
+
+<insert id="InsertEntityTimetzTimePointerPointer" parameter="item:struct" >
+    insert into types(sid,source,t_timetz) values(#{sid},#{source},#{var_timetz});
+</insert>
+
+<insert id="InsertArrayParameterTimetzTime" parameter="sid,source,var_timetz" >
+    insert into array_types(sid,source,t_timetz) values(#{sid},#{source},#{var_timetz});
+</insert>
+
+<insert id="InsertArrayParameterTimetzTimeOriginalPointer" parameter="sid,source,var_timetz" >
+    insert into array_types(sid,source,t_timetz) values(#{sid},#{source},#{var_timetz});
+</insert>
+
+<insert id="InsertArrayParameterTimetzTimePointerOriginal" parameter="sid,source,var_timetz" >
+    insert into array_types(sid,source,t_timetz) values(#{sid},#{source},#{var_timetz});
+</insert>
+
+<insert id="InsertArrayParameterTimetzTimePointerPointer" parameter="sid,source,var_timetz" >
+    insert into array_types(sid,source,t_timetz) values(#{sid},#{source},#{var_timetz});
+</insert>
+
+<insert id="InsertArrayEntityTimetzTime" parameter="sid,source,var_timetz" >
+    insert into array_types(sid,source,t_timetz) values(#{sid},#{source},#{var_timetz});
+</insert>
+
+<insert id="InsertArrayEntityTimetzTimeOriginalPointer" parameter="sid,source,var_timetz" >
+    insert into array_types(sid,source,t_timetz) values(#{sid},#{source},#{var_timetz});
+</insert>
+
+<insert id="InsertArrayEntityTimetzTimePointerOriginal" parameter="sid,source,var_timetz" >
+    insert into array_types(sid,source,t_timetz) values(#{sid},#{source},#{var_timetz});
+</insert>
+
+<insert id="InsertArrayEntityTimetzTimePointerPointer" parameter="sid,source,var_timetz" >
+    insert into array_types(sid,source,t_timetz) values(#{sid},#{source},#{var_timetz});
+</insert>
+
+<insert id="InsertParameterTimestampTime" parameter="sid,source,var_timestamp" >
+    insert into types(sid,source,t_timestamp) values(#{sid},#{source},#{var_timestamp});
+</insert>
+
+<insert id="InsertParameterTimestampTimeOriginalPointer" parameter="sid,source,var_timestamp" >
+    insert into types(sid,source,t_timestamp) values(#{sid},#{source},#{var_timestamp});
+</insert>
+
+<insert id="InsertParameterTimestampTimePointerOriginal" parameter="sid,source,var_timestamp" >
+    insert into types(sid,source,t_timestamp) values(#{sid},#{source},#{var_timestamp});
+</insert>
+
+<insert id="InsertParameterTimestampTimePointerPointer" parameter="sid,source,var_timestamp" >
+    insert into types(sid,source,t_timestamp) values(#{sid},#{source},#{var_timestamp});
+</insert>
+
+<insert id="InsertEntityTimestampTime" parameter="item:struct" >
+    insert into types(sid,source,t_timestamp) values(#{sid},#{source},#{var_timestamp});
+</insert>
+
+<insert id="InsertEntityTimestampTimeOriginalPointer" parameter="item:struct" >
+    insert into types(sid,source,t_timestamp) values(#{sid},#{source},#{var_timestamp});
+</insert>
+
+<insert id="InsertEntityTimestampTimePointerOriginal" parameter="item:struct" >
+    insert into types(sid,source,t_timestamp) values(#{sid},#{source},#{var_timestamp});
+</insert>
+
+<insert id="InsertEntityTimestampTimePointerPointer" parameter="item:struct" >
+    insert into types(sid,source,t_timestamp) values(#{sid},#{source},#{var_timestamp});
+</insert>
+
+<insert id="InsertArrayParameterTimestampTime" parameter="sid,source,var_timestamp" >
+    insert into array_types(sid,source,t_timestamp) values(#{sid},#{source},#{var_timestamp});
+</insert>
+
+<insert id="InsertArrayParameterTimestampTimeOriginalPointer" parameter="sid,source,var_timestamp" >
+    insert into array_types(sid,source,t_timestamp) values(#{sid},#{source},#{var_timestamp});
+</insert>
+
+<insert id="InsertArrayParameterTimestampTimePointerOriginal" parameter="sid,source,var_timestamp" >
+    insert into array_types(sid,source,t_timestamp) values(#{sid},#{source},#{var_timestamp});
+</insert>
+
+<insert id="InsertArrayParameterTimestampTimePointerPointer" parameter="sid,source,var_timestamp" >
+    insert into array_types(sid,source,t_timestamp) values(#{sid},#{source},#{var_timestamp});
+</insert>
+
+<insert id="InsertArrayEntityTimestampTime" parameter="sid,source,var_timestamp" >
+    insert into array_types(sid,source,t_timestamp) values(#{sid},#{source},#{var_timestamp});
+</insert>
+
+<insert id="InsertArrayEntityTimestampTimeOriginalPointer" parameter="sid,source,var_timestamp" >
+    insert into array_types(sid,source,t_timestamp) values(#{sid},#{source},#{var_timestamp});
+</insert>
+
+<insert id="InsertArrayEntityTimestampTimePointerOriginal" parameter="sid,source,var_timestamp" >
+    insert into array_types(sid,source,t_timestamp) values(#{sid},#{source},#{var_timestamp});
+</insert>
+
+<insert id="InsertArrayEntityTimestampTimePointerPointer" parameter="sid,source,var_timestamp" >
+    insert into array_types(sid,source,t_timestamp) values(#{sid},#{source},#{var_timestamp});
+</insert>
+
+<insert id="InsertParameterTimestampWithTimezoneTime" parameter="sid,source,var_timestamp_with_timezone" >
+    insert into types(sid,source,t_timestamp_with_timezone) values(#{sid},#{source},#{var_timestamp_with_timezone});
+</insert>
+
+<insert id="InsertParameterTimestampWithTimezoneTimeOriginalPointer" parameter="sid,source,var_timestamp_with_timezone" >
+    insert into types(sid,source,t_timestamp_with_timezone) values(#{sid},#{source},#{var_timestamp_with_timezone});
+</insert>
+
+<insert id="InsertParameterTimestampWithTimezoneTimePointerOriginal" parameter="sid,source,var_timestamp_with_timezone" >
+    insert into types(sid,source,t_timestamp_with_timezone) values(#{sid},#{source},#{var_timestamp_with_timezone});
+</insert>
+
+<insert id="InsertParameterTimestampWithTimezoneTimePointerPointer" parameter="sid,source,var_timestamp_with_timezone" >
+    insert into types(sid,source,t_timestamp_with_timezone) values(#{sid},#{source},#{var_timestamp_with_timezone});
+</insert>
+
+<insert id="InsertEntityTimestampWithTimezoneTime" parameter="item:struct" >
+    insert into types(sid,source,t_timestamp_with_timezone) values(#{sid},#{source},#{var_timestamp_with_timezone});
+</insert>
+
+<insert id="InsertEntityTimestampWithTimezoneTimeOriginalPointer" parameter="item:struct" >
+    insert into types(sid,source,t_timestamp_with_timezone) values(#{sid},#{source},#{var_timestamp_with_timezone});
+</insert>
+
+<insert id="InsertEntityTimestampWithTimezoneTimePointerOriginal" parameter="item:struct" >
+    insert into types(sid,source,t_timestamp_with_timezone) values(#{sid},#{source},#{var_timestamp_with_timezone});
+</insert>
+
+<insert id="InsertEntityTimestampWithTimezoneTimePointerPointer" parameter="item:struct" >
+    insert into types(sid,source,t_timestamp_with_timezone) values(#{sid},#{source},#{var_timestamp_with_timezone});
+</insert>
+
+<insert id="InsertArrayParameterTimestampWithTimezoneTime" parameter="sid,source,var_timestamp_with_timezone" >
+    insert into array_types(sid,source,t_timestamp_with_timezone) values(#{sid},#{source},#{var_timestamp_with_timezone});
+</insert>
+
+<insert id="InsertArrayParameterTimestampWithTimezoneTimeOriginalPointer" parameter="sid,source,var_timestamp_with_timezone" >
+    insert into array_types(sid,source,t_timestamp_with_timezone) values(#{sid},#{source},#{var_timestamp_with_timezone});
+</insert>
+
+<insert id="InsertArrayParameterTimestampWithTimezoneTimePointerOriginal" parameter="sid,source,var_timestamp_with_timezone" >
+    insert into array_types(sid,source,t_timestamp_with_timezone) values(#{sid},#{source},#{var_timestamp_with_timezone});
+</insert>
+
+<insert id="InsertArrayParameterTimestampWithTimezoneTimePointerPointer" parameter="sid,source,var_timestamp_with_timezone" >
+    insert into array_types(sid,source,t_timestamp_with_timezone) values(#{sid},#{source},#{var_timestamp_with_timezone});
+</insert>
+
+<insert id="InsertArrayEntityTimestampWithTimezoneTime" parameter="sid,source,var_timestamp_with_timezone" >
+    insert into array_types(sid,source,t_timestamp_with_timezone) values(#{sid},#{source},#{var_timestamp_with_timezone});
+</insert>
+
+<insert id="InsertArrayEntityTimestampWithTimezoneTimeOriginalPointer" parameter="sid,source,var_timestamp_with_timezone" >
+    insert into array_types(sid,source,t_timestamp_with_timezone) values(#{sid},#{source},#{var_timestamp_with_timezone});
+</insert>
+
+<insert id="InsertArrayEntityTimestampWithTimezoneTimePointerOriginal" parameter="sid,source,var_timestamp_with_timezone" >
+    insert into array_types(sid,source,t_timestamp_with_timezone) values(#{sid},#{source},#{var_timestamp_with_timezone});
+</insert>
+
+<insert id="InsertArrayEntityTimestampWithTimezoneTimePointerPointer" parameter="sid,source,var_timestamp_with_timezone" >
+    insert into array_types(sid,source,t_timestamp_with_timezone) values(#{sid},#{source},#{var_timestamp_with_timezone});
+</insert>
+
+<insert id="InsertParameterTimestamptzTime" parameter="sid,source,var_timestamptz" >
+    insert into types(sid,source,t_timestamptz) values(#{sid},#{source},#{var_timestamptz});
+</insert>
+
+<insert id="InsertParameterTimestamptzTimeOriginalPointer" parameter="sid,source,var_timestamptz" >
+    insert into types(sid,source,t_timestamptz) values(#{sid},#{source},#{var_timestamptz});
+</insert>
+
+<insert id="InsertParameterTimestamptzTimePointerOriginal" parameter="sid,source,var_timestamptz" >
+    insert into types(sid,source,t_timestamptz) values(#{sid},#{source},#{var_timestamptz});
+</insert>
+
+<insert id="InsertParameterTimestamptzTimePointerPointer" parameter="sid,source,var_timestamptz" >
+    insert into types(sid,source,t_timestamptz) values(#{sid},#{source},#{var_timestamptz});
+</insert>
+
+<insert id="InsertEntityTimestamptzTime" parameter="item:struct" >
+    insert into types(sid,source,t_timestamptz) values(#{sid},#{source},#{var_timestamptz});
+</insert>
+
+<insert id="InsertEntityTimestamptzTimeOriginalPointer" parameter="item:struct" >
+    insert into types(sid,source,t_timestamptz) values(#{sid},#{source},#{var_timestamptz});
+</insert>
+
+<insert id="InsertEntityTimestamptzTimePointerOriginal" parameter="item:struct" >
+    insert into types(sid,source,t_timestamptz) values(#{sid},#{source},#{var_timestamptz});
+</insert>
+
+<insert id="InsertEntityTimestamptzTimePointerPointer" parameter="item:struct" >
+    insert into types(sid,source,t_timestamptz) values(#{sid},#{source},#{var_timestamptz});
+</insert>
+
+<insert id="InsertArrayParameterTimestamptzTime" parameter="sid,source,var_timestamptz" >
+    insert into array_types(sid,source,t_timestamptz) values(#{sid},#{source},#{var_timestamptz});
+</insert>
+
+<insert id="InsertArrayParameterTimestamptzTimeOriginalPointer" parameter="sid,source,var_timestamptz" >
+    insert into array_types(sid,source,t_timestamptz) values(#{sid},#{source},#{var_timestamptz});
+</insert>
+
+<insert id="InsertArrayParameterTimestamptzTimePointerOriginal" parameter="sid,source,var_timestamptz" >
+    insert into array_types(sid,source,t_timestamptz) values(#{sid},#{source},#{var_timestamptz});
+</insert>
+
+<insert id="InsertArrayParameterTimestamptzTimePointerPointer" parameter="sid,source,var_timestamptz" >
+    insert into array_types(sid,source,t_timestamptz) values(#{sid},#{source},#{var_timestamptz});
+</insert>
+
+<insert id="InsertArrayEntityTimestamptzTime" parameter="sid,source,var_timestamptz" >
+    insert into array_types(sid,source,t_timestamptz) values(#{sid},#{source},#{var_timestamptz});
+</insert>
+
+<insert id="InsertArrayEntityTimestamptzTimeOriginalPointer" parameter="sid,source,var_timestamptz" >
+    insert into array_types(sid,source,t_timestamptz) values(#{sid},#{source},#{var_timestamptz});
+</insert>
+
+<insert id="InsertArrayEntityTimestamptzTimePointerOriginal" parameter="sid,source,var_timestamptz" >
+    insert into array_types(sid,source,t_timestamptz) values(#{sid},#{source},#{var_timestamptz});
+</insert>
+
+<insert id="InsertArrayEntityTimestamptzTimePointerPointer" parameter="sid,source,var_timestamptz" >
+    insert into array_types(sid,source,t_timestamptz) values(#{sid},#{source},#{var_timestamptz});
 </insert>
 
 </mapper>

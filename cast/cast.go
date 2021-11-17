@@ -10,7 +10,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/shopspring/decimal"
+	"github.com/gozelle/decimal"
 	"html/template"
 	"math"
 	"math/big"

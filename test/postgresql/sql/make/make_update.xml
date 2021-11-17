@@ -515,6 +515,70 @@
     update array_types set source =#{source}, t_varchar = #{ val } where sid = #{sid};
 </update>
 
+<update id="UpdateParameterFloat8Float32" parameter="sid,source,val" >
+    update types set t_float8 = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateParameterFloat8Float32OriginalPointer" parameter="sid,source,val" >
+    update types set t_float8 = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateParameterFloat8Float32PointerOriginal" parameter="sid,source,val" >
+    update types set t_float8 = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateParameterFloat8Float32PointerPointer" parameter="sid,source,val" >
+    update types set t_float8 = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateEntityFloat8Float32" parameter="item:struct" >
+    update types set t_float8 = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateEntityFloat8Float32OriginalPointer" parameter="item:struct" >
+    update types set t_float8 = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateEntityFloat8Float32PointerOriginal" parameter="item:struct" >
+    update types set t_float8 = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateEntityFloat8Float32PointerPointer" parameter="item:struct" >
+    update types set t_float8 = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayParameterFloat8Float32" parameter="sid,source,val" >
+    update array_types set source =#{source}, t_float8 = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayParameterFloat8Float32OriginalPointer" parameter="sid,source,val" >
+    update array_types set source =#{source}, t_float8 = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayParameterFloat8Float32PointerOriginal" parameter="sid,source,val" >
+    update array_types set source =#{source}, t_float8 = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayParameterFloat8Float32PointerPointer" parameter="sid,source,val" >
+    update array_types set source =#{source}, t_float8 = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayEntityFloat8Float32" parameter="item:struct" >
+    update array_types set source =#{source}, t_float8 = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayEntityFloat8Float32OriginalPointer" parameter="item:struct" >
+    update array_types set source =#{source}, t_float8 = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayEntityFloat8Float32PointerOriginal" parameter="item:struct" >
+    update array_types set source =#{source}, t_float8 = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayEntityFloat8Float32PointerPointer" parameter="item:struct" >
+    update array_types set source =#{source}, t_float8 = #{ val } where sid = #{sid};
+</update>
+
 <update id="UpdateParameterIntegerInt8" parameter="sid,source,val" >
     update types set t_integer = #{ val } where sid = #{sid};
 </update>
@@ -707,6 +771,262 @@
     update array_types set source =#{source}, t_int4 = #{ val } where sid = #{sid};
 </update>
 
+<update id="UpdateParameterNumericDecimal" parameter="sid,source,val" >
+    update types set t_numeric = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateParameterNumericDecimalOriginalPointer" parameter="sid,source,val" >
+    update types set t_numeric = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateParameterNumericDecimalPointerOriginal" parameter="sid,source,val" >
+    update types set t_numeric = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateParameterNumericDecimalPointerPointer" parameter="sid,source,val" >
+    update types set t_numeric = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateEntityNumericDecimal" parameter="item:struct" >
+    update types set t_numeric = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateEntityNumericDecimalOriginalPointer" parameter="item:struct" >
+    update types set t_numeric = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateEntityNumericDecimalPointerOriginal" parameter="item:struct" >
+    update types set t_numeric = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateEntityNumericDecimalPointerPointer" parameter="item:struct" >
+    update types set t_numeric = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayParameterNumericDecimal" parameter="sid,source,val" >
+    update array_types set source =#{source}, t_numeric = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayParameterNumericDecimalOriginalPointer" parameter="sid,source,val" >
+    update array_types set source =#{source}, t_numeric = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayParameterNumericDecimalPointerOriginal" parameter="sid,source,val" >
+    update array_types set source =#{source}, t_numeric = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayParameterNumericDecimalPointerPointer" parameter="sid,source,val" >
+    update array_types set source =#{source}, t_numeric = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayEntityNumericDecimal" parameter="item:struct" >
+    update array_types set source =#{source}, t_numeric = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayEntityNumericDecimalOriginalPointer" parameter="item:struct" >
+    update array_types set source =#{source}, t_numeric = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayEntityNumericDecimalPointerOriginal" parameter="item:struct" >
+    update array_types set source =#{source}, t_numeric = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayEntityNumericDecimalPointerPointer" parameter="item:struct" >
+    update array_types set source =#{source}, t_numeric = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateParameterDecimalDecimal" parameter="sid,source,val" >
+    update types set t_decimal = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateParameterDecimalDecimalOriginalPointer" parameter="sid,source,val" >
+    update types set t_decimal = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateParameterDecimalDecimalPointerOriginal" parameter="sid,source,val" >
+    update types set t_decimal = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateParameterDecimalDecimalPointerPointer" parameter="sid,source,val" >
+    update types set t_decimal = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateEntityDecimalDecimal" parameter="item:struct" >
+    update types set t_decimal = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateEntityDecimalDecimalOriginalPointer" parameter="item:struct" >
+    update types set t_decimal = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateEntityDecimalDecimalPointerOriginal" parameter="item:struct" >
+    update types set t_decimal = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateEntityDecimalDecimalPointerPointer" parameter="item:struct" >
+    update types set t_decimal = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayParameterDecimalDecimal" parameter="sid,source,val" >
+    update array_types set source =#{source}, t_decimal = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayParameterDecimalDecimalOriginalPointer" parameter="sid,source,val" >
+    update array_types set source =#{source}, t_decimal = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayParameterDecimalDecimalPointerOriginal" parameter="sid,source,val" >
+    update array_types set source =#{source}, t_decimal = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayParameterDecimalDecimalPointerPointer" parameter="sid,source,val" >
+    update array_types set source =#{source}, t_decimal = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayEntityDecimalDecimal" parameter="item:struct" >
+    update array_types set source =#{source}, t_decimal = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayEntityDecimalDecimalOriginalPointer" parameter="item:struct" >
+    update array_types set source =#{source}, t_decimal = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayEntityDecimalDecimalPointerOriginal" parameter="item:struct" >
+    update array_types set source =#{source}, t_decimal = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayEntityDecimalDecimalPointerPointer" parameter="item:struct" >
+    update array_types set source =#{source}, t_decimal = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateParameterFloat4Float32" parameter="sid,source,val" >
+    update types set t_float4 = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateParameterFloat4Float32OriginalPointer" parameter="sid,source,val" >
+    update types set t_float4 = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateParameterFloat4Float32PointerOriginal" parameter="sid,source,val" >
+    update types set t_float4 = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateParameterFloat4Float32PointerPointer" parameter="sid,source,val" >
+    update types set t_float4 = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateEntityFloat4Float32" parameter="item:struct" >
+    update types set t_float4 = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateEntityFloat4Float32OriginalPointer" parameter="item:struct" >
+    update types set t_float4 = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateEntityFloat4Float32PointerOriginal" parameter="item:struct" >
+    update types set t_float4 = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateEntityFloat4Float32PointerPointer" parameter="item:struct" >
+    update types set t_float4 = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayParameterFloat4Float32" parameter="sid,source,val" >
+    update array_types set source =#{source}, t_float4 = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayParameterFloat4Float32OriginalPointer" parameter="sid,source,val" >
+    update array_types set source =#{source}, t_float4 = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayParameterFloat4Float32PointerOriginal" parameter="sid,source,val" >
+    update array_types set source =#{source}, t_float4 = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayParameterFloat4Float32PointerPointer" parameter="sid,source,val" >
+    update array_types set source =#{source}, t_float4 = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayEntityFloat4Float32" parameter="item:struct" >
+    update array_types set source =#{source}, t_float4 = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayEntityFloat4Float32OriginalPointer" parameter="item:struct" >
+    update array_types set source =#{source}, t_float4 = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayEntityFloat4Float32PointerOriginal" parameter="item:struct" >
+    update array_types set source =#{source}, t_float4 = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayEntityFloat4Float32PointerPointer" parameter="item:struct" >
+    update array_types set source =#{source}, t_float4 = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateParameterSmallintInt8" parameter="sid,source,val" >
+    update types set t_smallint = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateParameterSmallintInt8OriginalPointer" parameter="sid,source,val" >
+    update types set t_smallint = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateParameterSmallintInt8PointerOriginal" parameter="sid,source,val" >
+    update types set t_smallint = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateParameterSmallintInt8PointerPointer" parameter="sid,source,val" >
+    update types set t_smallint = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateEntitySmallintInt8" parameter="item:struct" >
+    update types set t_smallint = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateEntitySmallintInt8OriginalPointer" parameter="item:struct" >
+    update types set t_smallint = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateEntitySmallintInt8PointerOriginal" parameter="item:struct" >
+    update types set t_smallint = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateEntitySmallintInt8PointerPointer" parameter="item:struct" >
+    update types set t_smallint = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayParameterSmallintInt8" parameter="sid,source,val" >
+    update array_types set source =#{source}, t_smallint = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayParameterSmallintInt8OriginalPointer" parameter="sid,source,val" >
+    update array_types set source =#{source}, t_smallint = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayParameterSmallintInt8PointerOriginal" parameter="sid,source,val" >
+    update array_types set source =#{source}, t_smallint = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayParameterSmallintInt8PointerPointer" parameter="sid,source,val" >
+    update array_types set source =#{source}, t_smallint = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayEntitySmallintInt8" parameter="item:struct" >
+    update array_types set source =#{source}, t_smallint = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayEntitySmallintInt8OriginalPointer" parameter="item:struct" >
+    update array_types set source =#{source}, t_smallint = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayEntitySmallintInt8PointerOriginal" parameter="item:struct" >
+    update array_types set source =#{source}, t_smallint = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayEntitySmallintInt8PointerPointer" parameter="item:struct" >
+    update array_types set source =#{source}, t_smallint = #{ val } where sid = #{sid};
+</update>
+
 <update id="UpdateParameterInt2Int8" parameter="sid,source,val" >
     update types set t_int2 = #{ val } where sid = #{sid};
 </update>
@@ -833,6 +1153,390 @@
 
 <update id="UpdateArrayEntityTextStringPointerPointer" parameter="item:struct" >
     update array_types set source =#{source}, t_text = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateParameterTimeTime" parameter="sid,source,val" >
+    update types set t_time = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateParameterTimeTimeOriginalPointer" parameter="sid,source,val" >
+    update types set t_time = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateParameterTimeTimePointerOriginal" parameter="sid,source,val" >
+    update types set t_time = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateParameterTimeTimePointerPointer" parameter="sid,source,val" >
+    update types set t_time = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateEntityTimeTime" parameter="item:struct" >
+    update types set t_time = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateEntityTimeTimeOriginalPointer" parameter="item:struct" >
+    update types set t_time = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateEntityTimeTimePointerOriginal" parameter="item:struct" >
+    update types set t_time = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateEntityTimeTimePointerPointer" parameter="item:struct" >
+    update types set t_time = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayParameterTimeTime" parameter="sid,source,val" >
+    update array_types set source =#{source}, t_time = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayParameterTimeTimeOriginalPointer" parameter="sid,source,val" >
+    update array_types set source =#{source}, t_time = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayParameterTimeTimePointerOriginal" parameter="sid,source,val" >
+    update array_types set source =#{source}, t_time = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayParameterTimeTimePointerPointer" parameter="sid,source,val" >
+    update array_types set source =#{source}, t_time = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayEntityTimeTime" parameter="item:struct" >
+    update array_types set source =#{source}, t_time = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayEntityTimeTimeOriginalPointer" parameter="item:struct" >
+    update array_types set source =#{source}, t_time = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayEntityTimeTimePointerOriginal" parameter="item:struct" >
+    update array_types set source =#{source}, t_time = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayEntityTimeTimePointerPointer" parameter="item:struct" >
+    update array_types set source =#{source}, t_time = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateParameterTimeWithTimezoneTime" parameter="sid,source,val" >
+    update types set t_time_with_timezone = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateParameterTimeWithTimezoneTimeOriginalPointer" parameter="sid,source,val" >
+    update types set t_time_with_timezone = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateParameterTimeWithTimezoneTimePointerOriginal" parameter="sid,source,val" >
+    update types set t_time_with_timezone = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateParameterTimeWithTimezoneTimePointerPointer" parameter="sid,source,val" >
+    update types set t_time_with_timezone = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateEntityTimeWithTimezoneTime" parameter="item:struct" >
+    update types set t_time_with_timezone = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateEntityTimeWithTimezoneTimeOriginalPointer" parameter="item:struct" >
+    update types set t_time_with_timezone = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateEntityTimeWithTimezoneTimePointerOriginal" parameter="item:struct" >
+    update types set t_time_with_timezone = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateEntityTimeWithTimezoneTimePointerPointer" parameter="item:struct" >
+    update types set t_time_with_timezone = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayParameterTimeWithTimezoneTime" parameter="sid,source,val" >
+    update array_types set source =#{source}, t_time_with_timezone = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayParameterTimeWithTimezoneTimeOriginalPointer" parameter="sid,source,val" >
+    update array_types set source =#{source}, t_time_with_timezone = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayParameterTimeWithTimezoneTimePointerOriginal" parameter="sid,source,val" >
+    update array_types set source =#{source}, t_time_with_timezone = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayParameterTimeWithTimezoneTimePointerPointer" parameter="sid,source,val" >
+    update array_types set source =#{source}, t_time_with_timezone = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayEntityTimeWithTimezoneTime" parameter="item:struct" >
+    update array_types set source =#{source}, t_time_with_timezone = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayEntityTimeWithTimezoneTimeOriginalPointer" parameter="item:struct" >
+    update array_types set source =#{source}, t_time_with_timezone = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayEntityTimeWithTimezoneTimePointerOriginal" parameter="item:struct" >
+    update array_types set source =#{source}, t_time_with_timezone = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayEntityTimeWithTimezoneTimePointerPointer" parameter="item:struct" >
+    update array_types set source =#{source}, t_time_with_timezone = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateParameterTimetzTime" parameter="sid,source,val" >
+    update types set t_timetz = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateParameterTimetzTimeOriginalPointer" parameter="sid,source,val" >
+    update types set t_timetz = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateParameterTimetzTimePointerOriginal" parameter="sid,source,val" >
+    update types set t_timetz = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateParameterTimetzTimePointerPointer" parameter="sid,source,val" >
+    update types set t_timetz = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateEntityTimetzTime" parameter="item:struct" >
+    update types set t_timetz = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateEntityTimetzTimeOriginalPointer" parameter="item:struct" >
+    update types set t_timetz = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateEntityTimetzTimePointerOriginal" parameter="item:struct" >
+    update types set t_timetz = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateEntityTimetzTimePointerPointer" parameter="item:struct" >
+    update types set t_timetz = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayParameterTimetzTime" parameter="sid,source,val" >
+    update array_types set source =#{source}, t_timetz = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayParameterTimetzTimeOriginalPointer" parameter="sid,source,val" >
+    update array_types set source =#{source}, t_timetz = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayParameterTimetzTimePointerOriginal" parameter="sid,source,val" >
+    update array_types set source =#{source}, t_timetz = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayParameterTimetzTimePointerPointer" parameter="sid,source,val" >
+    update array_types set source =#{source}, t_timetz = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayEntityTimetzTime" parameter="item:struct" >
+    update array_types set source =#{source}, t_timetz = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayEntityTimetzTimeOriginalPointer" parameter="item:struct" >
+    update array_types set source =#{source}, t_timetz = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayEntityTimetzTimePointerOriginal" parameter="item:struct" >
+    update array_types set source =#{source}, t_timetz = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayEntityTimetzTimePointerPointer" parameter="item:struct" >
+    update array_types set source =#{source}, t_timetz = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateParameterTimestampTime" parameter="sid,source,val" >
+    update types set t_timestamp = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateParameterTimestampTimeOriginalPointer" parameter="sid,source,val" >
+    update types set t_timestamp = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateParameterTimestampTimePointerOriginal" parameter="sid,source,val" >
+    update types set t_timestamp = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateParameterTimestampTimePointerPointer" parameter="sid,source,val" >
+    update types set t_timestamp = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateEntityTimestampTime" parameter="item:struct" >
+    update types set t_timestamp = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateEntityTimestampTimeOriginalPointer" parameter="item:struct" >
+    update types set t_timestamp = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateEntityTimestampTimePointerOriginal" parameter="item:struct" >
+    update types set t_timestamp = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateEntityTimestampTimePointerPointer" parameter="item:struct" >
+    update types set t_timestamp = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayParameterTimestampTime" parameter="sid,source,val" >
+    update array_types set source =#{source}, t_timestamp = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayParameterTimestampTimeOriginalPointer" parameter="sid,source,val" >
+    update array_types set source =#{source}, t_timestamp = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayParameterTimestampTimePointerOriginal" parameter="sid,source,val" >
+    update array_types set source =#{source}, t_timestamp = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayParameterTimestampTimePointerPointer" parameter="sid,source,val" >
+    update array_types set source =#{source}, t_timestamp = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayEntityTimestampTime" parameter="item:struct" >
+    update array_types set source =#{source}, t_timestamp = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayEntityTimestampTimeOriginalPointer" parameter="item:struct" >
+    update array_types set source =#{source}, t_timestamp = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayEntityTimestampTimePointerOriginal" parameter="item:struct" >
+    update array_types set source =#{source}, t_timestamp = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayEntityTimestampTimePointerPointer" parameter="item:struct" >
+    update array_types set source =#{source}, t_timestamp = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateParameterTimestampWithTimezoneTime" parameter="sid,source,val" >
+    update types set t_timestamp_with_timezone = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateParameterTimestampWithTimezoneTimeOriginalPointer" parameter="sid,source,val" >
+    update types set t_timestamp_with_timezone = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateParameterTimestampWithTimezoneTimePointerOriginal" parameter="sid,source,val" >
+    update types set t_timestamp_with_timezone = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateParameterTimestampWithTimezoneTimePointerPointer" parameter="sid,source,val" >
+    update types set t_timestamp_with_timezone = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateEntityTimestampWithTimezoneTime" parameter="item:struct" >
+    update types set t_timestamp_with_timezone = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateEntityTimestampWithTimezoneTimeOriginalPointer" parameter="item:struct" >
+    update types set t_timestamp_with_timezone = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateEntityTimestampWithTimezoneTimePointerOriginal" parameter="item:struct" >
+    update types set t_timestamp_with_timezone = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateEntityTimestampWithTimezoneTimePointerPointer" parameter="item:struct" >
+    update types set t_timestamp_with_timezone = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayParameterTimestampWithTimezoneTime" parameter="sid,source,val" >
+    update array_types set source =#{source}, t_timestamp_with_timezone = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayParameterTimestampWithTimezoneTimeOriginalPointer" parameter="sid,source,val" >
+    update array_types set source =#{source}, t_timestamp_with_timezone = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayParameterTimestampWithTimezoneTimePointerOriginal" parameter="sid,source,val" >
+    update array_types set source =#{source}, t_timestamp_with_timezone = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayParameterTimestampWithTimezoneTimePointerPointer" parameter="sid,source,val" >
+    update array_types set source =#{source}, t_timestamp_with_timezone = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayEntityTimestampWithTimezoneTime" parameter="item:struct" >
+    update array_types set source =#{source}, t_timestamp_with_timezone = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayEntityTimestampWithTimezoneTimeOriginalPointer" parameter="item:struct" >
+    update array_types set source =#{source}, t_timestamp_with_timezone = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayEntityTimestampWithTimezoneTimePointerOriginal" parameter="item:struct" >
+    update array_types set source =#{source}, t_timestamp_with_timezone = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayEntityTimestampWithTimezoneTimePointerPointer" parameter="item:struct" >
+    update array_types set source =#{source}, t_timestamp_with_timezone = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateParameterTimestamptzTime" parameter="sid,source,val" >
+    update types set t_timestamptz = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateParameterTimestamptzTimeOriginalPointer" parameter="sid,source,val" >
+    update types set t_timestamptz = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateParameterTimestamptzTimePointerOriginal" parameter="sid,source,val" >
+    update types set t_timestamptz = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateParameterTimestamptzTimePointerPointer" parameter="sid,source,val" >
+    update types set t_timestamptz = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateEntityTimestamptzTime" parameter="item:struct" >
+    update types set t_timestamptz = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateEntityTimestamptzTimeOriginalPointer" parameter="item:struct" >
+    update types set t_timestamptz = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateEntityTimestamptzTimePointerOriginal" parameter="item:struct" >
+    update types set t_timestamptz = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateEntityTimestamptzTimePointerPointer" parameter="item:struct" >
+    update types set t_timestamptz = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayParameterTimestamptzTime" parameter="sid,source,val" >
+    update array_types set source =#{source}, t_timestamptz = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayParameterTimestamptzTimeOriginalPointer" parameter="sid,source,val" >
+    update array_types set source =#{source}, t_timestamptz = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayParameterTimestamptzTimePointerOriginal" parameter="sid,source,val" >
+    update array_types set source =#{source}, t_timestamptz = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayParameterTimestamptzTimePointerPointer" parameter="sid,source,val" >
+    update array_types set source =#{source}, t_timestamptz = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayEntityTimestamptzTime" parameter="item:struct" >
+    update array_types set source =#{source}, t_timestamptz = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayEntityTimestamptzTimeOriginalPointer" parameter="item:struct" >
+    update array_types set source =#{source}, t_timestamptz = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayEntityTimestamptzTimePointerOriginal" parameter="item:struct" >
+    update array_types set source =#{source}, t_timestamptz = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayEntityTimestamptzTimePointerPointer" parameter="item:struct" >
+    update array_types set source =#{source}, t_timestamptz = #{ val } where sid = #{sid};
 </update>
 
 </mapper>

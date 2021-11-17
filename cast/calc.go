@@ -2,7 +2,7 @@ package cast
 
 import (
 	"fmt"
-	"github.com/shopspring/decimal"
+	"github.com/gozelle/decimal"
 	"math/big"
 	"strings"
 )

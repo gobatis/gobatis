@@ -515,6 +515,70 @@
     select t_varchar from array_types where sid = #{sid};
 </select>
 
+<select id="SelectParameterFloat8Float32" parameter="sid" result="t_float8">
+    select t_float8 from types where sid = #{sid};
+</select>
+
+<select id="SelectParameterFloat8Float32PointerOriginal" parameter="sid" result="t_float8">
+    select t_float8 from types where sid = #{sid};
+</select>
+
+<select id="SelectParameterFloat8Float32OriginalPointer" parameter="sid" result="t_float8">
+    select t_float8 from types where sid = #{sid};
+</select>
+
+<select id="SelectParameterFloat8Float32PointerPointer" parameter="sid" result="t_float8">
+    select t_float8 from types where sid = #{sid};
+</select>
+
+<select id="SelectEntityFloat8Float32" parameter="item:struct" result="t_float8">
+    select t_float8 from types where sid = #{sid};
+</select>
+
+<select id="SelectEntityFloat8Float32OriginalPointer" parameter="item:struct" result="t_float8">
+    select t_float8 from types where sid = #{sid};
+</select>
+
+<select id="SelectEntityFloat8Float32PointerOriginal" parameter="item:struct" result="t_float8">
+    select t_float8 from types where sid = #{sid};
+</select>
+
+<select id="SelectEntityFloat8Float32PointerPointer" parameter="item:struct" result="t_float8">
+    select t_float8 from types where sid = #{sid};
+</select>
+
+<select id="SelectArrayParameterFloat8Float32" parameter="sid" result="t_float8">
+    select t_float8 from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayParameterFloat8Float32OriginalPointer" parameter="sid" result="t_float8">
+    select t_float8 from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayParameterFloat8Float32PointerOriginal" parameter="sid" result="t_float8">
+    select t_float8 from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayParameterFloat8Float32PointerPointer" parameter="sid" result="t_float8">
+    select t_float8 from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayEntityFloat8Float32" parameter="sid" result="t_float8">
+    select t_float8 from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayEntityFloat8Float32OriginalPointer" parameter="sid" result="t_float8">
+    select t_float8 from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayEntityFloat8Float32PointerOriginal" parameter="sid" result="t_float8">
+    select t_float8 from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayEntityFloat8Float32PointerPointer" parameter="sid" result="t_float8">
+    select t_float8 from array_types where sid = #{sid};
+</select>
+
 <select id="SelectParameterIntegerInt8" parameter="sid" result="t_integer">
     select t_integer from types where sid = #{sid};
 </select>
@@ -707,6 +771,262 @@
     select t_int4 from array_types where sid = #{sid};
 </select>
 
+<select id="SelectParameterNumericDecimal" parameter="sid" result="t_numeric">
+    select t_numeric from types where sid = #{sid};
+</select>
+
+<select id="SelectParameterNumericDecimalPointerOriginal" parameter="sid" result="t_numeric">
+    select t_numeric from types where sid = #{sid};
+</select>
+
+<select id="SelectParameterNumericDecimalOriginalPointer" parameter="sid" result="t_numeric">
+    select t_numeric from types where sid = #{sid};
+</select>
+
+<select id="SelectParameterNumericDecimalPointerPointer" parameter="sid" result="t_numeric">
+    select t_numeric from types where sid = #{sid};
+</select>
+
+<select id="SelectEntityNumericDecimal" parameter="item:struct" result="t_numeric">
+    select t_numeric from types where sid = #{sid};
+</select>
+
+<select id="SelectEntityNumericDecimalOriginalPointer" parameter="item:struct" result="t_numeric">
+    select t_numeric from types where sid = #{sid};
+</select>
+
+<select id="SelectEntityNumericDecimalPointerOriginal" parameter="item:struct" result="t_numeric">
+    select t_numeric from types where sid = #{sid};
+</select>
+
+<select id="SelectEntityNumericDecimalPointerPointer" parameter="item:struct" result="t_numeric">
+    select t_numeric from types where sid = #{sid};
+</select>
+
+<select id="SelectArrayParameterNumericDecimal" parameter="sid" result="t_numeric">
+    select t_numeric from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayParameterNumericDecimalOriginalPointer" parameter="sid" result="t_numeric">
+    select t_numeric from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayParameterNumericDecimalPointerOriginal" parameter="sid" result="t_numeric">
+    select t_numeric from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayParameterNumericDecimalPointerPointer" parameter="sid" result="t_numeric">
+    select t_numeric from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayEntityNumericDecimal" parameter="sid" result="t_numeric">
+    select t_numeric from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayEntityNumericDecimalOriginalPointer" parameter="sid" result="t_numeric">
+    select t_numeric from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayEntityNumericDecimalPointerOriginal" parameter="sid" result="t_numeric">
+    select t_numeric from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayEntityNumericDecimalPointerPointer" parameter="sid" result="t_numeric">
+    select t_numeric from array_types where sid = #{sid};
+</select>
+
+<select id="SelectParameterDecimalDecimal" parameter="sid" result="t_decimal">
+    select t_decimal from types where sid = #{sid};
+</select>
+
+<select id="SelectParameterDecimalDecimalPointerOriginal" parameter="sid" result="t_decimal">
+    select t_decimal from types where sid = #{sid};
+</select>
+
+<select id="SelectParameterDecimalDecimalOriginalPointer" parameter="sid" result="t_decimal">
+    select t_decimal from types where sid = #{sid};
+</select>
+
+<select id="SelectParameterDecimalDecimalPointerPointer" parameter="sid" result="t_decimal">
+    select t_decimal from types where sid = #{sid};
+</select>
+
+<select id="SelectEntityDecimalDecimal" parameter="item:struct" result="t_decimal">
+    select t_decimal from types where sid = #{sid};
+</select>
+
+<select id="SelectEntityDecimalDecimalOriginalPointer" parameter="item:struct" result="t_decimal">
+    select t_decimal from types where sid = #{sid};
+</select>
+
+<select id="SelectEntityDecimalDecimalPointerOriginal" parameter="item:struct" result="t_decimal">
+    select t_decimal from types where sid = #{sid};
+</select>
+
+<select id="SelectEntityDecimalDecimalPointerPointer" parameter="item:struct" result="t_decimal">
+    select t_decimal from types where sid = #{sid};
+</select>
+
+<select id="SelectArrayParameterDecimalDecimal" parameter="sid" result="t_decimal">
+    select t_decimal from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayParameterDecimalDecimalOriginalPointer" parameter="sid" result="t_decimal">
+    select t_decimal from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayParameterDecimalDecimalPointerOriginal" parameter="sid" result="t_decimal">
+    select t_decimal from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayParameterDecimalDecimalPointerPointer" parameter="sid" result="t_decimal">
+    select t_decimal from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayEntityDecimalDecimal" parameter="sid" result="t_decimal">
+    select t_decimal from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayEntityDecimalDecimalOriginalPointer" parameter="sid" result="t_decimal">
+    select t_decimal from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayEntityDecimalDecimalPointerOriginal" parameter="sid" result="t_decimal">
+    select t_decimal from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayEntityDecimalDecimalPointerPointer" parameter="sid" result="t_decimal">
+    select t_decimal from array_types where sid = #{sid};
+</select>
+
+<select id="SelectParameterFloat4Float32" parameter="sid" result="t_float4">
+    select t_float4 from types where sid = #{sid};
+</select>
+
+<select id="SelectParameterFloat4Float32PointerOriginal" parameter="sid" result="t_float4">
+    select t_float4 from types where sid = #{sid};
+</select>
+
+<select id="SelectParameterFloat4Float32OriginalPointer" parameter="sid" result="t_float4">
+    select t_float4 from types where sid = #{sid};
+</select>
+
+<select id="SelectParameterFloat4Float32PointerPointer" parameter="sid" result="t_float4">
+    select t_float4 from types where sid = #{sid};
+</select>
+
+<select id="SelectEntityFloat4Float32" parameter="item:struct" result="t_float4">
+    select t_float4 from types where sid = #{sid};
+</select>
+
+<select id="SelectEntityFloat4Float32OriginalPointer" parameter="item:struct" result="t_float4">
+    select t_float4 from types where sid = #{sid};
+</select>
+
+<select id="SelectEntityFloat4Float32PointerOriginal" parameter="item:struct" result="t_float4">
+    select t_float4 from types where sid = #{sid};
+</select>
+
+<select id="SelectEntityFloat4Float32PointerPointer" parameter="item:struct" result="t_float4">
+    select t_float4 from types where sid = #{sid};
+</select>
+
+<select id="SelectArrayParameterFloat4Float32" parameter="sid" result="t_float4">
+    select t_float4 from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayParameterFloat4Float32OriginalPointer" parameter="sid" result="t_float4">
+    select t_float4 from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayParameterFloat4Float32PointerOriginal" parameter="sid" result="t_float4">
+    select t_float4 from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayParameterFloat4Float32PointerPointer" parameter="sid" result="t_float4">
+    select t_float4 from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayEntityFloat4Float32" parameter="sid" result="t_float4">
+    select t_float4 from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayEntityFloat4Float32OriginalPointer" parameter="sid" result="t_float4">
+    select t_float4 from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayEntityFloat4Float32PointerOriginal" parameter="sid" result="t_float4">
+    select t_float4 from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayEntityFloat4Float32PointerPointer" parameter="sid" result="t_float4">
+    select t_float4 from array_types where sid = #{sid};
+</select>
+
+<select id="SelectParameterSmallintInt8" parameter="sid" result="t_smallint">
+    select t_smallint from types where sid = #{sid};
+</select>
+
+<select id="SelectParameterSmallintInt8PointerOriginal" parameter="sid" result="t_smallint">
+    select t_smallint from types where sid = #{sid};
+</select>
+
+<select id="SelectParameterSmallintInt8OriginalPointer" parameter="sid" result="t_smallint">
+    select t_smallint from types where sid = #{sid};
+</select>
+
+<select id="SelectParameterSmallintInt8PointerPointer" parameter="sid" result="t_smallint">
+    select t_smallint from types where sid = #{sid};
+</select>
+
+<select id="SelectEntitySmallintInt8" parameter="item:struct" result="t_smallint">
+    select t_smallint from types where sid = #{sid};
+</select>
+
+<select id="SelectEntitySmallintInt8OriginalPointer" parameter="item:struct" result="t_smallint">
+    select t_smallint from types where sid = #{sid};
+</select>
+
+<select id="SelectEntitySmallintInt8PointerOriginal" parameter="item:struct" result="t_smallint">
+    select t_smallint from types where sid = #{sid};
+</select>
+
+<select id="SelectEntitySmallintInt8PointerPointer" parameter="item:struct" result="t_smallint">
+    select t_smallint from types where sid = #{sid};
+</select>
+
+<select id="SelectArrayParameterSmallintInt8" parameter="sid" result="t_smallint">
+    select t_smallint from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayParameterSmallintInt8OriginalPointer" parameter="sid" result="t_smallint">
+    select t_smallint from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayParameterSmallintInt8PointerOriginal" parameter="sid" result="t_smallint">
+    select t_smallint from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayParameterSmallintInt8PointerPointer" parameter="sid" result="t_smallint">
+    select t_smallint from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayEntitySmallintInt8" parameter="sid" result="t_smallint">
+    select t_smallint from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayEntitySmallintInt8OriginalPointer" parameter="sid" result="t_smallint">
+    select t_smallint from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayEntitySmallintInt8PointerOriginal" parameter="sid" result="t_smallint">
+    select t_smallint from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayEntitySmallintInt8PointerPointer" parameter="sid" result="t_smallint">
+    select t_smallint from array_types where sid = #{sid};
+</select>
+
 <select id="SelectParameterInt2Int8" parameter="sid" result="t_int2">
     select t_int2 from types where sid = #{sid};
 </select>
@@ -833,6 +1153,390 @@
 
 <select id="SelectArrayEntityTextStringPointerPointer" parameter="sid" result="t_text">
     select t_text from array_types where sid = #{sid};
+</select>
+
+<select id="SelectParameterTimeTime" parameter="sid" result="t_time">
+    select t_time from types where sid = #{sid};
+</select>
+
+<select id="SelectParameterTimeTimePointerOriginal" parameter="sid" result="t_time">
+    select t_time from types where sid = #{sid};
+</select>
+
+<select id="SelectParameterTimeTimeOriginalPointer" parameter="sid" result="t_time">
+    select t_time from types where sid = #{sid};
+</select>
+
+<select id="SelectParameterTimeTimePointerPointer" parameter="sid" result="t_time">
+    select t_time from types where sid = #{sid};
+</select>
+
+<select id="SelectEntityTimeTime" parameter="item:struct" result="t_time">
+    select t_time from types where sid = #{sid};
+</select>
+
+<select id="SelectEntityTimeTimeOriginalPointer" parameter="item:struct" result="t_time">
+    select t_time from types where sid = #{sid};
+</select>
+
+<select id="SelectEntityTimeTimePointerOriginal" parameter="item:struct" result="t_time">
+    select t_time from types where sid = #{sid};
+</select>
+
+<select id="SelectEntityTimeTimePointerPointer" parameter="item:struct" result="t_time">
+    select t_time from types where sid = #{sid};
+</select>
+
+<select id="SelectArrayParameterTimeTime" parameter="sid" result="t_time">
+    select t_time from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayParameterTimeTimeOriginalPointer" parameter="sid" result="t_time">
+    select t_time from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayParameterTimeTimePointerOriginal" parameter="sid" result="t_time">
+    select t_time from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayParameterTimeTimePointerPointer" parameter="sid" result="t_time">
+    select t_time from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayEntityTimeTime" parameter="sid" result="t_time">
+    select t_time from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayEntityTimeTimeOriginalPointer" parameter="sid" result="t_time">
+    select t_time from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayEntityTimeTimePointerOriginal" parameter="sid" result="t_time">
+    select t_time from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayEntityTimeTimePointerPointer" parameter="sid" result="t_time">
+    select t_time from array_types where sid = #{sid};
+</select>
+
+<select id="SelectParameterTimeWithTimezoneTime" parameter="sid" result="t_time_with_timezone">
+    select t_time_with_timezone from types where sid = #{sid};
+</select>
+
+<select id="SelectParameterTimeWithTimezoneTimePointerOriginal" parameter="sid" result="t_time_with_timezone">
+    select t_time_with_timezone from types where sid = #{sid};
+</select>
+
+<select id="SelectParameterTimeWithTimezoneTimeOriginalPointer" parameter="sid" result="t_time_with_timezone">
+    select t_time_with_timezone from types where sid = #{sid};
+</select>
+
+<select id="SelectParameterTimeWithTimezoneTimePointerPointer" parameter="sid" result="t_time_with_timezone">
+    select t_time_with_timezone from types where sid = #{sid};
+</select>
+
+<select id="SelectEntityTimeWithTimezoneTime" parameter="item:struct" result="t_time_with_timezone">
+    select t_time_with_timezone from types where sid = #{sid};
+</select>
+
+<select id="SelectEntityTimeWithTimezoneTimeOriginalPointer" parameter="item:struct" result="t_time_with_timezone">
+    select t_time_with_timezone from types where sid = #{sid};
+</select>
+
+<select id="SelectEntityTimeWithTimezoneTimePointerOriginal" parameter="item:struct" result="t_time_with_timezone">
+    select t_time_with_timezone from types where sid = #{sid};
+</select>
+
+<select id="SelectEntityTimeWithTimezoneTimePointerPointer" parameter="item:struct" result="t_time_with_timezone">
+    select t_time_with_timezone from types where sid = #{sid};
+</select>
+
+<select id="SelectArrayParameterTimeWithTimezoneTime" parameter="sid" result="t_time_with_timezone">
+    select t_time_with_timezone from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayParameterTimeWithTimezoneTimeOriginalPointer" parameter="sid" result="t_time_with_timezone">
+    select t_time_with_timezone from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayParameterTimeWithTimezoneTimePointerOriginal" parameter="sid" result="t_time_with_timezone">
+    select t_time_with_timezone from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayParameterTimeWithTimezoneTimePointerPointer" parameter="sid" result="t_time_with_timezone">
+    select t_time_with_timezone from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayEntityTimeWithTimezoneTime" parameter="sid" result="t_time_with_timezone">
+    select t_time_with_timezone from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayEntityTimeWithTimezoneTimeOriginalPointer" parameter="sid" result="t_time_with_timezone">
+    select t_time_with_timezone from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayEntityTimeWithTimezoneTimePointerOriginal" parameter="sid" result="t_time_with_timezone">
+    select t_time_with_timezone from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayEntityTimeWithTimezoneTimePointerPointer" parameter="sid" result="t_time_with_timezone">
+    select t_time_with_timezone from array_types where sid = #{sid};
+</select>
+
+<select id="SelectParameterTimetzTime" parameter="sid" result="t_timetz">
+    select t_timetz from types where sid = #{sid};
+</select>
+
+<select id="SelectParameterTimetzTimePointerOriginal" parameter="sid" result="t_timetz">
+    select t_timetz from types where sid = #{sid};
+</select>
+
+<select id="SelectParameterTimetzTimeOriginalPointer" parameter="sid" result="t_timetz">
+    select t_timetz from types where sid = #{sid};
+</select>
+
+<select id="SelectParameterTimetzTimePointerPointer" parameter="sid" result="t_timetz">
+    select t_timetz from types where sid = #{sid};
+</select>
+
+<select id="SelectEntityTimetzTime" parameter="item:struct" result="t_timetz">
+    select t_timetz from types where sid = #{sid};
+</select>
+
+<select id="SelectEntityTimetzTimeOriginalPointer" parameter="item:struct" result="t_timetz">
+    select t_timetz from types where sid = #{sid};
+</select>
+
+<select id="SelectEntityTimetzTimePointerOriginal" parameter="item:struct" result="t_timetz">
+    select t_timetz from types where sid = #{sid};
+</select>
+
+<select id="SelectEntityTimetzTimePointerPointer" parameter="item:struct" result="t_timetz">
+    select t_timetz from types where sid = #{sid};
+</select>
+
+<select id="SelectArrayParameterTimetzTime" parameter="sid" result="t_timetz">
+    select t_timetz from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayParameterTimetzTimeOriginalPointer" parameter="sid" result="t_timetz">
+    select t_timetz from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayParameterTimetzTimePointerOriginal" parameter="sid" result="t_timetz">
+    select t_timetz from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayParameterTimetzTimePointerPointer" parameter="sid" result="t_timetz">
+    select t_timetz from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayEntityTimetzTime" parameter="sid" result="t_timetz">
+    select t_timetz from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayEntityTimetzTimeOriginalPointer" parameter="sid" result="t_timetz">
+    select t_timetz from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayEntityTimetzTimePointerOriginal" parameter="sid" result="t_timetz">
+    select t_timetz from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayEntityTimetzTimePointerPointer" parameter="sid" result="t_timetz">
+    select t_timetz from array_types where sid = #{sid};
+</select>
+
+<select id="SelectParameterTimestampTime" parameter="sid" result="t_timestamp">
+    select t_timestamp from types where sid = #{sid};
+</select>
+
+<select id="SelectParameterTimestampTimePointerOriginal" parameter="sid" result="t_timestamp">
+    select t_timestamp from types where sid = #{sid};
+</select>
+
+<select id="SelectParameterTimestampTimeOriginalPointer" parameter="sid" result="t_timestamp">
+    select t_timestamp from types where sid = #{sid};
+</select>
+
+<select id="SelectParameterTimestampTimePointerPointer" parameter="sid" result="t_timestamp">
+    select t_timestamp from types where sid = #{sid};
+</select>
+
+<select id="SelectEntityTimestampTime" parameter="item:struct" result="t_timestamp">
+    select t_timestamp from types where sid = #{sid};
+</select>
+
+<select id="SelectEntityTimestampTimeOriginalPointer" parameter="item:struct" result="t_timestamp">
+    select t_timestamp from types where sid = #{sid};
+</select>
+
+<select id="SelectEntityTimestampTimePointerOriginal" parameter="item:struct" result="t_timestamp">
+    select t_timestamp from types where sid = #{sid};
+</select>
+
+<select id="SelectEntityTimestampTimePointerPointer" parameter="item:struct" result="t_timestamp">
+    select t_timestamp from types where sid = #{sid};
+</select>
+
+<select id="SelectArrayParameterTimestampTime" parameter="sid" result="t_timestamp">
+    select t_timestamp from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayParameterTimestampTimeOriginalPointer" parameter="sid" result="t_timestamp">
+    select t_timestamp from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayParameterTimestampTimePointerOriginal" parameter="sid" result="t_timestamp">
+    select t_timestamp from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayParameterTimestampTimePointerPointer" parameter="sid" result="t_timestamp">
+    select t_timestamp from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayEntityTimestampTime" parameter="sid" result="t_timestamp">
+    select t_timestamp from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayEntityTimestampTimeOriginalPointer" parameter="sid" result="t_timestamp">
+    select t_timestamp from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayEntityTimestampTimePointerOriginal" parameter="sid" result="t_timestamp">
+    select t_timestamp from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayEntityTimestampTimePointerPointer" parameter="sid" result="t_timestamp">
+    select t_timestamp from array_types where sid = #{sid};
+</select>
+
+<select id="SelectParameterTimestampWithTimezoneTime" parameter="sid" result="t_timestamp_with_timezone">
+    select t_timestamp_with_timezone from types where sid = #{sid};
+</select>
+
+<select id="SelectParameterTimestampWithTimezoneTimePointerOriginal" parameter="sid" result="t_timestamp_with_timezone">
+    select t_timestamp_with_timezone from types where sid = #{sid};
+</select>
+
+<select id="SelectParameterTimestampWithTimezoneTimeOriginalPointer" parameter="sid" result="t_timestamp_with_timezone">
+    select t_timestamp_with_timezone from types where sid = #{sid};
+</select>
+
+<select id="SelectParameterTimestampWithTimezoneTimePointerPointer" parameter="sid" result="t_timestamp_with_timezone">
+    select t_timestamp_with_timezone from types where sid = #{sid};
+</select>
+
+<select id="SelectEntityTimestampWithTimezoneTime" parameter="item:struct" result="t_timestamp_with_timezone">
+    select t_timestamp_with_timezone from types where sid = #{sid};
+</select>
+
+<select id="SelectEntityTimestampWithTimezoneTimeOriginalPointer" parameter="item:struct" result="t_timestamp_with_timezone">
+    select t_timestamp_with_timezone from types where sid = #{sid};
+</select>
+
+<select id="SelectEntityTimestampWithTimezoneTimePointerOriginal" parameter="item:struct" result="t_timestamp_with_timezone">
+    select t_timestamp_with_timezone from types where sid = #{sid};
+</select>
+
+<select id="SelectEntityTimestampWithTimezoneTimePointerPointer" parameter="item:struct" result="t_timestamp_with_timezone">
+    select t_timestamp_with_timezone from types where sid = #{sid};
+</select>
+
+<select id="SelectArrayParameterTimestampWithTimezoneTime" parameter="sid" result="t_timestamp_with_timezone">
+    select t_timestamp_with_timezone from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayParameterTimestampWithTimezoneTimeOriginalPointer" parameter="sid" result="t_timestamp_with_timezone">
+    select t_timestamp_with_timezone from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayParameterTimestampWithTimezoneTimePointerOriginal" parameter="sid" result="t_timestamp_with_timezone">
+    select t_timestamp_with_timezone from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayParameterTimestampWithTimezoneTimePointerPointer" parameter="sid" result="t_timestamp_with_timezone">
+    select t_timestamp_with_timezone from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayEntityTimestampWithTimezoneTime" parameter="sid" result="t_timestamp_with_timezone">
+    select t_timestamp_with_timezone from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayEntityTimestampWithTimezoneTimeOriginalPointer" parameter="sid" result="t_timestamp_with_timezone">
+    select t_timestamp_with_timezone from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayEntityTimestampWithTimezoneTimePointerOriginal" parameter="sid" result="t_timestamp_with_timezone">
+    select t_timestamp_with_timezone from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayEntityTimestampWithTimezoneTimePointerPointer" parameter="sid" result="t_timestamp_with_timezone">
+    select t_timestamp_with_timezone from array_types where sid = #{sid};
+</select>
+
+<select id="SelectParameterTimestamptzTime" parameter="sid" result="t_timestamptz">
+    select t_timestamptz from types where sid = #{sid};
+</select>
+
+<select id="SelectParameterTimestamptzTimePointerOriginal" parameter="sid" result="t_timestamptz">
+    select t_timestamptz from types where sid = #{sid};
+</select>
+
+<select id="SelectParameterTimestamptzTimeOriginalPointer" parameter="sid" result="t_timestamptz">
+    select t_timestamptz from types where sid = #{sid};
+</select>
+
+<select id="SelectParameterTimestamptzTimePointerPointer" parameter="sid" result="t_timestamptz">
+    select t_timestamptz from types where sid = #{sid};
+</select>
+
+<select id="SelectEntityTimestamptzTime" parameter="item:struct" result="t_timestamptz">
+    select t_timestamptz from types where sid = #{sid};
+</select>
+
+<select id="SelectEntityTimestamptzTimeOriginalPointer" parameter="item:struct" result="t_timestamptz">
+    select t_timestamptz from types where sid = #{sid};
+</select>
+
+<select id="SelectEntityTimestamptzTimePointerOriginal" parameter="item:struct" result="t_timestamptz">
+    select t_timestamptz from types where sid = #{sid};
+</select>
+
+<select id="SelectEntityTimestamptzTimePointerPointer" parameter="item:struct" result="t_timestamptz">
+    select t_timestamptz from types where sid = #{sid};
+</select>
+
+<select id="SelectArrayParameterTimestamptzTime" parameter="sid" result="t_timestamptz">
+    select t_timestamptz from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayParameterTimestamptzTimeOriginalPointer" parameter="sid" result="t_timestamptz">
+    select t_timestamptz from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayParameterTimestamptzTimePointerOriginal" parameter="sid" result="t_timestamptz">
+    select t_timestamptz from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayParameterTimestamptzTimePointerPointer" parameter="sid" result="t_timestamptz">
+    select t_timestamptz from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayEntityTimestamptzTime" parameter="sid" result="t_timestamptz">
+    select t_timestamptz from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayEntityTimestamptzTimeOriginalPointer" parameter="sid" result="t_timestamptz">
+    select t_timestamptz from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayEntityTimestamptzTimePointerOriginal" parameter="sid" result="t_timestamptz">
+    select t_timestamptz from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayEntityTimestamptzTimePointerPointer" parameter="sid" result="t_timestamptz">
+    select t_timestamptz from array_types where sid = #{sid};
 </select>
 
 </mapper>
