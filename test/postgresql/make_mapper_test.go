@@ -18,52 +18,80 @@ func TestInsert(t *testing.T) {
 	require.NoError(t, err)
 	err = engine.BindMapper(mapper)
 	require.NoError(t, err)
-	
+
 	defer func() {
 		engine.Close()
 	}()
-	
+
 	err = mapper.ResetTable()
 	require.NoError(t, err)
-	
-	dm := generator.NewDataManager()
-	// adm := generator.NewDataManager()
-	
+
+	sid := &generator.SID{}
+
 	//for i:=0;i<10;i++{
 	{
-		id := dm.NextId()
-		
-		val := _mock.Int64()
-		err := mapper.InsertParameterBigintInt64(val)
-		require.NoError(t, err, val)
-		
-		r1, err := mapper.SelectParameterBigintInt64(id)
-		require.NoError(t, err, id)
-		t.Log(id, val, r1)
+
+		id1 := sid.NextId()
+		v1 := _mock.Int64()
+		err = mapper.InsertParameterBigintInt64(id1, "InsertParameterBigintInt64", v1)
+		require.NoError(t, err, v1)
+
+		r1, err := mapper.SelectParameterBigintInt64(id1)
+		require.NoError(t, err, id1)
+		require.Equal(t, v1, r1)
+
+		id2 := sid.NextId()
+		v2 := _mock.Int64()
+		err = mapper.InsertParameterBigintInt64OriginalPointer(id2, "InsertParameterBigintInt64OriginalPointer", v2)
+		require.NoError(t, err, v2)
+
+		r2, err := mapper.SelectParameterBigintInt64OriginalPointer(id2)
+		require.NoError(t, err, id2)
+		require.Equal(t, v2, *r2)
+
 	}
 	{
-		id := dm.NextId()
-		
-		val := _mock.String()
-		err := mapper.InsertParameterCharacterString(val)
-		require.NoError(t, err, val)
-		
-		r1, err := mapper.SelectParameterCharacterString(id)
-		require.NoError(t, err, id)
-		require.Equal(t, val, r1)
-		t.Log(id, val, r1)
+
+		id1 := sid.NextId()
+		v1 := _mock.String()
+		err = mapper.InsertParameterCharacterString(id1, "InsertParameterCharacterString", v1)
+		require.NoError(t, err, v1)
+
+		r1, err := mapper.SelectParameterCharacterString(id1)
+		require.NoError(t, err, id1)
+		require.Equal(t, v1, r1)
+
+		id2 := sid.NextId()
+		v2 := _mock.String()
+		err = mapper.InsertParameterCharacterStringOriginalPointer(id2, "InsertParameterCharacterStringOriginalPointer", v2)
+		require.NoError(t, err, v2)
+
+		r2, err := mapper.SelectParameterCharacterStringOriginalPointer(id2)
+		require.NoError(t, err, id2)
+		require.Equal(t, v2, *r2)
+
 	}
 	{
-		id := dm.NextId()
-		
-		val := _mock.String()
-		err := mapper.InsertParameterCharacterVaryingString(val)
-		require.NoError(t, err, val)
-		
-		r1, err := mapper.SelectParameterCharacterVaryingString(id)
-		require.NoError(t, err, id)
-		t.Log(id, val, r1)
+
+		id1 := sid.NextId()
+		v1 := _mock.String()
+		err = mapper.InsertParameterCharacterVaryingString(id1, "InsertParameterCharacterVaryingString", v1)
+		require.NoError(t, err, v1)
+
+		r1, err := mapper.SelectParameterCharacterVaryingString(id1)
+		require.NoError(t, err, id1)
+		require.Equal(t, v1, r1)
+
+		id2 := sid.NextId()
+		v2 := _mock.String()
+		err = mapper.InsertParameterCharacterVaryingStringOriginalPointer(id2, "InsertParameterCharacterVaryingStringOriginalPointer", v2)
+		require.NoError(t, err, v2)
+
+		r2, err := mapper.SelectParameterCharacterVaryingStringOriginalPointer(id2)
+		require.NoError(t, err, id2)
+		require.Equal(t, v2, *r2)
+
 	}
-	
+
 	// }
 }

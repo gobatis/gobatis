@@ -84,6 +84,10 @@ func (p *Engine) BindNamespaceMapper(namespace string, ptr ...interface{}) (err 
 	return
 }
 
+func (p *Engine) MergeBuildIn(map[string]interface{}) {
+
+}
+
 func (p *Engine) Init(bundle Bundle) (err error) {
 	
 	p.InitLogger()

@@ -1,3 +1,4 @@
+{% autoescape off %}
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//gobatis.co//DTD Mapper 1.0//EN" "gobatis.co/dtd/mapper.dtd">
 <mapper>
@@ -7,3 +8,4 @@
 </{{statement.Tag}}>
 {% endfor %}
 </mapper>
+{% endautoescape %}

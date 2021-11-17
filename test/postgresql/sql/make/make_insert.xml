@@ -1,124 +1,233 @@
+
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//gobatis.co//DTD Mapper 1.0//EN" "gobatis.co/dtd/mapper.dtd">
 <mapper>
 
-<insert id="InsertParameterBigintInt64" parameter="var_bigint" >
-    insert into types(t_bigint) values(#{var_bigint});
+<insert id="InsertParameterBigintInt64" parameter="sid,source,var_bigint" >
+    insert into types(sid,source,t_bigint) values(#{sid},#{source},#{var_bigint});
 </insert>
 
-<insert id="InsertParameterBigintInt64PointerOriginal" parameter="var_bigint" >
-    insert into types(t_bigint) values(#{var_bigint});
+<insert id="InsertParameterBigintInt64OriginalPointer" parameter="sid,source,var_bigint" >
+    insert into types(sid,source,t_bigint) values(#{sid},#{source},#{var_bigint});
 </insert>
 
-<insert id="InsertEntityBigintInt64" parameter="var_bigint" >
-    insert into types(t_bigint) values(#{var_bigint});
+<insert id="InsertParameterBigintInt64PointerOriginal" parameter="sid,source,var_bigint" >
+    insert into types(sid,source,t_bigint) values(#{sid},#{source},#{var_bigint});
 </insert>
 
-<insert id="InsertEntityBigintInt64PointerOriginal" parameter="var_bigint" >
-    insert into types(t_bigint) values(#{var_bigint});
+<insert id="InsertParameterBigintInt64PointerPointer" parameter="sid,source,var_bigint" >
+    insert into types(sid,source,t_bigint) values(#{sid},#{source},#{var_bigint});
 </insert>
 
-<insert id="InsertParameterBigintInt64Embed" parameter="var_bigint" >
-    insert into types(t_bigint) values(${var_bigint});
+<insert id="InsertEntityBigintInt64" parameter="item" >
+    insert into types(sid,source,t_bigint) values(#{sid},#{source},#{var_bigint});
 </insert>
 
-<insert id="InsertArrayParameterBigintInt64" parameter="var_bigint" >
+<insert id="InsertEntityBigintInt64OriginalPointer" parameter="item" >
+    insert into types(sid,source,t_bigint) values(#{sid},#{source},#{var_bigint});
+</insert>
+
+<insert id="InsertEntityBigintInt64PointerOriginal" parameter="item" >
+    insert into types(sid,source,t_bigint) values(#{sid},#{source},#{var_bigint});
+</insert>
+
+<insert id="InsertEntityBigintInt64PointerPointer" parameter="item" >
+    insert into types(sid,source,t_bigint) values(#{sid},#{source},#{var_bigint});
+</insert>
+
+<insert id="InsertParameterBigintInt64Rows" parameter="sid,source,var_bigint" >
+    insert into types(sid,source,t_bigint) values(#{sid},#{source},#{var_bigint});
+</insert>
+
+<insert id="InsertParameterBigintInt64Must" parameter="sid,source,var_bigint" >
+    insert into types(sid,source,t_bigint) values(#{sid},#{source},#{var_bigint});
+</insert>
+
+<insert id="InsertParameterBigintInt64Stmt" parameter="sid,source,var_bigint" >
+    insert into types(sid,source,t_bigint) values(#{sid},#{source},#{var_bigint});
+</insert>
+
+<insert id="InsertParameterBigintInt64Context" parameter="sid,source,var_bigint" >
+    insert into types(sid,source,t_bigint) values(#{sid},#{source},#{var_bigint});
+</insert>
+
+<insert id="InsertParameterBigintInt64Tx" parameter="sid,source,var_bigint" >
+    insert into types(sid,source,t_bigint) values(#{sid},#{source},#{var_bigint});
+</insert>
+
+<insert id="InsertParameterBigintInt64Embed" parameter="sid,source,var_bigint" >
+    insert into types(sid,source,t_bigint) values(${sid}, ${source}, ${var_bigint});
+</insert>
+
+<insert id="InsertArrayParameterBigintInt64" parameter="sid,source,var_bigint" >
     insert into array_types(t_bigint) values(#{var_bigint});
 </insert>
 
-<insert id="InsertArrayParameterBigintInt64PointerOriginal" parameter="var_bigint" >
+<insert id="InsertArrayParameterBigintInt64PointerOriginal" parameter="sid,source,var_bigint" >
     insert into array_types(t_bigint) values(#{var_bigint});
 </insert>
 
-<insert id="InsertArrayEntityBigintInt64" parameter="var_bigint" >
+<insert id="InsertArrayEntityBigintInt64" parameter="sid,source,var_bigint" >
     insert into array_types(t_bigint) values(#{var_bigint});
 </insert>
 
-<insert id="InsertArrayEntityBigintInt64PointerOriginal" parameter="var_bigint" >
+<insert id="InsertArrayEntityBigintInt64PointerOriginal" parameter="sid,source,var_bigint" >
     insert into array_types(t_bigint) values(#{var_bigint});
 </insert>
 
-<insert id="InsertArrayParameterBigintInt64Embed" parameter="var_bigint" >
+<insert id="InsertArrayParameterBigintInt64Embed" parameter="sid,source,var_bigint" >
     insert into array_types(t_bigint) values(#{var_bigint});
 </insert>
 
-<insert id="InsertParameterCharacterString" parameter="var_character" >
-    insert into types(t_character) values(#{var_character});
+<insert id="InsertParameterCharacterString" parameter="sid,source,var_character" >
+    insert into types(sid,source,t_character) values(#{sid},#{source},#{var_character});
 </insert>
 
-<insert id="InsertParameterCharacterStringPointerOriginal" parameter="var_character" >
-    insert into types(t_character) values(#{var_character});
+<insert id="InsertParameterCharacterStringOriginalPointer" parameter="sid,source,var_character" >
+    insert into types(sid,source,t_character) values(#{sid},#{source},#{var_character});
 </insert>
 
-<insert id="InsertEntityCharacterString" parameter="var_character" >
-    insert into types(t_character) values(#{var_character});
+<insert id="InsertParameterCharacterStringPointerOriginal" parameter="sid,source,var_character" >
+    insert into types(sid,source,t_character) values(#{sid},#{source},#{var_character});
 </insert>
 
-<insert id="InsertEntityCharacterStringPointerOriginal" parameter="var_character" >
-    insert into types(t_character) values(#{var_character});
+<insert id="InsertParameterCharacterStringPointerPointer" parameter="sid,source,var_character" >
+    insert into types(sid,source,t_character) values(#{sid},#{source},#{var_character});
 </insert>
 
-<insert id="InsertParameterCharacterStringEmbed" parameter="var_character" >
-    insert into types(t_character) values(${var_character});
+<insert id="InsertEntityCharacterString" parameter="item" >
+    insert into types(sid,source,t_character) values(#{sid},#{source},#{var_character});
 </insert>
 
-<insert id="InsertArrayParameterCharacterString" parameter="var_character" >
+<insert id="InsertEntityCharacterStringOriginalPointer" parameter="item" >
+    insert into types(sid,source,t_character) values(#{sid},#{source},#{var_character});
+</insert>
+
+<insert id="InsertEntityCharacterStringPointerOriginal" parameter="item" >
+    insert into types(sid,source,t_character) values(#{sid},#{source},#{var_character});
+</insert>
+
+<insert id="InsertEntityCharacterStringPointerPointer" parameter="item" >
+    insert into types(sid,source,t_character) values(#{sid},#{source},#{var_character});
+</insert>
+
+<insert id="InsertParameterCharacterStringRows" parameter="sid,source,var_character" >
+    insert into types(sid,source,t_character) values(#{sid},#{source},#{var_character});
+</insert>
+
+<insert id="InsertParameterCharacterStringMust" parameter="sid,source,var_character" >
+    insert into types(sid,source,t_character) values(#{sid},#{source},#{var_character});
+</insert>
+
+<insert id="InsertParameterCharacterStringStmt" parameter="sid,source,var_character" >
+    insert into types(sid,source,t_character) values(#{sid},#{source},#{var_character});
+</insert>
+
+<insert id="InsertParameterCharacterStringContext" parameter="sid,source,var_character" >
+    insert into types(sid,source,t_character) values(#{sid},#{source},#{var_character});
+</insert>
+
+<insert id="InsertParameterCharacterStringTx" parameter="sid,source,var_character" >
+    insert into types(sid,source,t_character) values(#{sid},#{source},#{var_character});
+</insert>
+
+<insert id="InsertParameterCharacterStringEmbed" parameter="sid,source,var_character" >
+    insert into types(sid,source,t_character) values(${sid}, ${source}, ${var_character});
+</insert>
+
+<insert id="InsertArrayParameterCharacterString" parameter="sid,source,var_character" >
     insert into array_types(t_character) values(#{var_character});
 </insert>
 
-<insert id="InsertArrayParameterCharacterStringPointerOriginal" parameter="var_character" >
+<insert id="InsertArrayParameterCharacterStringPointerOriginal" parameter="sid,source,var_character" >
     insert into array_types(t_character) values(#{var_character});
 </insert>
 
-<insert id="InsertArrayEntityCharacterString" parameter="var_character" >
+<insert id="InsertArrayEntityCharacterString" parameter="sid,source,var_character" >
     insert into array_types(t_character) values(#{var_character});
 </insert>
 
-<insert id="InsertArrayEntityCharacterStringPointerOriginal" parameter="var_character" >
+<insert id="InsertArrayEntityCharacterStringPointerOriginal" parameter="sid,source,var_character" >
     insert into array_types(t_character) values(#{var_character});
 </insert>
 
-<insert id="InsertArrayParameterCharacterStringEmbed" parameter="var_character" >
+<insert id="InsertArrayParameterCharacterStringEmbed" parameter="sid,source,var_character" >
     insert into array_types(t_character) values(#{var_character});
 </insert>
 
-<insert id="InsertParameterCharacterVaryingString" parameter="var_character_varying" >
-    insert into types(t_character_varying) values(#{var_character_varying});
+<insert id="InsertParameterCharacterVaryingString" parameter="sid,source,var_character_varying" >
+    insert into types(sid,source,t_character_varying) values(#{sid},#{source},#{var_character_varying});
 </insert>
 
-<insert id="InsertParameterCharacterVaryingStringPointerOriginal" parameter="var_character_varying" >
-    insert into types(t_character_varying) values(#{var_character_varying});
+<insert id="InsertParameterCharacterVaryingStringOriginalPointer" parameter="sid,source,var_character_varying" >
+    insert into types(sid,source,t_character_varying) values(#{sid},#{source},#{var_character_varying});
 </insert>
 
-<insert id="InsertEntityCharacterVaryingString" parameter="var_character_varying" >
-    insert into types(t_character_varying) values(#{var_character_varying});
+<insert id="InsertParameterCharacterVaryingStringPointerOriginal" parameter="sid,source,var_character_varying" >
+    insert into types(sid,source,t_character_varying) values(#{sid},#{source},#{var_character_varying});
 </insert>
 
-<insert id="InsertEntityCharacterVaryingStringPointerOriginal" parameter="var_character_varying" >
-    insert into types(t_character_varying) values(#{var_character_varying});
+<insert id="InsertParameterCharacterVaryingStringPointerPointer" parameter="sid,source,var_character_varying" >
+    insert into types(sid,source,t_character_varying) values(#{sid},#{source},#{var_character_varying});
 </insert>
 
-<insert id="InsertParameterCharacterVaryingStringEmbed" parameter="var_character_varying" >
-    insert into types(t_character_varying) values(${var_character_varying});
+<insert id="InsertEntityCharacterVaryingString" parameter="item" >
+    insert into types(sid,source,t_character_varying) values(#{sid},#{source},#{var_character_varying});
 </insert>
 
-<insert id="InsertArrayParameterCharacterVaryingString" parameter="var_character_varying" >
+<insert id="InsertEntityCharacterVaryingStringOriginalPointer" parameter="item" >
+    insert into types(sid,source,t_character_varying) values(#{sid},#{source},#{var_character_varying});
+</insert>
+
+<insert id="InsertEntityCharacterVaryingStringPointerOriginal" parameter="item" >
+    insert into types(sid,source,t_character_varying) values(#{sid},#{source},#{var_character_varying});
+</insert>
+
+<insert id="InsertEntityCharacterVaryingStringPointerPointer" parameter="item" >
+    insert into types(sid,source,t_character_varying) values(#{sid},#{source},#{var_character_varying});
+</insert>
+
+<insert id="InsertParameterCharacterVaryingStringRows" parameter="sid,source,var_character_varying" >
+    insert into types(sid,source,t_character_varying) values(#{sid},#{source},#{var_character_varying});
+</insert>
+
+<insert id="InsertParameterCharacterVaryingStringMust" parameter="sid,source,var_character_varying" >
+    insert into types(sid,source,t_character_varying) values(#{sid},#{source},#{var_character_varying});
+</insert>
+
+<insert id="InsertParameterCharacterVaryingStringStmt" parameter="sid,source,var_character_varying" >
+    insert into types(sid,source,t_character_varying) values(#{sid},#{source},#{var_character_varying});
+</insert>
+
+<insert id="InsertParameterCharacterVaryingStringContext" parameter="sid,source,var_character_varying" >
+    insert into types(sid,source,t_character_varying) values(#{sid},#{source},#{var_character_varying});
+</insert>
+
+<insert id="InsertParameterCharacterVaryingStringTx" parameter="sid,source,var_character_varying" >
+    insert into types(sid,source,t_character_varying) values(#{sid},#{source},#{var_character_varying});
+</insert>
+
+<insert id="InsertParameterCharacterVaryingStringEmbed" parameter="sid,source,var_character_varying" >
+    insert into types(sid,source,t_character_varying) values(${sid}, ${source}, ${var_character_varying});
+</insert>
+
+<insert id="InsertArrayParameterCharacterVaryingString" parameter="sid,source,var_character_varying" >
     insert into array_types(t_character_varying) values(#{var_character_varying});
 </insert>
 
-<insert id="InsertArrayParameterCharacterVaryingStringPointerOriginal" parameter="var_character_varying" >
+<insert id="InsertArrayParameterCharacterVaryingStringPointerOriginal" parameter="sid,source,var_character_varying" >
     insert into array_types(t_character_varying) values(#{var_character_varying});
 </insert>
 
-<insert id="InsertArrayEntityCharacterVaryingString" parameter="var_character_varying" >
+<insert id="InsertArrayEntityCharacterVaryingString" parameter="sid,source,var_character_varying" >
     insert into array_types(t_character_varying) values(#{var_character_varying});
 </insert>
 
-<insert id="InsertArrayEntityCharacterVaryingStringPointerOriginal" parameter="var_character_varying" >
+<insert id="InsertArrayEntityCharacterVaryingStringPointerOriginal" parameter="sid,source,var_character_varying" >
     insert into array_types(t_character_varying) values(#{var_character_varying});
 </insert>
 
-<insert id="InsertArrayParameterCharacterVaryingStringEmbed" parameter="var_character_varying" >
+<insert id="InsertArrayParameterCharacterVaryingStringEmbed" parameter="sid,source,var_character_varying" >
     insert into array_types(t_character_varying) values(#{var_character_varying});
 </insert>
 

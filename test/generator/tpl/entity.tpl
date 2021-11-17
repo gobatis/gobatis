@@ -1,3 +1,4 @@
+{% autoescape off %}
 package {{ Header.Package  }}
 
 import (
@@ -11,3 +12,4 @@ type {{ entity.Name }} struct{ {% for param in entity.Params %}
         {{ param.Name }} {{ param.Type }} `sql:"{{ param.Tag }}"`{% endfor %}
 }
 {% endfor %}
+{% endautoescape %}

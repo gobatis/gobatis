@@ -1,3 +1,4 @@
+{% autoescape off %}
 package {{ Header.Package  }}
 
 import (
@@ -22,8 +23,7 @@ func TestInsert(t *testing.T) {
     err = mapper.ResetTable()
 	require.NoError(t, err)
 
-	dm := generator.NewDataManager()
-	// adm := generator.NewDataManager()
+	sid := &generator.SID{}
 
     //for i:=0;i<10;i++{
     {% for testCase in Cases %}{
@@ -32,4 +32,5 @@ func TestInsert(t *testing.T) {
     {% endfor %}
     // }
 }
+{% endautoescape %}
 

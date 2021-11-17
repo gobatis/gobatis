@@ -28,14 +28,23 @@ func (p Param) forkType(t string) *Param {
 	n.Type = t
 	return n
 }
+func (p Param) pointer() *Param {
+	n := new(Param)
+	err := copier.Copy(n, p)
+	if err != nil {
+		panic(err)
+	}
+	n.Type = "*" + n.Type
+	return n
+}
 
 type Statement struct {
 	Tag           string
 	Id            string
 	ShowParameter bool
 	ShowResult    bool
-	Params        []Param
-	Result        []Param
+	Params        []*Param
+	Result        []*Param
 	Sql           string
 }
 
@@ -59,7 +68,7 @@ func (p Statement) ForkSql(sql string) *Statement {
 	return n
 }
 
-func (p Statement) ForkParams(params []Param) *Statement {
+func (p Statement) ForkParams(params []*Param) *Statement {
 	n := new(Statement)
 	err := copier.Copy(n, p)
 	if err != nil {
@@ -69,7 +78,7 @@ func (p Statement) ForkParams(params []Param) *Statement {
 	return n
 }
 
-func (p Statement) ForkResult(params []Param) *Statement {
+func (p Statement) ForkResult(params []*Param) *Statement {
 	n := new(Statement)
 	err := copier.Copy(n, p)
 	if err != nil {
@@ -98,7 +107,7 @@ func RenderStatements(dist string, data []*Statement) {
 	}
 	res, err := tpl.Execute(map[string]interface{}{
 		"Statements": data,
-		"RenderParams": func(params []Param) string {
+		"RenderParams": func(params []*Param) string {
 			r := ""
 			for _, v := range params {
 				r += fmt.Sprintf("%s", v.Name)
@@ -122,8 +131,8 @@ func RenderStatements(dist string, data []*Statement) {
 
 type Method struct {
 	Name string
-	In   []Param
-	Out  []Param
+	In   []*Param
+	Out  []*Param
 }
 
 type Mapper struct {
@@ -165,6 +174,14 @@ func RenderMapper(dist string, header GoHeader, methods []*Method) {
 	res, err := tpl.Execute(map[string]interface{}{
 		"Header":  header,
 		"Methods": methods,
+		"RenderGoParams": func(params []*Param) string {
+			r := ""
+			for _, v := range params {
+				r += fmt.Sprintf("%s %s,", v.Name, v.Type)
+			}
+			r = strings.TrimSuffix(r, ",")
+			return r
+		},
 	})
 	if err != nil {
 		panic(err)

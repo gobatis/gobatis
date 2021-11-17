@@ -74,6 +74,10 @@ func (p SName) ParameterStmt(array bool) string {
 	return fmt.Sprintf("%s%sParameter%s%sStmt", p.Action, p.arrayType(array), p.Name, p.Type)
 }
 
+func (p SName) ParameterID(array bool) string {
+	return fmt.Sprintf("%s%sParameter%s%sID", p.Action, p.arrayType(array), p.Name, p.Type)
+}
+
 func (p SName) ParameterOtherType(array bool, t string) string {
 	return fmt.Sprintf("%s%sParameter%s%sOther", p.Action, p.arrayType(array), p.Name, strings.Title(t))
 }

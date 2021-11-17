@@ -1,3 +1,4 @@
+{% autoescape off %}
 package {{ Header.Package  }}
 
 import (
@@ -7,5 +8,6 @@ import (
 
 type MakeMapper struct {
 {% for method in Methods %}
-    {{ method.Name }} func({% for param in method.In %} {{ param.Name }} {{ param.Type }}, {% endfor %})({% for param in method.Out %} {{ param.Name }} {{ param.Type }}, {% endfor %}){% endfor %}
+    {{ method.Name }} func({{ RenderGoParams(method.In) }})({{ RenderGoParams(method.Out) }}){% endfor %}
 }
+{% endautoescape %}

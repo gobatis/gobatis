@@ -1,44 +1,59 @@
 package generator
 
-import "sync"
+import (
+	"fmt"
+	"sync"
+)
+
+type SID struct {
+	id int
+	mu sync.Mutex
+}
+
+func (p *SID) NextId() string {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.id++
+	return fmt.Sprintf("%d", p.id)
+}
 
 type DataRow struct {
-	Id     int
+	SId    string
 	Source string
 	Item   interface{}
 }
 
 func NewDataManager() *DataManager {
 	return &DataManager{
-		rows: map[int]*DataRow{},
+		rows: map[string]*DataRow{},
 	}
 }
 
 type DataManager struct {
-	id   int
+	sid  int
 	mu   sync.Mutex
-	rows map[int]*DataRow
+	rows map[string]*DataRow
 }
 
-func (p *DataManager) NextId() int {
+func (p *DataManager) NextId() string {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	p.id++
-	return p.id
+	p.sid++
+	return fmt.Sprintf("%d", p.sid)
 }
 
-func (p *DataManager) AddRow(id int, source string, item interface{}) {
+func (p *DataManager) AddRow(sid string, source string, item interface{}) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	p.rows[id] = &DataRow{
-		Id:     id,
+	p.rows[sid] = &DataRow{
+		SId:    sid,
 		Source: source,
 		Item:   item,
 	}
 }
 
-func (p *DataManager) GetRow(id int) *DataRow {
+func (p *DataManager) GetRow(sid string) *DataRow {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	return p.rows[id]
+	return p.rows[sid]
 }
