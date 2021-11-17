@@ -29,7 +29,7 @@ func TestMapper(t *testing.T) {
 	require.NoError(t, err)
 	
 	manager := generator.NewDataManager()
-	n := 100
+	n := 1
 	wg := sync.WaitGroup{}
 	wg.Add(n)
 	for i := 0; i < n; i++ {
