@@ -4,9 +4,11 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/gobatis/gobatis"
+	"github.com/gozelle/decimal"
 	"github.com/jackc/pgtype"
 	_ "github.com/jackc/pgx/v4/stdlib"
 	"reflect"
+	"strings"
 )
 
 const PGX = "pgx"
@@ -76,25 +78,52 @@ func (s *Scanner) Scan(rows *sql.Rows, ct *sql.ColumnType, value reflect.Value) 
 			assigner = new(pgtype.Time)
 		case "TIMESTAMP":
 			assigner = new(pgtype.Timestamp)
+		case "_INT2":
+			assigner = new(pgtype.Int2Array)
+		case "_INT4":
+			assigner = new(pgtype.Int4Array)
 		case "_INT8":
 			assigner = new(pgtype.Int8Array)
+		case "_FLOAT4":
+			assigner = new(pgtype.Float4Array)
+		case "_FLOAT8":
+			assigner = new(pgtype.Float8Array)
+		case "_NUMERIC":
+			assigner = new(pgtype.NumericArray)
 		case "_VARCHAR":
 			assigner = new(pgtype.VarcharArray)
 		case "_BPCHAR":
 			assigner = new(pgtype.BPCharArray)
+		case "_TEXT":
+			assigner = new(pgtype.TextArray)
+		case "_BOOL":
+			assigner = new(pgtype.BoolArray)
 		default:
 			err = fmt.Errorf("unsupport scan type: %s(%s)", ct.Name(), ct.DatabaseTypeName())
 			return
 		}
 		err = rows.Scan(assigner)
 		if err != nil {
-			err = fmt.Errorf("scan %s err: %s", ct.Name(), err)
+			err = fmt.Errorf("scan %s(%s) err: %s", ct.Name(), ct.DatabaseTypeName(), err)
 			return
 		}
 		if assigner.Get() != nil {
-			err = assigner.AssignTo(value.Interface())
+			if ct.DatabaseTypeName() == "_NUMERIC" && strings.HasSuffix(value.Type().String(), "decimal.Decimal") {
+				for _, v := range assigner.(*pgtype.NumericArray).Elements {
+					var r float64
+					err = v.AssignTo(&r)
+					if err != nil {
+						err = fmt.Errorf("assign %s(%s) to decimal err: %s", ct.Name(), ct.DatabaseTypeName(), err)
+						return
+					}
+					d := decimal.NewFromFloat(r)
+					value.Elem().Set(reflect.Append(value.Elem(), reflect.ValueOf(d)))
+				}
+			} else {
+				err = assigner.AssignTo(value.Interface())
+			}
 			if err != nil {
-				err = fmt.Errorf("assign %s err: %s", ct.Name(), err)
+				err = fmt.Errorf("assign %s(%s) err: %s", ct.Name(), ct.DatabaseTypeName(), err)
 				return
 			}
 		}

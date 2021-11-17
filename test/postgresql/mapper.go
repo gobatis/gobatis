@@ -6,6 +6,7 @@ import (
 )
 
 type decimal = _decimal.Decimal
+
 type time = _time.Time
 type Mapper struct {
 	*MakeMapper
