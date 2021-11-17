@@ -3,52 +3,580 @@
 <!DOCTYPE mapper PUBLIC "-//gobatis.co//DTD Mapper 1.0//EN" "gobatis.co/dtd/mapper.dtd">
 <mapper>
 
-<update id="UpdateParameterBigintInt64" parameter="id,val" >
-    update types set t_bigint = #{ val } from types where id = #{id};
+<update id="UpdateParameterBigintInt64" parameter="sid,source,val" >
+    update types set t_bigint = #{ val } where sid = #{sid};
 </update>
 
-<update id="UpdateParameterBigintInt64PointerOriginal" parameter="id,val" >
-    update types set t_bigint = #{ val } from types where id = #{id};
+<update id="UpdateParameterBigintInt64OriginalPointer" parameter="sid,source,val" >
+    update types set t_bigint = #{ val } where sid = #{sid};
 </update>
 
-<update id="UpdateEntityBigintInt64" parameter="id,val" >
-    update types set t_bigint = #{ val } from types where id = #{id};
+<update id="UpdateParameterBigintInt64PointerOriginal" parameter="sid,source,val" >
+    update types set t_bigint = #{ val } where sid = #{sid};
 </update>
 
-<update id="UpdateEntityBigintInt64PointerOriginal" parameter="id,val" >
-    update types set t_bigint = #{ val } from types where id = #{id};
+<update id="UpdateParameterBigintInt64PointerPointer" parameter="sid,source,val" >
+    update types set t_bigint = #{ val } where sid = #{sid};
 </update>
 
-<update id="UpdateParameterCharacterString" parameter="id,val" >
-    update types set t_character = #{ val } from types where id = #{id};
+<update id="UpdateEntityBigintInt64" parameter="item:struct" >
+    update types set t_bigint = #{ val } where sid = #{sid};
 </update>
 
-<update id="UpdateParameterCharacterStringPointerOriginal" parameter="id,val" >
-    update types set t_character = #{ val } from types where id = #{id};
+<update id="UpdateEntityBigintInt64OriginalPointer" parameter="item:struct" >
+    update types set t_bigint = #{ val } where sid = #{sid};
 </update>
 
-<update id="UpdateEntityCharacterString" parameter="id,val" >
-    update types set t_character = #{ val } from types where id = #{id};
+<update id="UpdateEntityBigintInt64PointerOriginal" parameter="item:struct" >
+    update types set t_bigint = #{ val } where sid = #{sid};
 </update>
 
-<update id="UpdateEntityCharacterStringPointerOriginal" parameter="id,val" >
-    update types set t_character = #{ val } from types where id = #{id};
+<update id="UpdateEntityBigintInt64PointerPointer" parameter="item:struct" >
+    update types set t_bigint = #{ val } where sid = #{sid};
 </update>
 
-<update id="UpdateParameterCharacterVaryingString" parameter="id,val" >
-    update types set t_character_varying = #{ val } from types where id = #{id};
+<update id="UpdateArrayParameterBigintInt64" parameter="sid,source,val" >
+    update array_types set source =#{source}, t_bigint = #{ val } where sid = #{sid};
 </update>
 
-<update id="UpdateParameterCharacterVaryingStringPointerOriginal" parameter="id,val" >
-    update types set t_character_varying = #{ val } from types where id = #{id};
+<update id="UpdateArrayParameterBigintInt64OriginalPointer" parameter="sid,source,val" >
+    update array_types set source =#{source}, t_bigint = #{ val } where sid = #{sid};
 </update>
 
-<update id="UpdateEntityCharacterVaryingString" parameter="id,val" >
-    update types set t_character_varying = #{ val } from types where id = #{id};
+<update id="UpdateArrayParameterBigintInt64PointerOriginal" parameter="sid,source,val" >
+    update array_types set source =#{source}, t_bigint = #{ val } where sid = #{sid};
 </update>
 
-<update id="UpdateEntityCharacterVaryingStringPointerOriginal" parameter="id,val" >
-    update types set t_character_varying = #{ val } from types where id = #{id};
+<update id="UpdateArrayParameterBigintInt64PointerPointer" parameter="sid,source,val" >
+    update array_types set source =#{source}, t_bigint = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayEntityBigintInt64" parameter="item:struct" >
+    update array_types set source =#{source}, t_bigint = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayEntityBigintInt64OriginalPointer" parameter="item:struct" >
+    update array_types set source =#{source}, t_bigint = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayEntityBigintInt64PointerOriginal" parameter="item:struct" >
+    update array_types set source =#{source}, t_bigint = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayEntityBigintInt64PointerPointer" parameter="item:struct" >
+    update array_types set source =#{source}, t_bigint = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateParameterInt8Int8" parameter="sid,source,val" >
+    update types set t_int8 = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateParameterInt8Int8OriginalPointer" parameter="sid,source,val" >
+    update types set t_int8 = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateParameterInt8Int8PointerOriginal" parameter="sid,source,val" >
+    update types set t_int8 = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateParameterInt8Int8PointerPointer" parameter="sid,source,val" >
+    update types set t_int8 = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateEntityInt8Int8" parameter="item:struct" >
+    update types set t_int8 = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateEntityInt8Int8OriginalPointer" parameter="item:struct" >
+    update types set t_int8 = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateEntityInt8Int8PointerOriginal" parameter="item:struct" >
+    update types set t_int8 = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateEntityInt8Int8PointerPointer" parameter="item:struct" >
+    update types set t_int8 = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayParameterInt8Int8" parameter="sid,source,val" >
+    update array_types set source =#{source}, t_int8 = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayParameterInt8Int8OriginalPointer" parameter="sid,source,val" >
+    update array_types set source =#{source}, t_int8 = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayParameterInt8Int8PointerOriginal" parameter="sid,source,val" >
+    update array_types set source =#{source}, t_int8 = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayParameterInt8Int8PointerPointer" parameter="sid,source,val" >
+    update array_types set source =#{source}, t_int8 = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayEntityInt8Int8" parameter="item:struct" >
+    update array_types set source =#{source}, t_int8 = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayEntityInt8Int8OriginalPointer" parameter="item:struct" >
+    update array_types set source =#{source}, t_int8 = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayEntityInt8Int8PointerOriginal" parameter="item:struct" >
+    update array_types set source =#{source}, t_int8 = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayEntityInt8Int8PointerPointer" parameter="item:struct" >
+    update array_types set source =#{source}, t_int8 = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateParameterBoolBool" parameter="sid,source,val" >
+    update types set t_bool = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateParameterBoolBoolOriginalPointer" parameter="sid,source,val" >
+    update types set t_bool = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateParameterBoolBoolPointerOriginal" parameter="sid,source,val" >
+    update types set t_bool = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateParameterBoolBoolPointerPointer" parameter="sid,source,val" >
+    update types set t_bool = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateEntityBoolBool" parameter="item:struct" >
+    update types set t_bool = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateEntityBoolBoolOriginalPointer" parameter="item:struct" >
+    update types set t_bool = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateEntityBoolBoolPointerOriginal" parameter="item:struct" >
+    update types set t_bool = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateEntityBoolBoolPointerPointer" parameter="item:struct" >
+    update types set t_bool = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayParameterBoolBool" parameter="sid,source,val" >
+    update array_types set source =#{source}, t_bool = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayParameterBoolBoolOriginalPointer" parameter="sid,source,val" >
+    update array_types set source =#{source}, t_bool = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayParameterBoolBoolPointerOriginal" parameter="sid,source,val" >
+    update array_types set source =#{source}, t_bool = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayParameterBoolBoolPointerPointer" parameter="sid,source,val" >
+    update array_types set source =#{source}, t_bool = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayEntityBoolBool" parameter="item:struct" >
+    update array_types set source =#{source}, t_bool = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayEntityBoolBoolOriginalPointer" parameter="item:struct" >
+    update array_types set source =#{source}, t_bool = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayEntityBoolBoolPointerOriginal" parameter="item:struct" >
+    update array_types set source =#{source}, t_bool = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayEntityBoolBoolPointerPointer" parameter="item:struct" >
+    update array_types set source =#{source}, t_bool = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateParameterCharacterString" parameter="sid,source,val" >
+    update types set t_character = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateParameterCharacterStringOriginalPointer" parameter="sid,source,val" >
+    update types set t_character = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateParameterCharacterStringPointerOriginal" parameter="sid,source,val" >
+    update types set t_character = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateParameterCharacterStringPointerPointer" parameter="sid,source,val" >
+    update types set t_character = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateEntityCharacterString" parameter="item:struct" >
+    update types set t_character = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateEntityCharacterStringOriginalPointer" parameter="item:struct" >
+    update types set t_character = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateEntityCharacterStringPointerOriginal" parameter="item:struct" >
+    update types set t_character = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateEntityCharacterStringPointerPointer" parameter="item:struct" >
+    update types set t_character = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayParameterCharacterString" parameter="sid,source,val" >
+    update array_types set source =#{source}, t_character = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayParameterCharacterStringOriginalPointer" parameter="sid,source,val" >
+    update array_types set source =#{source}, t_character = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayParameterCharacterStringPointerOriginal" parameter="sid,source,val" >
+    update array_types set source =#{source}, t_character = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayParameterCharacterStringPointerPointer" parameter="sid,source,val" >
+    update array_types set source =#{source}, t_character = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayEntityCharacterString" parameter="item:struct" >
+    update array_types set source =#{source}, t_character = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayEntityCharacterStringOriginalPointer" parameter="item:struct" >
+    update array_types set source =#{source}, t_character = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayEntityCharacterStringPointerOriginal" parameter="item:struct" >
+    update array_types set source =#{source}, t_character = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayEntityCharacterStringPointerPointer" parameter="item:struct" >
+    update array_types set source =#{source}, t_character = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateParameterCharString" parameter="sid,source,val" >
+    update types set t_char = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateParameterCharStringOriginalPointer" parameter="sid,source,val" >
+    update types set t_char = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateParameterCharStringPointerOriginal" parameter="sid,source,val" >
+    update types set t_char = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateParameterCharStringPointerPointer" parameter="sid,source,val" >
+    update types set t_char = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateEntityCharString" parameter="item:struct" >
+    update types set t_char = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateEntityCharStringOriginalPointer" parameter="item:struct" >
+    update types set t_char = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateEntityCharStringPointerOriginal" parameter="item:struct" >
+    update types set t_char = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateEntityCharStringPointerPointer" parameter="item:struct" >
+    update types set t_char = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayParameterCharString" parameter="sid,source,val" >
+    update array_types set source =#{source}, t_char = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayParameterCharStringOriginalPointer" parameter="sid,source,val" >
+    update array_types set source =#{source}, t_char = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayParameterCharStringPointerOriginal" parameter="sid,source,val" >
+    update array_types set source =#{source}, t_char = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayParameterCharStringPointerPointer" parameter="sid,source,val" >
+    update array_types set source =#{source}, t_char = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayEntityCharString" parameter="item:struct" >
+    update array_types set source =#{source}, t_char = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayEntityCharStringOriginalPointer" parameter="item:struct" >
+    update array_types set source =#{source}, t_char = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayEntityCharStringPointerOriginal" parameter="item:struct" >
+    update array_types set source =#{source}, t_char = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayEntityCharStringPointerPointer" parameter="item:struct" >
+    update array_types set source =#{source}, t_char = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateParameterCharacterVaryingString" parameter="sid,source,val" >
+    update types set t_character_varying = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateParameterCharacterVaryingStringOriginalPointer" parameter="sid,source,val" >
+    update types set t_character_varying = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateParameterCharacterVaryingStringPointerOriginal" parameter="sid,source,val" >
+    update types set t_character_varying = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateParameterCharacterVaryingStringPointerPointer" parameter="sid,source,val" >
+    update types set t_character_varying = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateEntityCharacterVaryingString" parameter="item:struct" >
+    update types set t_character_varying = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateEntityCharacterVaryingStringOriginalPointer" parameter="item:struct" >
+    update types set t_character_varying = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateEntityCharacterVaryingStringPointerOriginal" parameter="item:struct" >
+    update types set t_character_varying = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateEntityCharacterVaryingStringPointerPointer" parameter="item:struct" >
+    update types set t_character_varying = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayParameterCharacterVaryingString" parameter="sid,source,val" >
+    update array_types set source =#{source}, t_character_varying = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayParameterCharacterVaryingStringOriginalPointer" parameter="sid,source,val" >
+    update array_types set source =#{source}, t_character_varying = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayParameterCharacterVaryingStringPointerOriginal" parameter="sid,source,val" >
+    update array_types set source =#{source}, t_character_varying = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayParameterCharacterVaryingStringPointerPointer" parameter="sid,source,val" >
+    update array_types set source =#{source}, t_character_varying = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayEntityCharacterVaryingString" parameter="item:struct" >
+    update array_types set source =#{source}, t_character_varying = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayEntityCharacterVaryingStringOriginalPointer" parameter="item:struct" >
+    update array_types set source =#{source}, t_character_varying = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayEntityCharacterVaryingStringPointerOriginal" parameter="item:struct" >
+    update array_types set source =#{source}, t_character_varying = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayEntityCharacterVaryingStringPointerPointer" parameter="item:struct" >
+    update array_types set source =#{source}, t_character_varying = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateParameterVarcharString" parameter="sid,source,val" >
+    update types set t_varchar = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateParameterVarcharStringOriginalPointer" parameter="sid,source,val" >
+    update types set t_varchar = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateParameterVarcharStringPointerOriginal" parameter="sid,source,val" >
+    update types set t_varchar = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateParameterVarcharStringPointerPointer" parameter="sid,source,val" >
+    update types set t_varchar = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateEntityVarcharString" parameter="item:struct" >
+    update types set t_varchar = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateEntityVarcharStringOriginalPointer" parameter="item:struct" >
+    update types set t_varchar = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateEntityVarcharStringPointerOriginal" parameter="item:struct" >
+    update types set t_varchar = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateEntityVarcharStringPointerPointer" parameter="item:struct" >
+    update types set t_varchar = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayParameterVarcharString" parameter="sid,source,val" >
+    update array_types set source =#{source}, t_varchar = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayParameterVarcharStringOriginalPointer" parameter="sid,source,val" >
+    update array_types set source =#{source}, t_varchar = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayParameterVarcharStringPointerOriginal" parameter="sid,source,val" >
+    update array_types set source =#{source}, t_varchar = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayParameterVarcharStringPointerPointer" parameter="sid,source,val" >
+    update array_types set source =#{source}, t_varchar = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayEntityVarcharString" parameter="item:struct" >
+    update array_types set source =#{source}, t_varchar = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayEntityVarcharStringOriginalPointer" parameter="item:struct" >
+    update array_types set source =#{source}, t_varchar = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayEntityVarcharStringPointerOriginal" parameter="item:struct" >
+    update array_types set source =#{source}, t_varchar = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayEntityVarcharStringPointerPointer" parameter="item:struct" >
+    update array_types set source =#{source}, t_varchar = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateParameterIntInt8" parameter="sid,source,val" >
+    update types set t_int = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateParameterIntInt8OriginalPointer" parameter="sid,source,val" >
+    update types set t_int = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateParameterIntInt8PointerOriginal" parameter="sid,source,val" >
+    update types set t_int = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateParameterIntInt8PointerPointer" parameter="sid,source,val" >
+    update types set t_int = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateEntityIntInt8" parameter="item:struct" >
+    update types set t_int = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateEntityIntInt8OriginalPointer" parameter="item:struct" >
+    update types set t_int = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateEntityIntInt8PointerOriginal" parameter="item:struct" >
+    update types set t_int = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateEntityIntInt8PointerPointer" parameter="item:struct" >
+    update types set t_int = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayParameterIntInt8" parameter="sid,source,val" >
+    update array_types set source =#{source}, t_int = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayParameterIntInt8OriginalPointer" parameter="sid,source,val" >
+    update array_types set source =#{source}, t_int = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayParameterIntInt8PointerOriginal" parameter="sid,source,val" >
+    update array_types set source =#{source}, t_int = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayParameterIntInt8PointerPointer" parameter="sid,source,val" >
+    update array_types set source =#{source}, t_int = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayEntityIntInt8" parameter="item:struct" >
+    update array_types set source =#{source}, t_int = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayEntityIntInt8OriginalPointer" parameter="item:struct" >
+    update array_types set source =#{source}, t_int = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayEntityIntInt8PointerOriginal" parameter="item:struct" >
+    update array_types set source =#{source}, t_int = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayEntityIntInt8PointerPointer" parameter="item:struct" >
+    update array_types set source =#{source}, t_int = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateParameterInt4Int8" parameter="sid,source,val" >
+    update types set t_int4 = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateParameterInt4Int8OriginalPointer" parameter="sid,source,val" >
+    update types set t_int4 = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateParameterInt4Int8PointerOriginal" parameter="sid,source,val" >
+    update types set t_int4 = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateParameterInt4Int8PointerPointer" parameter="sid,source,val" >
+    update types set t_int4 = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateEntityInt4Int8" parameter="item:struct" >
+    update types set t_int4 = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateEntityInt4Int8OriginalPointer" parameter="item:struct" >
+    update types set t_int4 = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateEntityInt4Int8PointerOriginal" parameter="item:struct" >
+    update types set t_int4 = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateEntityInt4Int8PointerPointer" parameter="item:struct" >
+    update types set t_int4 = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayParameterInt4Int8" parameter="sid,source,val" >
+    update array_types set source =#{source}, t_int4 = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayParameterInt4Int8OriginalPointer" parameter="sid,source,val" >
+    update array_types set source =#{source}, t_int4 = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayParameterInt4Int8PointerOriginal" parameter="sid,source,val" >
+    update array_types set source =#{source}, t_int4 = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayParameterInt4Int8PointerPointer" parameter="sid,source,val" >
+    update array_types set source =#{source}, t_int4 = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayEntityInt4Int8" parameter="item:struct" >
+    update array_types set source =#{source}, t_int4 = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayEntityInt4Int8OriginalPointer" parameter="item:struct" >
+    update array_types set source =#{source}, t_int4 = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayEntityInt4Int8PointerOriginal" parameter="item:struct" >
+    update array_types set source =#{source}, t_int4 = #{ val } where sid = #{sid};
+</update>
+
+<update id="UpdateArrayEntityInt4Int8PointerPointer" parameter="item:struct" >
+    update array_types set source =#{source}, t_int4 = #{ val } where sid = #{sid};
 </update>
 
 </mapper>

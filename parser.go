@@ -60,7 +60,7 @@ func parseMapper(file, content string) (fs []*fragment, err error) {
 	var f *fragment
 	for _, v := range l.rootNode.Nodes {
 		switch v.Name {
-		case dtd.SELECT, dtd.INSERT, dtd.DELETE, dtd.UPDATE, dtd.SQL, dtd.SAVE, dtd.QUERY:
+		case dtd.SELECT, dtd.INSERT, dtd.DELETE, dtd.UPDATE, dtd.SQL, dtd.SAVE, dtd.QUERY, dtd.MIGRATE:
 			id := v.GetAttribute(dtd.ID)
 			if id == "" {
 				throw(file, v.ctx, parse_mapper_err).format("fragment: %s miss id", v.Name)

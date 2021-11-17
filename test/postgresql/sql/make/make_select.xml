@@ -3,160 +3,580 @@
 <!DOCTYPE mapper PUBLIC "-//gobatis.co//DTD Mapper 1.0//EN" "gobatis.co/dtd/mapper.dtd">
 <mapper>
 
-<select id="SelectParameterBigintInt64" parameter="id" result="t_bigint">
-    select t_bigint from types where id = #{id};
+<select id="SelectParameterBigintInt64" parameter="sid" result="t_bigint">
+    select t_bigint from types where sid = #{sid};
 </select>
 
-<select id="SelectParameterBigintInt64PointerOriginal" parameter="id" result="t_bigint">
-    select t_bigint from types where id = #{id};
+<select id="SelectParameterBigintInt64PointerOriginal" parameter="sid" result="t_bigint">
+    select t_bigint from types where sid = #{sid};
 </select>
 
-<select id="SelectParameterBigintInt64OriginalPointer" parameter="id" result="t_bigint">
-    select t_bigint from types where id = #{id};
+<select id="SelectParameterBigintInt64OriginalPointer" parameter="sid" result="t_bigint">
+    select t_bigint from types where sid = #{sid};
 </select>
 
-<select id="SelectParameterBigintInt64PointerPointer" parameter="id" result="t_bigint">
-    select t_bigint from types where id = #{id};
+<select id="SelectParameterBigintInt64PointerPointer" parameter="sid" result="t_bigint">
+    select t_bigint from types where sid = #{sid};
 </select>
 
-<select id="SelectEntityBigintInt64" parameter="id" result="t_bigint">
-    select t_bigint from types where id = #{id};
+<select id="SelectEntityBigintInt64" parameter="item:struct" result="t_bigint">
+    select t_bigint from types where sid = #{sid};
 </select>
 
-<select id="SelectEntityBigintInt64PointerOriginal" parameter="id" result="t_bigint">
-    select t_bigint from types where id = #{id};
+<select id="SelectEntityBigintInt64OriginalPointer" parameter="item:struct" result="t_bigint">
+    select t_bigint from types where sid = #{sid};
 </select>
 
-<select id="SelectArrayParameterBigintInt64" parameter="id" result="t_bigint">
-    select t_bigint from array_types where id = #{id};
+<select id="SelectEntityBigintInt64PointerOriginal" parameter="item:struct" result="t_bigint">
+    select t_bigint from types where sid = #{sid};
 </select>
 
-<select id="SelectArrayParameterBigintInt64PointerOriginal" parameter="id" result="t_bigint">
-    select t_bigint from array_types where id = #{id};
+<select id="SelectEntityBigintInt64PointerPointer" parameter="item:struct" result="t_bigint">
+    select t_bigint from types where sid = #{sid};
 </select>
 
-<select id="SelectArrayParameterBigintInt64OriginalPointer" parameter="id" result="t_bigint">
-    select t_bigint from array_types where id = #{id};
+<select id="SelectArrayParameterBigintInt64" parameter="sid" result="t_bigint">
+    select t_bigint from array_types where sid = #{sid};
 </select>
 
-<select id="SelectArrayParameterBigintInt64PointerPointer" parameter="id" result="t_bigint">
-    select t_bigint from array_types where id = #{id};
+<select id="SelectArrayParameterBigintInt64OriginalPointer" parameter="sid" result="t_bigint">
+    select t_bigint from array_types where sid = #{sid};
 </select>
 
-<select id="SelectArrayEntityBigintInt64" parameter="id" result="t_bigint">
-    select t_bigint from array_types where id = #{id};
+<select id="SelectArrayParameterBigintInt64PointerOriginal" parameter="sid" result="t_bigint">
+    select t_bigint from array_types where sid = #{sid};
 </select>
 
-<select id="SelectArrayEntityBigintInt64PointerOriginal" parameter="id" result="t_bigint">
-    select t_bigint from array_types where id = #{id};
+<select id="SelectArrayParameterBigintInt64PointerPointer" parameter="sid" result="t_bigint">
+    select t_bigint from array_types where sid = #{sid};
 </select>
 
-<select id="SelectArrayEntityBigintInt64OriginalPointer" parameter="id" result="t_bigint">
-    select t_bigint from array_types where id = #{id};
+<select id="SelectArrayEntityBigintInt64" parameter="sid" result="t_bigint">
+    select t_bigint from array_types where sid = #{sid};
 </select>
 
-<select id="SelectParameterCharacterString" parameter="id" result="t_character">
-    select t_character from types where id = #{id};
+<select id="SelectArrayEntityBigintInt64OriginalPointer" parameter="sid" result="t_bigint">
+    select t_bigint from array_types where sid = #{sid};
 </select>
 
-<select id="SelectParameterCharacterStringPointerOriginal" parameter="id" result="t_character">
-    select t_character from types where id = #{id};
+<select id="SelectArrayEntityBigintInt64PointerOriginal" parameter="sid" result="t_bigint">
+    select t_bigint from array_types where sid = #{sid};
 </select>
 
-<select id="SelectParameterCharacterStringOriginalPointer" parameter="id" result="t_character">
-    select t_character from types where id = #{id};
+<select id="SelectArrayEntityBigintInt64PointerPointer" parameter="sid" result="t_bigint">
+    select t_bigint from array_types where sid = #{sid};
 </select>
 
-<select id="SelectParameterCharacterStringPointerPointer" parameter="id" result="t_character">
-    select t_character from types where id = #{id};
+<select id="SelectParameterInt8Int8" parameter="sid" result="t_int8">
+    select t_int8 from types where sid = #{sid};
 </select>
 
-<select id="SelectEntityCharacterString" parameter="id" result="t_character">
-    select t_character from types where id = #{id};
+<select id="SelectParameterInt8Int8PointerOriginal" parameter="sid" result="t_int8">
+    select t_int8 from types where sid = #{sid};
 </select>
 
-<select id="SelectEntityCharacterStringPointerOriginal" parameter="id" result="t_character">
-    select t_character from types where id = #{id};
+<select id="SelectParameterInt8Int8OriginalPointer" parameter="sid" result="t_int8">
+    select t_int8 from types where sid = #{sid};
 </select>
 
-<select id="SelectArrayParameterCharacterString" parameter="id" result="t_character">
-    select t_character from array_types where id = #{id};
+<select id="SelectParameterInt8Int8PointerPointer" parameter="sid" result="t_int8">
+    select t_int8 from types where sid = #{sid};
 </select>
 
-<select id="SelectArrayParameterCharacterStringPointerOriginal" parameter="id" result="t_character">
-    select t_character from array_types where id = #{id};
+<select id="SelectEntityInt8Int8" parameter="item:struct" result="t_int8">
+    select t_int8 from types where sid = #{sid};
 </select>
 
-<select id="SelectArrayParameterCharacterStringOriginalPointer" parameter="id" result="t_character">
-    select t_character from array_types where id = #{id};
+<select id="SelectEntityInt8Int8OriginalPointer" parameter="item:struct" result="t_int8">
+    select t_int8 from types where sid = #{sid};
 </select>
 
-<select id="SelectArrayParameterCharacterStringPointerPointer" parameter="id" result="t_character">
-    select t_character from array_types where id = #{id};
+<select id="SelectEntityInt8Int8PointerOriginal" parameter="item:struct" result="t_int8">
+    select t_int8 from types where sid = #{sid};
 </select>
 
-<select id="SelectArrayEntityCharacterString" parameter="id" result="t_character">
-    select t_character from array_types where id = #{id};
+<select id="SelectEntityInt8Int8PointerPointer" parameter="item:struct" result="t_int8">
+    select t_int8 from types where sid = #{sid};
 </select>
 
-<select id="SelectArrayEntityCharacterStringPointerOriginal" parameter="id" result="t_character">
-    select t_character from array_types where id = #{id};
+<select id="SelectArrayParameterInt8Int8" parameter="sid" result="t_int8">
+    select t_int8 from array_types where sid = #{sid};
 </select>
 
-<select id="SelectArrayEntityCharacterStringOriginalPointer" parameter="id" result="t_character">
-    select t_character from array_types where id = #{id};
+<select id="SelectArrayParameterInt8Int8OriginalPointer" parameter="sid" result="t_int8">
+    select t_int8 from array_types where sid = #{sid};
 </select>
 
-<select id="SelectParameterCharacterVaryingString" parameter="id" result="t_character_varying">
-    select t_character_varying from types where id = #{id};
+<select id="SelectArrayParameterInt8Int8PointerOriginal" parameter="sid" result="t_int8">
+    select t_int8 from array_types where sid = #{sid};
 </select>
 
-<select id="SelectParameterCharacterVaryingStringPointerOriginal" parameter="id" result="t_character_varying">
-    select t_character_varying from types where id = #{id};
+<select id="SelectArrayParameterInt8Int8PointerPointer" parameter="sid" result="t_int8">
+    select t_int8 from array_types where sid = #{sid};
 </select>
 
-<select id="SelectParameterCharacterVaryingStringOriginalPointer" parameter="id" result="t_character_varying">
-    select t_character_varying from types where id = #{id};
+<select id="SelectArrayEntityInt8Int8" parameter="sid" result="t_int8">
+    select t_int8 from array_types where sid = #{sid};
 </select>
 
-<select id="SelectParameterCharacterVaryingStringPointerPointer" parameter="id" result="t_character_varying">
-    select t_character_varying from types where id = #{id};
+<select id="SelectArrayEntityInt8Int8OriginalPointer" parameter="sid" result="t_int8">
+    select t_int8 from array_types where sid = #{sid};
 </select>
 
-<select id="SelectEntityCharacterVaryingString" parameter="id" result="t_character_varying">
-    select t_character_varying from types where id = #{id};
+<select id="SelectArrayEntityInt8Int8PointerOriginal" parameter="sid" result="t_int8">
+    select t_int8 from array_types where sid = #{sid};
 </select>
 
-<select id="SelectEntityCharacterVaryingStringPointerOriginal" parameter="id" result="t_character_varying">
-    select t_character_varying from types where id = #{id};
+<select id="SelectArrayEntityInt8Int8PointerPointer" parameter="sid" result="t_int8">
+    select t_int8 from array_types where sid = #{sid};
 </select>
 
-<select id="SelectArrayParameterCharacterVaryingString" parameter="id" result="t_character_varying">
-    select t_character_varying from array_types where id = #{id};
+<select id="SelectParameterBoolBool" parameter="sid" result="t_bool">
+    select t_bool from types where sid = #{sid};
 </select>
 
-<select id="SelectArrayParameterCharacterVaryingStringPointerOriginal" parameter="id" result="t_character_varying">
-    select t_character_varying from array_types where id = #{id};
+<select id="SelectParameterBoolBoolPointerOriginal" parameter="sid" result="t_bool">
+    select t_bool from types where sid = #{sid};
 </select>
 
-<select id="SelectArrayParameterCharacterVaryingStringOriginalPointer" parameter="id" result="t_character_varying">
-    select t_character_varying from array_types where id = #{id};
+<select id="SelectParameterBoolBoolOriginalPointer" parameter="sid" result="t_bool">
+    select t_bool from types where sid = #{sid};
 </select>
 
-<select id="SelectArrayParameterCharacterVaryingStringPointerPointer" parameter="id" result="t_character_varying">
-    select t_character_varying from array_types where id = #{id};
+<select id="SelectParameterBoolBoolPointerPointer" parameter="sid" result="t_bool">
+    select t_bool from types where sid = #{sid};
 </select>
 
-<select id="SelectArrayEntityCharacterVaryingString" parameter="id" result="t_character_varying">
-    select t_character_varying from array_types where id = #{id};
+<select id="SelectEntityBoolBool" parameter="item:struct" result="t_bool">
+    select t_bool from types where sid = #{sid};
 </select>
 
-<select id="SelectArrayEntityCharacterVaryingStringPointerOriginal" parameter="id" result="t_character_varying">
-    select t_character_varying from array_types where id = #{id};
+<select id="SelectEntityBoolBoolOriginalPointer" parameter="item:struct" result="t_bool">
+    select t_bool from types where sid = #{sid};
 </select>
 
-<select id="SelectArrayEntityCharacterVaryingStringOriginalPointer" parameter="id" result="t_character_varying">
-    select t_character_varying from array_types where id = #{id};
+<select id="SelectEntityBoolBoolPointerOriginal" parameter="item:struct" result="t_bool">
+    select t_bool from types where sid = #{sid};
+</select>
+
+<select id="SelectEntityBoolBoolPointerPointer" parameter="item:struct" result="t_bool">
+    select t_bool from types where sid = #{sid};
+</select>
+
+<select id="SelectArrayParameterBoolBool" parameter="sid" result="t_bool">
+    select t_bool from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayParameterBoolBoolOriginalPointer" parameter="sid" result="t_bool">
+    select t_bool from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayParameterBoolBoolPointerOriginal" parameter="sid" result="t_bool">
+    select t_bool from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayParameterBoolBoolPointerPointer" parameter="sid" result="t_bool">
+    select t_bool from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayEntityBoolBool" parameter="sid" result="t_bool">
+    select t_bool from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayEntityBoolBoolOriginalPointer" parameter="sid" result="t_bool">
+    select t_bool from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayEntityBoolBoolPointerOriginal" parameter="sid" result="t_bool">
+    select t_bool from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayEntityBoolBoolPointerPointer" parameter="sid" result="t_bool">
+    select t_bool from array_types where sid = #{sid};
+</select>
+
+<select id="SelectParameterCharacterString" parameter="sid" result="t_character">
+    select t_character from types where sid = #{sid};
+</select>
+
+<select id="SelectParameterCharacterStringPointerOriginal" parameter="sid" result="t_character">
+    select t_character from types where sid = #{sid};
+</select>
+
+<select id="SelectParameterCharacterStringOriginalPointer" parameter="sid" result="t_character">
+    select t_character from types where sid = #{sid};
+</select>
+
+<select id="SelectParameterCharacterStringPointerPointer" parameter="sid" result="t_character">
+    select t_character from types where sid = #{sid};
+</select>
+
+<select id="SelectEntityCharacterString" parameter="item:struct" result="t_character">
+    select t_character from types where sid = #{sid};
+</select>
+
+<select id="SelectEntityCharacterStringOriginalPointer" parameter="item:struct" result="t_character">
+    select t_character from types where sid = #{sid};
+</select>
+
+<select id="SelectEntityCharacterStringPointerOriginal" parameter="item:struct" result="t_character">
+    select t_character from types where sid = #{sid};
+</select>
+
+<select id="SelectEntityCharacterStringPointerPointer" parameter="item:struct" result="t_character">
+    select t_character from types where sid = #{sid};
+</select>
+
+<select id="SelectArrayParameterCharacterString" parameter="sid" result="t_character">
+    select t_character from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayParameterCharacterStringOriginalPointer" parameter="sid" result="t_character">
+    select t_character from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayParameterCharacterStringPointerOriginal" parameter="sid" result="t_character">
+    select t_character from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayParameterCharacterStringPointerPointer" parameter="sid" result="t_character">
+    select t_character from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayEntityCharacterString" parameter="sid" result="t_character">
+    select t_character from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayEntityCharacterStringOriginalPointer" parameter="sid" result="t_character">
+    select t_character from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayEntityCharacterStringPointerOriginal" parameter="sid" result="t_character">
+    select t_character from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayEntityCharacterStringPointerPointer" parameter="sid" result="t_character">
+    select t_character from array_types where sid = #{sid};
+</select>
+
+<select id="SelectParameterCharString" parameter="sid" result="t_char">
+    select t_char from types where sid = #{sid};
+</select>
+
+<select id="SelectParameterCharStringPointerOriginal" parameter="sid" result="t_char">
+    select t_char from types where sid = #{sid};
+</select>
+
+<select id="SelectParameterCharStringOriginalPointer" parameter="sid" result="t_char">
+    select t_char from types where sid = #{sid};
+</select>
+
+<select id="SelectParameterCharStringPointerPointer" parameter="sid" result="t_char">
+    select t_char from types where sid = #{sid};
+</select>
+
+<select id="SelectEntityCharString" parameter="item:struct" result="t_char">
+    select t_char from types where sid = #{sid};
+</select>
+
+<select id="SelectEntityCharStringOriginalPointer" parameter="item:struct" result="t_char">
+    select t_char from types where sid = #{sid};
+</select>
+
+<select id="SelectEntityCharStringPointerOriginal" parameter="item:struct" result="t_char">
+    select t_char from types where sid = #{sid};
+</select>
+
+<select id="SelectEntityCharStringPointerPointer" parameter="item:struct" result="t_char">
+    select t_char from types where sid = #{sid};
+</select>
+
+<select id="SelectArrayParameterCharString" parameter="sid" result="t_char">
+    select t_char from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayParameterCharStringOriginalPointer" parameter="sid" result="t_char">
+    select t_char from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayParameterCharStringPointerOriginal" parameter="sid" result="t_char">
+    select t_char from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayParameterCharStringPointerPointer" parameter="sid" result="t_char">
+    select t_char from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayEntityCharString" parameter="sid" result="t_char">
+    select t_char from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayEntityCharStringOriginalPointer" parameter="sid" result="t_char">
+    select t_char from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayEntityCharStringPointerOriginal" parameter="sid" result="t_char">
+    select t_char from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayEntityCharStringPointerPointer" parameter="sid" result="t_char">
+    select t_char from array_types where sid = #{sid};
+</select>
+
+<select id="SelectParameterCharacterVaryingString" parameter="sid" result="t_character_varying">
+    select t_character_varying from types where sid = #{sid};
+</select>
+
+<select id="SelectParameterCharacterVaryingStringPointerOriginal" parameter="sid" result="t_character_varying">
+    select t_character_varying from types where sid = #{sid};
+</select>
+
+<select id="SelectParameterCharacterVaryingStringOriginalPointer" parameter="sid" result="t_character_varying">
+    select t_character_varying from types where sid = #{sid};
+</select>
+
+<select id="SelectParameterCharacterVaryingStringPointerPointer" parameter="sid" result="t_character_varying">
+    select t_character_varying from types where sid = #{sid};
+</select>
+
+<select id="SelectEntityCharacterVaryingString" parameter="item:struct" result="t_character_varying">
+    select t_character_varying from types where sid = #{sid};
+</select>
+
+<select id="SelectEntityCharacterVaryingStringOriginalPointer" parameter="item:struct" result="t_character_varying">
+    select t_character_varying from types where sid = #{sid};
+</select>
+
+<select id="SelectEntityCharacterVaryingStringPointerOriginal" parameter="item:struct" result="t_character_varying">
+    select t_character_varying from types where sid = #{sid};
+</select>
+
+<select id="SelectEntityCharacterVaryingStringPointerPointer" parameter="item:struct" result="t_character_varying">
+    select t_character_varying from types where sid = #{sid};
+</select>
+
+<select id="SelectArrayParameterCharacterVaryingString" parameter="sid" result="t_character_varying">
+    select t_character_varying from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayParameterCharacterVaryingStringOriginalPointer" parameter="sid" result="t_character_varying">
+    select t_character_varying from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayParameterCharacterVaryingStringPointerOriginal" parameter="sid" result="t_character_varying">
+    select t_character_varying from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayParameterCharacterVaryingStringPointerPointer" parameter="sid" result="t_character_varying">
+    select t_character_varying from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayEntityCharacterVaryingString" parameter="sid" result="t_character_varying">
+    select t_character_varying from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayEntityCharacterVaryingStringOriginalPointer" parameter="sid" result="t_character_varying">
+    select t_character_varying from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayEntityCharacterVaryingStringPointerOriginal" parameter="sid" result="t_character_varying">
+    select t_character_varying from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayEntityCharacterVaryingStringPointerPointer" parameter="sid" result="t_character_varying">
+    select t_character_varying from array_types where sid = #{sid};
+</select>
+
+<select id="SelectParameterVarcharString" parameter="sid" result="t_varchar">
+    select t_varchar from types where sid = #{sid};
+</select>
+
+<select id="SelectParameterVarcharStringPointerOriginal" parameter="sid" result="t_varchar">
+    select t_varchar from types where sid = #{sid};
+</select>
+
+<select id="SelectParameterVarcharStringOriginalPointer" parameter="sid" result="t_varchar">
+    select t_varchar from types where sid = #{sid};
+</select>
+
+<select id="SelectParameterVarcharStringPointerPointer" parameter="sid" result="t_varchar">
+    select t_varchar from types where sid = #{sid};
+</select>
+
+<select id="SelectEntityVarcharString" parameter="item:struct" result="t_varchar">
+    select t_varchar from types where sid = #{sid};
+</select>
+
+<select id="SelectEntityVarcharStringOriginalPointer" parameter="item:struct" result="t_varchar">
+    select t_varchar from types where sid = #{sid};
+</select>
+
+<select id="SelectEntityVarcharStringPointerOriginal" parameter="item:struct" result="t_varchar">
+    select t_varchar from types where sid = #{sid};
+</select>
+
+<select id="SelectEntityVarcharStringPointerPointer" parameter="item:struct" result="t_varchar">
+    select t_varchar from types where sid = #{sid};
+</select>
+
+<select id="SelectArrayParameterVarcharString" parameter="sid" result="t_varchar">
+    select t_varchar from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayParameterVarcharStringOriginalPointer" parameter="sid" result="t_varchar">
+    select t_varchar from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayParameterVarcharStringPointerOriginal" parameter="sid" result="t_varchar">
+    select t_varchar from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayParameterVarcharStringPointerPointer" parameter="sid" result="t_varchar">
+    select t_varchar from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayEntityVarcharString" parameter="sid" result="t_varchar">
+    select t_varchar from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayEntityVarcharStringOriginalPointer" parameter="sid" result="t_varchar">
+    select t_varchar from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayEntityVarcharStringPointerOriginal" parameter="sid" result="t_varchar">
+    select t_varchar from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayEntityVarcharStringPointerPointer" parameter="sid" result="t_varchar">
+    select t_varchar from array_types where sid = #{sid};
+</select>
+
+<select id="SelectParameterIntInt8" parameter="sid" result="t_int">
+    select t_int from types where sid = #{sid};
+</select>
+
+<select id="SelectParameterIntInt8PointerOriginal" parameter="sid" result="t_int">
+    select t_int from types where sid = #{sid};
+</select>
+
+<select id="SelectParameterIntInt8OriginalPointer" parameter="sid" result="t_int">
+    select t_int from types where sid = #{sid};
+</select>
+
+<select id="SelectParameterIntInt8PointerPointer" parameter="sid" result="t_int">
+    select t_int from types where sid = #{sid};
+</select>
+
+<select id="SelectEntityIntInt8" parameter="item:struct" result="t_int">
+    select t_int from types where sid = #{sid};
+</select>
+
+<select id="SelectEntityIntInt8OriginalPointer" parameter="item:struct" result="t_int">
+    select t_int from types where sid = #{sid};
+</select>
+
+<select id="SelectEntityIntInt8PointerOriginal" parameter="item:struct" result="t_int">
+    select t_int from types where sid = #{sid};
+</select>
+
+<select id="SelectEntityIntInt8PointerPointer" parameter="item:struct" result="t_int">
+    select t_int from types where sid = #{sid};
+</select>
+
+<select id="SelectArrayParameterIntInt8" parameter="sid" result="t_int">
+    select t_int from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayParameterIntInt8OriginalPointer" parameter="sid" result="t_int">
+    select t_int from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayParameterIntInt8PointerOriginal" parameter="sid" result="t_int">
+    select t_int from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayParameterIntInt8PointerPointer" parameter="sid" result="t_int">
+    select t_int from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayEntityIntInt8" parameter="sid" result="t_int">
+    select t_int from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayEntityIntInt8OriginalPointer" parameter="sid" result="t_int">
+    select t_int from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayEntityIntInt8PointerOriginal" parameter="sid" result="t_int">
+    select t_int from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayEntityIntInt8PointerPointer" parameter="sid" result="t_int">
+    select t_int from array_types where sid = #{sid};
+</select>
+
+<select id="SelectParameterInt4Int8" parameter="sid" result="t_int4">
+    select t_int4 from types where sid = #{sid};
+</select>
+
+<select id="SelectParameterInt4Int8PointerOriginal" parameter="sid" result="t_int4">
+    select t_int4 from types where sid = #{sid};
+</select>
+
+<select id="SelectParameterInt4Int8OriginalPointer" parameter="sid" result="t_int4">
+    select t_int4 from types where sid = #{sid};
+</select>
+
+<select id="SelectParameterInt4Int8PointerPointer" parameter="sid" result="t_int4">
+    select t_int4 from types where sid = #{sid};
+</select>
+
+<select id="SelectEntityInt4Int8" parameter="item:struct" result="t_int4">
+    select t_int4 from types where sid = #{sid};
+</select>
+
+<select id="SelectEntityInt4Int8OriginalPointer" parameter="item:struct" result="t_int4">
+    select t_int4 from types where sid = #{sid};
+</select>
+
+<select id="SelectEntityInt4Int8PointerOriginal" parameter="item:struct" result="t_int4">
+    select t_int4 from types where sid = #{sid};
+</select>
+
+<select id="SelectEntityInt4Int8PointerPointer" parameter="item:struct" result="t_int4">
+    select t_int4 from types where sid = #{sid};
+</select>
+
+<select id="SelectArrayParameterInt4Int8" parameter="sid" result="t_int4">
+    select t_int4 from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayParameterInt4Int8OriginalPointer" parameter="sid" result="t_int4">
+    select t_int4 from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayParameterInt4Int8PointerOriginal" parameter="sid" result="t_int4">
+    select t_int4 from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayParameterInt4Int8PointerPointer" parameter="sid" result="t_int4">
+    select t_int4 from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayEntityInt4Int8" parameter="sid" result="t_int4">
+    select t_int4 from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayEntityInt4Int8OriginalPointer" parameter="sid" result="t_int4">
+    select t_int4 from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayEntityInt4Int8PointerOriginal" parameter="sid" result="t_int4">
+    select t_int4 from array_types where sid = #{sid};
+</select>
+
+<select id="SelectArrayEntityInt4Int8PointerPointer" parameter="sid" result="t_int4">
+    select t_int4 from array_types where sid = #{sid};
 </select>
 
 </mapper>

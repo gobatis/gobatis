@@ -19,64 +19,180 @@
     insert into types(sid,source,t_bigint) values(#{sid},#{source},#{var_bigint});
 </insert>
 
-<insert id="InsertEntityBigintInt64" parameter="item" >
+<insert id="InsertEntityBigintInt64" parameter="item:struct" >
     insert into types(sid,source,t_bigint) values(#{sid},#{source},#{var_bigint});
 </insert>
 
-<insert id="InsertEntityBigintInt64OriginalPointer" parameter="item" >
+<insert id="InsertEntityBigintInt64OriginalPointer" parameter="item:struct" >
     insert into types(sid,source,t_bigint) values(#{sid},#{source},#{var_bigint});
 </insert>
 
-<insert id="InsertEntityBigintInt64PointerOriginal" parameter="item" >
+<insert id="InsertEntityBigintInt64PointerOriginal" parameter="item:struct" >
     insert into types(sid,source,t_bigint) values(#{sid},#{source},#{var_bigint});
 </insert>
 
-<insert id="InsertEntityBigintInt64PointerPointer" parameter="item" >
+<insert id="InsertEntityBigintInt64PointerPointer" parameter="item:struct" >
     insert into types(sid,source,t_bigint) values(#{sid},#{source},#{var_bigint});
-</insert>
-
-<insert id="InsertParameterBigintInt64Rows" parameter="sid,source,var_bigint" >
-    insert into types(sid,source,t_bigint) values(#{sid},#{source},#{var_bigint});
-</insert>
-
-<insert id="InsertParameterBigintInt64Must" parameter="sid,source,var_bigint" >
-    insert into types(sid,source,t_bigint) values(#{sid},#{source},#{var_bigint});
-</insert>
-
-<insert id="InsertParameterBigintInt64Stmt" parameter="sid,source,var_bigint" >
-    insert into types(sid,source,t_bigint) values(#{sid},#{source},#{var_bigint});
-</insert>
-
-<insert id="InsertParameterBigintInt64Context" parameter="sid,source,var_bigint" >
-    insert into types(sid,source,t_bigint) values(#{sid},#{source},#{var_bigint});
-</insert>
-
-<insert id="InsertParameterBigintInt64Tx" parameter="sid,source,var_bigint" >
-    insert into types(sid,source,t_bigint) values(#{sid},#{source},#{var_bigint});
-</insert>
-
-<insert id="InsertParameterBigintInt64Embed" parameter="sid,source,var_bigint" >
-    insert into types(sid,source,t_bigint) values(${sid}, ${source}, ${var_bigint});
 </insert>
 
 <insert id="InsertArrayParameterBigintInt64" parameter="sid,source,var_bigint" >
-    insert into array_types(t_bigint) values(#{var_bigint});
+    insert into array_types(sid,source,t_bigint) values(#{sid},#{source},#{var_bigint});
+</insert>
+
+<insert id="InsertArrayParameterBigintInt64OriginalPointer" parameter="sid,source,var_bigint" >
+    insert into array_types(sid,source,t_bigint) values(#{sid},#{source},#{var_bigint});
 </insert>
 
 <insert id="InsertArrayParameterBigintInt64PointerOriginal" parameter="sid,source,var_bigint" >
-    insert into array_types(t_bigint) values(#{var_bigint});
+    insert into array_types(sid,source,t_bigint) values(#{sid},#{source},#{var_bigint});
+</insert>
+
+<insert id="InsertArrayParameterBigintInt64PointerPointer" parameter="sid,source,var_bigint" >
+    insert into array_types(sid,source,t_bigint) values(#{sid},#{source},#{var_bigint});
 </insert>
 
 <insert id="InsertArrayEntityBigintInt64" parameter="sid,source,var_bigint" >
-    insert into array_types(t_bigint) values(#{var_bigint});
+    insert into array_types(sid,source,t_bigint) values(#{sid},#{source},#{var_bigint});
+</insert>
+
+<insert id="InsertArrayEntityBigintInt64OriginalPointer" parameter="sid,source,var_bigint" >
+    insert into array_types(sid,source,t_bigint) values(#{sid},#{source},#{var_bigint});
 </insert>
 
 <insert id="InsertArrayEntityBigintInt64PointerOriginal" parameter="sid,source,var_bigint" >
-    insert into array_types(t_bigint) values(#{var_bigint});
+    insert into array_types(sid,source,t_bigint) values(#{sid},#{source},#{var_bigint});
 </insert>
 
-<insert id="InsertArrayParameterBigintInt64Embed" parameter="sid,source,var_bigint" >
-    insert into array_types(t_bigint) values(#{var_bigint});
+<insert id="InsertArrayEntityBigintInt64PointerPointer" parameter="sid,source,var_bigint" >
+    insert into array_types(sid,source,t_bigint) values(#{sid},#{source},#{var_bigint});
+</insert>
+
+<insert id="InsertParameterInt8Int8" parameter="sid,source,var_int8" >
+    insert into types(sid,source,t_int8) values(#{sid},#{source},#{var_int8});
+</insert>
+
+<insert id="InsertParameterInt8Int8OriginalPointer" parameter="sid,source,var_int8" >
+    insert into types(sid,source,t_int8) values(#{sid},#{source},#{var_int8});
+</insert>
+
+<insert id="InsertParameterInt8Int8PointerOriginal" parameter="sid,source,var_int8" >
+    insert into types(sid,source,t_int8) values(#{sid},#{source},#{var_int8});
+</insert>
+
+<insert id="InsertParameterInt8Int8PointerPointer" parameter="sid,source,var_int8" >
+    insert into types(sid,source,t_int8) values(#{sid},#{source},#{var_int8});
+</insert>
+
+<insert id="InsertEntityInt8Int8" parameter="item:struct" >
+    insert into types(sid,source,t_int8) values(#{sid},#{source},#{var_int8});
+</insert>
+
+<insert id="InsertEntityInt8Int8OriginalPointer" parameter="item:struct" >
+    insert into types(sid,source,t_int8) values(#{sid},#{source},#{var_int8});
+</insert>
+
+<insert id="InsertEntityInt8Int8PointerOriginal" parameter="item:struct" >
+    insert into types(sid,source,t_int8) values(#{sid},#{source},#{var_int8});
+</insert>
+
+<insert id="InsertEntityInt8Int8PointerPointer" parameter="item:struct" >
+    insert into types(sid,source,t_int8) values(#{sid},#{source},#{var_int8});
+</insert>
+
+<insert id="InsertArrayParameterInt8Int8" parameter="sid,source,var_int8" >
+    insert into array_types(sid,source,t_int8) values(#{sid},#{source},#{var_int8});
+</insert>
+
+<insert id="InsertArrayParameterInt8Int8OriginalPointer" parameter="sid,source,var_int8" >
+    insert into array_types(sid,source,t_int8) values(#{sid},#{source},#{var_int8});
+</insert>
+
+<insert id="InsertArrayParameterInt8Int8PointerOriginal" parameter="sid,source,var_int8" >
+    insert into array_types(sid,source,t_int8) values(#{sid},#{source},#{var_int8});
+</insert>
+
+<insert id="InsertArrayParameterInt8Int8PointerPointer" parameter="sid,source,var_int8" >
+    insert into array_types(sid,source,t_int8) values(#{sid},#{source},#{var_int8});
+</insert>
+
+<insert id="InsertArrayEntityInt8Int8" parameter="sid,source,var_int8" >
+    insert into array_types(sid,source,t_int8) values(#{sid},#{source},#{var_int8});
+</insert>
+
+<insert id="InsertArrayEntityInt8Int8OriginalPointer" parameter="sid,source,var_int8" >
+    insert into array_types(sid,source,t_int8) values(#{sid},#{source},#{var_int8});
+</insert>
+
+<insert id="InsertArrayEntityInt8Int8PointerOriginal" parameter="sid,source,var_int8" >
+    insert into array_types(sid,source,t_int8) values(#{sid},#{source},#{var_int8});
+</insert>
+
+<insert id="InsertArrayEntityInt8Int8PointerPointer" parameter="sid,source,var_int8" >
+    insert into array_types(sid,source,t_int8) values(#{sid},#{source},#{var_int8});
+</insert>
+
+<insert id="InsertParameterBoolBool" parameter="sid,source,var_bool" >
+    insert into types(sid,source,t_bool) values(#{sid},#{source},#{var_bool});
+</insert>
+
+<insert id="InsertParameterBoolBoolOriginalPointer" parameter="sid,source,var_bool" >
+    insert into types(sid,source,t_bool) values(#{sid},#{source},#{var_bool});
+</insert>
+
+<insert id="InsertParameterBoolBoolPointerOriginal" parameter="sid,source,var_bool" >
+    insert into types(sid,source,t_bool) values(#{sid},#{source},#{var_bool});
+</insert>
+
+<insert id="InsertParameterBoolBoolPointerPointer" parameter="sid,source,var_bool" >
+    insert into types(sid,source,t_bool) values(#{sid},#{source},#{var_bool});
+</insert>
+
+<insert id="InsertEntityBoolBool" parameter="item:struct" >
+    insert into types(sid,source,t_bool) values(#{sid},#{source},#{var_bool});
+</insert>
+
+<insert id="InsertEntityBoolBoolOriginalPointer" parameter="item:struct" >
+    insert into types(sid,source,t_bool) values(#{sid},#{source},#{var_bool});
+</insert>
+
+<insert id="InsertEntityBoolBoolPointerOriginal" parameter="item:struct" >
+    insert into types(sid,source,t_bool) values(#{sid},#{source},#{var_bool});
+</insert>
+
+<insert id="InsertEntityBoolBoolPointerPointer" parameter="item:struct" >
+    insert into types(sid,source,t_bool) values(#{sid},#{source},#{var_bool});
+</insert>
+
+<insert id="InsertArrayParameterBoolBool" parameter="sid,source,var_bool" >
+    insert into array_types(sid,source,t_bool) values(#{sid},#{source},#{var_bool});
+</insert>
+
+<insert id="InsertArrayParameterBoolBoolOriginalPointer" parameter="sid,source,var_bool" >
+    insert into array_types(sid,source,t_bool) values(#{sid},#{source},#{var_bool});
+</insert>
+
+<insert id="InsertArrayParameterBoolBoolPointerOriginal" parameter="sid,source,var_bool" >
+    insert into array_types(sid,source,t_bool) values(#{sid},#{source},#{var_bool});
+</insert>
+
+<insert id="InsertArrayParameterBoolBoolPointerPointer" parameter="sid,source,var_bool" >
+    insert into array_types(sid,source,t_bool) values(#{sid},#{source},#{var_bool});
+</insert>
+
+<insert id="InsertArrayEntityBoolBool" parameter="sid,source,var_bool" >
+    insert into array_types(sid,source,t_bool) values(#{sid},#{source},#{var_bool});
+</insert>
+
+<insert id="InsertArrayEntityBoolBoolOriginalPointer" parameter="sid,source,var_bool" >
+    insert into array_types(sid,source,t_bool) values(#{sid},#{source},#{var_bool});
+</insert>
+
+<insert id="InsertArrayEntityBoolBoolPointerOriginal" parameter="sid,source,var_bool" >
+    insert into array_types(sid,source,t_bool) values(#{sid},#{source},#{var_bool});
+</insert>
+
+<insert id="InsertArrayEntityBoolBoolPointerPointer" parameter="sid,source,var_bool" >
+    insert into array_types(sid,source,t_bool) values(#{sid},#{source},#{var_bool});
 </insert>
 
 <insert id="InsertParameterCharacterString" parameter="sid,source,var_character" >
@@ -95,64 +211,116 @@
     insert into types(sid,source,t_character) values(#{sid},#{source},#{var_character});
 </insert>
 
-<insert id="InsertEntityCharacterString" parameter="item" >
+<insert id="InsertEntityCharacterString" parameter="item:struct" >
     insert into types(sid,source,t_character) values(#{sid},#{source},#{var_character});
 </insert>
 
-<insert id="InsertEntityCharacterStringOriginalPointer" parameter="item" >
+<insert id="InsertEntityCharacterStringOriginalPointer" parameter="item:struct" >
     insert into types(sid,source,t_character) values(#{sid},#{source},#{var_character});
 </insert>
 
-<insert id="InsertEntityCharacterStringPointerOriginal" parameter="item" >
+<insert id="InsertEntityCharacterStringPointerOriginal" parameter="item:struct" >
     insert into types(sid,source,t_character) values(#{sid},#{source},#{var_character});
 </insert>
 
-<insert id="InsertEntityCharacterStringPointerPointer" parameter="item" >
+<insert id="InsertEntityCharacterStringPointerPointer" parameter="item:struct" >
     insert into types(sid,source,t_character) values(#{sid},#{source},#{var_character});
-</insert>
-
-<insert id="InsertParameterCharacterStringRows" parameter="sid,source,var_character" >
-    insert into types(sid,source,t_character) values(#{sid},#{source},#{var_character});
-</insert>
-
-<insert id="InsertParameterCharacterStringMust" parameter="sid,source,var_character" >
-    insert into types(sid,source,t_character) values(#{sid},#{source},#{var_character});
-</insert>
-
-<insert id="InsertParameterCharacterStringStmt" parameter="sid,source,var_character" >
-    insert into types(sid,source,t_character) values(#{sid},#{source},#{var_character});
-</insert>
-
-<insert id="InsertParameterCharacterStringContext" parameter="sid,source,var_character" >
-    insert into types(sid,source,t_character) values(#{sid},#{source},#{var_character});
-</insert>
-
-<insert id="InsertParameterCharacterStringTx" parameter="sid,source,var_character" >
-    insert into types(sid,source,t_character) values(#{sid},#{source},#{var_character});
-</insert>
-
-<insert id="InsertParameterCharacterStringEmbed" parameter="sid,source,var_character" >
-    insert into types(sid,source,t_character) values(${sid}, ${source}, ${var_character});
 </insert>
 
 <insert id="InsertArrayParameterCharacterString" parameter="sid,source,var_character" >
-    insert into array_types(t_character) values(#{var_character});
+    insert into array_types(sid,source,t_character) values(#{sid},#{source},#{var_character});
+</insert>
+
+<insert id="InsertArrayParameterCharacterStringOriginalPointer" parameter="sid,source,var_character" >
+    insert into array_types(sid,source,t_character) values(#{sid},#{source},#{var_character});
 </insert>
 
 <insert id="InsertArrayParameterCharacterStringPointerOriginal" parameter="sid,source,var_character" >
-    insert into array_types(t_character) values(#{var_character});
+    insert into array_types(sid,source,t_character) values(#{sid},#{source},#{var_character});
+</insert>
+
+<insert id="InsertArrayParameterCharacterStringPointerPointer" parameter="sid,source,var_character" >
+    insert into array_types(sid,source,t_character) values(#{sid},#{source},#{var_character});
 </insert>
 
 <insert id="InsertArrayEntityCharacterString" parameter="sid,source,var_character" >
-    insert into array_types(t_character) values(#{var_character});
+    insert into array_types(sid,source,t_character) values(#{sid},#{source},#{var_character});
+</insert>
+
+<insert id="InsertArrayEntityCharacterStringOriginalPointer" parameter="sid,source,var_character" >
+    insert into array_types(sid,source,t_character) values(#{sid},#{source},#{var_character});
 </insert>
 
 <insert id="InsertArrayEntityCharacterStringPointerOriginal" parameter="sid,source,var_character" >
-    insert into array_types(t_character) values(#{var_character});
+    insert into array_types(sid,source,t_character) values(#{sid},#{source},#{var_character});
 </insert>
 
-<insert id="InsertArrayParameterCharacterStringEmbed" parameter="sid,source,var_character" >
-    insert into array_types(t_character) values(#{var_character});
+<insert id="InsertArrayEntityCharacterStringPointerPointer" parameter="sid,source,var_character" >
+    insert into array_types(sid,source,t_character) values(#{sid},#{source},#{var_character});
+</insert>
+
+<insert id="InsertParameterCharString" parameter="sid,source,var_char" >
+    insert into types(sid,source,t_char) values(#{sid},#{source},#{var_char});
+</insert>
+
+<insert id="InsertParameterCharStringOriginalPointer" parameter="sid,source,var_char" >
+    insert into types(sid,source,t_char) values(#{sid},#{source},#{var_char});
+</insert>
+
+<insert id="InsertParameterCharStringPointerOriginal" parameter="sid,source,var_char" >
+    insert into types(sid,source,t_char) values(#{sid},#{source},#{var_char});
+</insert>
+
+<insert id="InsertParameterCharStringPointerPointer" parameter="sid,source,var_char" >
+    insert into types(sid,source,t_char) values(#{sid},#{source},#{var_char});
+</insert>
+
+<insert id="InsertEntityCharString" parameter="item:struct" >
+    insert into types(sid,source,t_char) values(#{sid},#{source},#{var_char});
+</insert>
+
+<insert id="InsertEntityCharStringOriginalPointer" parameter="item:struct" >
+    insert into types(sid,source,t_char) values(#{sid},#{source},#{var_char});
+</insert>
+
+<insert id="InsertEntityCharStringPointerOriginal" parameter="item:struct" >
+    insert into types(sid,source,t_char) values(#{sid},#{source},#{var_char});
+</insert>
+
+<insert id="InsertEntityCharStringPointerPointer" parameter="item:struct" >
+    insert into types(sid,source,t_char) values(#{sid},#{source},#{var_char});
+</insert>
+
+<insert id="InsertArrayParameterCharString" parameter="sid,source,var_char" >
+    insert into array_types(sid,source,t_char) values(#{sid},#{source},#{var_char});
+</insert>
+
+<insert id="InsertArrayParameterCharStringOriginalPointer" parameter="sid,source,var_char" >
+    insert into array_types(sid,source,t_char) values(#{sid},#{source},#{var_char});
+</insert>
+
+<insert id="InsertArrayParameterCharStringPointerOriginal" parameter="sid,source,var_char" >
+    insert into array_types(sid,source,t_char) values(#{sid},#{source},#{var_char});
+</insert>
+
+<insert id="InsertArrayParameterCharStringPointerPointer" parameter="sid,source,var_char" >
+    insert into array_types(sid,source,t_char) values(#{sid},#{source},#{var_char});
+</insert>
+
+<insert id="InsertArrayEntityCharString" parameter="sid,source,var_char" >
+    insert into array_types(sid,source,t_char) values(#{sid},#{source},#{var_char});
+</insert>
+
+<insert id="InsertArrayEntityCharStringOriginalPointer" parameter="sid,source,var_char" >
+    insert into array_types(sid,source,t_char) values(#{sid},#{source},#{var_char});
+</insert>
+
+<insert id="InsertArrayEntityCharStringPointerOriginal" parameter="sid,source,var_char" >
+    insert into array_types(sid,source,t_char) values(#{sid},#{source},#{var_char});
+</insert>
+
+<insert id="InsertArrayEntityCharStringPointerPointer" parameter="sid,source,var_char" >
+    insert into array_types(sid,source,t_char) values(#{sid},#{source},#{var_char});
 </insert>
 
 <insert id="InsertParameterCharacterVaryingString" parameter="sid,source,var_character_varying" >
@@ -171,64 +339,244 @@
     insert into types(sid,source,t_character_varying) values(#{sid},#{source},#{var_character_varying});
 </insert>
 
-<insert id="InsertEntityCharacterVaryingString" parameter="item" >
+<insert id="InsertEntityCharacterVaryingString" parameter="item:struct" >
     insert into types(sid,source,t_character_varying) values(#{sid},#{source},#{var_character_varying});
 </insert>
 
-<insert id="InsertEntityCharacterVaryingStringOriginalPointer" parameter="item" >
+<insert id="InsertEntityCharacterVaryingStringOriginalPointer" parameter="item:struct" >
     insert into types(sid,source,t_character_varying) values(#{sid},#{source},#{var_character_varying});
 </insert>
 
-<insert id="InsertEntityCharacterVaryingStringPointerOriginal" parameter="item" >
+<insert id="InsertEntityCharacterVaryingStringPointerOriginal" parameter="item:struct" >
     insert into types(sid,source,t_character_varying) values(#{sid},#{source},#{var_character_varying});
 </insert>
 
-<insert id="InsertEntityCharacterVaryingStringPointerPointer" parameter="item" >
+<insert id="InsertEntityCharacterVaryingStringPointerPointer" parameter="item:struct" >
     insert into types(sid,source,t_character_varying) values(#{sid},#{source},#{var_character_varying});
-</insert>
-
-<insert id="InsertParameterCharacterVaryingStringRows" parameter="sid,source,var_character_varying" >
-    insert into types(sid,source,t_character_varying) values(#{sid},#{source},#{var_character_varying});
-</insert>
-
-<insert id="InsertParameterCharacterVaryingStringMust" parameter="sid,source,var_character_varying" >
-    insert into types(sid,source,t_character_varying) values(#{sid},#{source},#{var_character_varying});
-</insert>
-
-<insert id="InsertParameterCharacterVaryingStringStmt" parameter="sid,source,var_character_varying" >
-    insert into types(sid,source,t_character_varying) values(#{sid},#{source},#{var_character_varying});
-</insert>
-
-<insert id="InsertParameterCharacterVaryingStringContext" parameter="sid,source,var_character_varying" >
-    insert into types(sid,source,t_character_varying) values(#{sid},#{source},#{var_character_varying});
-</insert>
-
-<insert id="InsertParameterCharacterVaryingStringTx" parameter="sid,source,var_character_varying" >
-    insert into types(sid,source,t_character_varying) values(#{sid},#{source},#{var_character_varying});
-</insert>
-
-<insert id="InsertParameterCharacterVaryingStringEmbed" parameter="sid,source,var_character_varying" >
-    insert into types(sid,source,t_character_varying) values(${sid}, ${source}, ${var_character_varying});
 </insert>
 
 <insert id="InsertArrayParameterCharacterVaryingString" parameter="sid,source,var_character_varying" >
-    insert into array_types(t_character_varying) values(#{var_character_varying});
+    insert into array_types(sid,source,t_character_varying) values(#{sid},#{source},#{var_character_varying});
+</insert>
+
+<insert id="InsertArrayParameterCharacterVaryingStringOriginalPointer" parameter="sid,source,var_character_varying" >
+    insert into array_types(sid,source,t_character_varying) values(#{sid},#{source},#{var_character_varying});
 </insert>
 
 <insert id="InsertArrayParameterCharacterVaryingStringPointerOriginal" parameter="sid,source,var_character_varying" >
-    insert into array_types(t_character_varying) values(#{var_character_varying});
+    insert into array_types(sid,source,t_character_varying) values(#{sid},#{source},#{var_character_varying});
+</insert>
+
+<insert id="InsertArrayParameterCharacterVaryingStringPointerPointer" parameter="sid,source,var_character_varying" >
+    insert into array_types(sid,source,t_character_varying) values(#{sid},#{source},#{var_character_varying});
 </insert>
 
 <insert id="InsertArrayEntityCharacterVaryingString" parameter="sid,source,var_character_varying" >
-    insert into array_types(t_character_varying) values(#{var_character_varying});
+    insert into array_types(sid,source,t_character_varying) values(#{sid},#{source},#{var_character_varying});
+</insert>
+
+<insert id="InsertArrayEntityCharacterVaryingStringOriginalPointer" parameter="sid,source,var_character_varying" >
+    insert into array_types(sid,source,t_character_varying) values(#{sid},#{source},#{var_character_varying});
 </insert>
 
 <insert id="InsertArrayEntityCharacterVaryingStringPointerOriginal" parameter="sid,source,var_character_varying" >
-    insert into array_types(t_character_varying) values(#{var_character_varying});
+    insert into array_types(sid,source,t_character_varying) values(#{sid},#{source},#{var_character_varying});
 </insert>
 
-<insert id="InsertArrayParameterCharacterVaryingStringEmbed" parameter="sid,source,var_character_varying" >
-    insert into array_types(t_character_varying) values(#{var_character_varying});
+<insert id="InsertArrayEntityCharacterVaryingStringPointerPointer" parameter="sid,source,var_character_varying" >
+    insert into array_types(sid,source,t_character_varying) values(#{sid},#{source},#{var_character_varying});
+</insert>
+
+<insert id="InsertParameterVarcharString" parameter="sid,source,var_varchar" >
+    insert into types(sid,source,t_varchar) values(#{sid},#{source},#{var_varchar});
+</insert>
+
+<insert id="InsertParameterVarcharStringOriginalPointer" parameter="sid,source,var_varchar" >
+    insert into types(sid,source,t_varchar) values(#{sid},#{source},#{var_varchar});
+</insert>
+
+<insert id="InsertParameterVarcharStringPointerOriginal" parameter="sid,source,var_varchar" >
+    insert into types(sid,source,t_varchar) values(#{sid},#{source},#{var_varchar});
+</insert>
+
+<insert id="InsertParameterVarcharStringPointerPointer" parameter="sid,source,var_varchar" >
+    insert into types(sid,source,t_varchar) values(#{sid},#{source},#{var_varchar});
+</insert>
+
+<insert id="InsertEntityVarcharString" parameter="item:struct" >
+    insert into types(sid,source,t_varchar) values(#{sid},#{source},#{var_varchar});
+</insert>
+
+<insert id="InsertEntityVarcharStringOriginalPointer" parameter="item:struct" >
+    insert into types(sid,source,t_varchar) values(#{sid},#{source},#{var_varchar});
+</insert>
+
+<insert id="InsertEntityVarcharStringPointerOriginal" parameter="item:struct" >
+    insert into types(sid,source,t_varchar) values(#{sid},#{source},#{var_varchar});
+</insert>
+
+<insert id="InsertEntityVarcharStringPointerPointer" parameter="item:struct" >
+    insert into types(sid,source,t_varchar) values(#{sid},#{source},#{var_varchar});
+</insert>
+
+<insert id="InsertArrayParameterVarcharString" parameter="sid,source,var_varchar" >
+    insert into array_types(sid,source,t_varchar) values(#{sid},#{source},#{var_varchar});
+</insert>
+
+<insert id="InsertArrayParameterVarcharStringOriginalPointer" parameter="sid,source,var_varchar" >
+    insert into array_types(sid,source,t_varchar) values(#{sid},#{source},#{var_varchar});
+</insert>
+
+<insert id="InsertArrayParameterVarcharStringPointerOriginal" parameter="sid,source,var_varchar" >
+    insert into array_types(sid,source,t_varchar) values(#{sid},#{source},#{var_varchar});
+</insert>
+
+<insert id="InsertArrayParameterVarcharStringPointerPointer" parameter="sid,source,var_varchar" >
+    insert into array_types(sid,source,t_varchar) values(#{sid},#{source},#{var_varchar});
+</insert>
+
+<insert id="InsertArrayEntityVarcharString" parameter="sid,source,var_varchar" >
+    insert into array_types(sid,source,t_varchar) values(#{sid},#{source},#{var_varchar});
+</insert>
+
+<insert id="InsertArrayEntityVarcharStringOriginalPointer" parameter="sid,source,var_varchar" >
+    insert into array_types(sid,source,t_varchar) values(#{sid},#{source},#{var_varchar});
+</insert>
+
+<insert id="InsertArrayEntityVarcharStringPointerOriginal" parameter="sid,source,var_varchar" >
+    insert into array_types(sid,source,t_varchar) values(#{sid},#{source},#{var_varchar});
+</insert>
+
+<insert id="InsertArrayEntityVarcharStringPointerPointer" parameter="sid,source,var_varchar" >
+    insert into array_types(sid,source,t_varchar) values(#{sid},#{source},#{var_varchar});
+</insert>
+
+<insert id="InsertParameterIntInt8" parameter="sid,source,var_int" >
+    insert into types(sid,source,t_int) values(#{sid},#{source},#{var_int});
+</insert>
+
+<insert id="InsertParameterIntInt8OriginalPointer" parameter="sid,source,var_int" >
+    insert into types(sid,source,t_int) values(#{sid},#{source},#{var_int});
+</insert>
+
+<insert id="InsertParameterIntInt8PointerOriginal" parameter="sid,source,var_int" >
+    insert into types(sid,source,t_int) values(#{sid},#{source},#{var_int});
+</insert>
+
+<insert id="InsertParameterIntInt8PointerPointer" parameter="sid,source,var_int" >
+    insert into types(sid,source,t_int) values(#{sid},#{source},#{var_int});
+</insert>
+
+<insert id="InsertEntityIntInt8" parameter="item:struct" >
+    insert into types(sid,source,t_int) values(#{sid},#{source},#{var_int});
+</insert>
+
+<insert id="InsertEntityIntInt8OriginalPointer" parameter="item:struct" >
+    insert into types(sid,source,t_int) values(#{sid},#{source},#{var_int});
+</insert>
+
+<insert id="InsertEntityIntInt8PointerOriginal" parameter="item:struct" >
+    insert into types(sid,source,t_int) values(#{sid},#{source},#{var_int});
+</insert>
+
+<insert id="InsertEntityIntInt8PointerPointer" parameter="item:struct" >
+    insert into types(sid,source,t_int) values(#{sid},#{source},#{var_int});
+</insert>
+
+<insert id="InsertArrayParameterIntInt8" parameter="sid,source,var_int" >
+    insert into array_types(sid,source,t_int) values(#{sid},#{source},#{var_int});
+</insert>
+
+<insert id="InsertArrayParameterIntInt8OriginalPointer" parameter="sid,source,var_int" >
+    insert into array_types(sid,source,t_int) values(#{sid},#{source},#{var_int});
+</insert>
+
+<insert id="InsertArrayParameterIntInt8PointerOriginal" parameter="sid,source,var_int" >
+    insert into array_types(sid,source,t_int) values(#{sid},#{source},#{var_int});
+</insert>
+
+<insert id="InsertArrayParameterIntInt8PointerPointer" parameter="sid,source,var_int" >
+    insert into array_types(sid,source,t_int) values(#{sid},#{source},#{var_int});
+</insert>
+
+<insert id="InsertArrayEntityIntInt8" parameter="sid,source,var_int" >
+    insert into array_types(sid,source,t_int) values(#{sid},#{source},#{var_int});
+</insert>
+
+<insert id="InsertArrayEntityIntInt8OriginalPointer" parameter="sid,source,var_int" >
+    insert into array_types(sid,source,t_int) values(#{sid},#{source},#{var_int});
+</insert>
+
+<insert id="InsertArrayEntityIntInt8PointerOriginal" parameter="sid,source,var_int" >
+    insert into array_types(sid,source,t_int) values(#{sid},#{source},#{var_int});
+</insert>
+
+<insert id="InsertArrayEntityIntInt8PointerPointer" parameter="sid,source,var_int" >
+    insert into array_types(sid,source,t_int) values(#{sid},#{source},#{var_int});
+</insert>
+
+<insert id="InsertParameterInt4Int8" parameter="sid,source,var_int4" >
+    insert into types(sid,source,t_int4) values(#{sid},#{source},#{var_int4});
+</insert>
+
+<insert id="InsertParameterInt4Int8OriginalPointer" parameter="sid,source,var_int4" >
+    insert into types(sid,source,t_int4) values(#{sid},#{source},#{var_int4});
+</insert>
+
+<insert id="InsertParameterInt4Int8PointerOriginal" parameter="sid,source,var_int4" >
+    insert into types(sid,source,t_int4) values(#{sid},#{source},#{var_int4});
+</insert>
+
+<insert id="InsertParameterInt4Int8PointerPointer" parameter="sid,source,var_int4" >
+    insert into types(sid,source,t_int4) values(#{sid},#{source},#{var_int4});
+</insert>
+
+<insert id="InsertEntityInt4Int8" parameter="item:struct" >
+    insert into types(sid,source,t_int4) values(#{sid},#{source},#{var_int4});
+</insert>
+
+<insert id="InsertEntityInt4Int8OriginalPointer" parameter="item:struct" >
+    insert into types(sid,source,t_int4) values(#{sid},#{source},#{var_int4});
+</insert>
+
+<insert id="InsertEntityInt4Int8PointerOriginal" parameter="item:struct" >
+    insert into types(sid,source,t_int4) values(#{sid},#{source},#{var_int4});
+</insert>
+
+<insert id="InsertEntityInt4Int8PointerPointer" parameter="item:struct" >
+    insert into types(sid,source,t_int4) values(#{sid},#{source},#{var_int4});
+</insert>
+
+<insert id="InsertArrayParameterInt4Int8" parameter="sid,source,var_int4" >
+    insert into array_types(sid,source,t_int4) values(#{sid},#{source},#{var_int4});
+</insert>
+
+<insert id="InsertArrayParameterInt4Int8OriginalPointer" parameter="sid,source,var_int4" >
+    insert into array_types(sid,source,t_int4) values(#{sid},#{source},#{var_int4});
+</insert>
+
+<insert id="InsertArrayParameterInt4Int8PointerOriginal" parameter="sid,source,var_int4" >
+    insert into array_types(sid,source,t_int4) values(#{sid},#{source},#{var_int4});
+</insert>
+
+<insert id="InsertArrayParameterInt4Int8PointerPointer" parameter="sid,source,var_int4" >
+    insert into array_types(sid,source,t_int4) values(#{sid},#{source},#{var_int4});
+</insert>
+
+<insert id="InsertArrayEntityInt4Int8" parameter="sid,source,var_int4" >
+    insert into array_types(sid,source,t_int4) values(#{sid},#{source},#{var_int4});
+</insert>
+
+<insert id="InsertArrayEntityInt4Int8OriginalPointer" parameter="sid,source,var_int4" >
+    insert into array_types(sid,source,t_int4) values(#{sid},#{source},#{var_int4});
+</insert>
+
+<insert id="InsertArrayEntityInt4Int8PointerOriginal" parameter="sid,source,var_int4" >
+    insert into array_types(sid,source,t_int4) values(#{sid},#{source},#{var_int4});
+</insert>
+
+<insert id="InsertArrayEntityInt4Int8PointerPointer" parameter="sid,source,var_int4" >
+    insert into array_types(sid,source,t_int4) values(#{sid},#{source},#{var_int4});
 </insert>
 
 </mapper>

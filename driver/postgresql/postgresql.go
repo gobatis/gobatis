@@ -46,12 +46,16 @@ func (s *Scanner) Scan(rows *sql.Rows, ct *sql.ColumnType, value reflect.Value) 
 	var assigner pgtype.Value
 	
 	switch ct.DatabaseTypeName() {
+	case "INT4":
+		assigner = new(pgtype.Int4)
 	case "INT8":
 		assigner = new(pgtype.Int8)
 	case "VARCHAR":
 		assigner = new(pgtype.Varchar)
 	case "BPCHAR":
 		assigner = new(pgtype.BPChar)
+	case "BOOL":
+		assigner = new(pgtype.Bool)
 	case "_INT8":
 		assigner = new(pgtype.Int8Array)
 	case "_VARCHAR":

@@ -3,52 +3,580 @@
 <!DOCTYPE mapper PUBLIC "-//gobatis.co//DTD Mapper 1.0//EN" "gobatis.co/dtd/mapper.dtd">
 <mapper>
 
-<delete id="DeleteParameterBigintInt64" parameter="id" >
-    delete from types where id = #{id};
+<delete id="DeleteParameterBigintInt64" parameter="sid" >
+    delete from types where sid = #{sid};
 </delete>
 
-<delete id="DeleteParameterBigintInt64PointerOriginal" parameter="id" >
-    delete from types where id = #{id};
+<delete id="DeleteParameterBigintInt64OriginalPointer" parameter="sid" >
+    delete from types where sid = #{sid};
 </delete>
 
-<delete id="DeleteEntityBigintInt64" parameter="id" >
-    delete from types where id = #{id};
+<delete id="DeleteParameterBigintInt64PointerOriginal" parameter="sid" >
+    delete from types where sid = #{sid};
 </delete>
 
-<delete id="DeleteEntityBigintInt64PointerOriginal" parameter="id" >
-    delete from types where id = #{id};
+<delete id="DeleteParameterBigintInt64PointerPointer" parameter="sid" >
+    delete from types where sid = #{sid};
 </delete>
 
-<delete id="DeleteParameterCharacterString" parameter="id" >
-    delete from types where id = #{id};
+<delete id="DeleteEntityBigintInt64" parameter="item:struct" >
+    delete from types where sid = #{sid};
 </delete>
 
-<delete id="DeleteParameterCharacterStringPointerOriginal" parameter="id" >
-    delete from types where id = #{id};
+<delete id="DeleteEntityBigintInt64OriginalPointer" parameter="item:struct" >
+    delete from types where sid = #{sid};
 </delete>
 
-<delete id="DeleteEntityCharacterString" parameter="id" >
-    delete from types where id = #{id};
+<delete id="DeleteEntityBigintInt64PointerOriginal" parameter="item:struct" >
+    delete from types where sid = #{sid};
 </delete>
 
-<delete id="DeleteEntityCharacterStringPointerOriginal" parameter="id" >
-    delete from types where id = #{id};
+<delete id="DeleteEntityBigintInt64PointerPointer" parameter="item:struct" >
+    delete from types where sid = #{sid};
 </delete>
 
-<delete id="DeleteParameterCharacterVaryingString" parameter="id" >
-    delete from types where id = #{id};
+<delete id="DeleteArrayParameterBigintInt64" parameter="sid" >
+    delete from array_types where sid = #{sid};
 </delete>
 
-<delete id="DeleteParameterCharacterVaryingStringPointerOriginal" parameter="id" >
-    delete from types where id = #{id};
+<delete id="DeleteArrayParameterBigintInt64OriginalPointer" parameter="sid" >
+    delete from array_types where sid = #{sid};
 </delete>
 
-<delete id="DeleteEntityCharacterVaryingString" parameter="id" >
-    delete from types where id = #{id};
+<delete id="DeleteArrayParameterBigintInt64PointerOriginal" parameter="sid" >
+    delete from array_types where sid = #{sid};
 </delete>
 
-<delete id="DeleteEntityCharacterVaryingStringPointerOriginal" parameter="id" >
-    delete from types where id = #{id};
+<delete id="DeleteArrayParameterBigintInt64PointerPointer" parameter="sid" >
+    delete from array_types where sid = #{sid};
+</delete>
+
+<delete id="DeleteArrayEntityBigintInt64" parameter="item:struct" >
+    delete from array_types where sid = #{sid};
+</delete>
+
+<delete id="DeleteArrayEntityBigintInt64OriginalPointer" parameter="item:struct" >
+    delete from array_types where sid = #{sid};
+</delete>
+
+<delete id="DeleteArrayEntityBigintInt64PointerOriginal" parameter="item:struct" >
+    delete from array_types where sid = #{sid};
+</delete>
+
+<delete id="DeleteArrayEntityBigintInt64PointerPointer" parameter="item:struct" >
+    delete from array_types where sid = #{sid};
+</delete>
+
+<delete id="DeleteParameterInt8Int8" parameter="sid" >
+    delete from types where sid = #{sid};
+</delete>
+
+<delete id="DeleteParameterInt8Int8OriginalPointer" parameter="sid" >
+    delete from types where sid = #{sid};
+</delete>
+
+<delete id="DeleteParameterInt8Int8PointerOriginal" parameter="sid" >
+    delete from types where sid = #{sid};
+</delete>
+
+<delete id="DeleteParameterInt8Int8PointerPointer" parameter="sid" >
+    delete from types where sid = #{sid};
+</delete>
+
+<delete id="DeleteEntityInt8Int8" parameter="item:struct" >
+    delete from types where sid = #{sid};
+</delete>
+
+<delete id="DeleteEntityInt8Int8OriginalPointer" parameter="item:struct" >
+    delete from types where sid = #{sid};
+</delete>
+
+<delete id="DeleteEntityInt8Int8PointerOriginal" parameter="item:struct" >
+    delete from types where sid = #{sid};
+</delete>
+
+<delete id="DeleteEntityInt8Int8PointerPointer" parameter="item:struct" >
+    delete from types where sid = #{sid};
+</delete>
+
+<delete id="DeleteArrayParameterInt8Int8" parameter="sid" >
+    delete from array_types where sid = #{sid};
+</delete>
+
+<delete id="DeleteArrayParameterInt8Int8OriginalPointer" parameter="sid" >
+    delete from array_types where sid = #{sid};
+</delete>
+
+<delete id="DeleteArrayParameterInt8Int8PointerOriginal" parameter="sid" >
+    delete from array_types where sid = #{sid};
+</delete>
+
+<delete id="DeleteArrayParameterInt8Int8PointerPointer" parameter="sid" >
+    delete from array_types where sid = #{sid};
+</delete>
+
+<delete id="DeleteArrayEntityInt8Int8" parameter="item:struct" >
+    delete from array_types where sid = #{sid};
+</delete>
+
+<delete id="DeleteArrayEntityInt8Int8OriginalPointer" parameter="item:struct" >
+    delete from array_types where sid = #{sid};
+</delete>
+
+<delete id="DeleteArrayEntityInt8Int8PointerOriginal" parameter="item:struct" >
+    delete from array_types where sid = #{sid};
+</delete>
+
+<delete id="DeleteArrayEntityInt8Int8PointerPointer" parameter="item:struct" >
+    delete from array_types where sid = #{sid};
+</delete>
+
+<delete id="DeleteParameterBoolBool" parameter="sid" >
+    delete from types where sid = #{sid};
+</delete>
+
+<delete id="DeleteParameterBoolBoolOriginalPointer" parameter="sid" >
+    delete from types where sid = #{sid};
+</delete>
+
+<delete id="DeleteParameterBoolBoolPointerOriginal" parameter="sid" >
+    delete from types where sid = #{sid};
+</delete>
+
+<delete id="DeleteParameterBoolBoolPointerPointer" parameter="sid" >
+    delete from types where sid = #{sid};
+</delete>
+
+<delete id="DeleteEntityBoolBool" parameter="item:struct" >
+    delete from types where sid = #{sid};
+</delete>
+
+<delete id="DeleteEntityBoolBoolOriginalPointer" parameter="item:struct" >
+    delete from types where sid = #{sid};
+</delete>
+
+<delete id="DeleteEntityBoolBoolPointerOriginal" parameter="item:struct" >
+    delete from types where sid = #{sid};
+</delete>
+
+<delete id="DeleteEntityBoolBoolPointerPointer" parameter="item:struct" >
+    delete from types where sid = #{sid};
+</delete>
+
+<delete id="DeleteArrayParameterBoolBool" parameter="sid" >
+    delete from array_types where sid = #{sid};
+</delete>
+
+<delete id="DeleteArrayParameterBoolBoolOriginalPointer" parameter="sid" >
+    delete from array_types where sid = #{sid};
+</delete>
+
+<delete id="DeleteArrayParameterBoolBoolPointerOriginal" parameter="sid" >
+    delete from array_types where sid = #{sid};
+</delete>
+
+<delete id="DeleteArrayParameterBoolBoolPointerPointer" parameter="sid" >
+    delete from array_types where sid = #{sid};
+</delete>
+
+<delete id="DeleteArrayEntityBoolBool" parameter="item:struct" >
+    delete from array_types where sid = #{sid};
+</delete>
+
+<delete id="DeleteArrayEntityBoolBoolOriginalPointer" parameter="item:struct" >
+    delete from array_types where sid = #{sid};
+</delete>
+
+<delete id="DeleteArrayEntityBoolBoolPointerOriginal" parameter="item:struct" >
+    delete from array_types where sid = #{sid};
+</delete>
+
+<delete id="DeleteArrayEntityBoolBoolPointerPointer" parameter="item:struct" >
+    delete from array_types where sid = #{sid};
+</delete>
+
+<delete id="DeleteParameterCharacterString" parameter="sid" >
+    delete from types where sid = #{sid};
+</delete>
+
+<delete id="DeleteParameterCharacterStringOriginalPointer" parameter="sid" >
+    delete from types where sid = #{sid};
+</delete>
+
+<delete id="DeleteParameterCharacterStringPointerOriginal" parameter="sid" >
+    delete from types where sid = #{sid};
+</delete>
+
+<delete id="DeleteParameterCharacterStringPointerPointer" parameter="sid" >
+    delete from types where sid = #{sid};
+</delete>
+
+<delete id="DeleteEntityCharacterString" parameter="item:struct" >
+    delete from types where sid = #{sid};
+</delete>
+
+<delete id="DeleteEntityCharacterStringOriginalPointer" parameter="item:struct" >
+    delete from types where sid = #{sid};
+</delete>
+
+<delete id="DeleteEntityCharacterStringPointerOriginal" parameter="item:struct" >
+    delete from types where sid = #{sid};
+</delete>
+
+<delete id="DeleteEntityCharacterStringPointerPointer" parameter="item:struct" >
+    delete from types where sid = #{sid};
+</delete>
+
+<delete id="DeleteArrayParameterCharacterString" parameter="sid" >
+    delete from array_types where sid = #{sid};
+</delete>
+
+<delete id="DeleteArrayParameterCharacterStringOriginalPointer" parameter="sid" >
+    delete from array_types where sid = #{sid};
+</delete>
+
+<delete id="DeleteArrayParameterCharacterStringPointerOriginal" parameter="sid" >
+    delete from array_types where sid = #{sid};
+</delete>
+
+<delete id="DeleteArrayParameterCharacterStringPointerPointer" parameter="sid" >
+    delete from array_types where sid = #{sid};
+</delete>
+
+<delete id="DeleteArrayEntityCharacterString" parameter="item:struct" >
+    delete from array_types where sid = #{sid};
+</delete>
+
+<delete id="DeleteArrayEntityCharacterStringOriginalPointer" parameter="item:struct" >
+    delete from array_types where sid = #{sid};
+</delete>
+
+<delete id="DeleteArrayEntityCharacterStringPointerOriginal" parameter="item:struct" >
+    delete from array_types where sid = #{sid};
+</delete>
+
+<delete id="DeleteArrayEntityCharacterStringPointerPointer" parameter="item:struct" >
+    delete from array_types where sid = #{sid};
+</delete>
+
+<delete id="DeleteParameterCharString" parameter="sid" >
+    delete from types where sid = #{sid};
+</delete>
+
+<delete id="DeleteParameterCharStringOriginalPointer" parameter="sid" >
+    delete from types where sid = #{sid};
+</delete>
+
+<delete id="DeleteParameterCharStringPointerOriginal" parameter="sid" >
+    delete from types where sid = #{sid};
+</delete>
+
+<delete id="DeleteParameterCharStringPointerPointer" parameter="sid" >
+    delete from types where sid = #{sid};
+</delete>
+
+<delete id="DeleteEntityCharString" parameter="item:struct" >
+    delete from types where sid = #{sid};
+</delete>
+
+<delete id="DeleteEntityCharStringOriginalPointer" parameter="item:struct" >
+    delete from types where sid = #{sid};
+</delete>
+
+<delete id="DeleteEntityCharStringPointerOriginal" parameter="item:struct" >
+    delete from types where sid = #{sid};
+</delete>
+
+<delete id="DeleteEntityCharStringPointerPointer" parameter="item:struct" >
+    delete from types where sid = #{sid};
+</delete>
+
+<delete id="DeleteArrayParameterCharString" parameter="sid" >
+    delete from array_types where sid = #{sid};
+</delete>
+
+<delete id="DeleteArrayParameterCharStringOriginalPointer" parameter="sid" >
+    delete from array_types where sid = #{sid};
+</delete>
+
+<delete id="DeleteArrayParameterCharStringPointerOriginal" parameter="sid" >
+    delete from array_types where sid = #{sid};
+</delete>
+
+<delete id="DeleteArrayParameterCharStringPointerPointer" parameter="sid" >
+    delete from array_types where sid = #{sid};
+</delete>
+
+<delete id="DeleteArrayEntityCharString" parameter="item:struct" >
+    delete from array_types where sid = #{sid};
+</delete>
+
+<delete id="DeleteArrayEntityCharStringOriginalPointer" parameter="item:struct" >
+    delete from array_types where sid = #{sid};
+</delete>
+
+<delete id="DeleteArrayEntityCharStringPointerOriginal" parameter="item:struct" >
+    delete from array_types where sid = #{sid};
+</delete>
+
+<delete id="DeleteArrayEntityCharStringPointerPointer" parameter="item:struct" >
+    delete from array_types where sid = #{sid};
+</delete>
+
+<delete id="DeleteParameterCharacterVaryingString" parameter="sid" >
+    delete from types where sid = #{sid};
+</delete>
+
+<delete id="DeleteParameterCharacterVaryingStringOriginalPointer" parameter="sid" >
+    delete from types where sid = #{sid};
+</delete>
+
+<delete id="DeleteParameterCharacterVaryingStringPointerOriginal" parameter="sid" >
+    delete from types where sid = #{sid};
+</delete>
+
+<delete id="DeleteParameterCharacterVaryingStringPointerPointer" parameter="sid" >
+    delete from types where sid = #{sid};
+</delete>
+
+<delete id="DeleteEntityCharacterVaryingString" parameter="item:struct" >
+    delete from types where sid = #{sid};
+</delete>
+
+<delete id="DeleteEntityCharacterVaryingStringOriginalPointer" parameter="item:struct" >
+    delete from types where sid = #{sid};
+</delete>
+
+<delete id="DeleteEntityCharacterVaryingStringPointerOriginal" parameter="item:struct" >
+    delete from types where sid = #{sid};
+</delete>
+
+<delete id="DeleteEntityCharacterVaryingStringPointerPointer" parameter="item:struct" >
+    delete from types where sid = #{sid};
+</delete>
+
+<delete id="DeleteArrayParameterCharacterVaryingString" parameter="sid" >
+    delete from array_types where sid = #{sid};
+</delete>
+
+<delete id="DeleteArrayParameterCharacterVaryingStringOriginalPointer" parameter="sid" >
+    delete from array_types where sid = #{sid};
+</delete>
+
+<delete id="DeleteArrayParameterCharacterVaryingStringPointerOriginal" parameter="sid" >
+    delete from array_types where sid = #{sid};
+</delete>
+
+<delete id="DeleteArrayParameterCharacterVaryingStringPointerPointer" parameter="sid" >
+    delete from array_types where sid = #{sid};
+</delete>
+
+<delete id="DeleteArrayEntityCharacterVaryingString" parameter="item:struct" >
+    delete from array_types where sid = #{sid};
+</delete>
+
+<delete id="DeleteArrayEntityCharacterVaryingStringOriginalPointer" parameter="item:struct" >
+    delete from array_types where sid = #{sid};
+</delete>
+
+<delete id="DeleteArrayEntityCharacterVaryingStringPointerOriginal" parameter="item:struct" >
+    delete from array_types where sid = #{sid};
+</delete>
+
+<delete id="DeleteArrayEntityCharacterVaryingStringPointerPointer" parameter="item:struct" >
+    delete from array_types where sid = #{sid};
+</delete>
+
+<delete id="DeleteParameterVarcharString" parameter="sid" >
+    delete from types where sid = #{sid};
+</delete>
+
+<delete id="DeleteParameterVarcharStringOriginalPointer" parameter="sid" >
+    delete from types where sid = #{sid};
+</delete>
+
+<delete id="DeleteParameterVarcharStringPointerOriginal" parameter="sid" >
+    delete from types where sid = #{sid};
+</delete>
+
+<delete id="DeleteParameterVarcharStringPointerPointer" parameter="sid" >
+    delete from types where sid = #{sid};
+</delete>
+
+<delete id="DeleteEntityVarcharString" parameter="item:struct" >
+    delete from types where sid = #{sid};
+</delete>
+
+<delete id="DeleteEntityVarcharStringOriginalPointer" parameter="item:struct" >
+    delete from types where sid = #{sid};
+</delete>
+
+<delete id="DeleteEntityVarcharStringPointerOriginal" parameter="item:struct" >
+    delete from types where sid = #{sid};
+</delete>
+
+<delete id="DeleteEntityVarcharStringPointerPointer" parameter="item:struct" >
+    delete from types where sid = #{sid};
+</delete>
+
+<delete id="DeleteArrayParameterVarcharString" parameter="sid" >
+    delete from array_types where sid = #{sid};
+</delete>
+
+<delete id="DeleteArrayParameterVarcharStringOriginalPointer" parameter="sid" >
+    delete from array_types where sid = #{sid};
+</delete>
+
+<delete id="DeleteArrayParameterVarcharStringPointerOriginal" parameter="sid" >
+    delete from array_types where sid = #{sid};
+</delete>
+
+<delete id="DeleteArrayParameterVarcharStringPointerPointer" parameter="sid" >
+    delete from array_types where sid = #{sid};
+</delete>
+
+<delete id="DeleteArrayEntityVarcharString" parameter="item:struct" >
+    delete from array_types where sid = #{sid};
+</delete>
+
+<delete id="DeleteArrayEntityVarcharStringOriginalPointer" parameter="item:struct" >
+    delete from array_types where sid = #{sid};
+</delete>
+
+<delete id="DeleteArrayEntityVarcharStringPointerOriginal" parameter="item:struct" >
+    delete from array_types where sid = #{sid};
+</delete>
+
+<delete id="DeleteArrayEntityVarcharStringPointerPointer" parameter="item:struct" >
+    delete from array_types where sid = #{sid};
+</delete>
+
+<delete id="DeleteParameterIntInt8" parameter="sid" >
+    delete from types where sid = #{sid};
+</delete>
+
+<delete id="DeleteParameterIntInt8OriginalPointer" parameter="sid" >
+    delete from types where sid = #{sid};
+</delete>
+
+<delete id="DeleteParameterIntInt8PointerOriginal" parameter="sid" >
+    delete from types where sid = #{sid};
+</delete>
+
+<delete id="DeleteParameterIntInt8PointerPointer" parameter="sid" >
+    delete from types where sid = #{sid};
+</delete>
+
+<delete id="DeleteEntityIntInt8" parameter="item:struct" >
+    delete from types where sid = #{sid};
+</delete>
+
+<delete id="DeleteEntityIntInt8OriginalPointer" parameter="item:struct" >
+    delete from types where sid = #{sid};
+</delete>
+
+<delete id="DeleteEntityIntInt8PointerOriginal" parameter="item:struct" >
+    delete from types where sid = #{sid};
+</delete>
+
+<delete id="DeleteEntityIntInt8PointerPointer" parameter="item:struct" >
+    delete from types where sid = #{sid};
+</delete>
+
+<delete id="DeleteArrayParameterIntInt8" parameter="sid" >
+    delete from array_types where sid = #{sid};
+</delete>
+
+<delete id="DeleteArrayParameterIntInt8OriginalPointer" parameter="sid" >
+    delete from array_types where sid = #{sid};
+</delete>
+
+<delete id="DeleteArrayParameterIntInt8PointerOriginal" parameter="sid" >
+    delete from array_types where sid = #{sid};
+</delete>
+
+<delete id="DeleteArrayParameterIntInt8PointerPointer" parameter="sid" >
+    delete from array_types where sid = #{sid};
+</delete>
+
+<delete id="DeleteArrayEntityIntInt8" parameter="item:struct" >
+    delete from array_types where sid = #{sid};
+</delete>
+
+<delete id="DeleteArrayEntityIntInt8OriginalPointer" parameter="item:struct" >
+    delete from array_types where sid = #{sid};
+</delete>
+
+<delete id="DeleteArrayEntityIntInt8PointerOriginal" parameter="item:struct" >
+    delete from array_types where sid = #{sid};
+</delete>
+
+<delete id="DeleteArrayEntityIntInt8PointerPointer" parameter="item:struct" >
+    delete from array_types where sid = #{sid};
+</delete>
+
+<delete id="DeleteParameterInt4Int8" parameter="sid" >
+    delete from types where sid = #{sid};
+</delete>
+
+<delete id="DeleteParameterInt4Int8OriginalPointer" parameter="sid" >
+    delete from types where sid = #{sid};
+</delete>
+
+<delete id="DeleteParameterInt4Int8PointerOriginal" parameter="sid" >
+    delete from types where sid = #{sid};
+</delete>
+
+<delete id="DeleteParameterInt4Int8PointerPointer" parameter="sid" >
+    delete from types where sid = #{sid};
+</delete>
+
+<delete id="DeleteEntityInt4Int8" parameter="item:struct" >
+    delete from types where sid = #{sid};
+</delete>
+
+<delete id="DeleteEntityInt4Int8OriginalPointer" parameter="item:struct" >
+    delete from types where sid = #{sid};
+</delete>
+
+<delete id="DeleteEntityInt4Int8PointerOriginal" parameter="item:struct" >
+    delete from types where sid = #{sid};
+</delete>
+
+<delete id="DeleteEntityInt4Int8PointerPointer" parameter="item:struct" >
+    delete from types where sid = #{sid};
+</delete>
+
+<delete id="DeleteArrayParameterInt4Int8" parameter="sid" >
+    delete from array_types where sid = #{sid};
+</delete>
+
+<delete id="DeleteArrayParameterInt4Int8OriginalPointer" parameter="sid" >
+    delete from array_types where sid = #{sid};
+</delete>
+
+<delete id="DeleteArrayParameterInt4Int8PointerOriginal" parameter="sid" >
+    delete from array_types where sid = #{sid};
+</delete>
+
+<delete id="DeleteArrayParameterInt4Int8PointerPointer" parameter="sid" >
+    delete from array_types where sid = #{sid};
+</delete>
+
+<delete id="DeleteArrayEntityInt4Int8" parameter="item:struct" >
+    delete from array_types where sid = #{sid};
+</delete>
+
+<delete id="DeleteArrayEntityInt4Int8OriginalPointer" parameter="item:struct" >
+    delete from array_types where sid = #{sid};
+</delete>
+
+<delete id="DeleteArrayEntityInt4Int8PointerOriginal" parameter="item:struct" >
+    delete from array_types where sid = #{sid};
+</delete>
+
+<delete id="DeleteArrayEntityInt4Int8PointerPointer" parameter="item:struct" >
+    delete from array_types where sid = #{sid};
 </delete>
 
 </mapper>

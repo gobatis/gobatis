@@ -35,7 +35,7 @@ func (p *caller) call(in []reflect.Value) *caller {
 	}()
 	
 	switch p.fragment.node.Name {
-	case dtd.SELECT, dtd.INSERT, dtd.DELETE, dtd.UPDATE:
+	case dtd.SELECT, dtd.INSERT, dtd.DELETE, dtd.UPDATE, dtd.MIGRATE:
 		err = p.exec(in)
 	case dtd.SAVE:
 		err = p.save(in)
@@ -57,8 +57,10 @@ func (p *caller) exec(in []reflect.Value) error {
 		return nil
 	}
 	defer func() {
-		s.close()
+		// TODO CHECK CLOSED
+		//s.close()
 	}()
+	
 	err = p.run(s)
 	if err != nil {
 		return err

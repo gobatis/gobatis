@@ -146,7 +146,7 @@ func (p *execScanner) scan() error {
 		return fmt.Errorf("scan rows: illegal values length %d", len(p.values))
 	}
 	// TODO handle pointer
-	p.values[0].SetInt(p.affected)
+	p.values[0].Elem().SetInt(p.affected)
 	//switch p.values[0].Elem().Kind() {
 	//case reflect.Int:
 	//	r, e := cast.ToIntE(p.affected)

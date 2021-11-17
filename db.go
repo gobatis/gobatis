@@ -114,9 +114,8 @@ func (p *DB) Migrate(mapper interface{}) error {
 	mt := reflect.ValueOf(mapper)
 	et := reflectValueElem(mt)
 	pv := reflect.ValueOf(p)
-	
 	if mt.Kind() != reflect.Ptr || et.Kind() != reflect.Struct {
-		return fmt.Errorf("migration mapper expect struct pointer, pass: %s", mt.Type())
+		return fmt.Errorf("expect struct pointer, got: %s", mt.Type())
 	}
 	mt = et
 	for i := 0; i < mt.NumField(); i++ {
