@@ -57,8 +57,7 @@ func (p *caller) exec(in []reflect.Value) error {
 		return nil
 	}
 	defer func() {
-		// TODO CHECK CLOSED
-		//s.close()
+		s.close()
 	}()
 	
 	err = p.run(s)

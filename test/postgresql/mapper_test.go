@@ -20,7 +20,8 @@ func TestMapper(t *testing.T) {
 	defer func() {
 		engine.Close()
 	}()
-	err = engine.Master().Migrate(mapper)
+	//err = engine.Master().Migrate(mapper)
+	err = mapper.Migrate()
 	require.NoError(t, err)
 	
 	err = mapper.ResetTable()

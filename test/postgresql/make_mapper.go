@@ -35,6 +35,22 @@ type MakeMapper struct {
 	InsertArrayEntityInt8Int8OriginalPointer                  func(sid string, source string, items []*int8) error
 	InsertArrayEntityInt8Int8PointerOriginal                  func(sid string, source string, items []*int8) error
 	InsertArrayEntityInt8Int8PointerPointer                   func(sid string, source string, items []*int8) error
+	InsertParameterBooleanBool                                func(sid string, source string, var_boolean bool) (int, error)
+	InsertParameterBooleanBoolOriginalPointer                 func(sid string, source string, var_boolean bool) (*int, error)
+	InsertParameterBooleanBoolPointerOriginal                 func(sid *string, source *string, var_boolean *bool) (int, error)
+	InsertParameterBooleanBoolPointerPointer                  func(sid string, source string, var_boolean *bool) (*int, error)
+	InsertEntityBooleanBool                                   func(item BooleanOriginal) error
+	InsertEntityBooleanBoolOriginalPointer                    func(item BooleanOriginal) error
+	InsertEntityBooleanBoolPointerOriginal                    func(item *BooleanPointer) error
+	InsertEntityBooleanBoolPointerPointer                     func(item *BooleanPointer) error
+	InsertArrayParameterBooleanBool                           func(sid string, source string, items []bool) error
+	InsertArrayParameterBooleanBoolOriginalPointer            func(sid string, source string, items []bool) error
+	InsertArrayParameterBooleanBoolPointerOriginal            func(sid string, source string, items []*bool) error
+	InsertArrayParameterBooleanBoolPointerPointer             func(sid string, source string, items []*bool) error
+	InsertArrayEntityBooleanBool                              func(sid string, source string, items []*bool) error
+	InsertArrayEntityBooleanBoolOriginalPointer               func(sid string, source string, items []*bool) error
+	InsertArrayEntityBooleanBoolPointerOriginal               func(sid string, source string, items []*bool) error
+	InsertArrayEntityBooleanBoolPointerPointer                func(sid string, source string, items []*bool) error
 	InsertParameterBoolBool                                   func(sid string, source string, var_bool bool) (int, error)
 	InsertParameterBoolBoolOriginalPointer                    func(sid string, source string, var_bool bool) (*int, error)
 	InsertParameterBoolBoolPointerOriginal                    func(sid *string, source *string, var_bool *bool) (int, error)
@@ -115,6 +131,22 @@ type MakeMapper struct {
 	InsertArrayEntityVarcharStringOriginalPointer             func(sid string, source string, items []*string) error
 	InsertArrayEntityVarcharStringPointerOriginal             func(sid string, source string, items []*string) error
 	InsertArrayEntityVarcharStringPointerPointer              func(sid string, source string, items []*string) error
+	InsertParameterIntegerInt8                                func(sid string, source string, var_integer int8) (int, error)
+	InsertParameterIntegerInt8OriginalPointer                 func(sid string, source string, var_integer int8) (*int, error)
+	InsertParameterIntegerInt8PointerOriginal                 func(sid *string, source *string, var_integer *int8) (int, error)
+	InsertParameterIntegerInt8PointerPointer                  func(sid string, source string, var_integer *int8) (*int, error)
+	InsertEntityIntegerInt8                                   func(item IntegerOriginal) error
+	InsertEntityIntegerInt8OriginalPointer                    func(item IntegerOriginal) error
+	InsertEntityIntegerInt8PointerOriginal                    func(item *IntegerPointer) error
+	InsertEntityIntegerInt8PointerPointer                     func(item *IntegerPointer) error
+	InsertArrayParameterIntegerInt8                           func(sid string, source string, items []int8) error
+	InsertArrayParameterIntegerInt8OriginalPointer            func(sid string, source string, items []int8) error
+	InsertArrayParameterIntegerInt8PointerOriginal            func(sid string, source string, items []*int8) error
+	InsertArrayParameterIntegerInt8PointerPointer             func(sid string, source string, items []*int8) error
+	InsertArrayEntityIntegerInt8                              func(sid string, source string, items []*int8) error
+	InsertArrayEntityIntegerInt8OriginalPointer               func(sid string, source string, items []*int8) error
+	InsertArrayEntityIntegerInt8PointerOriginal               func(sid string, source string, items []*int8) error
+	InsertArrayEntityIntegerInt8PointerPointer                func(sid string, source string, items []*int8) error
 	InsertParameterIntInt8                                    func(sid string, source string, var_int int8) (int, error)
 	InsertParameterIntInt8OriginalPointer                     func(sid string, source string, var_int int8) (*int, error)
 	InsertParameterIntInt8PointerOriginal                     func(sid *string, source *string, var_int *int8) (int, error)
@@ -147,6 +179,38 @@ type MakeMapper struct {
 	InsertArrayEntityInt4Int8OriginalPointer                  func(sid string, source string, items []*int8) error
 	InsertArrayEntityInt4Int8PointerOriginal                  func(sid string, source string, items []*int8) error
 	InsertArrayEntityInt4Int8PointerPointer                   func(sid string, source string, items []*int8) error
+	InsertParameterInt2Int8                                   func(sid string, source string, var_int2 int8) (int, error)
+	InsertParameterInt2Int8OriginalPointer                    func(sid string, source string, var_int2 int8) (*int, error)
+	InsertParameterInt2Int8PointerOriginal                    func(sid *string, source *string, var_int2 *int8) (int, error)
+	InsertParameterInt2Int8PointerPointer                     func(sid string, source string, var_int2 *int8) (*int, error)
+	InsertEntityInt2Int8                                      func(item Int2Original) error
+	InsertEntityInt2Int8OriginalPointer                       func(item Int2Original) error
+	InsertEntityInt2Int8PointerOriginal                       func(item *Int2Pointer) error
+	InsertEntityInt2Int8PointerPointer                        func(item *Int2Pointer) error
+	InsertArrayParameterInt2Int8                              func(sid string, source string, items []int8) error
+	InsertArrayParameterInt2Int8OriginalPointer               func(sid string, source string, items []int8) error
+	InsertArrayParameterInt2Int8PointerOriginal               func(sid string, source string, items []*int8) error
+	InsertArrayParameterInt2Int8PointerPointer                func(sid string, source string, items []*int8) error
+	InsertArrayEntityInt2Int8                                 func(sid string, source string, items []*int8) error
+	InsertArrayEntityInt2Int8OriginalPointer                  func(sid string, source string, items []*int8) error
+	InsertArrayEntityInt2Int8PointerOriginal                  func(sid string, source string, items []*int8) error
+	InsertArrayEntityInt2Int8PointerPointer                   func(sid string, source string, items []*int8) error
+	InsertParameterTextString                                 func(sid string, source string, var_text string) (int, error)
+	InsertParameterTextStringOriginalPointer                  func(sid string, source string, var_text string) (*int, error)
+	InsertParameterTextStringPointerOriginal                  func(sid *string, source *string, var_text *string) (int, error)
+	InsertParameterTextStringPointerPointer                   func(sid string, source string, var_text *string) (*int, error)
+	InsertEntityTextString                                    func(item TextOriginal) error
+	InsertEntityTextStringOriginalPointer                     func(item TextOriginal) error
+	InsertEntityTextStringPointerOriginal                     func(item *TextPointer) error
+	InsertEntityTextStringPointerPointer                      func(item *TextPointer) error
+	InsertArrayParameterTextString                            func(sid string, source string, items []string) error
+	InsertArrayParameterTextStringOriginalPointer             func(sid string, source string, items []string) error
+	InsertArrayParameterTextStringPointerOriginal             func(sid string, source string, items []*string) error
+	InsertArrayParameterTextStringPointerPointer              func(sid string, source string, items []*string) error
+	InsertArrayEntityTextString                               func(sid string, source string, items []*string) error
+	InsertArrayEntityTextStringOriginalPointer                func(sid string, source string, items []*string) error
+	InsertArrayEntityTextStringPointerOriginal                func(sid string, source string, items []*string) error
+	InsertArrayEntityTextStringPointerPointer                 func(sid string, source string, items []*string) error
 	SelectParameterBigintInt64                                func(sid string) (int64, error)
 	SelectParameterBigintInt64OriginalPointer                 func(sid string) (*int64, error)
 	SelectParameterBigintInt64PointerOriginal                 func(sid string) (int64, error)
@@ -179,6 +243,22 @@ type MakeMapper struct {
 	SelectArrayEntityInt8Int8OriginalPointer                  func(id int) ([]*int8, error)
 	SelectArrayEntityInt8Int8PointerOriginal                  func(id int) ([]*int8, error)
 	SelectArrayEntityInt8Int8PointerPointer                   func(id int) ([]*int8, error)
+	SelectParameterBooleanBool                                func(sid string) (bool, error)
+	SelectParameterBooleanBoolOriginalPointer                 func(sid string) (*bool, error)
+	SelectParameterBooleanBoolPointerOriginal                 func(sid string) (bool, error)
+	SelectParameterBooleanBoolPointerPointer                  func(sid string) (*bool, error)
+	SelectEntityBooleanBool                                   func(sid string) (*bool, error)
+	SelectEntityBooleanBoolOriginalPointer                    func(sid string) (*bool, error)
+	SelectEntityBooleanBoolPointerOriginal                    func(sid string) (*bool, error)
+	SelectEntityBooleanBoolPointerPointer                     func(sid string) (*bool, error)
+	SelectArrayParameterBooleanBool                           func(id int) ([]bool, error)
+	SelectArrayParameterBooleanBoolOriginalPointer            func(id int) ([]bool, error)
+	SelectArrayParameterBooleanBoolPointerOriginal            func(id int) ([]*bool, error)
+	SelectArrayParameterBooleanBoolPointerPointer             func(id int) ([]*bool, error)
+	SelectArrayEntityBooleanBool                              func(id int) ([]*bool, error)
+	SelectArrayEntityBooleanBoolOriginalPointer               func(id int) ([]*bool, error)
+	SelectArrayEntityBooleanBoolPointerOriginal               func(id int) ([]*bool, error)
+	SelectArrayEntityBooleanBoolPointerPointer                func(id int) ([]*bool, error)
 	SelectParameterBoolBool                                   func(sid string) (bool, error)
 	SelectParameterBoolBoolOriginalPointer                    func(sid string) (*bool, error)
 	SelectParameterBoolBoolPointerOriginal                    func(sid string) (bool, error)
@@ -259,6 +339,22 @@ type MakeMapper struct {
 	SelectArrayEntityVarcharStringOriginalPointer             func(id int) ([]*string, error)
 	SelectArrayEntityVarcharStringPointerOriginal             func(id int) ([]*string, error)
 	SelectArrayEntityVarcharStringPointerPointer              func(id int) ([]*string, error)
+	SelectParameterIntegerInt8                                func(sid string) (int8, error)
+	SelectParameterIntegerInt8OriginalPointer                 func(sid string) (*int8, error)
+	SelectParameterIntegerInt8PointerOriginal                 func(sid string) (int8, error)
+	SelectParameterIntegerInt8PointerPointer                  func(sid string) (*int8, error)
+	SelectEntityIntegerInt8                                   func(sid string) (*int8, error)
+	SelectEntityIntegerInt8OriginalPointer                    func(sid string) (*int8, error)
+	SelectEntityIntegerInt8PointerOriginal                    func(sid string) (*int8, error)
+	SelectEntityIntegerInt8PointerPointer                     func(sid string) (*int8, error)
+	SelectArrayParameterIntegerInt8                           func(id int) ([]int8, error)
+	SelectArrayParameterIntegerInt8OriginalPointer            func(id int) ([]int8, error)
+	SelectArrayParameterIntegerInt8PointerOriginal            func(id int) ([]*int8, error)
+	SelectArrayParameterIntegerInt8PointerPointer             func(id int) ([]*int8, error)
+	SelectArrayEntityIntegerInt8                              func(id int) ([]*int8, error)
+	SelectArrayEntityIntegerInt8OriginalPointer               func(id int) ([]*int8, error)
+	SelectArrayEntityIntegerInt8PointerOriginal               func(id int) ([]*int8, error)
+	SelectArrayEntityIntegerInt8PointerPointer                func(id int) ([]*int8, error)
 	SelectParameterIntInt8                                    func(sid string) (int8, error)
 	SelectParameterIntInt8OriginalPointer                     func(sid string) (*int8, error)
 	SelectParameterIntInt8PointerOriginal                     func(sid string) (int8, error)
@@ -291,6 +387,38 @@ type MakeMapper struct {
 	SelectArrayEntityInt4Int8OriginalPointer                  func(id int) ([]*int8, error)
 	SelectArrayEntityInt4Int8PointerOriginal                  func(id int) ([]*int8, error)
 	SelectArrayEntityInt4Int8PointerPointer                   func(id int) ([]*int8, error)
+	SelectParameterInt2Int8                                   func(sid string) (int8, error)
+	SelectParameterInt2Int8OriginalPointer                    func(sid string) (*int8, error)
+	SelectParameterInt2Int8PointerOriginal                    func(sid string) (int8, error)
+	SelectParameterInt2Int8PointerPointer                     func(sid string) (*int8, error)
+	SelectEntityInt2Int8                                      func(sid string) (*int8, error)
+	SelectEntityInt2Int8OriginalPointer                       func(sid string) (*int8, error)
+	SelectEntityInt2Int8PointerOriginal                       func(sid string) (*int8, error)
+	SelectEntityInt2Int8PointerPointer                        func(sid string) (*int8, error)
+	SelectArrayParameterInt2Int8                              func(id int) ([]int8, error)
+	SelectArrayParameterInt2Int8OriginalPointer               func(id int) ([]int8, error)
+	SelectArrayParameterInt2Int8PointerOriginal               func(id int) ([]*int8, error)
+	SelectArrayParameterInt2Int8PointerPointer                func(id int) ([]*int8, error)
+	SelectArrayEntityInt2Int8                                 func(id int) ([]*int8, error)
+	SelectArrayEntityInt2Int8OriginalPointer                  func(id int) ([]*int8, error)
+	SelectArrayEntityInt2Int8PointerOriginal                  func(id int) ([]*int8, error)
+	SelectArrayEntityInt2Int8PointerPointer                   func(id int) ([]*int8, error)
+	SelectParameterTextString                                 func(sid string) (string, error)
+	SelectParameterTextStringOriginalPointer                  func(sid string) (*string, error)
+	SelectParameterTextStringPointerOriginal                  func(sid string) (string, error)
+	SelectParameterTextStringPointerPointer                   func(sid string) (*string, error)
+	SelectEntityTextString                                    func(sid string) (*string, error)
+	SelectEntityTextStringOriginalPointer                     func(sid string) (*string, error)
+	SelectEntityTextStringPointerOriginal                     func(sid string) (*string, error)
+	SelectEntityTextStringPointerPointer                      func(sid string) (*string, error)
+	SelectArrayParameterTextString                            func(id int) ([]string, error)
+	SelectArrayParameterTextStringOriginalPointer             func(id int) ([]string, error)
+	SelectArrayParameterTextStringPointerOriginal             func(id int) ([]*string, error)
+	SelectArrayParameterTextStringPointerPointer              func(id int) ([]*string, error)
+	SelectArrayEntityTextString                               func(id int) ([]*string, error)
+	SelectArrayEntityTextStringOriginalPointer                func(id int) ([]*string, error)
+	SelectArrayEntityTextStringPointerOriginal                func(id int) ([]*string, error)
+	SelectArrayEntityTextStringPointerPointer                 func(id int) ([]*string, error)
 	UpdateParameterBigintInt64                                func(sid string, source string, var_bigint int64) (int, error)
 	UpdateParameterBigintInt64OriginalPointer                 func(sid string, source string, var_bigint int64) (*int, error)
 	UpdateParameterBigintInt64PointerOriginal                 func(sid *string, source *string, var_bigint *int64) (int, error)
@@ -323,6 +451,22 @@ type MakeMapper struct {
 	UpdateArrayEntityInt8Int8OriginalPointer                  func(item Int8Pointer) error
 	UpdateArrayEntityInt8Int8PointerOriginal                  func(item Int8Original) error
 	UpdateArrayEntityInt8Int8PointerPointer                   func(item Int8Pointer) error
+	UpdateParameterBooleanBool                                func(sid string, source string, var_boolean bool) (int, error)
+	UpdateParameterBooleanBoolOriginalPointer                 func(sid string, source string, var_boolean bool) (*int, error)
+	UpdateParameterBooleanBoolPointerOriginal                 func(sid *string, source *string, var_boolean *bool) (int, error)
+	UpdateParameterBooleanBoolPointerPointer                  func(sid string, source string, var_boolean *bool) (*int, error)
+	UpdateEntityBooleanBool                                   func(item BooleanOriginal) error
+	UpdateEntityBooleanBoolOriginalPointer                    func(item BooleanOriginal) error
+	UpdateEntityBooleanBoolPointerOriginal                    func(item *BooleanPointer) error
+	UpdateEntityBooleanBoolPointerPointer                     func(item *BooleanPointer) error
+	UpdateArrayParameterBooleanBool                           func(sid string, source string, items []bool) error
+	UpdateArrayParameterBooleanBoolOriginalPointer            func(sid string, source string, items []bool) error
+	UpdateArrayParameterBooleanBoolPointerOriginal            func(sid string, source string, items []*bool) error
+	UpdateArrayParameterBooleanBoolPointerPointer             func(sid string, source string, items []*bool) error
+	UpdateArrayEntityBooleanBool                              func(item BooleanOriginal) error
+	UpdateArrayEntityBooleanBoolOriginalPointer               func(item BooleanPointer) error
+	UpdateArrayEntityBooleanBoolPointerOriginal               func(item BooleanOriginal) error
+	UpdateArrayEntityBooleanBoolPointerPointer                func(item BooleanPointer) error
 	UpdateParameterBoolBool                                   func(sid string, source string, var_bool bool) (int, error)
 	UpdateParameterBoolBoolOriginalPointer                    func(sid string, source string, var_bool bool) (*int, error)
 	UpdateParameterBoolBoolPointerOriginal                    func(sid *string, source *string, var_bool *bool) (int, error)
@@ -403,6 +547,22 @@ type MakeMapper struct {
 	UpdateArrayEntityVarcharStringOriginalPointer             func(item VarcharPointer) error
 	UpdateArrayEntityVarcharStringPointerOriginal             func(item VarcharOriginal) error
 	UpdateArrayEntityVarcharStringPointerPointer              func(item VarcharPointer) error
+	UpdateParameterIntegerInt8                                func(sid string, source string, var_integer int8) (int, error)
+	UpdateParameterIntegerInt8OriginalPointer                 func(sid string, source string, var_integer int8) (*int, error)
+	UpdateParameterIntegerInt8PointerOriginal                 func(sid *string, source *string, var_integer *int8) (int, error)
+	UpdateParameterIntegerInt8PointerPointer                  func(sid string, source string, var_integer *int8) (*int, error)
+	UpdateEntityIntegerInt8                                   func(item IntegerOriginal) error
+	UpdateEntityIntegerInt8OriginalPointer                    func(item IntegerOriginal) error
+	UpdateEntityIntegerInt8PointerOriginal                    func(item *IntegerPointer) error
+	UpdateEntityIntegerInt8PointerPointer                     func(item *IntegerPointer) error
+	UpdateArrayParameterIntegerInt8                           func(sid string, source string, items []int8) error
+	UpdateArrayParameterIntegerInt8OriginalPointer            func(sid string, source string, items []int8) error
+	UpdateArrayParameterIntegerInt8PointerOriginal            func(sid string, source string, items []*int8) error
+	UpdateArrayParameterIntegerInt8PointerPointer             func(sid string, source string, items []*int8) error
+	UpdateArrayEntityIntegerInt8                              func(item IntegerOriginal) error
+	UpdateArrayEntityIntegerInt8OriginalPointer               func(item IntegerPointer) error
+	UpdateArrayEntityIntegerInt8PointerOriginal               func(item IntegerOriginal) error
+	UpdateArrayEntityIntegerInt8PointerPointer                func(item IntegerPointer) error
 	UpdateParameterIntInt8                                    func(sid string, source string, var_int int8) (int, error)
 	UpdateParameterIntInt8OriginalPointer                     func(sid string, source string, var_int int8) (*int, error)
 	UpdateParameterIntInt8PointerOriginal                     func(sid *string, source *string, var_int *int8) (int, error)
@@ -435,6 +595,38 @@ type MakeMapper struct {
 	UpdateArrayEntityInt4Int8OriginalPointer                  func(item Int4Pointer) error
 	UpdateArrayEntityInt4Int8PointerOriginal                  func(item Int4Original) error
 	UpdateArrayEntityInt4Int8PointerPointer                   func(item Int4Pointer) error
+	UpdateParameterInt2Int8                                   func(sid string, source string, var_int2 int8) (int, error)
+	UpdateParameterInt2Int8OriginalPointer                    func(sid string, source string, var_int2 int8) (*int, error)
+	UpdateParameterInt2Int8PointerOriginal                    func(sid *string, source *string, var_int2 *int8) (int, error)
+	UpdateParameterInt2Int8PointerPointer                     func(sid string, source string, var_int2 *int8) (*int, error)
+	UpdateEntityInt2Int8                                      func(item Int2Original) error
+	UpdateEntityInt2Int8OriginalPointer                       func(item Int2Original) error
+	UpdateEntityInt2Int8PointerOriginal                       func(item *Int2Pointer) error
+	UpdateEntityInt2Int8PointerPointer                        func(item *Int2Pointer) error
+	UpdateArrayParameterInt2Int8                              func(sid string, source string, items []int8) error
+	UpdateArrayParameterInt2Int8OriginalPointer               func(sid string, source string, items []int8) error
+	UpdateArrayParameterInt2Int8PointerOriginal               func(sid string, source string, items []*int8) error
+	UpdateArrayParameterInt2Int8PointerPointer                func(sid string, source string, items []*int8) error
+	UpdateArrayEntityInt2Int8                                 func(item Int2Original) error
+	UpdateArrayEntityInt2Int8OriginalPointer                  func(item Int2Pointer) error
+	UpdateArrayEntityInt2Int8PointerOriginal                  func(item Int2Original) error
+	UpdateArrayEntityInt2Int8PointerPointer                   func(item Int2Pointer) error
+	UpdateParameterTextString                                 func(sid string, source string, var_text string) (int, error)
+	UpdateParameterTextStringOriginalPointer                  func(sid string, source string, var_text string) (*int, error)
+	UpdateParameterTextStringPointerOriginal                  func(sid *string, source *string, var_text *string) (int, error)
+	UpdateParameterTextStringPointerPointer                   func(sid string, source string, var_text *string) (*int, error)
+	UpdateEntityTextString                                    func(item TextOriginal) error
+	UpdateEntityTextStringOriginalPointer                     func(item TextOriginal) error
+	UpdateEntityTextStringPointerOriginal                     func(item *TextPointer) error
+	UpdateEntityTextStringPointerPointer                      func(item *TextPointer) error
+	UpdateArrayParameterTextString                            func(sid string, source string, items []string) error
+	UpdateArrayParameterTextStringOriginalPointer             func(sid string, source string, items []string) error
+	UpdateArrayParameterTextStringPointerOriginal             func(sid string, source string, items []*string) error
+	UpdateArrayParameterTextStringPointerPointer              func(sid string, source string, items []*string) error
+	UpdateArrayEntityTextString                               func(item TextOriginal) error
+	UpdateArrayEntityTextStringOriginalPointer                func(item TextPointer) error
+	UpdateArrayEntityTextStringPointerOriginal                func(item TextOriginal) error
+	UpdateArrayEntityTextStringPointerPointer                 func(item TextPointer) error
 	DeleteParameterBigintInt64                                func(sid string) (int, error)
 	DeleteParameterBigintInt64OriginalPointer                 func(sid string) (*int, error)
 	DeleteParameterBigintInt64PointerOriginal                 func(sid *string) (int, error)
@@ -467,6 +659,22 @@ type MakeMapper struct {
 	DeleteArrayEntityInt8Int8OriginalPointer                  func(id int) (int, error)
 	DeleteArrayEntityInt8Int8PointerOriginal                  func(id int) (int, error)
 	DeleteArrayEntityInt8Int8PointerPointer                   func(id int) (int, error)
+	DeleteParameterBooleanBool                                func(sid string) (int, error)
+	DeleteParameterBooleanBoolOriginalPointer                 func(sid string) (*int, error)
+	DeleteParameterBooleanBoolPointerOriginal                 func(sid *string) (int, error)
+	DeleteParameterBooleanBoolPointerPointer                  func(sid string) (*int, error)
+	DeleteEntityBooleanBool                                   func(item BooleanOriginal) error
+	DeleteEntityBooleanBoolOriginalPointer                    func(item BooleanOriginal) error
+	DeleteEntityBooleanBoolPointerOriginal                    func(item *BooleanPointer) error
+	DeleteEntityBooleanBoolPointerPointer                     func(item *BooleanPointer) error
+	DeleteArrayParameterBooleanBool                           func(id int) (int, error)
+	DeleteArrayParameterBooleanBoolOriginalPointer            func(id int) (int, error)
+	DeleteArrayParameterBooleanBoolPointerOriginal            func(id int) (int, error)
+	DeleteArrayParameterBooleanBoolPointerPointer             func(id int) (int, error)
+	DeleteArrayEntityBooleanBool                              func(id int) (int, error)
+	DeleteArrayEntityBooleanBoolOriginalPointer               func(id int) (int, error)
+	DeleteArrayEntityBooleanBoolPointerOriginal               func(id int) (int, error)
+	DeleteArrayEntityBooleanBoolPointerPointer                func(id int) (int, error)
 	DeleteParameterBoolBool                                   func(sid string) (int, error)
 	DeleteParameterBoolBoolOriginalPointer                    func(sid string) (*int, error)
 	DeleteParameterBoolBoolPointerOriginal                    func(sid *string) (int, error)
@@ -547,6 +755,22 @@ type MakeMapper struct {
 	DeleteArrayEntityVarcharStringOriginalPointer             func(id int) (int, error)
 	DeleteArrayEntityVarcharStringPointerOriginal             func(id int) (int, error)
 	DeleteArrayEntityVarcharStringPointerPointer              func(id int) (int, error)
+	DeleteParameterIntegerInt8                                func(sid string) (int, error)
+	DeleteParameterIntegerInt8OriginalPointer                 func(sid string) (*int, error)
+	DeleteParameterIntegerInt8PointerOriginal                 func(sid *string) (int, error)
+	DeleteParameterIntegerInt8PointerPointer                  func(sid string) (*int, error)
+	DeleteEntityIntegerInt8                                   func(item IntegerOriginal) error
+	DeleteEntityIntegerInt8OriginalPointer                    func(item IntegerOriginal) error
+	DeleteEntityIntegerInt8PointerOriginal                    func(item *IntegerPointer) error
+	DeleteEntityIntegerInt8PointerPointer                     func(item *IntegerPointer) error
+	DeleteArrayParameterIntegerInt8                           func(id int) (int, error)
+	DeleteArrayParameterIntegerInt8OriginalPointer            func(id int) (int, error)
+	DeleteArrayParameterIntegerInt8PointerOriginal            func(id int) (int, error)
+	DeleteArrayParameterIntegerInt8PointerPointer             func(id int) (int, error)
+	DeleteArrayEntityIntegerInt8                              func(id int) (int, error)
+	DeleteArrayEntityIntegerInt8OriginalPointer               func(id int) (int, error)
+	DeleteArrayEntityIntegerInt8PointerOriginal               func(id int) (int, error)
+	DeleteArrayEntityIntegerInt8PointerPointer                func(id int) (int, error)
 	DeleteParameterIntInt8                                    func(sid string) (int, error)
 	DeleteParameterIntInt8OriginalPointer                     func(sid string) (*int, error)
 	DeleteParameterIntInt8PointerOriginal                     func(sid *string) (int, error)
@@ -579,4 +803,36 @@ type MakeMapper struct {
 	DeleteArrayEntityInt4Int8OriginalPointer                  func(id int) (int, error)
 	DeleteArrayEntityInt4Int8PointerOriginal                  func(id int) (int, error)
 	DeleteArrayEntityInt4Int8PointerPointer                   func(id int) (int, error)
+	DeleteParameterInt2Int8                                   func(sid string) (int, error)
+	DeleteParameterInt2Int8OriginalPointer                    func(sid string) (*int, error)
+	DeleteParameterInt2Int8PointerOriginal                    func(sid *string) (int, error)
+	DeleteParameterInt2Int8PointerPointer                     func(sid string) (*int, error)
+	DeleteEntityInt2Int8                                      func(item Int2Original) error
+	DeleteEntityInt2Int8OriginalPointer                       func(item Int2Original) error
+	DeleteEntityInt2Int8PointerOriginal                       func(item *Int2Pointer) error
+	DeleteEntityInt2Int8PointerPointer                        func(item *Int2Pointer) error
+	DeleteArrayParameterInt2Int8                              func(id int) (int, error)
+	DeleteArrayParameterInt2Int8OriginalPointer               func(id int) (int, error)
+	DeleteArrayParameterInt2Int8PointerOriginal               func(id int) (int, error)
+	DeleteArrayParameterInt2Int8PointerPointer                func(id int) (int, error)
+	DeleteArrayEntityInt2Int8                                 func(id int) (int, error)
+	DeleteArrayEntityInt2Int8OriginalPointer                  func(id int) (int, error)
+	DeleteArrayEntityInt2Int8PointerOriginal                  func(id int) (int, error)
+	DeleteArrayEntityInt2Int8PointerPointer                   func(id int) (int, error)
+	DeleteParameterTextString                                 func(sid string) (int, error)
+	DeleteParameterTextStringOriginalPointer                  func(sid string) (*int, error)
+	DeleteParameterTextStringPointerOriginal                  func(sid *string) (int, error)
+	DeleteParameterTextStringPointerPointer                   func(sid string) (*int, error)
+	DeleteEntityTextString                                    func(item TextOriginal) error
+	DeleteEntityTextStringOriginalPointer                     func(item TextOriginal) error
+	DeleteEntityTextStringPointerOriginal                     func(item *TextPointer) error
+	DeleteEntityTextStringPointerPointer                      func(item *TextPointer) error
+	DeleteArrayParameterTextString                            func(id int) (int, error)
+	DeleteArrayParameterTextStringOriginalPointer             func(id int) (int, error)
+	DeleteArrayParameterTextStringPointerOriginal             func(id int) (int, error)
+	DeleteArrayParameterTextStringPointerPointer              func(id int) (int, error)
+	DeleteArrayEntityTextString                               func(id int) (int, error)
+	DeleteArrayEntityTextStringOriginalPointer                func(id int) (int, error)
+	DeleteArrayEntityTextStringPointerOriginal                func(id int) (int, error)
+	DeleteArrayEntityTextStringPointerPointer                 func(id int) (int, error)
 }

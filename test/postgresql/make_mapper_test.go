@@ -116,6 +116,58 @@ func testScanTypes(t *testing.T, mapper *Mapper, manager *generator.DataManager)
 
 		sid := manager.NextId()
 		v := _mock.Bool()
+		rows, err := mapper.InsertParameterBooleanBool(sid, "InsertParameterBooleanBool", v)
+		require.NoError(t, err, v)
+		require.Equal(t, 1, rows)
+
+		r, err := mapper.SelectParameterBooleanBool(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, v, r)
+
+		v = _mock.Bool()
+		rows, err = mapper.UpdateParameterBooleanBool(sid, "UpdateParameterBooleanBool", v)
+		require.NoError(t, err, sid, v)
+		require.Equal(t, 1, rows)
+
+		r, err = mapper.SelectParameterBooleanBool(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, v, r)
+
+		rows, err = mapper.DeleteParameterBooleanBool(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, 1, rows)
+
+	}
+	{
+
+		sid := manager.NextId()
+		v := _mock.Bool()
+		rows, err := mapper.InsertParameterBooleanBoolOriginalPointer(sid, "InsertParameterBooleanBoolOriginalPointer", v)
+		require.NoError(t, err, v)
+		require.Equal(t, 1, *rows)
+
+		r, err := mapper.SelectParameterBooleanBoolOriginalPointer(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, v, *r)
+
+		v = _mock.Bool()
+		rows, err = mapper.UpdateParameterBooleanBoolOriginalPointer(sid, "UpdateParameterBooleanBoolOriginalPointer", v)
+		require.NoError(t, err, sid, v)
+		require.Equal(t, 1, *rows)
+
+		r, err = mapper.SelectParameterBooleanBoolOriginalPointer(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, v, *r)
+
+		rows, err = mapper.DeleteParameterBooleanBoolOriginalPointer(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, 1, *rows)
+
+	}
+	{
+
+		sid := manager.NextId()
+		v := _mock.Bool()
 		rows, err := mapper.InsertParameterBoolBool(sid, "InsertParameterBoolBool", v)
 		require.NoError(t, err, v)
 		require.Equal(t, 1, rows)
@@ -376,6 +428,58 @@ func testScanTypes(t *testing.T, mapper *Mapper, manager *generator.DataManager)
 
 		sid := manager.NextId()
 		v := _mock.Int8()
+		rows, err := mapper.InsertParameterIntegerInt8(sid, "InsertParameterIntegerInt8", v)
+		require.NoError(t, err, v)
+		require.Equal(t, 1, rows)
+
+		r, err := mapper.SelectParameterIntegerInt8(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, v, r)
+
+		v = _mock.Int8()
+		rows, err = mapper.UpdateParameterIntegerInt8(sid, "UpdateParameterIntegerInt8", v)
+		require.NoError(t, err, sid, v)
+		require.Equal(t, 1, rows)
+
+		r, err = mapper.SelectParameterIntegerInt8(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, v, r)
+
+		rows, err = mapper.DeleteParameterIntegerInt8(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, 1, rows)
+
+	}
+	{
+
+		sid := manager.NextId()
+		v := _mock.Int8()
+		rows, err := mapper.InsertParameterIntegerInt8OriginalPointer(sid, "InsertParameterIntegerInt8OriginalPointer", v)
+		require.NoError(t, err, v)
+		require.Equal(t, 1, *rows)
+
+		r, err := mapper.SelectParameterIntegerInt8OriginalPointer(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, v, *r)
+
+		v = _mock.Int8()
+		rows, err = mapper.UpdateParameterIntegerInt8OriginalPointer(sid, "UpdateParameterIntegerInt8OriginalPointer", v)
+		require.NoError(t, err, sid, v)
+		require.Equal(t, 1, *rows)
+
+		r, err = mapper.SelectParameterIntegerInt8OriginalPointer(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, v, *r)
+
+		rows, err = mapper.DeleteParameterIntegerInt8OriginalPointer(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, 1, *rows)
+
+	}
+	{
+
+		sid := manager.NextId()
+		v := _mock.Int8()
 		rows, err := mapper.InsertParameterIntInt8(sid, "InsertParameterIntInt8", v)
 		require.NoError(t, err, v)
 		require.Equal(t, 1, rows)
@@ -472,6 +576,110 @@ func testScanTypes(t *testing.T, mapper *Mapper, manager *generator.DataManager)
 		require.Equal(t, v, *r)
 
 		rows, err = mapper.DeleteParameterInt4Int8OriginalPointer(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, 1, *rows)
+
+	}
+	{
+
+		sid := manager.NextId()
+		v := _mock.Int8()
+		rows, err := mapper.InsertParameterInt2Int8(sid, "InsertParameterInt2Int8", v)
+		require.NoError(t, err, v)
+		require.Equal(t, 1, rows)
+
+		r, err := mapper.SelectParameterInt2Int8(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, v, r)
+
+		v = _mock.Int8()
+		rows, err = mapper.UpdateParameterInt2Int8(sid, "UpdateParameterInt2Int8", v)
+		require.NoError(t, err, sid, v)
+		require.Equal(t, 1, rows)
+
+		r, err = mapper.SelectParameterInt2Int8(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, v, r)
+
+		rows, err = mapper.DeleteParameterInt2Int8(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, 1, rows)
+
+	}
+	{
+
+		sid := manager.NextId()
+		v := _mock.Int8()
+		rows, err := mapper.InsertParameterInt2Int8OriginalPointer(sid, "InsertParameterInt2Int8OriginalPointer", v)
+		require.NoError(t, err, v)
+		require.Equal(t, 1, *rows)
+
+		r, err := mapper.SelectParameterInt2Int8OriginalPointer(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, v, *r)
+
+		v = _mock.Int8()
+		rows, err = mapper.UpdateParameterInt2Int8OriginalPointer(sid, "UpdateParameterInt2Int8OriginalPointer", v)
+		require.NoError(t, err, sid, v)
+		require.Equal(t, 1, *rows)
+
+		r, err = mapper.SelectParameterInt2Int8OriginalPointer(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, v, *r)
+
+		rows, err = mapper.DeleteParameterInt2Int8OriginalPointer(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, 1, *rows)
+
+	}
+	{
+
+		sid := manager.NextId()
+		v := _mock.String()
+		rows, err := mapper.InsertParameterTextString(sid, "InsertParameterTextString", v)
+		require.NoError(t, err, v)
+		require.Equal(t, 1, rows)
+
+		r, err := mapper.SelectParameterTextString(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, v, r)
+
+		v = _mock.String()
+		rows, err = mapper.UpdateParameterTextString(sid, "UpdateParameterTextString", v)
+		require.NoError(t, err, sid, v)
+		require.Equal(t, 1, rows)
+
+		r, err = mapper.SelectParameterTextString(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, v, r)
+
+		rows, err = mapper.DeleteParameterTextString(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, 1, rows)
+
+	}
+	{
+
+		sid := manager.NextId()
+		v := _mock.String()
+		rows, err := mapper.InsertParameterTextStringOriginalPointer(sid, "InsertParameterTextStringOriginalPointer", v)
+		require.NoError(t, err, v)
+		require.Equal(t, 1, *rows)
+
+		r, err := mapper.SelectParameterTextStringOriginalPointer(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, v, *r)
+
+		v = _mock.String()
+		rows, err = mapper.UpdateParameterTextStringOriginalPointer(sid, "UpdateParameterTextStringOriginalPointer", v)
+		require.NoError(t, err, sid, v)
+		require.Equal(t, 1, *rows)
+
+		r, err = mapper.SelectParameterTextStringOriginalPointer(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, v, *r)
+
+		rows, err = mapper.DeleteParameterTextStringOriginalPointer(sid)
 		require.NoError(t, err, sid)
 		require.Equal(t, 1, *rows)
 

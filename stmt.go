@@ -25,6 +25,10 @@ type Stmt struct {
 }
 
 func (p Stmt) close() {
+	defer func() {
+		_ = recover()
+	}()
+	// TODO 区别 DB close
 	if p.conn != nil {
 		_ = p.conn.Close()
 	}

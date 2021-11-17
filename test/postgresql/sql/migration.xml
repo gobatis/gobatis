@@ -21,7 +21,7 @@
         t_box box,
         t_bytea bytea,
         t_character char(24),
-        t_char char,
+        t_char char(24),
         t_character_varying varchar,
         t_varchar varchar,
         t_cidr cidr,
@@ -67,7 +67,8 @@
         t_tsvector tsvector,
         t_txid_snapshot txid_snapshot,
         t_uuid uuid,
-        t_xml xml
+        t_xml xml,
+        deleted bool
         );
 
         create unique index if not exists types_sid_uindex
@@ -132,7 +133,8 @@
         t_tsvector tsvector[],
         t_txid_snapshot txid_snapshot[],
         t_uuid uuid[],
-        t_xml xml[]
+        t_xml xml[],
+        deleted bool
         );
 
         create unique index if not exists array_types_sid_uindex

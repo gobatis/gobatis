@@ -1,10 +1,8 @@
 package postgresql
 
-import "github.com/gobatis/gobatis"
-
 type Mapper struct {
 	*MakeMapper
-	Migrate    func(db *gobatis.DB) error
+	Migrate    func() error
 	ResetTable func() error
 	//InsertNullType func(a interface{}) (row error)
 	//SelectNullInt  func(id int) error

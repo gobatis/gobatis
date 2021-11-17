@@ -77,7 +77,7 @@ func makePostgresqlXML() {
 			Tag:           "delete",
 			ShowParameter: true,
 			Params:        []*Param{{Name: "sid"}},
-			Sql:           fmt.Sprintf("delete from types where sid = #{sid};"),
+			Sql:           fmt.Sprintf("update types set deleted=true where sid = #{sid};"),
 		}
 		item := &Param{Name: "item:struct"}
 		insertStatements = append(insertStatements,
@@ -126,7 +126,7 @@ func makePostgresqlXML() {
 		insert = insert.ForkSql(fmt.Sprintf("insert into array_types(sid,source,%s) values(#{sid},#{source},#{%s});", fmt.Sprintf("t_%s", v.Type), fmt.Sprintf("var_%s", v.Type)))
 		_select = _select.ForkSql(fmt.Sprintf("select t_%s from array_types where sid = #{sid};", v.Type))
 		update = update.ForkSql(fmt.Sprintf("update array_types set source =#{source}, t_%s = #{ val } where sid = #{sid};", v.Type))
-		_delete = _delete.ForkSql(fmt.Sprintf("delete from array_types where sid = #{sid};"))
+		_delete = _delete.ForkSql(fmt.Sprintf("update array_types set deleted=true where sid = #{sid};"))
 		insertStatements = append(insertStatements,
 			insert.ForkId(iName.ParameterOriginal(true)),
 			insert.ForkId(iName.ParameterOriginalPointer(true)),
