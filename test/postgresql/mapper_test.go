@@ -5,6 +5,7 @@ import (
 	"github.com/gobatis/gobatis/driver/postgresql"
 	"github.com/gobatis/gobatis/test/generator"
 	"github.com/stretchr/testify/require"
+	"sync"
 	"testing"
 )
 
@@ -27,5 +28,17 @@ func TestMapper(t *testing.T) {
 	err = mapper.ResetTable()
 	require.NoError(t, err)
 	
-	testScanTypes(t, mapper, generator.NewDataManager())
+	manager := generator.NewDataManager()
+	n := 100
+	wg := sync.WaitGroup{}
+	wg.Add(n)
+	for i := 0; i < n; i++ {
+		go func() {
+			defer func() {
+				wg.Done()
+			}()
+			testScanTypes(t, mapper, manager)
+		}()
+	}
+	wg.Wait()
 }
