@@ -12,6 +12,7 @@ require (
 	github.com/gozelle/_mock v0.0.0-20211114021104-dc75ce553720
 	github.com/gozelle/decimal v1.3.2-0.20211117124208-0a2df7a603e8
 	github.com/iancoleman/strcase v0.2.0
+	github.com/jackc/pgconn v1.10.0
 	github.com/jackc/pgtype v1.8.1
 	github.com/jackc/pgx/v4 v4.13.0
 	github.com/jinzhu/copier v0.3.2

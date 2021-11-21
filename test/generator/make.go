@@ -243,9 +243,9 @@ func makePostgresqlMapper() {
 		}
 		insertMethods = append(insertMethods,
 			&Method{Name: iName.ParameterOriginal(true), In: []*Param{sid, source, {Name: "items", Type: arrayType(v.Default)}}, Out: []*Param{_int, _err}},
-			&Method{Name: iName.ParameterOriginalPointer(true), In: []*Param{sid, source, {Name: "items", Type: arrayType(v.Default)}}, Out: []*Param{_int, _err}},
+			&Method{Name: iName.ParameterOriginalPointer(true), In: []*Param{sid, source, {Name: "items", Type: arrayType(v.Default)}}, Out: []*Param{_int.pointer(), _err}},
 			&Method{Name: iName.ParameterPointerOriginal(true), In: []*Param{sid, source, {Name: "items", Type: arrayType("*" + v.Default)}}, Out: []*Param{_int, _err}},
-			&Method{Name: iName.ParameterPointerPointer(true), In: []*Param{sid, source, {Name: "items", Type: arrayType("*" + v.Default)}}, Out: []*Param{_int, _err}},
+			&Method{Name: iName.ParameterPointerPointer(true), In: []*Param{sid, source, {Name: "items", Type: arrayType("*" + v.Default)}}, Out: []*Param{_int.pointer(), _err}},
 			&Method{Name: iName.EntityOriginal(true), In: []*Param{sid, source, {Name: "items", Type: arrayType("*" + v.Default)}}, Out: []*Param{_int, _err}},
 			&Method{Name: iName.EntityOriginalPointer(true), In: []*Param{sid, source, {Name: "items", Type: arrayType("*" + v.Default)}}, Out: []*Param{_int, _err}},
 			&Method{Name: iName.EntityPointerOriginal(true), In: []*Param{sid, source, {Name: "items", Type: arrayType("*" + v.Default)}}, Out: []*Param{_int, _err}},
@@ -253,8 +253,8 @@ func makePostgresqlMapper() {
 		)
 		selectMethods = append(selectMethods,
 			&Method{Name: sName.ParameterOriginal(true), In: []*Param{sid}, Out: []*Param{{Type: arrayType(v.Default)}, _err}},
-			&Method{Name: sName.ParameterOriginalPointer(true), In: []*Param{sid}, Out: []*Param{{Type: arrayType(v.Default)}, _err}},
-			&Method{Name: sName.ParameterPointerOriginal(true), In: []*Param{sid}, Out: []*Param{{Type: arrayType("*" + v.Default)}, _err}},
+			&Method{Name: sName.ParameterOriginalPointer(true), In: []*Param{sid}, Out: []*Param{{Type: arrayType("*" + v.Default)}, _err}},
+			&Method{Name: sName.ParameterPointerOriginal(true), In: []*Param{sid}, Out: []*Param{{Type: arrayType(v.Default)}, _err}},
 			&Method{Name: sName.ParameterPointerPointer(true), In: []*Param{sid}, Out: []*Param{{Type: arrayType("*" + v.Default)}, _err}},
 			&Method{Name: sName.EntityOriginal(true), In: []*Param{sid}, Out: []*Param{{Type: arrayType("*" + v.Default)}, _err}},
 			&Method{Name: sName.EntityOriginalPointer(true), In: []*Param{sid}, Out: []*Param{{Type: arrayType("*" + v.Default)}, _err}},
@@ -263,9 +263,9 @@ func makePostgresqlMapper() {
 		)
 		updateMethods = append(updateMethods,
 			&Method{Name: uName.ParameterOriginal(true), In: []*Param{sid, source, {Name: "items", Type: arrayType(v.Default)}}, Out: []*Param{_int, _err}},
-			&Method{Name: uName.ParameterOriginalPointer(true), In: []*Param{sid, source, {Name: "items", Type: arrayType(v.Default)}}, Out: []*Param{_int, _err}},
+			&Method{Name: uName.ParameterOriginalPointer(true), In: []*Param{sid, source, {Name: "items", Type: arrayType(v.Default)}}, Out: []*Param{_int.pointer(), _err}},
 			&Method{Name: uName.ParameterPointerOriginal(true), In: []*Param{sid, source, {Name: "items", Type: arrayType("*" + v.Default)}}, Out: []*Param{_int, _err}},
-			&Method{Name: uName.ParameterPointerPointer(true), In: []*Param{sid, source, {Name: "items", Type: arrayType("*" + v.Default)}}, Out: []*Param{_int, _err}},
+			&Method{Name: uName.ParameterPointerPointer(true), In: []*Param{sid, source, {Name: "items", Type: arrayType("*" + v.Default)}}, Out: []*Param{_int.pointer(), _err}},
 			&Method{Name: uName.EntityOriginal(true), In: []*Param{{Name: "item", Type: fmt.Sprintf("%sOriginal", strcase.ToCamel(v.Type))}}, Out: []*Param{_int, _err}},
 			&Method{Name: uName.EntityOriginalPointer(true), In: []*Param{{Name: "item", Type: fmt.Sprintf("%sPointer", strcase.ToCamel(v.Type))}}, Out: []*Param{_int, _err}},
 			&Method{Name: uName.EntityPointerOriginal(true), In: []*Param{{Name: "item", Type: fmt.Sprintf("%sOriginal", strcase.ToCamel(v.Type))}}, Out: []*Param{_int, _err}},
@@ -273,9 +273,9 @@ func makePostgresqlMapper() {
 		)
 		deleteMethods = append(deleteMethods,
 			&Method{Name: dName.ParameterOriginal(true), In: []*Param{sid}, Out: []*Param{_int, _err}},
-			&Method{Name: dName.ParameterOriginalPointer(true), In: []*Param{sid}, Out: []*Param{_int, _err}},
+			&Method{Name: dName.ParameterOriginalPointer(true), In: []*Param{sid}, Out: []*Param{_int.pointer(), _err}},
 			&Method{Name: dName.ParameterPointerOriginal(true), In: []*Param{sid}, Out: []*Param{_int, _err}},
-			&Method{Name: dName.ParameterPointerPointer(true), In: []*Param{sid}, Out: []*Param{_int, _err}},
+			&Method{Name: dName.ParameterPointerPointer(true), In: []*Param{sid}, Out: []*Param{_int.pointer(), _err}},
 			&Method{Name: dName.EntityOriginal(true), In: []*Param{sid}, Out: []*Param{_int, _err}},
 			&Method{Name: dName.EntityOriginalPointer(true), In: []*Param{sid}, Out: []*Param{_int, _err}},
 			&Method{Name: dName.EntityPointerOriginal(true), In: []*Param{sid}, Out: []*Param{_int, _err}},
@@ -337,10 +337,10 @@ require.Equal(t, 1, {% if OutPointer %}*{%endif%}rows)
 const selectArrayCaseTpl = `
 {% autoescape off %}
 sid := manager.NextId()
-vs :=  make([]{% if OutPointer %}*{%endif%}{{ GoType }},0)
+vs :=  make([]{% if InPointer %}*{%endif%}{{ GoType }},0)
 for i:=0;i<3;i++{
 	v := _mock.{{ MockFunc }}()
-	vs = append(vs, {% if OutPointer %}&{%endif%}v)
+	vs = append(vs, {% if InPointer %}&{%endif%}v)
 }
 rows, err := mapper.{{ InsertFunc }}(sid, "{{ InsertFunc }}",vs)
 require.NoError(t, err, vs)
@@ -350,14 +350,14 @@ require.Equal(t, 1, {% if OutPointer %}*{%endif%}rows)
 r, err := mapper.{{ SelectFunc }}(sid)
 require.NoError(t, err, sid)
 for i:=0;i<3;i++{
-	require.Equal(t, vs[i], {% if OutPointer %}*{%endif%}r[i])
+	require.Equal(t, {% if InPointer %}*{%endif%}vs[i], {% if OutPointer %}*{%endif%}r[i])
 }
 {% endif %}
 
-vs = make([]{% if OutPointer %}*{%endif%}{{ GoType }},0)
+vs = make([]{% if InPointer %}*{%endif%}{{ GoType }},0)
 for i:=0;i<3;i++{
 	v := _mock.{{ MockFunc }}()
-	vs = append(vs, {% if OutPointer %}&{%endif%}v)
+	vs = append(vs, {% if InPointer %}&{%endif%}v)
 }
 rows, err =  mapper.{{ UpdateFunc }}(sid, "{{ UpdateFunc }}", vs)
 require.NoError(t, err, sid, vs)
@@ -367,7 +367,7 @@ require.Equal(t, 1, {% if OutPointer %}*{%endif%}rows)
 r, err = mapper.{{ SelectFunc }}(sid)
 require.NoError(t, err, sid)
 for i:=0;i<3;i++{
-	require.Equal(t, vs[i], {% if OutPointer %}*{%endif%}r[i])
+	require.Equal(t, {% if InPointer %}*{%endif%}vs[i], {% if OutPointer %}*{%endif%}r[i])
 }
 {% endif %}
 
@@ -424,6 +424,24 @@ func makePostgresqlCases() {
 					SelectFunc: sName.ParameterOriginal(true),
 					UpdateFunc: uName.ParameterOriginal(true),
 					DeleteFunc: dName.ParameterOriginal(true),
+				})},
+				&TestCase{Code: RenderTpl(selectArrayCaseTpl, SelectCaseData{
+					MockFunc:   strings.Title(v.Default),
+					GoType:     v.Default,
+					OutPointer: true,
+					InsertFunc: iName.ParameterOriginalPointer(true),
+					SelectFunc: sName.ParameterOriginalPointer(true),
+					UpdateFunc: uName.ParameterOriginalPointer(true),
+					DeleteFunc: dName.ParameterOriginalPointer(true),
+				})},
+				&TestCase{Code: RenderTpl(selectArrayCaseTpl, SelectCaseData{
+					MockFunc:   strings.Title(v.Default),
+					GoType:     v.Default,
+					InPointer:  true,
+					InsertFunc: iName.ParameterPointerOriginal(true),
+					SelectFunc: sName.ParameterPointerOriginal(true),
+					UpdateFunc: uName.ParameterPointerOriginal(true),
+					DeleteFunc: dName.ParameterPointerOriginal(true),
 				})},
 			)
 		}

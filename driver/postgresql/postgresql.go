@@ -117,7 +117,11 @@ func (s *Scanner) Scan(rows *sql.Rows, ct *sql.ColumnType, value reflect.Value) 
 						return
 					}
 					d := decimal.NewFromFloat(r)
-					value.Elem().Set(reflect.Append(value.Elem(), reflect.ValueOf(d)))
+					if value.Type().Elem().Kind() == reflect.Slice && value.Type().Elem().Elem().Kind() == reflect.Ptr {
+						value.Elem().Set(reflect.Append(value.Elem(), reflect.ValueOf(&d)))
+					} else {
+						value.Elem().Set(reflect.Append(value.Elem(), reflect.ValueOf(d)))
+					}
 				}
 			} else {
 				err = assigner.AssignTo(value.Interface())

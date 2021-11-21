@@ -1123,38 +1123,6 @@
     update types set deleted=true where sid = #{sid};
 </delete>
 
-<delete id="DeleteArrayParameterTextString" parameter="sid" >
-    update array_types set deleted=true where sid = #{sid};
-</delete>
-
-<delete id="DeleteArrayParameterTextStringOriginalPointer" parameter="sid" >
-    update array_types set deleted=true where sid = #{sid};
-</delete>
-
-<delete id="DeleteArrayParameterTextStringPointerOriginal" parameter="sid" >
-    update array_types set deleted=true where sid = #{sid};
-</delete>
-
-<delete id="DeleteArrayParameterTextStringPointerPointer" parameter="sid" >
-    update array_types set deleted=true where sid = #{sid};
-</delete>
-
-<delete id="DeleteArrayEntityTextString" parameter="item:struct" >
-    update array_types set deleted=true where sid = #{sid};
-</delete>
-
-<delete id="DeleteArrayEntityTextStringOriginalPointer" parameter="item:struct" >
-    update array_types set deleted=true where sid = #{sid};
-</delete>
-
-<delete id="DeleteArrayEntityTextStringPointerOriginal" parameter="item:struct" >
-    update array_types set deleted=true where sid = #{sid};
-</delete>
-
-<delete id="DeleteArrayEntityTextStringPointerPointer" parameter="item:struct" >
-    update array_types set deleted=true where sid = #{sid};
-</delete>
-
 <delete id="DeleteParameterTimeTime" parameter="sid" >
     update types set deleted=true where sid = #{sid};
 </delete>
@@ -1185,38 +1153,6 @@
 
 <delete id="DeleteEntityTimeTimePointerPointer" parameter="item:struct" >
     update types set deleted=true where sid = #{sid};
-</delete>
-
-<delete id="DeleteArrayParameterTimeTime" parameter="sid" >
-    update array_types set deleted=true where sid = #{sid};
-</delete>
-
-<delete id="DeleteArrayParameterTimeTimeOriginalPointer" parameter="sid" >
-    update array_types set deleted=true where sid = #{sid};
-</delete>
-
-<delete id="DeleteArrayParameterTimeTimePointerOriginal" parameter="sid" >
-    update array_types set deleted=true where sid = #{sid};
-</delete>
-
-<delete id="DeleteArrayParameterTimeTimePointerPointer" parameter="sid" >
-    update array_types set deleted=true where sid = #{sid};
-</delete>
-
-<delete id="DeleteArrayEntityTimeTime" parameter="item:struct" >
-    update array_types set deleted=true where sid = #{sid};
-</delete>
-
-<delete id="DeleteArrayEntityTimeTimeOriginalPointer" parameter="item:struct" >
-    update array_types set deleted=true where sid = #{sid};
-</delete>
-
-<delete id="DeleteArrayEntityTimeTimePointerOriginal" parameter="item:struct" >
-    update array_types set deleted=true where sid = #{sid};
-</delete>
-
-<delete id="DeleteArrayEntityTimeTimePointerPointer" parameter="item:struct" >
-    update array_types set deleted=true where sid = #{sid};
 </delete>
 
 <delete id="DeleteParameterTimeWithTimezoneTime" parameter="sid" >
@@ -1251,38 +1187,6 @@
     update types set deleted=true where sid = #{sid};
 </delete>
 
-<delete id="DeleteArrayParameterTimeWithTimezoneTime" parameter="sid" >
-    update array_types set deleted=true where sid = #{sid};
-</delete>
-
-<delete id="DeleteArrayParameterTimeWithTimezoneTimeOriginalPointer" parameter="sid" >
-    update array_types set deleted=true where sid = #{sid};
-</delete>
-
-<delete id="DeleteArrayParameterTimeWithTimezoneTimePointerOriginal" parameter="sid" >
-    update array_types set deleted=true where sid = #{sid};
-</delete>
-
-<delete id="DeleteArrayParameterTimeWithTimezoneTimePointerPointer" parameter="sid" >
-    update array_types set deleted=true where sid = #{sid};
-</delete>
-
-<delete id="DeleteArrayEntityTimeWithTimezoneTime" parameter="item:struct" >
-    update array_types set deleted=true where sid = #{sid};
-</delete>
-
-<delete id="DeleteArrayEntityTimeWithTimezoneTimeOriginalPointer" parameter="item:struct" >
-    update array_types set deleted=true where sid = #{sid};
-</delete>
-
-<delete id="DeleteArrayEntityTimeWithTimezoneTimePointerOriginal" parameter="item:struct" >
-    update array_types set deleted=true where sid = #{sid};
-</delete>
-
-<delete id="DeleteArrayEntityTimeWithTimezoneTimePointerPointer" parameter="item:struct" >
-    update array_types set deleted=true where sid = #{sid};
-</delete>
-
 <delete id="DeleteParameterTimetzTime" parameter="sid" >
     update types set deleted=true where sid = #{sid};
 </delete>
@@ -1313,38 +1217,6 @@
 
 <delete id="DeleteEntityTimetzTimePointerPointer" parameter="item:struct" >
     update types set deleted=true where sid = #{sid};
-</delete>
-
-<delete id="DeleteArrayParameterTimetzTime" parameter="sid" >
-    update array_types set deleted=true where sid = #{sid};
-</delete>
-
-<delete id="DeleteArrayParameterTimetzTimeOriginalPointer" parameter="sid" >
-    update array_types set deleted=true where sid = #{sid};
-</delete>
-
-<delete id="DeleteArrayParameterTimetzTimePointerOriginal" parameter="sid" >
-    update array_types set deleted=true where sid = #{sid};
-</delete>
-
-<delete id="DeleteArrayParameterTimetzTimePointerPointer" parameter="sid" >
-    update array_types set deleted=true where sid = #{sid};
-</delete>
-
-<delete id="DeleteArrayEntityTimetzTime" parameter="item:struct" >
-    update array_types set deleted=true where sid = #{sid};
-</delete>
-
-<delete id="DeleteArrayEntityTimetzTimeOriginalPointer" parameter="item:struct" >
-    update array_types set deleted=true where sid = #{sid};
-</delete>
-
-<delete id="DeleteArrayEntityTimetzTimePointerOriginal" parameter="item:struct" >
-    update array_types set deleted=true where sid = #{sid};
-</delete>
-
-<delete id="DeleteArrayEntityTimetzTimePointerPointer" parameter="item:struct" >
-    update array_types set deleted=true where sid = #{sid};
 </delete>
 
 <delete id="DeleteParameterTimestampTime" parameter="sid" >
@@ -1379,38 +1251,6 @@
     update types set deleted=true where sid = #{sid};
 </delete>
 
-<delete id="DeleteArrayParameterTimestampTime" parameter="sid" >
-    update array_types set deleted=true where sid = #{sid};
-</delete>
-
-<delete id="DeleteArrayParameterTimestampTimeOriginalPointer" parameter="sid" >
-    update array_types set deleted=true where sid = #{sid};
-</delete>
-
-<delete id="DeleteArrayParameterTimestampTimePointerOriginal" parameter="sid" >
-    update array_types set deleted=true where sid = #{sid};
-</delete>
-
-<delete id="DeleteArrayParameterTimestampTimePointerPointer" parameter="sid" >
-    update array_types set deleted=true where sid = #{sid};
-</delete>
-
-<delete id="DeleteArrayEntityTimestampTime" parameter="item:struct" >
-    update array_types set deleted=true where sid = #{sid};
-</delete>
-
-<delete id="DeleteArrayEntityTimestampTimeOriginalPointer" parameter="item:struct" >
-    update array_types set deleted=true where sid = #{sid};
-</delete>
-
-<delete id="DeleteArrayEntityTimestampTimePointerOriginal" parameter="item:struct" >
-    update array_types set deleted=true where sid = #{sid};
-</delete>
-
-<delete id="DeleteArrayEntityTimestampTimePointerPointer" parameter="item:struct" >
-    update array_types set deleted=true where sid = #{sid};
-</delete>
-
 <delete id="DeleteParameterTimestampWithTimezoneTime" parameter="sid" >
     update types set deleted=true where sid = #{sid};
 </delete>
@@ -1443,38 +1283,6 @@
     update types set deleted=true where sid = #{sid};
 </delete>
 
-<delete id="DeleteArrayParameterTimestampWithTimezoneTime" parameter="sid" >
-    update array_types set deleted=true where sid = #{sid};
-</delete>
-
-<delete id="DeleteArrayParameterTimestampWithTimezoneTimeOriginalPointer" parameter="sid" >
-    update array_types set deleted=true where sid = #{sid};
-</delete>
-
-<delete id="DeleteArrayParameterTimestampWithTimezoneTimePointerOriginal" parameter="sid" >
-    update array_types set deleted=true where sid = #{sid};
-</delete>
-
-<delete id="DeleteArrayParameterTimestampWithTimezoneTimePointerPointer" parameter="sid" >
-    update array_types set deleted=true where sid = #{sid};
-</delete>
-
-<delete id="DeleteArrayEntityTimestampWithTimezoneTime" parameter="item:struct" >
-    update array_types set deleted=true where sid = #{sid};
-</delete>
-
-<delete id="DeleteArrayEntityTimestampWithTimezoneTimeOriginalPointer" parameter="item:struct" >
-    update array_types set deleted=true where sid = #{sid};
-</delete>
-
-<delete id="DeleteArrayEntityTimestampWithTimezoneTimePointerOriginal" parameter="item:struct" >
-    update array_types set deleted=true where sid = #{sid};
-</delete>
-
-<delete id="DeleteArrayEntityTimestampWithTimezoneTimePointerPointer" parameter="item:struct" >
-    update array_types set deleted=true where sid = #{sid};
-</delete>
-
 <delete id="DeleteParameterTimestamptzTime" parameter="sid" >
     update types set deleted=true where sid = #{sid};
 </delete>
@@ -1505,38 +1313,6 @@
 
 <delete id="DeleteEntityTimestamptzTimePointerPointer" parameter="item:struct" >
     update types set deleted=true where sid = #{sid};
-</delete>
-
-<delete id="DeleteArrayParameterTimestamptzTime" parameter="sid" >
-    update array_types set deleted=true where sid = #{sid};
-</delete>
-
-<delete id="DeleteArrayParameterTimestamptzTimeOriginalPointer" parameter="sid" >
-    update array_types set deleted=true where sid = #{sid};
-</delete>
-
-<delete id="DeleteArrayParameterTimestamptzTimePointerOriginal" parameter="sid" >
-    update array_types set deleted=true where sid = #{sid};
-</delete>
-
-<delete id="DeleteArrayParameterTimestamptzTimePointerPointer" parameter="sid" >
-    update array_types set deleted=true where sid = #{sid};
-</delete>
-
-<delete id="DeleteArrayEntityTimestamptzTime" parameter="item:struct" >
-    update array_types set deleted=true where sid = #{sid};
-</delete>
-
-<delete id="DeleteArrayEntityTimestamptzTimeOriginalPointer" parameter="item:struct" >
-    update array_types set deleted=true where sid = #{sid};
-</delete>
-
-<delete id="DeleteArrayEntityTimestamptzTimePointerOriginal" parameter="item:struct" >
-    update array_types set deleted=true where sid = #{sid};
-</delete>
-
-<delete id="DeleteArrayEntityTimestamptzTimePointerPointer" parameter="item:struct" >
-    update array_types set deleted=true where sid = #{sid};
 </delete>
 
 </mapper>

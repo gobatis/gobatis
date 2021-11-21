@@ -101,6 +101,82 @@ func testScanTypes(t *testing.T, mapper *Mapper, manager *generator.DataManager)
 	{
 
 		sid := manager.NextId()
+		vs := make([]int64, 0)
+		for i := 0; i < 3; i++ {
+			v := _mock.Int64()
+			vs = append(vs, v)
+		}
+		rows, err := mapper.InsertArrayParameterBigintInt64OriginalPointer(sid, "InsertArrayParameterBigintInt64OriginalPointer", vs)
+		require.NoError(t, err, vs)
+		require.Equal(t, 1, *rows)
+
+		r, err := mapper.SelectArrayParameterBigintInt64OriginalPointer(sid)
+		require.NoError(t, err, sid)
+		for i := 0; i < 3; i++ {
+			require.Equal(t, vs[i], *r[i])
+		}
+
+		vs = make([]int64, 0)
+		for i := 0; i < 3; i++ {
+			v := _mock.Int64()
+			vs = append(vs, v)
+		}
+		rows, err = mapper.UpdateArrayParameterBigintInt64OriginalPointer(sid, "UpdateArrayParameterBigintInt64OriginalPointer", vs)
+		require.NoError(t, err, sid, vs)
+		require.Equal(t, 1, *rows)
+
+		r, err = mapper.SelectArrayParameterBigintInt64OriginalPointer(sid)
+		require.NoError(t, err, sid)
+		for i := 0; i < 3; i++ {
+			require.Equal(t, vs[i], *r[i])
+		}
+
+		rows, err = mapper.DeleteArrayParameterBigintInt64OriginalPointer(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, 1, *rows)
+
+	}
+	{
+
+		sid := manager.NextId()
+		vs := make([]*int64, 0)
+		for i := 0; i < 3; i++ {
+			v := _mock.Int64()
+			vs = append(vs, &v)
+		}
+		rows, err := mapper.InsertArrayParameterBigintInt64PointerOriginal(sid, "InsertArrayParameterBigintInt64PointerOriginal", vs)
+		require.NoError(t, err, vs)
+		require.Equal(t, 1, rows)
+
+		r, err := mapper.SelectArrayParameterBigintInt64PointerOriginal(sid)
+		require.NoError(t, err, sid)
+		for i := 0; i < 3; i++ {
+			require.Equal(t, *vs[i], r[i])
+		}
+
+		vs = make([]*int64, 0)
+		for i := 0; i < 3; i++ {
+			v := _mock.Int64()
+			vs = append(vs, &v)
+		}
+		rows, err = mapper.UpdateArrayParameterBigintInt64PointerOriginal(sid, "UpdateArrayParameterBigintInt64PointerOriginal", vs)
+		require.NoError(t, err, sid, vs)
+		require.Equal(t, 1, rows)
+
+		r, err = mapper.SelectArrayParameterBigintInt64PointerOriginal(sid)
+		require.NoError(t, err, sid)
+		for i := 0; i < 3; i++ {
+			require.Equal(t, *vs[i], r[i])
+		}
+
+		rows, err = mapper.DeleteArrayParameterBigintInt64PointerOriginal(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, 1, rows)
+
+	}
+	{
+
+		sid := manager.NextId()
 		v := _mock.Int8()
 		rows, err := mapper.InsertParameterInt8Int8(sid, "InsertParameterInt8Int8", v)
 		require.NoError(t, err, v)
@@ -184,6 +260,82 @@ func testScanTypes(t *testing.T, mapper *Mapper, manager *generator.DataManager)
 		}
 
 		rows, err = mapper.DeleteArrayParameterInt8Int8(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, 1, rows)
+
+	}
+	{
+
+		sid := manager.NextId()
+		vs := make([]int8, 0)
+		for i := 0; i < 3; i++ {
+			v := _mock.Int8()
+			vs = append(vs, v)
+		}
+		rows, err := mapper.InsertArrayParameterInt8Int8OriginalPointer(sid, "InsertArrayParameterInt8Int8OriginalPointer", vs)
+		require.NoError(t, err, vs)
+		require.Equal(t, 1, *rows)
+
+		r, err := mapper.SelectArrayParameterInt8Int8OriginalPointer(sid)
+		require.NoError(t, err, sid)
+		for i := 0; i < 3; i++ {
+			require.Equal(t, vs[i], *r[i])
+		}
+
+		vs = make([]int8, 0)
+		for i := 0; i < 3; i++ {
+			v := _mock.Int8()
+			vs = append(vs, v)
+		}
+		rows, err = mapper.UpdateArrayParameterInt8Int8OriginalPointer(sid, "UpdateArrayParameterInt8Int8OriginalPointer", vs)
+		require.NoError(t, err, sid, vs)
+		require.Equal(t, 1, *rows)
+
+		r, err = mapper.SelectArrayParameterInt8Int8OriginalPointer(sid)
+		require.NoError(t, err, sid)
+		for i := 0; i < 3; i++ {
+			require.Equal(t, vs[i], *r[i])
+		}
+
+		rows, err = mapper.DeleteArrayParameterInt8Int8OriginalPointer(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, 1, *rows)
+
+	}
+	{
+
+		sid := manager.NextId()
+		vs := make([]*int8, 0)
+		for i := 0; i < 3; i++ {
+			v := _mock.Int8()
+			vs = append(vs, &v)
+		}
+		rows, err := mapper.InsertArrayParameterInt8Int8PointerOriginal(sid, "InsertArrayParameterInt8Int8PointerOriginal", vs)
+		require.NoError(t, err, vs)
+		require.Equal(t, 1, rows)
+
+		r, err := mapper.SelectArrayParameterInt8Int8PointerOriginal(sid)
+		require.NoError(t, err, sid)
+		for i := 0; i < 3; i++ {
+			require.Equal(t, *vs[i], r[i])
+		}
+
+		vs = make([]*int8, 0)
+		for i := 0; i < 3; i++ {
+			v := _mock.Int8()
+			vs = append(vs, &v)
+		}
+		rows, err = mapper.UpdateArrayParameterInt8Int8PointerOriginal(sid, "UpdateArrayParameterInt8Int8PointerOriginal", vs)
+		require.NoError(t, err, sid, vs)
+		require.Equal(t, 1, rows)
+
+		r, err = mapper.SelectArrayParameterInt8Int8PointerOriginal(sid)
+		require.NoError(t, err, sid)
+		for i := 0; i < 3; i++ {
+			require.Equal(t, *vs[i], r[i])
+		}
+
+		rows, err = mapper.DeleteArrayParameterInt8Int8PointerOriginal(sid)
 		require.NoError(t, err, sid)
 		require.Equal(t, 1, rows)
 
@@ -281,6 +433,82 @@ func testScanTypes(t *testing.T, mapper *Mapper, manager *generator.DataManager)
 	{
 
 		sid := manager.NextId()
+		vs := make([]bool, 0)
+		for i := 0; i < 3; i++ {
+			v := _mock.Bool()
+			vs = append(vs, v)
+		}
+		rows, err := mapper.InsertArrayParameterBooleanBoolOriginalPointer(sid, "InsertArrayParameterBooleanBoolOriginalPointer", vs)
+		require.NoError(t, err, vs)
+		require.Equal(t, 1, *rows)
+
+		r, err := mapper.SelectArrayParameterBooleanBoolOriginalPointer(sid)
+		require.NoError(t, err, sid)
+		for i := 0; i < 3; i++ {
+			require.Equal(t, vs[i], *r[i])
+		}
+
+		vs = make([]bool, 0)
+		for i := 0; i < 3; i++ {
+			v := _mock.Bool()
+			vs = append(vs, v)
+		}
+		rows, err = mapper.UpdateArrayParameterBooleanBoolOriginalPointer(sid, "UpdateArrayParameterBooleanBoolOriginalPointer", vs)
+		require.NoError(t, err, sid, vs)
+		require.Equal(t, 1, *rows)
+
+		r, err = mapper.SelectArrayParameterBooleanBoolOriginalPointer(sid)
+		require.NoError(t, err, sid)
+		for i := 0; i < 3; i++ {
+			require.Equal(t, vs[i], *r[i])
+		}
+
+		rows, err = mapper.DeleteArrayParameterBooleanBoolOriginalPointer(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, 1, *rows)
+
+	}
+	{
+
+		sid := manager.NextId()
+		vs := make([]*bool, 0)
+		for i := 0; i < 3; i++ {
+			v := _mock.Bool()
+			vs = append(vs, &v)
+		}
+		rows, err := mapper.InsertArrayParameterBooleanBoolPointerOriginal(sid, "InsertArrayParameterBooleanBoolPointerOriginal", vs)
+		require.NoError(t, err, vs)
+		require.Equal(t, 1, rows)
+
+		r, err := mapper.SelectArrayParameterBooleanBoolPointerOriginal(sid)
+		require.NoError(t, err, sid)
+		for i := 0; i < 3; i++ {
+			require.Equal(t, *vs[i], r[i])
+		}
+
+		vs = make([]*bool, 0)
+		for i := 0; i < 3; i++ {
+			v := _mock.Bool()
+			vs = append(vs, &v)
+		}
+		rows, err = mapper.UpdateArrayParameterBooleanBoolPointerOriginal(sid, "UpdateArrayParameterBooleanBoolPointerOriginal", vs)
+		require.NoError(t, err, sid, vs)
+		require.Equal(t, 1, rows)
+
+		r, err = mapper.SelectArrayParameterBooleanBoolPointerOriginal(sid)
+		require.NoError(t, err, sid)
+		for i := 0; i < 3; i++ {
+			require.Equal(t, *vs[i], r[i])
+		}
+
+		rows, err = mapper.DeleteArrayParameterBooleanBoolPointerOriginal(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, 1, rows)
+
+	}
+	{
+
+		sid := manager.NextId()
 		v := _mock.Bool()
 		rows, err := mapper.InsertParameterBoolBool(sid, "InsertParameterBoolBool", v)
 		require.NoError(t, err, v)
@@ -364,6 +592,82 @@ func testScanTypes(t *testing.T, mapper *Mapper, manager *generator.DataManager)
 		}
 
 		rows, err = mapper.DeleteArrayParameterBoolBool(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, 1, rows)
+
+	}
+	{
+
+		sid := manager.NextId()
+		vs := make([]bool, 0)
+		for i := 0; i < 3; i++ {
+			v := _mock.Bool()
+			vs = append(vs, v)
+		}
+		rows, err := mapper.InsertArrayParameterBoolBoolOriginalPointer(sid, "InsertArrayParameterBoolBoolOriginalPointer", vs)
+		require.NoError(t, err, vs)
+		require.Equal(t, 1, *rows)
+
+		r, err := mapper.SelectArrayParameterBoolBoolOriginalPointer(sid)
+		require.NoError(t, err, sid)
+		for i := 0; i < 3; i++ {
+			require.Equal(t, vs[i], *r[i])
+		}
+
+		vs = make([]bool, 0)
+		for i := 0; i < 3; i++ {
+			v := _mock.Bool()
+			vs = append(vs, v)
+		}
+		rows, err = mapper.UpdateArrayParameterBoolBoolOriginalPointer(sid, "UpdateArrayParameterBoolBoolOriginalPointer", vs)
+		require.NoError(t, err, sid, vs)
+		require.Equal(t, 1, *rows)
+
+		r, err = mapper.SelectArrayParameterBoolBoolOriginalPointer(sid)
+		require.NoError(t, err, sid)
+		for i := 0; i < 3; i++ {
+			require.Equal(t, vs[i], *r[i])
+		}
+
+		rows, err = mapper.DeleteArrayParameterBoolBoolOriginalPointer(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, 1, *rows)
+
+	}
+	{
+
+		sid := manager.NextId()
+		vs := make([]*bool, 0)
+		for i := 0; i < 3; i++ {
+			v := _mock.Bool()
+			vs = append(vs, &v)
+		}
+		rows, err := mapper.InsertArrayParameterBoolBoolPointerOriginal(sid, "InsertArrayParameterBoolBoolPointerOriginal", vs)
+		require.NoError(t, err, vs)
+		require.Equal(t, 1, rows)
+
+		r, err := mapper.SelectArrayParameterBoolBoolPointerOriginal(sid)
+		require.NoError(t, err, sid)
+		for i := 0; i < 3; i++ {
+			require.Equal(t, *vs[i], r[i])
+		}
+
+		vs = make([]*bool, 0)
+		for i := 0; i < 3; i++ {
+			v := _mock.Bool()
+			vs = append(vs, &v)
+		}
+		rows, err = mapper.UpdateArrayParameterBoolBoolPointerOriginal(sid, "UpdateArrayParameterBoolBoolPointerOriginal", vs)
+		require.NoError(t, err, sid, vs)
+		require.Equal(t, 1, rows)
+
+		r, err = mapper.SelectArrayParameterBoolBoolPointerOriginal(sid)
+		require.NoError(t, err, sid)
+		for i := 0; i < 3; i++ {
+			require.Equal(t, *vs[i], r[i])
+		}
+
+		rows, err = mapper.DeleteArrayParameterBoolBoolPointerOriginal(sid)
 		require.NoError(t, err, sid)
 		require.Equal(t, 1, rows)
 
@@ -461,6 +765,82 @@ func testScanTypes(t *testing.T, mapper *Mapper, manager *generator.DataManager)
 	{
 
 		sid := manager.NextId()
+		vs := make([]string, 0)
+		for i := 0; i < 3; i++ {
+			v := _mock.String()
+			vs = append(vs, v)
+		}
+		rows, err := mapper.InsertArrayParameterCharacterStringOriginalPointer(sid, "InsertArrayParameterCharacterStringOriginalPointer", vs)
+		require.NoError(t, err, vs)
+		require.Equal(t, 1, *rows)
+
+		r, err := mapper.SelectArrayParameterCharacterStringOriginalPointer(sid)
+		require.NoError(t, err, sid)
+		for i := 0; i < 3; i++ {
+			require.Equal(t, vs[i], *r[i])
+		}
+
+		vs = make([]string, 0)
+		for i := 0; i < 3; i++ {
+			v := _mock.String()
+			vs = append(vs, v)
+		}
+		rows, err = mapper.UpdateArrayParameterCharacterStringOriginalPointer(sid, "UpdateArrayParameterCharacterStringOriginalPointer", vs)
+		require.NoError(t, err, sid, vs)
+		require.Equal(t, 1, *rows)
+
+		r, err = mapper.SelectArrayParameterCharacterStringOriginalPointer(sid)
+		require.NoError(t, err, sid)
+		for i := 0; i < 3; i++ {
+			require.Equal(t, vs[i], *r[i])
+		}
+
+		rows, err = mapper.DeleteArrayParameterCharacterStringOriginalPointer(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, 1, *rows)
+
+	}
+	{
+
+		sid := manager.NextId()
+		vs := make([]*string, 0)
+		for i := 0; i < 3; i++ {
+			v := _mock.String()
+			vs = append(vs, &v)
+		}
+		rows, err := mapper.InsertArrayParameterCharacterStringPointerOriginal(sid, "InsertArrayParameterCharacterStringPointerOriginal", vs)
+		require.NoError(t, err, vs)
+		require.Equal(t, 1, rows)
+
+		r, err := mapper.SelectArrayParameterCharacterStringPointerOriginal(sid)
+		require.NoError(t, err, sid)
+		for i := 0; i < 3; i++ {
+			require.Equal(t, *vs[i], r[i])
+		}
+
+		vs = make([]*string, 0)
+		for i := 0; i < 3; i++ {
+			v := _mock.String()
+			vs = append(vs, &v)
+		}
+		rows, err = mapper.UpdateArrayParameterCharacterStringPointerOriginal(sid, "UpdateArrayParameterCharacterStringPointerOriginal", vs)
+		require.NoError(t, err, sid, vs)
+		require.Equal(t, 1, rows)
+
+		r, err = mapper.SelectArrayParameterCharacterStringPointerOriginal(sid)
+		require.NoError(t, err, sid)
+		for i := 0; i < 3; i++ {
+			require.Equal(t, *vs[i], r[i])
+		}
+
+		rows, err = mapper.DeleteArrayParameterCharacterStringPointerOriginal(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, 1, rows)
+
+	}
+	{
+
+		sid := manager.NextId()
 		v := _mock.String()
 		rows, err := mapper.InsertParameterCharString(sid, "InsertParameterCharString", v)
 		require.NoError(t, err, v)
@@ -544,6 +924,82 @@ func testScanTypes(t *testing.T, mapper *Mapper, manager *generator.DataManager)
 		}
 
 		rows, err = mapper.DeleteArrayParameterCharString(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, 1, rows)
+
+	}
+	{
+
+		sid := manager.NextId()
+		vs := make([]string, 0)
+		for i := 0; i < 3; i++ {
+			v := _mock.String()
+			vs = append(vs, v)
+		}
+		rows, err := mapper.InsertArrayParameterCharStringOriginalPointer(sid, "InsertArrayParameterCharStringOriginalPointer", vs)
+		require.NoError(t, err, vs)
+		require.Equal(t, 1, *rows)
+
+		r, err := mapper.SelectArrayParameterCharStringOriginalPointer(sid)
+		require.NoError(t, err, sid)
+		for i := 0; i < 3; i++ {
+			require.Equal(t, vs[i], *r[i])
+		}
+
+		vs = make([]string, 0)
+		for i := 0; i < 3; i++ {
+			v := _mock.String()
+			vs = append(vs, v)
+		}
+		rows, err = mapper.UpdateArrayParameterCharStringOriginalPointer(sid, "UpdateArrayParameterCharStringOriginalPointer", vs)
+		require.NoError(t, err, sid, vs)
+		require.Equal(t, 1, *rows)
+
+		r, err = mapper.SelectArrayParameterCharStringOriginalPointer(sid)
+		require.NoError(t, err, sid)
+		for i := 0; i < 3; i++ {
+			require.Equal(t, vs[i], *r[i])
+		}
+
+		rows, err = mapper.DeleteArrayParameterCharStringOriginalPointer(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, 1, *rows)
+
+	}
+	{
+
+		sid := manager.NextId()
+		vs := make([]*string, 0)
+		for i := 0; i < 3; i++ {
+			v := _mock.String()
+			vs = append(vs, &v)
+		}
+		rows, err := mapper.InsertArrayParameterCharStringPointerOriginal(sid, "InsertArrayParameterCharStringPointerOriginal", vs)
+		require.NoError(t, err, vs)
+		require.Equal(t, 1, rows)
+
+		r, err := mapper.SelectArrayParameterCharStringPointerOriginal(sid)
+		require.NoError(t, err, sid)
+		for i := 0; i < 3; i++ {
+			require.Equal(t, *vs[i], r[i])
+		}
+
+		vs = make([]*string, 0)
+		for i := 0; i < 3; i++ {
+			v := _mock.String()
+			vs = append(vs, &v)
+		}
+		rows, err = mapper.UpdateArrayParameterCharStringPointerOriginal(sid, "UpdateArrayParameterCharStringPointerOriginal", vs)
+		require.NoError(t, err, sid, vs)
+		require.Equal(t, 1, rows)
+
+		r, err = mapper.SelectArrayParameterCharStringPointerOriginal(sid)
+		require.NoError(t, err, sid)
+		for i := 0; i < 3; i++ {
+			require.Equal(t, *vs[i], r[i])
+		}
+
+		rows, err = mapper.DeleteArrayParameterCharStringPointerOriginal(sid)
 		require.NoError(t, err, sid)
 		require.Equal(t, 1, rows)
 
@@ -641,6 +1097,82 @@ func testScanTypes(t *testing.T, mapper *Mapper, manager *generator.DataManager)
 	{
 
 		sid := manager.NextId()
+		vs := make([]string, 0)
+		for i := 0; i < 3; i++ {
+			v := _mock.String()
+			vs = append(vs, v)
+		}
+		rows, err := mapper.InsertArrayParameterCharacterVaryingStringOriginalPointer(sid, "InsertArrayParameterCharacterVaryingStringOriginalPointer", vs)
+		require.NoError(t, err, vs)
+		require.Equal(t, 1, *rows)
+
+		r, err := mapper.SelectArrayParameterCharacterVaryingStringOriginalPointer(sid)
+		require.NoError(t, err, sid)
+		for i := 0; i < 3; i++ {
+			require.Equal(t, vs[i], *r[i])
+		}
+
+		vs = make([]string, 0)
+		for i := 0; i < 3; i++ {
+			v := _mock.String()
+			vs = append(vs, v)
+		}
+		rows, err = mapper.UpdateArrayParameterCharacterVaryingStringOriginalPointer(sid, "UpdateArrayParameterCharacterVaryingStringOriginalPointer", vs)
+		require.NoError(t, err, sid, vs)
+		require.Equal(t, 1, *rows)
+
+		r, err = mapper.SelectArrayParameterCharacterVaryingStringOriginalPointer(sid)
+		require.NoError(t, err, sid)
+		for i := 0; i < 3; i++ {
+			require.Equal(t, vs[i], *r[i])
+		}
+
+		rows, err = mapper.DeleteArrayParameterCharacterVaryingStringOriginalPointer(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, 1, *rows)
+
+	}
+	{
+
+		sid := manager.NextId()
+		vs := make([]*string, 0)
+		for i := 0; i < 3; i++ {
+			v := _mock.String()
+			vs = append(vs, &v)
+		}
+		rows, err := mapper.InsertArrayParameterCharacterVaryingStringPointerOriginal(sid, "InsertArrayParameterCharacterVaryingStringPointerOriginal", vs)
+		require.NoError(t, err, vs)
+		require.Equal(t, 1, rows)
+
+		r, err := mapper.SelectArrayParameterCharacterVaryingStringPointerOriginal(sid)
+		require.NoError(t, err, sid)
+		for i := 0; i < 3; i++ {
+			require.Equal(t, *vs[i], r[i])
+		}
+
+		vs = make([]*string, 0)
+		for i := 0; i < 3; i++ {
+			v := _mock.String()
+			vs = append(vs, &v)
+		}
+		rows, err = mapper.UpdateArrayParameterCharacterVaryingStringPointerOriginal(sid, "UpdateArrayParameterCharacterVaryingStringPointerOriginal", vs)
+		require.NoError(t, err, sid, vs)
+		require.Equal(t, 1, rows)
+
+		r, err = mapper.SelectArrayParameterCharacterVaryingStringPointerOriginal(sid)
+		require.NoError(t, err, sid)
+		for i := 0; i < 3; i++ {
+			require.Equal(t, *vs[i], r[i])
+		}
+
+		rows, err = mapper.DeleteArrayParameterCharacterVaryingStringPointerOriginal(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, 1, rows)
+
+	}
+	{
+
+		sid := manager.NextId()
 		v := _mock.String()
 		rows, err := mapper.InsertParameterVarcharString(sid, "InsertParameterVarcharString", v)
 		require.NoError(t, err, v)
@@ -724,6 +1256,82 @@ func testScanTypes(t *testing.T, mapper *Mapper, manager *generator.DataManager)
 		}
 
 		rows, err = mapper.DeleteArrayParameterVarcharString(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, 1, rows)
+
+	}
+	{
+
+		sid := manager.NextId()
+		vs := make([]string, 0)
+		for i := 0; i < 3; i++ {
+			v := _mock.String()
+			vs = append(vs, v)
+		}
+		rows, err := mapper.InsertArrayParameterVarcharStringOriginalPointer(sid, "InsertArrayParameterVarcharStringOriginalPointer", vs)
+		require.NoError(t, err, vs)
+		require.Equal(t, 1, *rows)
+
+		r, err := mapper.SelectArrayParameterVarcharStringOriginalPointer(sid)
+		require.NoError(t, err, sid)
+		for i := 0; i < 3; i++ {
+			require.Equal(t, vs[i], *r[i])
+		}
+
+		vs = make([]string, 0)
+		for i := 0; i < 3; i++ {
+			v := _mock.String()
+			vs = append(vs, v)
+		}
+		rows, err = mapper.UpdateArrayParameterVarcharStringOriginalPointer(sid, "UpdateArrayParameterVarcharStringOriginalPointer", vs)
+		require.NoError(t, err, sid, vs)
+		require.Equal(t, 1, *rows)
+
+		r, err = mapper.SelectArrayParameterVarcharStringOriginalPointer(sid)
+		require.NoError(t, err, sid)
+		for i := 0; i < 3; i++ {
+			require.Equal(t, vs[i], *r[i])
+		}
+
+		rows, err = mapper.DeleteArrayParameterVarcharStringOriginalPointer(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, 1, *rows)
+
+	}
+	{
+
+		sid := manager.NextId()
+		vs := make([]*string, 0)
+		for i := 0; i < 3; i++ {
+			v := _mock.String()
+			vs = append(vs, &v)
+		}
+		rows, err := mapper.InsertArrayParameterVarcharStringPointerOriginal(sid, "InsertArrayParameterVarcharStringPointerOriginal", vs)
+		require.NoError(t, err, vs)
+		require.Equal(t, 1, rows)
+
+		r, err := mapper.SelectArrayParameterVarcharStringPointerOriginal(sid)
+		require.NoError(t, err, sid)
+		for i := 0; i < 3; i++ {
+			require.Equal(t, *vs[i], r[i])
+		}
+
+		vs = make([]*string, 0)
+		for i := 0; i < 3; i++ {
+			v := _mock.String()
+			vs = append(vs, &v)
+		}
+		rows, err = mapper.UpdateArrayParameterVarcharStringPointerOriginal(sid, "UpdateArrayParameterVarcharStringPointerOriginal", vs)
+		require.NoError(t, err, sid, vs)
+		require.Equal(t, 1, rows)
+
+		r, err = mapper.SelectArrayParameterVarcharStringPointerOriginal(sid)
+		require.NoError(t, err, sid)
+		for i := 0; i < 3; i++ {
+			require.Equal(t, *vs[i], r[i])
+		}
+
+		rows, err = mapper.DeleteArrayParameterVarcharStringPointerOriginal(sid)
 		require.NoError(t, err, sid)
 		require.Equal(t, 1, rows)
 
@@ -821,6 +1429,82 @@ func testScanTypes(t *testing.T, mapper *Mapper, manager *generator.DataManager)
 	{
 
 		sid := manager.NextId()
+		vs := make([]float32, 0)
+		for i := 0; i < 3; i++ {
+			v := _mock.Float32()
+			vs = append(vs, v)
+		}
+		rows, err := mapper.InsertArrayParameterFloat8Float32OriginalPointer(sid, "InsertArrayParameterFloat8Float32OriginalPointer", vs)
+		require.NoError(t, err, vs)
+		require.Equal(t, 1, *rows)
+
+		r, err := mapper.SelectArrayParameterFloat8Float32OriginalPointer(sid)
+		require.NoError(t, err, sid)
+		for i := 0; i < 3; i++ {
+			require.Equal(t, vs[i], *r[i])
+		}
+
+		vs = make([]float32, 0)
+		for i := 0; i < 3; i++ {
+			v := _mock.Float32()
+			vs = append(vs, v)
+		}
+		rows, err = mapper.UpdateArrayParameterFloat8Float32OriginalPointer(sid, "UpdateArrayParameterFloat8Float32OriginalPointer", vs)
+		require.NoError(t, err, sid, vs)
+		require.Equal(t, 1, *rows)
+
+		r, err = mapper.SelectArrayParameterFloat8Float32OriginalPointer(sid)
+		require.NoError(t, err, sid)
+		for i := 0; i < 3; i++ {
+			require.Equal(t, vs[i], *r[i])
+		}
+
+		rows, err = mapper.DeleteArrayParameterFloat8Float32OriginalPointer(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, 1, *rows)
+
+	}
+	{
+
+		sid := manager.NextId()
+		vs := make([]*float32, 0)
+		for i := 0; i < 3; i++ {
+			v := _mock.Float32()
+			vs = append(vs, &v)
+		}
+		rows, err := mapper.InsertArrayParameterFloat8Float32PointerOriginal(sid, "InsertArrayParameterFloat8Float32PointerOriginal", vs)
+		require.NoError(t, err, vs)
+		require.Equal(t, 1, rows)
+
+		r, err := mapper.SelectArrayParameterFloat8Float32PointerOriginal(sid)
+		require.NoError(t, err, sid)
+		for i := 0; i < 3; i++ {
+			require.Equal(t, *vs[i], r[i])
+		}
+
+		vs = make([]*float32, 0)
+		for i := 0; i < 3; i++ {
+			v := _mock.Float32()
+			vs = append(vs, &v)
+		}
+		rows, err = mapper.UpdateArrayParameterFloat8Float32PointerOriginal(sid, "UpdateArrayParameterFloat8Float32PointerOriginal", vs)
+		require.NoError(t, err, sid, vs)
+		require.Equal(t, 1, rows)
+
+		r, err = mapper.SelectArrayParameterFloat8Float32PointerOriginal(sid)
+		require.NoError(t, err, sid)
+		for i := 0; i < 3; i++ {
+			require.Equal(t, *vs[i], r[i])
+		}
+
+		rows, err = mapper.DeleteArrayParameterFloat8Float32PointerOriginal(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, 1, rows)
+
+	}
+	{
+
+		sid := manager.NextId()
 		v := _mock.Int8()
 		rows, err := mapper.InsertParameterIntegerInt8(sid, "InsertParameterIntegerInt8", v)
 		require.NoError(t, err, v)
@@ -904,6 +1588,82 @@ func testScanTypes(t *testing.T, mapper *Mapper, manager *generator.DataManager)
 		}
 
 		rows, err = mapper.DeleteArrayParameterIntegerInt8(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, 1, rows)
+
+	}
+	{
+
+		sid := manager.NextId()
+		vs := make([]int8, 0)
+		for i := 0; i < 3; i++ {
+			v := _mock.Int8()
+			vs = append(vs, v)
+		}
+		rows, err := mapper.InsertArrayParameterIntegerInt8OriginalPointer(sid, "InsertArrayParameterIntegerInt8OriginalPointer", vs)
+		require.NoError(t, err, vs)
+		require.Equal(t, 1, *rows)
+
+		r, err := mapper.SelectArrayParameterIntegerInt8OriginalPointer(sid)
+		require.NoError(t, err, sid)
+		for i := 0; i < 3; i++ {
+			require.Equal(t, vs[i], *r[i])
+		}
+
+		vs = make([]int8, 0)
+		for i := 0; i < 3; i++ {
+			v := _mock.Int8()
+			vs = append(vs, v)
+		}
+		rows, err = mapper.UpdateArrayParameterIntegerInt8OriginalPointer(sid, "UpdateArrayParameterIntegerInt8OriginalPointer", vs)
+		require.NoError(t, err, sid, vs)
+		require.Equal(t, 1, *rows)
+
+		r, err = mapper.SelectArrayParameterIntegerInt8OriginalPointer(sid)
+		require.NoError(t, err, sid)
+		for i := 0; i < 3; i++ {
+			require.Equal(t, vs[i], *r[i])
+		}
+
+		rows, err = mapper.DeleteArrayParameterIntegerInt8OriginalPointer(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, 1, *rows)
+
+	}
+	{
+
+		sid := manager.NextId()
+		vs := make([]*int8, 0)
+		for i := 0; i < 3; i++ {
+			v := _mock.Int8()
+			vs = append(vs, &v)
+		}
+		rows, err := mapper.InsertArrayParameterIntegerInt8PointerOriginal(sid, "InsertArrayParameterIntegerInt8PointerOriginal", vs)
+		require.NoError(t, err, vs)
+		require.Equal(t, 1, rows)
+
+		r, err := mapper.SelectArrayParameterIntegerInt8PointerOriginal(sid)
+		require.NoError(t, err, sid)
+		for i := 0; i < 3; i++ {
+			require.Equal(t, *vs[i], r[i])
+		}
+
+		vs = make([]*int8, 0)
+		for i := 0; i < 3; i++ {
+			v := _mock.Int8()
+			vs = append(vs, &v)
+		}
+		rows, err = mapper.UpdateArrayParameterIntegerInt8PointerOriginal(sid, "UpdateArrayParameterIntegerInt8PointerOriginal", vs)
+		require.NoError(t, err, sid, vs)
+		require.Equal(t, 1, rows)
+
+		r, err = mapper.SelectArrayParameterIntegerInt8PointerOriginal(sid)
+		require.NoError(t, err, sid)
+		for i := 0; i < 3; i++ {
+			require.Equal(t, *vs[i], r[i])
+		}
+
+		rows, err = mapper.DeleteArrayParameterIntegerInt8PointerOriginal(sid)
 		require.NoError(t, err, sid)
 		require.Equal(t, 1, rows)
 
@@ -1001,6 +1761,82 @@ func testScanTypes(t *testing.T, mapper *Mapper, manager *generator.DataManager)
 	{
 
 		sid := manager.NextId()
+		vs := make([]int8, 0)
+		for i := 0; i < 3; i++ {
+			v := _mock.Int8()
+			vs = append(vs, v)
+		}
+		rows, err := mapper.InsertArrayParameterIntInt8OriginalPointer(sid, "InsertArrayParameterIntInt8OriginalPointer", vs)
+		require.NoError(t, err, vs)
+		require.Equal(t, 1, *rows)
+
+		r, err := mapper.SelectArrayParameterIntInt8OriginalPointer(sid)
+		require.NoError(t, err, sid)
+		for i := 0; i < 3; i++ {
+			require.Equal(t, vs[i], *r[i])
+		}
+
+		vs = make([]int8, 0)
+		for i := 0; i < 3; i++ {
+			v := _mock.Int8()
+			vs = append(vs, v)
+		}
+		rows, err = mapper.UpdateArrayParameterIntInt8OriginalPointer(sid, "UpdateArrayParameterIntInt8OriginalPointer", vs)
+		require.NoError(t, err, sid, vs)
+		require.Equal(t, 1, *rows)
+
+		r, err = mapper.SelectArrayParameterIntInt8OriginalPointer(sid)
+		require.NoError(t, err, sid)
+		for i := 0; i < 3; i++ {
+			require.Equal(t, vs[i], *r[i])
+		}
+
+		rows, err = mapper.DeleteArrayParameterIntInt8OriginalPointer(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, 1, *rows)
+
+	}
+	{
+
+		sid := manager.NextId()
+		vs := make([]*int8, 0)
+		for i := 0; i < 3; i++ {
+			v := _mock.Int8()
+			vs = append(vs, &v)
+		}
+		rows, err := mapper.InsertArrayParameterIntInt8PointerOriginal(sid, "InsertArrayParameterIntInt8PointerOriginal", vs)
+		require.NoError(t, err, vs)
+		require.Equal(t, 1, rows)
+
+		r, err := mapper.SelectArrayParameterIntInt8PointerOriginal(sid)
+		require.NoError(t, err, sid)
+		for i := 0; i < 3; i++ {
+			require.Equal(t, *vs[i], r[i])
+		}
+
+		vs = make([]*int8, 0)
+		for i := 0; i < 3; i++ {
+			v := _mock.Int8()
+			vs = append(vs, &v)
+		}
+		rows, err = mapper.UpdateArrayParameterIntInt8PointerOriginal(sid, "UpdateArrayParameterIntInt8PointerOriginal", vs)
+		require.NoError(t, err, sid, vs)
+		require.Equal(t, 1, rows)
+
+		r, err = mapper.SelectArrayParameterIntInt8PointerOriginal(sid)
+		require.NoError(t, err, sid)
+		for i := 0; i < 3; i++ {
+			require.Equal(t, *vs[i], r[i])
+		}
+
+		rows, err = mapper.DeleteArrayParameterIntInt8PointerOriginal(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, 1, rows)
+
+	}
+	{
+
+		sid := manager.NextId()
 		v := _mock.Int8()
 		rows, err := mapper.InsertParameterInt4Int8(sid, "InsertParameterInt4Int8", v)
 		require.NoError(t, err, v)
@@ -1084,6 +1920,82 @@ func testScanTypes(t *testing.T, mapper *Mapper, manager *generator.DataManager)
 		}
 
 		rows, err = mapper.DeleteArrayParameterInt4Int8(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, 1, rows)
+
+	}
+	{
+
+		sid := manager.NextId()
+		vs := make([]int8, 0)
+		for i := 0; i < 3; i++ {
+			v := _mock.Int8()
+			vs = append(vs, v)
+		}
+		rows, err := mapper.InsertArrayParameterInt4Int8OriginalPointer(sid, "InsertArrayParameterInt4Int8OriginalPointer", vs)
+		require.NoError(t, err, vs)
+		require.Equal(t, 1, *rows)
+
+		r, err := mapper.SelectArrayParameterInt4Int8OriginalPointer(sid)
+		require.NoError(t, err, sid)
+		for i := 0; i < 3; i++ {
+			require.Equal(t, vs[i], *r[i])
+		}
+
+		vs = make([]int8, 0)
+		for i := 0; i < 3; i++ {
+			v := _mock.Int8()
+			vs = append(vs, v)
+		}
+		rows, err = mapper.UpdateArrayParameterInt4Int8OriginalPointer(sid, "UpdateArrayParameterInt4Int8OriginalPointer", vs)
+		require.NoError(t, err, sid, vs)
+		require.Equal(t, 1, *rows)
+
+		r, err = mapper.SelectArrayParameterInt4Int8OriginalPointer(sid)
+		require.NoError(t, err, sid)
+		for i := 0; i < 3; i++ {
+			require.Equal(t, vs[i], *r[i])
+		}
+
+		rows, err = mapper.DeleteArrayParameterInt4Int8OriginalPointer(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, 1, *rows)
+
+	}
+	{
+
+		sid := manager.NextId()
+		vs := make([]*int8, 0)
+		for i := 0; i < 3; i++ {
+			v := _mock.Int8()
+			vs = append(vs, &v)
+		}
+		rows, err := mapper.InsertArrayParameterInt4Int8PointerOriginal(sid, "InsertArrayParameterInt4Int8PointerOriginal", vs)
+		require.NoError(t, err, vs)
+		require.Equal(t, 1, rows)
+
+		r, err := mapper.SelectArrayParameterInt4Int8PointerOriginal(sid)
+		require.NoError(t, err, sid)
+		for i := 0; i < 3; i++ {
+			require.Equal(t, *vs[i], r[i])
+		}
+
+		vs = make([]*int8, 0)
+		for i := 0; i < 3; i++ {
+			v := _mock.Int8()
+			vs = append(vs, &v)
+		}
+		rows, err = mapper.UpdateArrayParameterInt4Int8PointerOriginal(sid, "UpdateArrayParameterInt4Int8PointerOriginal", vs)
+		require.NoError(t, err, sid, vs)
+		require.Equal(t, 1, rows)
+
+		r, err = mapper.SelectArrayParameterInt4Int8PointerOriginal(sid)
+		require.NoError(t, err, sid)
+		for i := 0; i < 3; i++ {
+			require.Equal(t, *vs[i], r[i])
+		}
+
+		rows, err = mapper.DeleteArrayParameterInt4Int8PointerOriginal(sid)
 		require.NoError(t, err, sid)
 		require.Equal(t, 1, rows)
 
@@ -1181,6 +2093,82 @@ func testScanTypes(t *testing.T, mapper *Mapper, manager *generator.DataManager)
 	{
 
 		sid := manager.NextId()
+		vs := make([]decimal, 0)
+		for i := 0; i < 3; i++ {
+			v := _mock.Decimal()
+			vs = append(vs, v)
+		}
+		rows, err := mapper.InsertArrayParameterNumericDecimalOriginalPointer(sid, "InsertArrayParameterNumericDecimalOriginalPointer", vs)
+		require.NoError(t, err, vs)
+		require.Equal(t, 1, *rows)
+
+		r, err := mapper.SelectArrayParameterNumericDecimalOriginalPointer(sid)
+		require.NoError(t, err, sid)
+		for i := 0; i < 3; i++ {
+			require.Equal(t, vs[i], *r[i])
+		}
+
+		vs = make([]decimal, 0)
+		for i := 0; i < 3; i++ {
+			v := _mock.Decimal()
+			vs = append(vs, v)
+		}
+		rows, err = mapper.UpdateArrayParameterNumericDecimalOriginalPointer(sid, "UpdateArrayParameterNumericDecimalOriginalPointer", vs)
+		require.NoError(t, err, sid, vs)
+		require.Equal(t, 1, *rows)
+
+		r, err = mapper.SelectArrayParameterNumericDecimalOriginalPointer(sid)
+		require.NoError(t, err, sid)
+		for i := 0; i < 3; i++ {
+			require.Equal(t, vs[i], *r[i])
+		}
+
+		rows, err = mapper.DeleteArrayParameterNumericDecimalOriginalPointer(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, 1, *rows)
+
+	}
+	{
+
+		sid := manager.NextId()
+		vs := make([]*decimal, 0)
+		for i := 0; i < 3; i++ {
+			v := _mock.Decimal()
+			vs = append(vs, &v)
+		}
+		rows, err := mapper.InsertArrayParameterNumericDecimalPointerOriginal(sid, "InsertArrayParameterNumericDecimalPointerOriginal", vs)
+		require.NoError(t, err, vs)
+		require.Equal(t, 1, rows)
+
+		r, err := mapper.SelectArrayParameterNumericDecimalPointerOriginal(sid)
+		require.NoError(t, err, sid)
+		for i := 0; i < 3; i++ {
+			require.Equal(t, *vs[i], r[i])
+		}
+
+		vs = make([]*decimal, 0)
+		for i := 0; i < 3; i++ {
+			v := _mock.Decimal()
+			vs = append(vs, &v)
+		}
+		rows, err = mapper.UpdateArrayParameterNumericDecimalPointerOriginal(sid, "UpdateArrayParameterNumericDecimalPointerOriginal", vs)
+		require.NoError(t, err, sid, vs)
+		require.Equal(t, 1, rows)
+
+		r, err = mapper.SelectArrayParameterNumericDecimalPointerOriginal(sid)
+		require.NoError(t, err, sid)
+		for i := 0; i < 3; i++ {
+			require.Equal(t, *vs[i], r[i])
+		}
+
+		rows, err = mapper.DeleteArrayParameterNumericDecimalPointerOriginal(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, 1, rows)
+
+	}
+	{
+
+		sid := manager.NextId()
 		v := _mock.Decimal()
 		rows, err := mapper.InsertParameterDecimalDecimal(sid, "InsertParameterDecimalDecimal", v)
 		require.NoError(t, err, v)
@@ -1264,6 +2252,82 @@ func testScanTypes(t *testing.T, mapper *Mapper, manager *generator.DataManager)
 		}
 
 		rows, err = mapper.DeleteArrayParameterDecimalDecimal(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, 1, rows)
+
+	}
+	{
+
+		sid := manager.NextId()
+		vs := make([]decimal, 0)
+		for i := 0; i < 3; i++ {
+			v := _mock.Decimal()
+			vs = append(vs, v)
+		}
+		rows, err := mapper.InsertArrayParameterDecimalDecimalOriginalPointer(sid, "InsertArrayParameterDecimalDecimalOriginalPointer", vs)
+		require.NoError(t, err, vs)
+		require.Equal(t, 1, *rows)
+
+		r, err := mapper.SelectArrayParameterDecimalDecimalOriginalPointer(sid)
+		require.NoError(t, err, sid)
+		for i := 0; i < 3; i++ {
+			require.Equal(t, vs[i], *r[i])
+		}
+
+		vs = make([]decimal, 0)
+		for i := 0; i < 3; i++ {
+			v := _mock.Decimal()
+			vs = append(vs, v)
+		}
+		rows, err = mapper.UpdateArrayParameterDecimalDecimalOriginalPointer(sid, "UpdateArrayParameterDecimalDecimalOriginalPointer", vs)
+		require.NoError(t, err, sid, vs)
+		require.Equal(t, 1, *rows)
+
+		r, err = mapper.SelectArrayParameterDecimalDecimalOriginalPointer(sid)
+		require.NoError(t, err, sid)
+		for i := 0; i < 3; i++ {
+			require.Equal(t, vs[i], *r[i])
+		}
+
+		rows, err = mapper.DeleteArrayParameterDecimalDecimalOriginalPointer(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, 1, *rows)
+
+	}
+	{
+
+		sid := manager.NextId()
+		vs := make([]*decimal, 0)
+		for i := 0; i < 3; i++ {
+			v := _mock.Decimal()
+			vs = append(vs, &v)
+		}
+		rows, err := mapper.InsertArrayParameterDecimalDecimalPointerOriginal(sid, "InsertArrayParameterDecimalDecimalPointerOriginal", vs)
+		require.NoError(t, err, vs)
+		require.Equal(t, 1, rows)
+
+		r, err := mapper.SelectArrayParameterDecimalDecimalPointerOriginal(sid)
+		require.NoError(t, err, sid)
+		for i := 0; i < 3; i++ {
+			require.Equal(t, *vs[i], r[i])
+		}
+
+		vs = make([]*decimal, 0)
+		for i := 0; i < 3; i++ {
+			v := _mock.Decimal()
+			vs = append(vs, &v)
+		}
+		rows, err = mapper.UpdateArrayParameterDecimalDecimalPointerOriginal(sid, "UpdateArrayParameterDecimalDecimalPointerOriginal", vs)
+		require.NoError(t, err, sid, vs)
+		require.Equal(t, 1, rows)
+
+		r, err = mapper.SelectArrayParameterDecimalDecimalPointerOriginal(sid)
+		require.NoError(t, err, sid)
+		for i := 0; i < 3; i++ {
+			require.Equal(t, *vs[i], r[i])
+		}
+
+		rows, err = mapper.DeleteArrayParameterDecimalDecimalPointerOriginal(sid)
 		require.NoError(t, err, sid)
 		require.Equal(t, 1, rows)
 
@@ -1361,6 +2425,82 @@ func testScanTypes(t *testing.T, mapper *Mapper, manager *generator.DataManager)
 	{
 
 		sid := manager.NextId()
+		vs := make([]float32, 0)
+		for i := 0; i < 3; i++ {
+			v := _mock.Float32()
+			vs = append(vs, v)
+		}
+		rows, err := mapper.InsertArrayParameterFloat4Float32OriginalPointer(sid, "InsertArrayParameterFloat4Float32OriginalPointer", vs)
+		require.NoError(t, err, vs)
+		require.Equal(t, 1, *rows)
+
+		r, err := mapper.SelectArrayParameterFloat4Float32OriginalPointer(sid)
+		require.NoError(t, err, sid)
+		for i := 0; i < 3; i++ {
+			require.Equal(t, vs[i], *r[i])
+		}
+
+		vs = make([]float32, 0)
+		for i := 0; i < 3; i++ {
+			v := _mock.Float32()
+			vs = append(vs, v)
+		}
+		rows, err = mapper.UpdateArrayParameterFloat4Float32OriginalPointer(sid, "UpdateArrayParameterFloat4Float32OriginalPointer", vs)
+		require.NoError(t, err, sid, vs)
+		require.Equal(t, 1, *rows)
+
+		r, err = mapper.SelectArrayParameterFloat4Float32OriginalPointer(sid)
+		require.NoError(t, err, sid)
+		for i := 0; i < 3; i++ {
+			require.Equal(t, vs[i], *r[i])
+		}
+
+		rows, err = mapper.DeleteArrayParameterFloat4Float32OriginalPointer(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, 1, *rows)
+
+	}
+	{
+
+		sid := manager.NextId()
+		vs := make([]*float32, 0)
+		for i := 0; i < 3; i++ {
+			v := _mock.Float32()
+			vs = append(vs, &v)
+		}
+		rows, err := mapper.InsertArrayParameterFloat4Float32PointerOriginal(sid, "InsertArrayParameterFloat4Float32PointerOriginal", vs)
+		require.NoError(t, err, vs)
+		require.Equal(t, 1, rows)
+
+		r, err := mapper.SelectArrayParameterFloat4Float32PointerOriginal(sid)
+		require.NoError(t, err, sid)
+		for i := 0; i < 3; i++ {
+			require.Equal(t, *vs[i], r[i])
+		}
+
+		vs = make([]*float32, 0)
+		for i := 0; i < 3; i++ {
+			v := _mock.Float32()
+			vs = append(vs, &v)
+		}
+		rows, err = mapper.UpdateArrayParameterFloat4Float32PointerOriginal(sid, "UpdateArrayParameterFloat4Float32PointerOriginal", vs)
+		require.NoError(t, err, sid, vs)
+		require.Equal(t, 1, rows)
+
+		r, err = mapper.SelectArrayParameterFloat4Float32PointerOriginal(sid)
+		require.NoError(t, err, sid)
+		for i := 0; i < 3; i++ {
+			require.Equal(t, *vs[i], r[i])
+		}
+
+		rows, err = mapper.DeleteArrayParameterFloat4Float32PointerOriginal(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, 1, rows)
+
+	}
+	{
+
+		sid := manager.NextId()
 		v := _mock.Int8()
 		rows, err := mapper.InsertParameterSmallintInt8(sid, "InsertParameterSmallintInt8", v)
 		require.NoError(t, err, v)
@@ -1444,6 +2584,82 @@ func testScanTypes(t *testing.T, mapper *Mapper, manager *generator.DataManager)
 		}
 
 		rows, err = mapper.DeleteArrayParameterSmallintInt8(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, 1, rows)
+
+	}
+	{
+
+		sid := manager.NextId()
+		vs := make([]int8, 0)
+		for i := 0; i < 3; i++ {
+			v := _mock.Int8()
+			vs = append(vs, v)
+		}
+		rows, err := mapper.InsertArrayParameterSmallintInt8OriginalPointer(sid, "InsertArrayParameterSmallintInt8OriginalPointer", vs)
+		require.NoError(t, err, vs)
+		require.Equal(t, 1, *rows)
+
+		r, err := mapper.SelectArrayParameterSmallintInt8OriginalPointer(sid)
+		require.NoError(t, err, sid)
+		for i := 0; i < 3; i++ {
+			require.Equal(t, vs[i], *r[i])
+		}
+
+		vs = make([]int8, 0)
+		for i := 0; i < 3; i++ {
+			v := _mock.Int8()
+			vs = append(vs, v)
+		}
+		rows, err = mapper.UpdateArrayParameterSmallintInt8OriginalPointer(sid, "UpdateArrayParameterSmallintInt8OriginalPointer", vs)
+		require.NoError(t, err, sid, vs)
+		require.Equal(t, 1, *rows)
+
+		r, err = mapper.SelectArrayParameterSmallintInt8OriginalPointer(sid)
+		require.NoError(t, err, sid)
+		for i := 0; i < 3; i++ {
+			require.Equal(t, vs[i], *r[i])
+		}
+
+		rows, err = mapper.DeleteArrayParameterSmallintInt8OriginalPointer(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, 1, *rows)
+
+	}
+	{
+
+		sid := manager.NextId()
+		vs := make([]*int8, 0)
+		for i := 0; i < 3; i++ {
+			v := _mock.Int8()
+			vs = append(vs, &v)
+		}
+		rows, err := mapper.InsertArrayParameterSmallintInt8PointerOriginal(sid, "InsertArrayParameterSmallintInt8PointerOriginal", vs)
+		require.NoError(t, err, vs)
+		require.Equal(t, 1, rows)
+
+		r, err := mapper.SelectArrayParameterSmallintInt8PointerOriginal(sid)
+		require.NoError(t, err, sid)
+		for i := 0; i < 3; i++ {
+			require.Equal(t, *vs[i], r[i])
+		}
+
+		vs = make([]*int8, 0)
+		for i := 0; i < 3; i++ {
+			v := _mock.Int8()
+			vs = append(vs, &v)
+		}
+		rows, err = mapper.UpdateArrayParameterSmallintInt8PointerOriginal(sid, "UpdateArrayParameterSmallintInt8PointerOriginal", vs)
+		require.NoError(t, err, sid, vs)
+		require.Equal(t, 1, rows)
+
+		r, err = mapper.SelectArrayParameterSmallintInt8PointerOriginal(sid)
+		require.NoError(t, err, sid)
+		for i := 0; i < 3; i++ {
+			require.Equal(t, *vs[i], r[i])
+		}
+
+		rows, err = mapper.DeleteArrayParameterSmallintInt8PointerOriginal(sid)
 		require.NoError(t, err, sid)
 		require.Equal(t, 1, rows)
 
@@ -1541,6 +2757,82 @@ func testScanTypes(t *testing.T, mapper *Mapper, manager *generator.DataManager)
 	{
 
 		sid := manager.NextId()
+		vs := make([]int8, 0)
+		for i := 0; i < 3; i++ {
+			v := _mock.Int8()
+			vs = append(vs, v)
+		}
+		rows, err := mapper.InsertArrayParameterInt2Int8OriginalPointer(sid, "InsertArrayParameterInt2Int8OriginalPointer", vs)
+		require.NoError(t, err, vs)
+		require.Equal(t, 1, *rows)
+
+		r, err := mapper.SelectArrayParameterInt2Int8OriginalPointer(sid)
+		require.NoError(t, err, sid)
+		for i := 0; i < 3; i++ {
+			require.Equal(t, vs[i], *r[i])
+		}
+
+		vs = make([]int8, 0)
+		for i := 0; i < 3; i++ {
+			v := _mock.Int8()
+			vs = append(vs, v)
+		}
+		rows, err = mapper.UpdateArrayParameterInt2Int8OriginalPointer(sid, "UpdateArrayParameterInt2Int8OriginalPointer", vs)
+		require.NoError(t, err, sid, vs)
+		require.Equal(t, 1, *rows)
+
+		r, err = mapper.SelectArrayParameterInt2Int8OriginalPointer(sid)
+		require.NoError(t, err, sid)
+		for i := 0; i < 3; i++ {
+			require.Equal(t, vs[i], *r[i])
+		}
+
+		rows, err = mapper.DeleteArrayParameterInt2Int8OriginalPointer(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, 1, *rows)
+
+	}
+	{
+
+		sid := manager.NextId()
+		vs := make([]*int8, 0)
+		for i := 0; i < 3; i++ {
+			v := _mock.Int8()
+			vs = append(vs, &v)
+		}
+		rows, err := mapper.InsertArrayParameterInt2Int8PointerOriginal(sid, "InsertArrayParameterInt2Int8PointerOriginal", vs)
+		require.NoError(t, err, vs)
+		require.Equal(t, 1, rows)
+
+		r, err := mapper.SelectArrayParameterInt2Int8PointerOriginal(sid)
+		require.NoError(t, err, sid)
+		for i := 0; i < 3; i++ {
+			require.Equal(t, *vs[i], r[i])
+		}
+
+		vs = make([]*int8, 0)
+		for i := 0; i < 3; i++ {
+			v := _mock.Int8()
+			vs = append(vs, &v)
+		}
+		rows, err = mapper.UpdateArrayParameterInt2Int8PointerOriginal(sid, "UpdateArrayParameterInt2Int8PointerOriginal", vs)
+		require.NoError(t, err, sid, vs)
+		require.Equal(t, 1, rows)
+
+		r, err = mapper.SelectArrayParameterInt2Int8PointerOriginal(sid)
+		require.NoError(t, err, sid)
+		for i := 0; i < 3; i++ {
+			require.Equal(t, *vs[i], r[i])
+		}
+
+		rows, err = mapper.DeleteArrayParameterInt2Int8PointerOriginal(sid)
+		require.NoError(t, err, sid)
+		require.Equal(t, 1, rows)
+
+	}
+	{
+
+		sid := manager.NextId()
 		v := _mock.String()
 		rows, err := mapper.InsertParameterTextString(sid, "InsertParameterTextString", v)
 		require.NoError(t, err, v)
@@ -1593,44 +2885,6 @@ func testScanTypes(t *testing.T, mapper *Mapper, manager *generator.DataManager)
 	{
 
 		sid := manager.NextId()
-		vs := make([]string, 0)
-		for i := 0; i < 3; i++ {
-			v := _mock.String()
-			vs = append(vs, v)
-		}
-		rows, err := mapper.InsertArrayParameterTextString(sid, "InsertArrayParameterTextString", vs)
-		require.NoError(t, err, vs)
-		require.Equal(t, 1, rows)
-
-		r, err := mapper.SelectArrayParameterTextString(sid)
-		require.NoError(t, err, sid)
-		for i := 0; i < 3; i++ {
-			require.Equal(t, vs[i], r[i])
-		}
-
-		vs = make([]string, 0)
-		for i := 0; i < 3; i++ {
-			v := _mock.String()
-			vs = append(vs, v)
-		}
-		rows, err = mapper.UpdateArrayParameterTextString(sid, "UpdateArrayParameterTextString", vs)
-		require.NoError(t, err, sid, vs)
-		require.Equal(t, 1, rows)
-
-		r, err = mapper.SelectArrayParameterTextString(sid)
-		require.NoError(t, err, sid)
-		for i := 0; i < 3; i++ {
-			require.Equal(t, vs[i], r[i])
-		}
-
-		rows, err = mapper.DeleteArrayParameterTextString(sid)
-		require.NoError(t, err, sid)
-		require.Equal(t, 1, rows)
-
-	}
-	{
-
-		sid := manager.NextId()
 		v := _mock.Time()
 		rows, err := mapper.InsertParameterTimeTime(sid, "InsertParameterTimeTime", v)
 		require.NoError(t, err, v)
@@ -1662,32 +2916,6 @@ func testScanTypes(t *testing.T, mapper *Mapper, manager *generator.DataManager)
 		rows, err = mapper.DeleteParameterTimeTimeOriginalPointer(sid)
 		require.NoError(t, err, sid)
 		require.Equal(t, 1, *rows)
-
-	}
-	{
-
-		sid := manager.NextId()
-		vs := make([]time, 0)
-		for i := 0; i < 3; i++ {
-			v := _mock.Time()
-			vs = append(vs, v)
-		}
-		rows, err := mapper.InsertArrayParameterTimeTime(sid, "InsertArrayParameterTimeTime", vs)
-		require.NoError(t, err, vs)
-		require.Equal(t, 1, rows)
-
-		vs = make([]time, 0)
-		for i := 0; i < 3; i++ {
-			v := _mock.Time()
-			vs = append(vs, v)
-		}
-		rows, err = mapper.UpdateArrayParameterTimeTime(sid, "UpdateArrayParameterTimeTime", vs)
-		require.NoError(t, err, sid, vs)
-		require.Equal(t, 1, rows)
-
-		rows, err = mapper.DeleteArrayParameterTimeTime(sid)
-		require.NoError(t, err, sid)
-		require.Equal(t, 1, rows)
 
 	}
 	{
@@ -1729,32 +2957,6 @@ func testScanTypes(t *testing.T, mapper *Mapper, manager *generator.DataManager)
 	{
 
 		sid := manager.NextId()
-		vs := make([]time, 0)
-		for i := 0; i < 3; i++ {
-			v := _mock.Time()
-			vs = append(vs, v)
-		}
-		rows, err := mapper.InsertArrayParameterTimeWithTimezoneTime(sid, "InsertArrayParameterTimeWithTimezoneTime", vs)
-		require.NoError(t, err, vs)
-		require.Equal(t, 1, rows)
-
-		vs = make([]time, 0)
-		for i := 0; i < 3; i++ {
-			v := _mock.Time()
-			vs = append(vs, v)
-		}
-		rows, err = mapper.UpdateArrayParameterTimeWithTimezoneTime(sid, "UpdateArrayParameterTimeWithTimezoneTime", vs)
-		require.NoError(t, err, sid, vs)
-		require.Equal(t, 1, rows)
-
-		rows, err = mapper.DeleteArrayParameterTimeWithTimezoneTime(sid)
-		require.NoError(t, err, sid)
-		require.Equal(t, 1, rows)
-
-	}
-	{
-
-		sid := manager.NextId()
 		v := _mock.Time()
 		rows, err := mapper.InsertParameterTimetzTime(sid, "InsertParameterTimetzTime", v)
 		require.NoError(t, err, v)
@@ -1786,32 +2988,6 @@ func testScanTypes(t *testing.T, mapper *Mapper, manager *generator.DataManager)
 		rows, err = mapper.DeleteParameterTimetzTimeOriginalPointer(sid)
 		require.NoError(t, err, sid)
 		require.Equal(t, 1, *rows)
-
-	}
-	{
-
-		sid := manager.NextId()
-		vs := make([]time, 0)
-		for i := 0; i < 3; i++ {
-			v := _mock.Time()
-			vs = append(vs, v)
-		}
-		rows, err := mapper.InsertArrayParameterTimetzTime(sid, "InsertArrayParameterTimetzTime", vs)
-		require.NoError(t, err, vs)
-		require.Equal(t, 1, rows)
-
-		vs = make([]time, 0)
-		for i := 0; i < 3; i++ {
-			v := _mock.Time()
-			vs = append(vs, v)
-		}
-		rows, err = mapper.UpdateArrayParameterTimetzTime(sid, "UpdateArrayParameterTimetzTime", vs)
-		require.NoError(t, err, sid, vs)
-		require.Equal(t, 1, rows)
-
-		rows, err = mapper.DeleteArrayParameterTimetzTime(sid)
-		require.NoError(t, err, sid)
-		require.Equal(t, 1, rows)
 
 	}
 	{
@@ -1853,32 +3029,6 @@ func testScanTypes(t *testing.T, mapper *Mapper, manager *generator.DataManager)
 	{
 
 		sid := manager.NextId()
-		vs := make([]time, 0)
-		for i := 0; i < 3; i++ {
-			v := _mock.Time()
-			vs = append(vs, v)
-		}
-		rows, err := mapper.InsertArrayParameterTimestampTime(sid, "InsertArrayParameterTimestampTime", vs)
-		require.NoError(t, err, vs)
-		require.Equal(t, 1, rows)
-
-		vs = make([]time, 0)
-		for i := 0; i < 3; i++ {
-			v := _mock.Time()
-			vs = append(vs, v)
-		}
-		rows, err = mapper.UpdateArrayParameterTimestampTime(sid, "UpdateArrayParameterTimestampTime", vs)
-		require.NoError(t, err, sid, vs)
-		require.Equal(t, 1, rows)
-
-		rows, err = mapper.DeleteArrayParameterTimestampTime(sid)
-		require.NoError(t, err, sid)
-		require.Equal(t, 1, rows)
-
-	}
-	{
-
-		sid := manager.NextId()
 		v := _mock.Time()
 		rows, err := mapper.InsertParameterTimestampWithTimezoneTime(sid, "InsertParameterTimestampWithTimezoneTime", v)
 		require.NoError(t, err, v)
@@ -1915,32 +3065,6 @@ func testScanTypes(t *testing.T, mapper *Mapper, manager *generator.DataManager)
 	{
 
 		sid := manager.NextId()
-		vs := make([]time, 0)
-		for i := 0; i < 3; i++ {
-			v := _mock.Time()
-			vs = append(vs, v)
-		}
-		rows, err := mapper.InsertArrayParameterTimestampWithTimezoneTime(sid, "InsertArrayParameterTimestampWithTimezoneTime", vs)
-		require.NoError(t, err, vs)
-		require.Equal(t, 1, rows)
-
-		vs = make([]time, 0)
-		for i := 0; i < 3; i++ {
-			v := _mock.Time()
-			vs = append(vs, v)
-		}
-		rows, err = mapper.UpdateArrayParameterTimestampWithTimezoneTime(sid, "UpdateArrayParameterTimestampWithTimezoneTime", vs)
-		require.NoError(t, err, sid, vs)
-		require.Equal(t, 1, rows)
-
-		rows, err = mapper.DeleteArrayParameterTimestampWithTimezoneTime(sid)
-		require.NoError(t, err, sid)
-		require.Equal(t, 1, rows)
-
-	}
-	{
-
-		sid := manager.NextId()
 		v := _mock.Time()
 		rows, err := mapper.InsertParameterTimestamptzTime(sid, "InsertParameterTimestamptzTime", v)
 		require.NoError(t, err, v)
@@ -1972,32 +3096,6 @@ func testScanTypes(t *testing.T, mapper *Mapper, manager *generator.DataManager)
 		rows, err = mapper.DeleteParameterTimestamptzTimeOriginalPointer(sid)
 		require.NoError(t, err, sid)
 		require.Equal(t, 1, *rows)
-
-	}
-	{
-
-		sid := manager.NextId()
-		vs := make([]time, 0)
-		for i := 0; i < 3; i++ {
-			v := _mock.Time()
-			vs = append(vs, v)
-		}
-		rows, err := mapper.InsertArrayParameterTimestamptzTime(sid, "InsertArrayParameterTimestamptzTime", vs)
-		require.NoError(t, err, vs)
-		require.Equal(t, 1, rows)
-
-		vs = make([]time, 0)
-		for i := 0; i < 3; i++ {
-			v := _mock.Time()
-			vs = append(vs, v)
-		}
-		rows, err = mapper.UpdateArrayParameterTimestamptzTime(sid, "UpdateArrayParameterTimestamptzTime", vs)
-		require.NoError(t, err, sid, vs)
-		require.Equal(t, 1, rows)
-
-		rows, err = mapper.DeleteArrayParameterTimestamptzTime(sid)
-		require.NoError(t, err, sid)
-		require.Equal(t, 1, rows)
 
 	}
 

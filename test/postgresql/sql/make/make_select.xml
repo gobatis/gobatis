@@ -1123,38 +1123,6 @@
     select t_text from types where sid = #{sid};
 </select>
 
-<select id="SelectArrayParameterTextString" parameter="sid" result="t_text">
-    select t_text from array_types where sid = #{sid};
-</select>
-
-<select id="SelectArrayParameterTextStringOriginalPointer" parameter="sid" result="t_text">
-    select t_text from array_types where sid = #{sid};
-</select>
-
-<select id="SelectArrayParameterTextStringPointerOriginal" parameter="sid" result="t_text">
-    select t_text from array_types where sid = #{sid};
-</select>
-
-<select id="SelectArrayParameterTextStringPointerPointer" parameter="sid" result="t_text">
-    select t_text from array_types where sid = #{sid};
-</select>
-
-<select id="SelectArrayEntityTextString" parameter="sid" result="t_text">
-    select t_text from array_types where sid = #{sid};
-</select>
-
-<select id="SelectArrayEntityTextStringOriginalPointer" parameter="sid" result="t_text">
-    select t_text from array_types where sid = #{sid};
-</select>
-
-<select id="SelectArrayEntityTextStringPointerOriginal" parameter="sid" result="t_text">
-    select t_text from array_types where sid = #{sid};
-</select>
-
-<select id="SelectArrayEntityTextStringPointerPointer" parameter="sid" result="t_text">
-    select t_text from array_types where sid = #{sid};
-</select>
-
 <select id="SelectParameterTimeTime" parameter="sid" result="t_time">
     select t_time from types where sid = #{sid};
 </select>
@@ -1185,38 +1153,6 @@
 
 <select id="SelectEntityTimeTimePointerPointer" parameter="item:struct" result="t_time">
     select t_time from types where sid = #{sid};
-</select>
-
-<select id="SelectArrayParameterTimeTime" parameter="sid" result="t_time">
-    select t_time from array_types where sid = #{sid};
-</select>
-
-<select id="SelectArrayParameterTimeTimeOriginalPointer" parameter="sid" result="t_time">
-    select t_time from array_types where sid = #{sid};
-</select>
-
-<select id="SelectArrayParameterTimeTimePointerOriginal" parameter="sid" result="t_time">
-    select t_time from array_types where sid = #{sid};
-</select>
-
-<select id="SelectArrayParameterTimeTimePointerPointer" parameter="sid" result="t_time">
-    select t_time from array_types where sid = #{sid};
-</select>
-
-<select id="SelectArrayEntityTimeTime" parameter="sid" result="t_time">
-    select t_time from array_types where sid = #{sid};
-</select>
-
-<select id="SelectArrayEntityTimeTimeOriginalPointer" parameter="sid" result="t_time">
-    select t_time from array_types where sid = #{sid};
-</select>
-
-<select id="SelectArrayEntityTimeTimePointerOriginal" parameter="sid" result="t_time">
-    select t_time from array_types where sid = #{sid};
-</select>
-
-<select id="SelectArrayEntityTimeTimePointerPointer" parameter="sid" result="t_time">
-    select t_time from array_types where sid = #{sid};
 </select>
 
 <select id="SelectParameterTimeWithTimezoneTime" parameter="sid" result="t_time_with_timezone">
@@ -1251,38 +1187,6 @@
     select t_time_with_timezone from types where sid = #{sid};
 </select>
 
-<select id="SelectArrayParameterTimeWithTimezoneTime" parameter="sid" result="t_time_with_timezone">
-    select t_time_with_timezone from array_types where sid = #{sid};
-</select>
-
-<select id="SelectArrayParameterTimeWithTimezoneTimeOriginalPointer" parameter="sid" result="t_time_with_timezone">
-    select t_time_with_timezone from array_types where sid = #{sid};
-</select>
-
-<select id="SelectArrayParameterTimeWithTimezoneTimePointerOriginal" parameter="sid" result="t_time_with_timezone">
-    select t_time_with_timezone from array_types where sid = #{sid};
-</select>
-
-<select id="SelectArrayParameterTimeWithTimezoneTimePointerPointer" parameter="sid" result="t_time_with_timezone">
-    select t_time_with_timezone from array_types where sid = #{sid};
-</select>
-
-<select id="SelectArrayEntityTimeWithTimezoneTime" parameter="sid" result="t_time_with_timezone">
-    select t_time_with_timezone from array_types where sid = #{sid};
-</select>
-
-<select id="SelectArrayEntityTimeWithTimezoneTimeOriginalPointer" parameter="sid" result="t_time_with_timezone">
-    select t_time_with_timezone from array_types where sid = #{sid};
-</select>
-
-<select id="SelectArrayEntityTimeWithTimezoneTimePointerOriginal" parameter="sid" result="t_time_with_timezone">
-    select t_time_with_timezone from array_types where sid = #{sid};
-</select>
-
-<select id="SelectArrayEntityTimeWithTimezoneTimePointerPointer" parameter="sid" result="t_time_with_timezone">
-    select t_time_with_timezone from array_types where sid = #{sid};
-</select>
-
 <select id="SelectParameterTimetzTime" parameter="sid" result="t_timetz">
     select t_timetz from types where sid = #{sid};
 </select>
@@ -1313,38 +1217,6 @@
 
 <select id="SelectEntityTimetzTimePointerPointer" parameter="item:struct" result="t_timetz">
     select t_timetz from types where sid = #{sid};
-</select>
-
-<select id="SelectArrayParameterTimetzTime" parameter="sid" result="t_timetz">
-    select t_timetz from array_types where sid = #{sid};
-</select>
-
-<select id="SelectArrayParameterTimetzTimeOriginalPointer" parameter="sid" result="t_timetz">
-    select t_timetz from array_types where sid = #{sid};
-</select>
-
-<select id="SelectArrayParameterTimetzTimePointerOriginal" parameter="sid" result="t_timetz">
-    select t_timetz from array_types where sid = #{sid};
-</select>
-
-<select id="SelectArrayParameterTimetzTimePointerPointer" parameter="sid" result="t_timetz">
-    select t_timetz from array_types where sid = #{sid};
-</select>
-
-<select id="SelectArrayEntityTimetzTime" parameter="sid" result="t_timetz">
-    select t_timetz from array_types where sid = #{sid};
-</select>
-
-<select id="SelectArrayEntityTimetzTimeOriginalPointer" parameter="sid" result="t_timetz">
-    select t_timetz from array_types where sid = #{sid};
-</select>
-
-<select id="SelectArrayEntityTimetzTimePointerOriginal" parameter="sid" result="t_timetz">
-    select t_timetz from array_types where sid = #{sid};
-</select>
-
-<select id="SelectArrayEntityTimetzTimePointerPointer" parameter="sid" result="t_timetz">
-    select t_timetz from array_types where sid = #{sid};
 </select>
 
 <select id="SelectParameterTimestampTime" parameter="sid" result="t_timestamp">
@@ -1379,38 +1251,6 @@
     select t_timestamp from types where sid = #{sid};
 </select>
 
-<select id="SelectArrayParameterTimestampTime" parameter="sid" result="t_timestamp">
-    select t_timestamp from array_types where sid = #{sid};
-</select>
-
-<select id="SelectArrayParameterTimestampTimeOriginalPointer" parameter="sid" result="t_timestamp">
-    select t_timestamp from array_types where sid = #{sid};
-</select>
-
-<select id="SelectArrayParameterTimestampTimePointerOriginal" parameter="sid" result="t_timestamp">
-    select t_timestamp from array_types where sid = #{sid};
-</select>
-
-<select id="SelectArrayParameterTimestampTimePointerPointer" parameter="sid" result="t_timestamp">
-    select t_timestamp from array_types where sid = #{sid};
-</select>
-
-<select id="SelectArrayEntityTimestampTime" parameter="sid" result="t_timestamp">
-    select t_timestamp from array_types where sid = #{sid};
-</select>
-
-<select id="SelectArrayEntityTimestampTimeOriginalPointer" parameter="sid" result="t_timestamp">
-    select t_timestamp from array_types where sid = #{sid};
-</select>
-
-<select id="SelectArrayEntityTimestampTimePointerOriginal" parameter="sid" result="t_timestamp">
-    select t_timestamp from array_types where sid = #{sid};
-</select>
-
-<select id="SelectArrayEntityTimestampTimePointerPointer" parameter="sid" result="t_timestamp">
-    select t_timestamp from array_types where sid = #{sid};
-</select>
-
 <select id="SelectParameterTimestampWithTimezoneTime" parameter="sid" result="t_timestamp_with_timezone">
     select t_timestamp_with_timezone from types where sid = #{sid};
 </select>
@@ -1443,38 +1283,6 @@
     select t_timestamp_with_timezone from types where sid = #{sid};
 </select>
 
-<select id="SelectArrayParameterTimestampWithTimezoneTime" parameter="sid" result="t_timestamp_with_timezone">
-    select t_timestamp_with_timezone from array_types where sid = #{sid};
-</select>
-
-<select id="SelectArrayParameterTimestampWithTimezoneTimeOriginalPointer" parameter="sid" result="t_timestamp_with_timezone">
-    select t_timestamp_with_timezone from array_types where sid = #{sid};
-</select>
-
-<select id="SelectArrayParameterTimestampWithTimezoneTimePointerOriginal" parameter="sid" result="t_timestamp_with_timezone">
-    select t_timestamp_with_timezone from array_types where sid = #{sid};
-</select>
-
-<select id="SelectArrayParameterTimestampWithTimezoneTimePointerPointer" parameter="sid" result="t_timestamp_with_timezone">
-    select t_timestamp_with_timezone from array_types where sid = #{sid};
-</select>
-
-<select id="SelectArrayEntityTimestampWithTimezoneTime" parameter="sid" result="t_timestamp_with_timezone">
-    select t_timestamp_with_timezone from array_types where sid = #{sid};
-</select>
-
-<select id="SelectArrayEntityTimestampWithTimezoneTimeOriginalPointer" parameter="sid" result="t_timestamp_with_timezone">
-    select t_timestamp_with_timezone from array_types where sid = #{sid};
-</select>
-
-<select id="SelectArrayEntityTimestampWithTimezoneTimePointerOriginal" parameter="sid" result="t_timestamp_with_timezone">
-    select t_timestamp_with_timezone from array_types where sid = #{sid};
-</select>
-
-<select id="SelectArrayEntityTimestampWithTimezoneTimePointerPointer" parameter="sid" result="t_timestamp_with_timezone">
-    select t_timestamp_with_timezone from array_types where sid = #{sid};
-</select>
-
 <select id="SelectParameterTimestamptzTime" parameter="sid" result="t_timestamptz">
     select t_timestamptz from types where sid = #{sid};
 </select>
@@ -1505,38 +1313,6 @@
 
 <select id="SelectEntityTimestamptzTimePointerPointer" parameter="item:struct" result="t_timestamptz">
     select t_timestamptz from types where sid = #{sid};
-</select>
-
-<select id="SelectArrayParameterTimestamptzTime" parameter="sid" result="t_timestamptz">
-    select t_timestamptz from array_types where sid = #{sid};
-</select>
-
-<select id="SelectArrayParameterTimestamptzTimeOriginalPointer" parameter="sid" result="t_timestamptz">
-    select t_timestamptz from array_types where sid = #{sid};
-</select>
-
-<select id="SelectArrayParameterTimestamptzTimePointerOriginal" parameter="sid" result="t_timestamptz">
-    select t_timestamptz from array_types where sid = #{sid};
-</select>
-
-<select id="SelectArrayParameterTimestamptzTimePointerPointer" parameter="sid" result="t_timestamptz">
-    select t_timestamptz from array_types where sid = #{sid};
-</select>
-
-<select id="SelectArrayEntityTimestamptzTime" parameter="sid" result="t_timestamptz">
-    select t_timestamptz from array_types where sid = #{sid};
-</select>
-
-<select id="SelectArrayEntityTimestamptzTimeOriginalPointer" parameter="sid" result="t_timestamptz">
-    select t_timestamptz from array_types where sid = #{sid};
-</select>
-
-<select id="SelectArrayEntityTimestamptzTimePointerOriginal" parameter="sid" result="t_timestamptz">
-    select t_timestamptz from array_types where sid = #{sid};
-</select>
-
-<select id="SelectArrayEntityTimestamptzTimePointerPointer" parameter="sid" result="t_timestamptz">
-    select t_timestamptz from array_types where sid = #{sid};
 </select>
 
 </mapper>
