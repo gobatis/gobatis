@@ -11,7 +11,7 @@ import (
 func TestInsert(t *testing.T) {
 	var err error
 	mapper := new(MakeMapper)
-	engine := gobatis.NewPostgresql("postgresql://postgres:postgres@127.0.0.1:5432/gobatis?connect_timeout=10&sslmode=disable")
+	engine := gobatis.NewPostgresql("postgresql://postgres:123456@127.0.0.1:5432/gobatis?connect_timeout=10&sslmode=disable")
 	err = engine.Init(gobatis.NewBundle("./sql"))
 	require.NoError(t, err)
 	err = engine.BindMapper(mapper)

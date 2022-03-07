@@ -58,23 +58,23 @@ func rv(v interface{}) reflect.Value {
 }
 
 func TestEngine(t *testing.T) {
-	
-	engine := NewPostgresql("postgresql://postgres:postgres@127.0.0.1:5432/gobatis?connect_timeout=10&sslmode=disable")
+
+	engine := NewPostgresql("postgresql://postgres:123456@127.0.0.1:5432/gobatis?connect_timeout=10&sslmode=disable")
 	err := engine.Init(NewBundle("test"))
 	require.NoError(t, err)
-	
+
 	err = engine.master.Ping()
 	require.NoError(t, err)
-	
+
 	defer func() {
 		err = engine.master.Close()
 		require.NoError(t, err)
 	}()
-	
+
 	_testMapper := new(postgresql.TestMapper)
 	err = engine.BindMapper(_testMapper)
 	require.NoError(t, err)
-	
+
 	testSelectInsert(t, _testMapper)
 	testSelectInsertPointer(t, _testMapper)
 	testSelectInsertForeachSlice(t, _testMapper)
@@ -103,59 +103,59 @@ func TestStmt(t *testing.T) {
 	defer func() {
 		engine.Close()
 	}()
-	
+
 	stmtMapper := new(postgresql.StmtMapper)
 	err = engine.BindMapper(stmtMapper)
 	require.NoError(t, err)
-	
+
 	err = stmtMapper.TestInsertStmt(&postgresql.User{
 		Name: "tom",
 		Age:  18,
 	})
 	require.NoError(t, err)
-	
+
 	err = stmtMapper.TestInsertStmt(&postgresql.User{
 		Name: "michael",
 		Age:  8,
 	})
 	require.NoError(t, err)
-	
+
 	err = stmtMapper.TestInsertStmt2(&postgresql.User{
 		Name: "jack",
 		Age:  2,
 	})
 	require.NoError(t, err)
-	
+
 	err = stmtMapper.TestInsertStmt2(&postgresql.User{
 		Name: "jack",
 		Age:  3,
 	})
 	require.NoError(t, err)
-	
+
 	err = stmtMapper.TestInsertStmt2(&postgresql.User{
 		Name: "jack",
 		Age:  4,
 	})
 	require.NoError(t, err)
-	
+
 	err = stmtMapper.TestInsertStmt2(&postgresql.User{
 		Name: "default",
 		Age:  8,
 	})
 	require.NoError(t, err)
-	
+
 	err = stmtMapper.TestInsertStmt2(&postgresql.User{
 		Name: "default",
 		Age:  9,
 		From: "usa",
 	})
 	require.NoError(t, err)
-	
+
 	users, err := stmtMapper.TestQueryStmt("tom", 18)
 	require.NoError(t, err)
 	require.True(t, len(users) > 0)
 	t.Log(users[0].Name, users[0].Age)
-	
+
 	users, err = stmtMapper.TestQueryStmt("michael", 8)
 	require.NoError(t, err)
 	require.True(t, len(users) > 0)
@@ -236,7 +236,7 @@ func TestStringArray(t *testing.T) {
 	m := new(postgresql.StmtMapper)
 	err = engine.BindMapper(m)
 	require.NoError(t, err)
-	
+
 	tags := pgtype.TextArray{}
 	err = tags.Set([]string{"a", "b"})
 	require.NoError(t, err)
@@ -246,7 +246,7 @@ func TestStringArray(t *testing.T) {
 		Tags: tags,
 	})
 	require.NoError(t, err)
-	
+
 	//r, err := m.GetStringArray("tags")
 	//require.NoError(t, err)
 	//for _, v := range r.Tags.Elements {
@@ -277,7 +277,7 @@ func testSelectInsert(t *testing.T, _testMapper *postgresql.TestMapper) {
 		Interval:                 100 * time.Second,
 		Boolean:                  true,
 	})
-	
+
 	require.NoError(t, err)
 	if id <= 0 {
 		require.Error(t, fmt.Errorf("returning id should greater 0"))
@@ -288,7 +288,7 @@ func testSelectInsertPointer(t *testing.T, _testMapper *postgresql.TestMapper) {
 	dec := decimal.NewFromFloat(3.14)
 	now := time.Now()
 	interval := 100 * time.Second
-	
+
 	id, err := _testMapper.SelectInsertPointer(&postgresql.EntityPointer{
 		Int8:                     pointer.ToInt8(1),
 		BigInt:                   pointer.ToInt64(2),
@@ -311,7 +311,7 @@ func testSelectInsertPointer(t *testing.T, _testMapper *postgresql.TestMapper) {
 		Interval:                 &interval,
 		Boolean:                  pointer.ToBool(true),
 	})
-	
+
 	require.NoError(t, err)
 	if id <= 0 {
 		require.Error(t, fmt.Errorf("returning id should greater 0"))
@@ -460,7 +460,7 @@ func testSelectStruct(t *testing.T, _testMapper *postgresql.TestMapper) {
 	//d, err := json.MarshalIndent(item, "", "\t")
 	require.NoError(t, err)
 	//fmt.Println(string(d))
-	
+
 	item2, err := _testMapper.SelectStructPointer(47)
 	_ = item2
 	require.NoError(t, err)
@@ -476,7 +476,7 @@ func testSelectStructs(t *testing.T, _testMapper *postgresql.TestMapper) {
 	//d, err := json.MarshalIndent(item, "", "\t")
 	require.NoError(t, err)
 	//fmt.Println(string(d))
-	
+
 	item2, err := _testMapper.SelectStructsPointer(47)
 	_ = item2
 	require.NoError(t, err)
@@ -492,10 +492,10 @@ func TestRunning(t *testing.T) {
 	engine := NewPostgresql("postgresql://postgres:postgres@127.0.0.1:5432/gobatis?connect_timeout=10&sslmode=disable")
 	err := engine.Init(NewBundle("test"))
 	require.NoError(t, err)
-	
+
 	err = engine.master.Ping()
 	require.NoError(t, err)
-	
+
 	defer func() {
 		err = engine.master.Close()
 		require.NoError(t, err)
@@ -505,14 +505,14 @@ func TestRunning(t *testing.T) {
 		queryMapper,
 	)
 	require.NoError(t, err)
-	
+
 	//engine.SetLoggerLevel(DebugLevel)
-	
+
 	InsertR001(t)
 	InsertR002(t)
 	InsertR011(t)
 	InsertR012(t)
-	
+
 	QueryR001(t)
 }
 
