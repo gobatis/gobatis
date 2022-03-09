@@ -393,7 +393,7 @@ var testParseQueryCases = []testParseMapperCase{
 			<block type="PAGING">
 				order by age desc
 				limit #{limit} offset #{ paging(page,limit)}
-			
+			</block>
 		</query>`,
 		method: rv(func(row string) (err error) { return }),
 		sqls: []*testParseMapperCaseSql{

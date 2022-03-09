@@ -22,7 +22,7 @@ func TestXMLParseError(t *testing.T) {
 	_ = listener
 	tokens := wrapMapperSchema(`
 <update id="updateUser">some...</update>
-<insert id="ok">some...</insert>
+<insert id="ok">some...</insert
 `)
 	inputStream := antlr.NewInputStream(strings.TrimSpace(tokens))
 	defer func() {
