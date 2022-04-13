@@ -8,15 +8,27 @@ import (
 	"github.com/gobatis/gobatis/cast"
 	"github.com/gobatis/gobatis/driver/mysql"
 	"github.com/gobatis/gobatis/driver/postgresql"
+	"github.com/gobatis/gobatis/driver/tunnel"
+	"golang.org/x/crypto/ssh"
 	"reflect"
 	"time"
 )
 
-func NewDB(driver, dsn string) *DB {
-	return &DB{
+func NewDB(driver, dsn string, cfg ...tunnel.SSHTunnelConfig) *DB {
+	var sshcon *ssh.Client
+	if len(cfg) == 1 {
+		sshcon = tunnel.Open(cfg[0])
+	}
+	db := &DB{
 		driver: driver,
 		dsn:    dsn,
 	}
+
+	if sshcon != nil {
+		db.sshcon = sshcon
+	}
+
+	return db
 }
 
 type (
@@ -29,14 +41,15 @@ type DB struct {
 	dsn    string
 	db     *sql.DB
 	logger Logger
+	sshcon *ssh.Client
 }
 
 func (p *DB) initDB() (err error) {
 	switch p.driver {
 	case postgresql.PGX:
-		p.db, err = postgresql.InitDB(p.dsn)
+		p.db, err = postgresql.InitDB(p.dsn, p.sshcon)
 	case mysql.MySQL:
-		p.db, err = mysql.InitDB(p.dsn)
+		p.db, err = mysql.InitDB(p.dsn, p.sshcon)
 	default:
 		p.db, err = sql.Open(p.driver, p.dsn)
 		if err != nil {
@@ -132,7 +145,7 @@ func (p *DB) Migrate(mapper interface{}) error {
 	mt := reflect.ValueOf(mapper)
 	et := reflectValueElem(mt)
 	pv := reflect.ValueOf(p)
-	
+
 	if mt.Kind() != reflect.Ptr || et.Kind() != reflect.Struct {
 		return fmt.Errorf("migration mapper expect struct pointer, pass: %s", mt.Type())
 	}
@@ -155,6 +168,6 @@ func (p *DB) Migrate(mapper interface{}) error {
 			p.logger.Infof("[gobatis][migrate] exec %s success", mt.Type().Field(i).Name)
 		}
 	}
-	
+
 	return nil
 }
