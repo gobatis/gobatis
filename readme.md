@@ -46,3 +46,11 @@ $ go get -v github.com/gobatis/gobatis
 
 参考 engine_test.go -> TestEngine。
 
+## New
+
+```go
+db := batis.New("")
+db.Raw(sql string, batis.Param("name", 123)).Scan()
+db.Raw(sql string, batis.Param("name", 123)).Find()
+db.Raw(sql string, batis.Param("name", 123)).First()
+```

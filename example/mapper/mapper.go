@@ -1,7 +1,7 @@
 package mapper
 
 import (
-	"github.com/gobatis/gobatis"
+	batis "github.com/gobatis/gobatis"
 	"github.com/gobatis/gobatis/example/entity"
 	"time"
 )
@@ -12,7 +12,7 @@ var (
 )
 
 type migrationMapper struct {
-	CreateTable func(db *gobatis.DB) error
+	CreateTable func(db *batis.DB) error
 }
 
 type userMapper struct {
@@ -24,4 +24,8 @@ type userMapper struct {
 	GetUserByFrom   func(places []string) ([]*entity.User, error)
 	QueryUsers      func(m map[string]interface{}) ([]*entity.User, error)
 	DeleteUsers     func(id int) (rows int, err error)
+}
+
+type NewMapper struct {
+	Ping func(ctx *batis.Context) (err error)
 }

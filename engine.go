@@ -1,4 +1,4 @@
-package gobatis
+package batis
 
 import (
 	"fmt"
@@ -107,7 +107,7 @@ func (p *Engine) Close() {
 }
 
 func (p *Engine) SQL(name string, args ...interface{}) {
-
+	
 }
 
 func (p *Engine) Call(name string, args ...interface{}) {

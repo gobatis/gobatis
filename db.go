@@ -1,4 +1,4 @@
-package gobatis
+package batis
 
 import (
 	"context"
@@ -157,4 +157,12 @@ func (p *DB) Migrate(mapper interface{}) error {
 	}
 	
 	return nil
+}
+
+func (p *DB) TestExec(sql string, ) {
+	return
+}
+
+func (p *DB) Raw() {
+	
 }

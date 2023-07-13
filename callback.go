@@ -1,4 +1,4 @@
-package gobatis
+package batis
 
 type CallbackContext struct {
 	Stmt string

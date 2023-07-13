@@ -1,4 +1,4 @@
-package gobatis
+package batis
 
 import (
 	"fmt"

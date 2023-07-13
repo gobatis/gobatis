@@ -3,15 +3,14 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/gobatis/gobatis"
 	"github.com/gobatis/gobatis/example/entity"
 	"github.com/gobatis/gobatis/example/mapper"
 	"log"
 )
 
 func main() {
-	engine := gobatis.NewPostgresql("postgresql://postgres:postgres@127.0.0.1:5432/gobatis?connect_timeout=10&sslmode=disable")
-	err := engine.Init(gobatis.NewBundle("./sql"))
+	engine := batis.NewPostgresql("postgresql://postgres:postgres@127.0.0.1:5432/gobatis?connect_timeout=10&sslmode=disable")
+	err := engine.Init(batis.NewBundle("./sql"))
 	if err != nil {
 		log.Panicln("Init error:", err)
 	}
