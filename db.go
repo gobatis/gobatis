@@ -312,7 +312,7 @@ func (d *DB) Prepare(sql string, params ...NameValue) *Stmt {
 	return &Stmt{}
 }
 
-func (d *DB) Exec(ctx Context, sql string, params ...NameValue) (scanner Scanner) {
+func (d *DB) Execute(ctx Context, sql string, params ...NameValue) (scanner Scanner) {
 	return
 }
 

@@ -54,7 +54,7 @@ func TestDBQuery(t *testing.T) {
 	//	select * from users where id = ${ id }
 	//`, Param("id", 21)).Scan(&user)
 	
-	err = db.Exec(Background(), `
+	err = db.Execute(Background(), `
 		insert into users(name,age) values(
 		<foreach collection="enums" separator="," open="'" close="'">
             ${item.Name}, ${item.Age}
@@ -64,7 +64,7 @@ func TestDBQuery(t *testing.T) {
 	require.NoError(t, err)
 	
 	var users []User
-	err = db.Exec(Background(), `
+	err = db.Execute(Background(), `
 		select * from messages where cid in ${ids} 
 	`, Param("ids", []int64{1, 2, 34})).Scan(&users)
 	require.NoError(t, err)

@@ -16,7 +16,7 @@ func (u UserDal) SaveUser(ctx batis.Context, user string) (err error) {
 	}
 	
 	var age int64
-	err = u.db.Exec(ctx.Must().Strict().Analyze(), "select * from users where id = ${id}", batis.Param("id", 123)).Scan(&age)
+	err = u.db.Execute(ctx.Must().Strict().Analyze(), "select * from users where id = ${id}", batis.Param("id", 123)).Scan(&age)
 	if err != nil {
 		return
 	}
