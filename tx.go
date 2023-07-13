@@ -3,61 +3,50 @@ package batis
 import (
 	"context"
 	"database/sql"
-	"sync"
 )
 
-func NewTx(tx *sql.Tx) *Tx {
-	return &Tx{tx: tx}
+func (d *DB) Tx() *sql.Tx {
+	return d.tx
 }
 
-type Tx struct {
-	tx      *sql.Tx
-	mu      sync.RWMutex
-	stmtMap map[string]*Stmt
+func (d *DB) PrepareContext(ctx context.Context, query string) (*sql.Stmt, error) {
+	return d.tx.PrepareContext(ctx, query)
 }
 
-func (p *Tx) Tx() *sql.Tx {
-	return p.tx
-}
-
-func (p *Tx) PrepareContext(ctx context.Context, query string) (*sql.Stmt, error) {
-	return p.tx.PrepareContext(ctx, query)
-}
-
-func (p *Tx) addStmt(stmt *Stmt) {
-	p.mu.Lock()
+func (d *DB) addStmt(stmt *Stmt) {
+	d.mu.Lock()
 	defer func() {
-		p.mu.Unlock()
+		d.mu.Unlock()
 	}()
-	if p.stmtMap == nil {
-		p.stmtMap = map[string]*Stmt{}
+	if d.stmtMap == nil {
+		d.stmtMap = map[string]*Stmt{}
 	}
-	_, ok := p.stmtMap[stmt.caller.fragment.id]
+	_, ok := d.stmtMap[stmt.caller.fragment.id]
 	if ok {
 		return
 	}
-	p.stmtMap[stmt.caller.fragment.id] = stmt
+	d.stmtMap[stmt.caller.fragment.id] = stmt
 }
 
-func (p *Tx) getStmt(id string) *Stmt {
-	p.mu.RLock()
+func (d *DB) getStmt(id string) *Stmt {
+	d.mu.RLock()
 	defer func() {
-		p.mu.RUnlock()
+		d.mu.RUnlock()
 	}()
-	return p.stmtMap[id]
+	return d.stmtMap[id]
 }
 
-func (p *Tx) Commit() error {
-	return p.tx.Commit()
+func (d *DB) Commit() error {
+	return d.tx.Commit()
 }
-func (p *Tx) Rollback() error {
-	return p.tx.Rollback()
-}
-
-func (p *Tx) ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
-	return p.tx.ExecContext(ctx, query, args...)
+func (d *DB) Rollback() error {
+	return d.tx.Rollback()
 }
 
-func (p *Tx) QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error) {
-	return p.tx.QueryContext(ctx, query, args...)
+func (d *DB) ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
+	return d.tx.ExecContext(ctx, query, args...)
+}
+
+func (d *DB) QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error) {
+	return d.tx.QueryContext(ctx, query, args...)
 }

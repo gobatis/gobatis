@@ -15,9 +15,11 @@ import (
 
 const (
 	config_xml = "gobatis.xml"
+	none       = "<none>"
+	anonymous  = "<anonymous>"
 )
 
-func parseConfig(engine *Engine, file, content string) (err error) {
+func parseConfig(engine *DB, file, content string) (err error) {
 	defer func() {
 		e := recover()
 		err = castRecoverError(file, e)
@@ -37,7 +39,7 @@ func parseConfig(engine *Engine, file, content string) (err error) {
 	return
 }
 
-func parseMapper(engine *Engine, file, content string) (err error) {
+func parseMapper(db *DB, file, content string) (err error) {
 	
 	defer func() {
 		e := recover()
@@ -58,7 +60,7 @@ func parseMapper(engine *Engine, file, content string) (err error) {
 	}
 	
 	if l.rootNode == nil {
-		engine.logger.Warnf("empty mapperCache file: %s", file)
+		db.logger.Warnf("empty mapperCache file: %s", file)
 		return
 	}
 	for _, v := range l.rootNode.Nodes {
@@ -68,7 +70,7 @@ func parseMapper(engine *Engine, file, content string) (err error) {
 			if id == "" {
 				throw(file, v.ctx, parseMapperErr).format("fragment: %s miss id", v.Name)
 			}
-			engine.addFragment(file, v.ctx, id, v)
+			db.addFragment(file, v.ctx, id, v)
 		}
 	}
 	return

@@ -49,8 +49,9 @@ $ go get -v github.com/gobatis/gobatis
 ## New
 
 ```go
-db := batis.New("")
-db.Raw(sql string, batis.Param("name", 123)).Scan()
-db.Raw(sql string, batis.Param("name", 123)).Find()
-db.Raw(sql string, batis.Param("name", 123)).First()
+db := gobatis.New("")
+db.Raw(sql string, gobatis.Param("name", 123)).Scan()
+db.Raw(sql string, gobatis.Param("name", 123)).Find()
+db.Raw(sql string, gobatis.Param("name", 123)).First()
+db.Raw(sql string, gobatis.Param("name", 123)).First()
 ```

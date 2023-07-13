@@ -1,7 +1,6 @@
 package mapper
 
 import (
-	batis "github.com/gobatis/gobatis"
 	"github.com/gobatis/gobatis/example/entity"
 	"time"
 )
@@ -27,5 +26,6 @@ type userMapper struct {
 }
 
 type NewMapper struct {
-	Ping func(ctx *batis.Context) (err error)
+	Ping  func(ctx *batis.Context) (err error)
+	Ping2 func(ctx *batis.Context, name string) (err error)
 }

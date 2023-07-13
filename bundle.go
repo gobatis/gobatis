@@ -8,7 +8,13 @@ import (
 	"path/filepath"
 )
 
-type Bundle = http.FileSystem
+type Bundles map[string]Bundle
+
+func (b Bundles) Files(name string) (files []string, err error) {
+	panic("todo")
+}
+
+type Bundle http.FileSystem
 
 type BundleOption struct {
 	Filename        string

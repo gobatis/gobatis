@@ -624,7 +624,7 @@ func (p *caller) exec(in ...reflect.Value) (err error) {
 		in = p.removeParam(in, index)
 	}
 	
-	tx, _ := _execer.(*Tx)
+	tx, _ := _execer.(*DB)
 	if tx != nil {
 		stmt := tx.getStmt(p.fragment.id)
 		if stmt != nil {
@@ -720,7 +720,7 @@ func (p *caller) query(in ...reflect.Value) (err error) {
 		in = p.removeParam(in, index)
 	}
 	
-	tx, _ := _queryer.(*Tx)
+	tx, _ := _queryer.(*DB)
 	if tx != nil {
 		stmt := tx.getStmt(p.fragment.id)
 		if stmt != nil {

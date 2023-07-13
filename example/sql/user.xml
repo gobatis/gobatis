@@ -1,9 +1,18 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//gobatis.co//DTD Mapper 1.0//EN" "gobatis.co/dtd/mapper.dtd">
 
-<mapper>
+<mapper namespace="Mapper">
+    
     <insert id="AddUser" parameter="user:struct">
         insert into users( name, age, "from", vip ) values( #{user.Name}, #{user.Age}, #{user.From}, ${user.Vip})
+    </insert>
+    
+    <insert id="AddName">
+        insert into users(name, age, "from", vip) values(
+            <foreach collection="" close="" index="" item="">
+                ${item1}, ${}
+            </foreach>
+        );
     </insert>
 
     <update id="UpdateUser" parameter="id,vip">
