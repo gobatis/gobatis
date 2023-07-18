@@ -48,6 +48,7 @@ type Context struct {
 	loose   bool
 	traceId string
 	analyze bool
+	mute    bool
 }
 
 func (c Context) Copy() Context {
@@ -113,6 +114,11 @@ func (c Context) Must() Context {
 
 func (c Context) Strict() Context {
 	c.exact = true
+	return c
+}
+
+func (c Context) Mute() Context {
+	c.mute = true
 	return c
 }
 
