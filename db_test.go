@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"testing"
 	"time"
-
+	
 	"github.com/AlekSi/pointer"
 	"github.com/gobatis/gobatis/driver/postgres"
 	"github.com/gobatis/gobatis/test"
@@ -49,12 +49,12 @@ func (User) TableName() string {
 func TestDBQuery(t *testing.T) {
 	db, err := Open(postgres.Open(""))
 	require.NoError(t, err)
-
+	
 	var user User
 	//err = db.Query(Background(), `
 	//	select * from users where id = ${ id }
 	//`, Param("id", 21)).Scan(&user)
-
+	
 	err = db.Execute(Background(), `
 		insert into users(name,age) values(
 		<foreach collection="enums" separator="," open="'" close="'">
@@ -63,18 +63,18 @@ func TestDBQuery(t *testing.T) {
 		)
 	`).Scan()
 	require.NoError(t, err)
-
+	
 	var users []User
 	err = db.Execute(Background(), `
 		select * from messages where cid in ${ids} 
 	`, Param("ids", []int64{1, 2, 34})).Scan(&users)
 	require.NoError(t, err)
-
+	
 	err = db.Insert(Background(), "users", user, nil).Error()
 	if err != nil {
 		return
 	}
-
+	
 	err = db.Update(Background(), "tests", map[string]any{
 		"name": "name",
 		"age":  18,
@@ -82,33 +82,77 @@ func TestDBQuery(t *testing.T) {
 	if err != nil {
 		return
 	}
-
+	
 	err = db.InsertBatch(Background(), "users", user, 10, nil).Error()
 	if err != nil {
 		return
 	}
-
+	
 	err = db.Delete(Background(), user.TableName(), Where("id = ${user.Id}", Param("user", user))).Error()
 	if err != nil {
 		return
 	}
-
+	
 	require.NoError(t, err)
 }
 
 func TestDBInsert(t *testing.T) {
-	db, err := Open(postgres.Open(""))
+	db := &DB{}
+	
+	var users []User
+	var total int64
+	err := db.Build(
+		Background(), Select("*").
+			From("users").
+			Where("agg > 0").
+			Page(0, 10).
+			Count("*"),
+	).Scan(&users, &total)
 	require.NoError(t, err)
+	
+	err = db.Build(
+		Background(), Raw(`
+				select * from a left join b on a.name = b.name where a.age > 18
+            `, Param("a", map[string]any{})).
+			Scroll(10, And("a.ab > #{ age }", Param("age", 18))).
+			Page(0, 10).
+			Count("*"),
+	).Scan(&users, &total)
+	require.NoError(t, err)
+	
+	err = db.Update(Background(), "", map[string]any{}, Where("")).Error()
+	if err != nil {
+		return
+	}
+	
+	return
+}
 
+func TestDBQuery45(t *testing.T) {
+	db := &DB{}
+	
+	err := db.Execute(Background(),
+		`update public.users where id = #{a} and name = #{b}`,
+		Param("a", 10),
+		Param("b", 10),
+	).Error()
+	if err != nil {
+		return
+	}
+	
+	require.NoError(t, err)
+}
+
+func TestDBQuery2(t *testing.T) {
+	db := &DB{}
+	
 	var user User
-	err = db.Query(
+	err := db.Query(
 		Background(),
-		SelectExcept("*", "name", "age"),
-		Count(""),
-		From(""),
-		Paging(0, 10),
-		Scroll(10, ""),
+		`select * from users where <if test="age >= 10"> id = #{ age  }</if>`,
+		Param("age", 10),
 	).Scan(&user)
+	
 	require.NoError(t, err)
 }
 
@@ -332,7 +376,7 @@ func testSelectInsert(t *testing.T, _testMapper *test.TestMapper) {
 		Interval:                 100 * time.Second,
 		Boolean:                  true,
 	})
-
+	
 	require.NoError(t, err)
 	if id <= 0 {
 		require.Error(t, fmt.Errorf("returning id should greater 0"))
@@ -343,7 +387,7 @@ func testSelectInsertPointer(t *testing.T, _testMapper *test.TestMapper) {
 	dec := decimal.NewFromFloat(3.14)
 	now := time.Now()
 	interval := 100 * time.Second
-
+	
 	id, err := _testMapper.SelectInsertPointer(&test.EntityPointer{
 		Int8:                     pointer.ToInt8(1),
 		BigInt:                   pointer.ToInt64(2),
@@ -366,7 +410,7 @@ func testSelectInsertPointer(t *testing.T, _testMapper *test.TestMapper) {
 		Interval:                 &interval,
 		Boolean:                  pointer.ToBool(true),
 	})
-
+	
 	require.NoError(t, err)
 	if id <= 0 {
 		require.Error(t, fmt.Errorf("returning id should greater 0"))
@@ -515,7 +559,7 @@ func testSelectStruct(t *testing.T, _testMapper *test.TestMapper) {
 	//d, err := json.MarshalIndent(item, "", "\t")
 	require.NoError(t, err)
 	//fmt.Println(string(d))
-
+	
 	item2, err := _testMapper.SelectStructPointer(47)
 	_ = item2
 	require.NoError(t, err)
@@ -531,7 +575,7 @@ func testSelectStructs(t *testing.T, _testMapper *test.TestMapper) {
 	//d, err := json.MarshalIndent(item, "", "\t")
 	require.NoError(t, err)
 	//fmt.Println(string(d))
-
+	
 	item2, err := _testMapper.SelectStructsPointer(47)
 	_ = item2
 	require.NoError(t, err)

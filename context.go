@@ -5,13 +5,6 @@ import (
 	"time"
 )
 
-type Trace struct {
-	Caller string
-	Func   string
-	Cost   time.Duration
-	SQL    string
-}
-
 func Background() Context {
 	return Context{}
 }
@@ -87,6 +80,13 @@ func (c Context) WithContext(ctx context.Context) Context {
 func (c Context) WithTraceId(id string) Context {
 	c.traceId = id
 	return c
+}
+
+type Trace struct {
+	Caller string
+	Func   string
+	Cost   time.Duration
+	SQL    string
 }
 
 func (c Context) Traces() []Trace {

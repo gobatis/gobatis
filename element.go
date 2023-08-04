@@ -1,7 +1,6 @@
 package gobatis
 
 import (
-	"fmt"
 	"strings"
 )
 
@@ -14,6 +13,8 @@ const (
 	pagingTag
 	scrollTag
 	onConflictTag
+	raw
+	tableTag
 )
 
 type Element interface {
@@ -37,7 +38,7 @@ func (e element) Params() []NameValue {
 	return e.params
 }
 
-func OnConflict(sql string, params ...NameValue) Element {
+func OnConflict(fields []string, sql string, params ...NameValue) Element {
 	return &element{
 		name:   onConflictTag,
 		sql:    sql,
@@ -53,46 +54,38 @@ func Where(sql string, params ...NameValue) Element {
 	}
 }
 
-// Select TODO wrap field
-func Select(fields ...string) Element {
+func And(sql string, params ...NameValue) Element {
 	return &element{
-		name: selectTag,
-		sql:  strings.Join(fields, ","),
-	}
-}
-
-func SelectExcept(fields ...string) Element {
-	return &element{
-		name: selectExceptTag,
-		sql:  strings.Join(fields, ","),
-	}
-}
-
-func Count(sql string) Element {
-	return &element{
-		name: countTag,
-		sql:  sql,
-	}
-}
-
-func From(sql string, params ...NameValue) Element {
-	return &element{
-		name:   fromTag,
+		name:   whereTag,
 		sql:    sql,
 		params: params,
 	}
 }
 
-func Paging(page, limit int64) Element {
-	return &element{
-		name: pagingTag,
-		sql:  fmt.Sprintf("limit %d offset %d", limit, page),
-	}
+// Select TODO wrap field
+func Select(fields ...string) *Builder {
+	b := &Builder{}
+	b.addElement(element{
+		name: selectTag,
+		sql:  strings.Join(fields, ","),
+	})
+	return b
 }
 
-func Scroll(limit int64, sql string) Element {
-	return &element{
-		name: scrollTag,
-		sql:  fmt.Sprintf("%s limit %d", sql, limit),
-	}
+func SelectAllExcept(fields ...string) *Builder {
+	b := &Builder{}
+	b.addElement(element{
+		name: selectExceptTag,
+		sql:  strings.Join(fields, ","),
+	})
+	return b
+}
+
+func Raw(sql string, params ...NameValue) *Builder {
+	b := &Builder{}
+	b.addElement(element{
+		name: selectExceptTag,
+		sql:  sql,
+	})
+	return b
 }
