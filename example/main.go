@@ -3,13 +3,15 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"log"
+
+	gbt "github.com/gobatis/gobatis"
 	"github.com/gobatis/gobatis/example/entity"
 	"github.com/gobatis/gobatis/example/mapper"
-	"log"
 )
 
 func main() {
-	engine := batis.NewPostgresql("postgresql://postgres:postgres@127.0.0.1:5432/gobatis?connect_timeout=10&sslmode=disable")
+	engine := gbt.NewPostgresql("postgresql://postgres:postgres@127.0.0.1:5432/gobatis?connect_timeout=10&sslmode=disable")
 	err := engine.Init(batis.NewBundle("./sql"))
 	if err != nil {
 		log.Panicln("Init error:", err)
@@ -27,12 +29,12 @@ func main() {
 	defer func() {
 		engine.Close()
 	}()
-	
+
 	err = engine.Master().Migrate(mapper.Migration)
 	if err != nil {
 		log.Panicf("exec migration error: %v", err)
 	}
-	
+
 	// AddUser
 	rows, err := mapper.User.AddUser(&entity.User{
 		Name: "Tom",
@@ -43,7 +45,7 @@ func main() {
 	if err != nil || rows != 1 {
 		log.Panicf("Call AddUser error: <%v, %d>", err, rows)
 	}
-	
+
 	// AddUserReturnId
 	id, createdAt, err := mapper.User.AddUserReturnId(&entity.User{
 		Name: "Tom",
@@ -55,7 +57,7 @@ func main() {
 		log.Panicf("Call AddUserReturnId error: %v", err)
 	}
 	fmt.Printf("id:%d, createdAt:%v", id, createdAt)
-	
+
 	rows, err = mapper.User.UpdateUser(id, true)
 	if err != nil {
 		log.Panicf("Call UpdateUser error: %v", err)
@@ -64,7 +66,7 @@ func main() {
 	if rows != 1 {
 		log.Panicf("Call UpdateUser expect: rows=1, got:%d", rows)
 	}
-	
+
 	// GetUserById
 	name, age, err := mapper.User.GetUserById(int64(id))
 	if err != nil {
@@ -76,21 +78,21 @@ func main() {
 	if age != 18 {
 		log.Panicf("GetUserById expect age=18: got:%d", age)
 	}
-	
+
 	user, err := mapper.User.GetUserByName("Tom")
 	if err != nil {
 		log.Panicf("Call GetUserByName error: %v", err)
 	}
 	fmt.Println("Call GetUserByName:")
 	printJson(user)
-	
+
 	users, err := mapper.User.GetUserByFrom([]string{"venus"})
 	if err != nil {
 		log.Panicf("Call GetUserByFrom error: %v", err)
 	}
 	fmt.Println("Call GetUserByFrom:")
 	printJson(users)
-	
+
 	users, err = mapper.User.QueryUsers(map[string]interface{}{
 		"name": "Tom",
 	})
@@ -99,7 +101,7 @@ func main() {
 	}
 	fmt.Println("Call QueryUsers:")
 	printJson(users)
-	
+
 	rows, err = mapper.User.DeleteUsers(id)
 	if err != nil {
 		log.Panicf("Call DeleteUser error: %v", err)

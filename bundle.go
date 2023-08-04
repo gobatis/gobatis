@@ -1,11 +1,12 @@
-package batis
+package gobatis
 
 import (
 	"fmt"
-	"github.com/shurcooL/vfsgen"
 	"net/http"
 	"os"
 	"path/filepath"
+
+	"github.com/shurcooL/vfsgen"
 )
 
 type Bundles map[string]Bundle

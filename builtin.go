@@ -1,11 +1,12 @@
-package batis
+package gobatis
 
 import (
-	"github.com/gobatis/gobatis/cast"
-	"github.com/shopspring/decimal"
 	"reflect"
 	"strings"
 	"sync"
+
+	"github.com/gobatis/gobatis/cast"
+	"github.com/shopspring/decimal"
 )
 
 var _builtin *builtin

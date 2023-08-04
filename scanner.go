@@ -1,4 +1,4 @@
-package batis
+package gobatis
 
 type Scanner struct {
 	ctx *Context

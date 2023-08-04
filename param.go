@@ -1,4 +1,4 @@
-package batis
+package gobatis
 
 type NameValue struct {
 	name  string

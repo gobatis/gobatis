@@ -1,18 +1,19 @@
-package batis
+package gobatis
 
 import (
 	"database/sql"
 	"fmt"
-	"github.com/antlr/antlr4/runtime/Go/antlr"
 	"io"
 	"path/filepath"
 	"reflect"
 	"strings"
 	"sync"
+
+	"github.com/antlr/antlr4/runtime/Go/antlr"
 )
 
 func Open(d Dialector, options ...Option) (db *DB, err error) {
-	
+
 	db = &DB{
 		bundle:          nil,
 		fragmentManager: nil,
@@ -23,17 +24,17 @@ func Open(d Dialector, options ...Option) (db *DB, err error) {
 		stmtMap:         nil,
 		error:           nil,
 	}
-	
+
 	db.db, err = d.DB()
 	if err != nil {
 		return
 	}
-	
+
 	err = db.Ping()
 	if err != nil {
 		return
 	}
-	
+
 	return
 }
 
@@ -91,12 +92,12 @@ func (d *DB) useLogger() Logger {
 }
 
 //func (d *DB) Init(bundle Bundle) (err error) {
-//	
+//
 //	if d.logger == nil {
 //		d.logger = _log.NewStdLogger()
 //		d.logger.SetLevel(InfoLevel)
 //	}
-//	
+//
 //	d.bundle = bundle
 //	err = d.parseBundle()
 //	if err != nil {
@@ -130,7 +131,7 @@ func (d *DB) parseBundle() (err error) {
 	if err != nil {
 		return
 	}
-	
+
 	err = d.parseMappers()
 	if err != nil {
 		return
@@ -149,7 +150,7 @@ func (d *DB) BindMapper(bundle Bundle, ptr ...interface{}) (err error) {
 }
 
 func (d *DB) bindMapper(mapper interface{}) (err error) {
-	
+
 	rv := reflect.ValueOf(mapper)
 	if rv.Kind() != reflect.Ptr || rv.Elem().Kind() != reflect.Struct {
 		return fmt.Errorf("exptect *struct, got: %s", rv.Type())
@@ -198,14 +199,14 @@ func (d *DB) parseConfig() (err error) {
 		err = fmt.Errorf("no bundle")
 		return
 	}
-	
+
 	f, err := d.bundle.Open(config_xml)
 	if err != nil {
 		err = nil
 		return
 	}
 	_ = f.Close()
-	
+
 	bs, err := d.readBundleFile(config_xml)
 	if err != nil {
 		return
@@ -227,7 +228,7 @@ func (d *DB) readBundleFile(path string) (bs []byte, err error) {
 	defer func() {
 		_ = file.Close()
 	}()
-	
+
 	bs, err = io.ReadAll(file)
 	if err != nil {
 		err = fmt.Errorf("read %s content error: %s", path, err)
@@ -284,7 +285,7 @@ func (d *DB) walkMappers(root string) (files []string, err error) {
 }
 
 func (d *DB) addFragment(file string, ctx antlr.ParserRuleContext, id string, node *xmlNode) {
-	
+
 	f, err := parseFragment(d, file, id, node)
 	if err != nil {
 		return
@@ -317,22 +318,22 @@ func (d *DB) Execute(ctx Context, sql string, params ...NameValue) (scanner Scan
 }
 
 func (d *DB) Delete(ctx Context, table string, where Element) (scanner Scanner) {
-	
+
 	return
 }
 
 func (d *DB) Update(ctx Context, table string, data map[string]any, where Element) (scanner Scanner) {
-	
+
 	return
 }
 
 func (d *DB) Insert(ctx Context, table string, data any, onConflict Element) (scanner Scanner) {
-	
+
 	return
 }
 
 func (d *DB) InsertBatch(ctx Context, table string, data any, batch int, onConflict Element) (scanner Scanner) {
-	
+
 	return
 }
 

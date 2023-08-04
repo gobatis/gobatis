@@ -1,16 +1,17 @@
-package batis
+package gobatis
 
 import (
 	"context"
 	"database/sql"
 	"fmt"
-	"github.com/gobatis/gobatis/cast"
-	"github.com/gobatis/gobatis/dtd"
 	"reflect"
 	"regexp"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/gobatis/gobatis/cast"
+	"github.com/gobatis/gobatis/dtd"
 )
 
 const (
@@ -143,7 +144,7 @@ func (p *fragment) proxy(field reflect.Value) {
 }
 
 func (p *fragment) call(_type reflect.Type, in ...reflect.Value) []reflect.Value {
-	
+
 	c := &caller{fragment: p, args: in, logger: p.db.logger}
 	for i := 0; i < _type.NumOut()-1; i++ {
 		if _type.Out(i).Kind() == reflect.Ptr {
@@ -152,7 +153,7 @@ func (p *fragment) call(_type reflect.Type, in ...reflect.Value) []reflect.Value
 			c.values = append(c.values, reflect.New(_type.Out(i)))
 		}
 	}
-	
+
 	err := c.call()
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -167,7 +168,7 @@ func (p *fragment) call(_type reflect.Type, in ...reflect.Value) []reflect.Value
 	} else {
 		c.values = append(c.values, reflect.Zero(errorType))
 	}
-	
+
 	for i := 0; i < _type.NumOut()-1; i++ {
 		if _type.Out(i).Kind() == reflect.Ptr {
 			if err == sql.ErrNoRows {
@@ -177,19 +178,19 @@ func (p *fragment) call(_type reflect.Type, in ...reflect.Value) []reflect.Value
 			c.values[i] = c.values[i].Elem()
 		}
 	}
-	
+
 	return c.values
 }
 
 func (p *fragment) setResultAttribute() {
-	
+
 	if p.node.Name != dtd.SELECT &&
 		p.node.Name != dtd.INSERT &&
 		p.node.Name != dtd.UPDATE &&
 		p.node.Name != dtd.DELETE {
 		return
 	}
-	
+
 	if p.node.HasAttribute(dtd.RESULT) {
 		p.resultAttribute = result_result
 	} else if p.node.HasAttribute(dtd.RESULT_MAP) {
@@ -214,12 +215,12 @@ func (p *fragment) checkParameter(ft reflect.Type, mn, fn string) {
 }
 
 func (p *fragment) checkResult(ft reflect.Type, mn, fn string) {
-	
+
 	if ft.NumOut() == 0 || !isErrorType(ft.Out(ft.NumOut()-1)) {
 		throw(p.node.File, p.node.ctx, checkResultErr).
 			format("out expect error at last, got %s", ft.Out(ft.NumOut()-1).String())
 	}
-	
+
 	switch p.node.Name {
 	case dtd.SELECT:
 		switch p.resultAttribute {
@@ -256,7 +257,7 @@ func (p *fragment) checkResult(ft reflect.Type, mn, fn string) {
 					}
 				}
 			}
-			
+
 		}
 	case dtd.INSERT, dtd.UPDATE, dtd.DELETE:
 		if ft.NumOut() > 1 {
@@ -286,16 +287,16 @@ func (p *fragment) checkResult(ft reflect.Type, mn, fn string) {
 
 func (p *fragment) parseStatement(args ...reflect.Value) (sql string, exprs []string, vars []interface{},
 	dynamic bool, err error) {
-	
+
 	defer func() {
 		e := recover()
 		err = castRecoverError(p.node.File, e)
 	}()
-	
+
 	if len(p.in) != len(args) {
 		throw(p.node.File, p.node.ctx, parasFragmentErr).format("expect %d args, got %d", len(p.in), len(args))
 	}
-	
+
 	parser := newExprParser(args...)
 	for i, v := range p.in {
 		err = parser.paramsStack.list.Front().Next().Value.(*exprParams).bind(v, i)
@@ -305,7 +306,7 @@ func (p *fragment) parseStatement(args ...reflect.Value) (sql string, exprs []st
 	}
 	res := new(psr)
 	p.parseBlocks(parser, p.node, res)
-	
+
 	sql = res.sql
 	vars, err = parser.realVars()
 	if err != nil {
@@ -313,7 +314,7 @@ func (p *fragment) parseStatement(args ...reflect.Value) (sql string, exprs []st
 	}
 	exprs = parser.exprs
 	dynamic = res.dynamic
-	
+
 	return
 }
 
@@ -364,7 +365,7 @@ func (p *fragment) parseSql(parser *exprParser, node *xmlNode, res *psr) {
 			inject = false
 		}
 	}
-	
+
 	// to avoid useless space
 	res.sql += s
 }
@@ -414,7 +415,7 @@ func (p *fragment) parseTest(parser *exprParser, node *xmlNode, res *psr) bool {
 		return false
 	}
 	p.parseBlocks(parser, node, res)
-	
+
 	return true
 }
 
@@ -480,7 +481,7 @@ func (p *fragment) parseSet(parser *exprParser, node *xmlNode, res *psr) {
 }
 
 func (p *fragment) parseForeach(parser *exprParser, node *xmlNode, res *psr) {
-	
+
 	_var := node.GetAttribute(dtd.COLLECTION)
 	collection, ok := parser.paramsStack.getVar(_var)
 	if !ok {
@@ -503,7 +504,7 @@ func (p *fragment) parseForeach(parser *exprParser, node *xmlNode, res *psr) {
 	open := node.GetAttribute(dtd.OPEN)
 	_close := node.GetAttribute(dtd.CLOSE)
 	separator := node.GetAttribute(dtd.SEPARATOR)
-	
+
 	parser.paramsStack.push(newExprParams())
 	elem := toReflectValueElem(collection.value)
 	frags := make([]string, 0)
@@ -595,12 +596,12 @@ type caller struct {
 //}
 
 func (p *caller) call() (err error) {
-	
+
 	start := time.Now()
 	defer func() {
 		p.logger.Debugf("[gobatis] [%s] cost: %s", p.fragment.id, time.Since(start))
 	}()
-	
+
 	switch p.fragment.node.Name {
 	case dtd.SELECT:
 		return p.query(p.args...)
@@ -614,7 +615,7 @@ func (p *caller) call() (err error) {
 }
 
 func (p *caller) exec(in ...reflect.Value) (err error) {
-	
+
 	_execer, index := p.execer(in)
 	if index > -1 {
 		in = p.removeParam(in, index)
@@ -623,7 +624,7 @@ func (p *caller) exec(in ...reflect.Value) (err error) {
 	if index > -1 {
 		in = p.removeParam(in, index)
 	}
-	
+
 	tx, _ := _execer.(*DB)
 	if tx != nil {
 		stmt := tx.getStmt(p.fragment.id)
@@ -631,11 +632,11 @@ func (p *caller) exec(in ...reflect.Value) (err error) {
 			return stmt.exec(true, ctx, in)
 		}
 	}
-	
+
 	if p.fragment._stmt != nil {
 		return p.fragment._stmt.exec(false, ctx, in)
 	}
-	
+
 	var conn *sql.Conn
 	if _execer == nil {
 		conn, err = p.fragment.db.Conn(ctx)
@@ -651,15 +652,15 @@ func (p *caller) exec(in ...reflect.Value) (err error) {
 			}
 		}
 	}()
-	
+
 	s, exprs, vars, dynamic, err := p.fragment.parseStatement(in...)
 	if err != nil {
 		return
 	}
-	
+
 	p.logger.Debugf("[gobatis] [%s] exec statement: %s", p.fragment.id, s)
 	p.logger.Debugf("[gobatis] [%s] exec parameter: %s", p.fragment.id, printVars(vars))
-	
+
 	var res sql.Result
 	if p.fragment.stmt {
 		var _stmt *sql.Stmt
@@ -670,7 +671,7 @@ func (p *caller) exec(in ...reflect.Value) (err error) {
 			p.logger.Errorf("[gobatis] [%s] prepare error: %v", p.fragment.id, err)
 			return err
 		}
-		
+
 		if !dynamic {
 			stmt := &Stmt{
 				stmt:   _stmt,
@@ -695,7 +696,7 @@ func (p *caller) exec(in ...reflect.Value) (err error) {
 		p.logger.Errorf("[gobatis] [%s] exec error: %v", p.fragment.id, err)
 		return
 	}
-	
+
 	return p.parseExecResult(res, p.values)
 }
 
@@ -709,17 +710,17 @@ func (p *caller) parseExecResult(res sql.Result, values []reflect.Value) error {
 }
 
 func (p *caller) query(in ...reflect.Value) (err error) {
-	
+
 	ctx, index := p.context(in)
 	if index > -1 {
 		in = p.removeParam(in, index)
 	}
-	
+
 	_queryer, index := p.queryer(in)
 	if index > -1 {
 		in = p.removeParam(in, index)
 	}
-	
+
 	tx, _ := _queryer.(*DB)
 	if tx != nil {
 		stmt := tx.getStmt(p.fragment.id)
@@ -731,7 +732,7 @@ func (p *caller) query(in ...reflect.Value) (err error) {
 			return
 		}
 	}
-	
+
 	if p.fragment._stmt != nil {
 		err = p.fragment._stmt.query(false, ctx, in, p.values)
 		if err != nil {
@@ -739,7 +740,7 @@ func (p *caller) query(in ...reflect.Value) (err error) {
 		}
 		return
 	}
-	
+
 	var conn *sql.Conn
 	if _queryer == nil {
 		conn, err = p.fragment.db.Conn(ctx)
@@ -755,15 +756,15 @@ func (p *caller) query(in ...reflect.Value) (err error) {
 			}
 		}
 	}()
-	
+
 	s, exprs, vars, dynamic, err := p.fragment.parseStatement(in...)
 	if err != nil {
 		return
 	}
-	
+
 	p.logger.Debugf("[gobatis] [%s] query statement: %s", p.fragment.id, s)
 	p.logger.Debugf("[gobatis] [%s] query parameter: [%+v]", p.fragment.id, printVars(vars))
-	
+
 	var rows *sql.Rows
 	if p.fragment.stmt {
 		var _stmt *sql.Stmt
@@ -774,7 +775,7 @@ func (p *caller) query(in ...reflect.Value) (err error) {
 			p.logger.Errorf("[gobatis] [%s] prepare error: %v", p.fragment.id, err)
 			return err
 		}
-		
+
 		if p.fragment.stmt && !dynamic {
 			stmt := &Stmt{
 				stmt:   _stmt,
@@ -789,7 +790,7 @@ func (p *caller) query(in ...reflect.Value) (err error) {
 				p.fragment._stmt = stmt
 			}
 		}
-		
+
 		rows, err = _stmt.QueryContext(ctx, vars...)
 	} else {
 		rows, err = _queryer.QueryContext(ctx, s, vars...)
@@ -813,7 +814,7 @@ func (p *caller) parseQueryResult(rows *sql.Rows, values []reflect.Value) (err e
 			p.logger.Errorf("[gobatis] [%s] close rows error: %s", p.fragment.id, _err)
 		}
 	}()
-	
+
 	res := queryResult{rows: rows}
 	err = res.setSelected(p.fragment.resultAttribute, p.fragment.out, values)
 	if err != nil {

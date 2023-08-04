@@ -1,4 +1,4 @@
-package batis
+package gobatis
 
 import (
 	"errors"
@@ -20,7 +20,7 @@ func mapDirOpenError(originalErr error, name string) error {
 	if os.IsNotExist(originalErr) || os.IsPermission(originalErr) {
 		return originalErr
 	}
-	
+
 	parts := strings.Split(name, string(filepath.Separator))
 	for i := range parts {
 		if parts[i] == "" {
@@ -43,7 +43,7 @@ func (p fsDir) Open(name string) (http.File, error) {
 	if filepath.Separator != '/' && strings.ContainsRune(name, filepath.Separator) {
 		return nil, errors.New("http: invalid character in file path")
 	}
-	
+
 	fullPath := p.prepare(name)
 	f, err := os.Open(fullPath)
 	if err != nil {

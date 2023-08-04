@@ -1,16 +1,17 @@
-package batis
+package gobatis
 
 import (
 	"fmt"
+	"os"
+	"reflect"
+	"testing"
+	"time"
+
 	"github.com/AlekSi/pointer"
 	"github.com/gobatis/gobatis/driver/postgres"
 	"github.com/gobatis/gobatis/test"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/require"
-	"os"
-	"reflect"
-	"testing"
-	"time"
 )
 
 var (
@@ -48,12 +49,12 @@ func (User) TableName() string {
 func TestDBQuery(t *testing.T) {
 	db, err := Open(postgres.Open(""))
 	require.NoError(t, err)
-	
+
 	var user User
 	//err = db.Query(Background(), `
 	//	select * from users where id = ${ id }
 	//`, Param("id", 21)).Scan(&user)
-	
+
 	err = db.Execute(Background(), `
 		insert into users(name,age) values(
 		<foreach collection="enums" separator="," open="'" close="'">
@@ -62,18 +63,18 @@ func TestDBQuery(t *testing.T) {
 		)
 	`).Scan()
 	require.NoError(t, err)
-	
+
 	var users []User
 	err = db.Execute(Background(), `
 		select * from messages where cid in ${ids} 
 	`, Param("ids", []int64{1, 2, 34})).Scan(&users)
 	require.NoError(t, err)
-	
+
 	err = db.Insert(Background(), "users", user, nil).Error()
 	if err != nil {
 		return
 	}
-	
+
 	err = db.Update(Background(), "tests", map[string]any{
 		"name": "name",
 		"age":  18,
@@ -81,24 +82,24 @@ func TestDBQuery(t *testing.T) {
 	if err != nil {
 		return
 	}
-	
+
 	err = db.InsertBatch(Background(), "users", user, 10, nil).Error()
 	if err != nil {
 		return
 	}
-	
+
 	err = db.Delete(Background(), user.TableName(), Where("id = ${user.Id}", Param("user", user))).Error()
 	if err != nil {
 		return
 	}
-	
+
 	require.NoError(t, err)
 }
 
 func TestDBInsert(t *testing.T) {
 	db, err := Open(postgres.Open(""))
 	require.NoError(t, err)
-	
+
 	var user User
 	err = db.Query(
 		Background(),
@@ -112,23 +113,23 @@ func TestDBInsert(t *testing.T) {
 }
 
 //func TestEngine(t *testing.T) {
-//	
+//
 //	engine := NewPostgresql("postgresql://postgres:postgres@127.0.0.1:5432/gobatis?connect_timeout=10&sslmode=disable")
 //	err := engine.Init(NewBundle("test"))
 //	require.NoError(t, err)
-//	
+//
 //	err = engine.master.Ping()
 //	require.NoError(t, err)
-//	
+//
 //	defer func() {
 //		err = engine.master.Close()
 //		require.NoError(t, err)
 //	}()
-//	
+//
 //	_testMapper := new(test.TestMapper)
 //	err = engine.BindMapper(_testMapper)
 //	require.NoError(t, err)
-//	
+//
 //	testSelectInsert(t, _testMapper)
 //	testSelectInsertPointer(t, _testMapper)
 //	testSelectInsertForeachSlice(t, _testMapper)
@@ -157,59 +158,59 @@ func TestDBInsert(t *testing.T) {
 //	defer func() {
 //		engine.Close()
 //	}()
-//	
+//
 //	stmtMapper := new(test.StmtMapper)
 //	err = engine.BindMapper(stmtMapper)
 //	require.NoError(t, err)
-//	
+//
 //	err = stmtMapper.TestInsertStmt(&test.User{
 //		Name: "tom",
 //		Age:  18,
 //	})
 //	require.NoError(t, err)
-//	
+//
 //	err = stmtMapper.TestInsertStmt(&test.User{
 //		Name: "michael",
 //		Age:  8,
 //	})
 //	require.NoError(t, err)
-//	
+//
 //	err = stmtMapper.TestInsertStmt2(&test.User{
 //		Name: "jack",
 //		Age:  2,
 //	})
 //	require.NoError(t, err)
-//	
+//
 //	err = stmtMapper.TestInsertStmt2(&test.User{
 //		Name: "jack",
 //		Age:  3,
 //	})
 //	require.NoError(t, err)
-//	
+//
 //	err = stmtMapper.TestInsertStmt2(&test.User{
 //		Name: "jack",
 //		Age:  4,
 //	})
 //	require.NoError(t, err)
-//	
+//
 //	err = stmtMapper.TestInsertStmt2(&test.User{
 //		Name: "default",
 //		Age:  8,
 //	})
 //	require.NoError(t, err)
-//	
+//
 //	err = stmtMapper.TestInsertStmt2(&test.User{
 //		Name: "default",
 //		Age:  9,
 //		From: "usa",
 //	})
 //	require.NoError(t, err)
-//	
+//
 //	users, err := stmtMapper.TestQueryStmt("tom", 18)
 //	require.NoError(t, err)
 //	require.True(t, len(users) > 0)
 //	t.Log(users[0].Name, users[0].Age)
-//	
+//
 //	users, err = stmtMapper.TestQueryStmt("michael", 8)
 //	require.NoError(t, err)
 //	require.True(t, len(users) > 0)
@@ -226,11 +227,11 @@ func TestDBInsert(t *testing.T) {
 //	defer func() {
 //		engine.Close()
 //	}()
-//	
+//
 //	stmtMapper := new(StmtMapper)
 //	err = engine.BindMapper(stmtMapper)
 //	require.NoError(t, err)
-//	
+//
 //	tx, err := engine.Master().Begin()
 //	require.NoError(t, err)
 //	defer func() {
@@ -242,36 +243,36 @@ func TestDBInsert(t *testing.T) {
 //			require.NoError(t, err)
 //		}
 //	}()
-//	
+//
 //	err = stmtMapper.TestInsertStmtTx(tx, &test.User{
 //		Name: "tom_tx",
 //		Age:  18,
 //	})
 //	require.NoError(t, err)
-//	
+//
 //	err = stmtMapper.TestInsertStmtTx(tx, &test.User{
 //		Name: "michael_tx",
 //		Age:  8,
 //	})
 //	require.NoError(t, err)
-//	
+//
 //	err = stmtMapper.TestInsertStmt2Tx(tx, &test.User{
 //		Name: "default_tx",
 //		Age:  8,
 //	})
 //	require.NoError(t, err)
-//	
+//
 //	err = stmtMapper.TestInsertStmt2Tx(tx, &test.User{
 //		Name: "default_tx",
 //		Age:  9,
 //	})
 //	require.NoError(t, err)
-//	
+//
 //	users, err := stmtMapper.TestQueryStmtTx(tx, "tom_tx", 18)
 //	require.NoError(t, err)
 //	require.True(t, len(users) > 0, len(users))
 //	t.Log(users[0].Name, users[0].Age)
-//	
+//
 //	users, err = stmtMapper.TestQueryStmtTx(tx, "default_tx", 8)
 //	require.NoError(t, err)
 //	require.True(t, len(users) > 0, len(users))
@@ -290,7 +291,7 @@ func TestDBInsert(t *testing.T) {
 //	m := new(test.StmtMapper)
 //	err = engine.BindMapper(m)
 //	require.NoError(t, err)
-//	
+//
 //	tags := pgtype.TextArray{}
 //	err = tags.Set([]string{"a", "b"})
 //	require.NoError(t, err)
@@ -300,7 +301,7 @@ func TestDBInsert(t *testing.T) {
 //		Tags: tags,
 //	})
 //	require.NoError(t, err)
-//	
+//
 //	//r, err := m.GetStringArray("tags")
 //	//require.NoError(t, err)
 //	//for _, v := range r.Tags.Elements {
@@ -331,7 +332,7 @@ func testSelectInsert(t *testing.T, _testMapper *test.TestMapper) {
 		Interval:                 100 * time.Second,
 		Boolean:                  true,
 	})
-	
+
 	require.NoError(t, err)
 	if id <= 0 {
 		require.Error(t, fmt.Errorf("returning id should greater 0"))
@@ -342,7 +343,7 @@ func testSelectInsertPointer(t *testing.T, _testMapper *test.TestMapper) {
 	dec := decimal.NewFromFloat(3.14)
 	now := time.Now()
 	interval := 100 * time.Second
-	
+
 	id, err := _testMapper.SelectInsertPointer(&test.EntityPointer{
 		Int8:                     pointer.ToInt8(1),
 		BigInt:                   pointer.ToInt64(2),
@@ -365,7 +366,7 @@ func testSelectInsertPointer(t *testing.T, _testMapper *test.TestMapper) {
 		Interval:                 &interval,
 		Boolean:                  pointer.ToBool(true),
 	})
-	
+
 	require.NoError(t, err)
 	if id <= 0 {
 		require.Error(t, fmt.Errorf("returning id should greater 0"))
@@ -514,7 +515,7 @@ func testSelectStruct(t *testing.T, _testMapper *test.TestMapper) {
 	//d, err := json.MarshalIndent(item, "", "\t")
 	require.NoError(t, err)
 	//fmt.Println(string(d))
-	
+
 	item2, err := _testMapper.SelectStructPointer(47)
 	_ = item2
 	require.NoError(t, err)
@@ -530,7 +531,7 @@ func testSelectStructs(t *testing.T, _testMapper *test.TestMapper) {
 	//d, err := json.MarshalIndent(item, "", "\t")
 	require.NoError(t, err)
 	//fmt.Println(string(d))
-	
+
 	item2, err := _testMapper.SelectStructsPointer(47)
 	_ = item2
 	require.NoError(t, err)

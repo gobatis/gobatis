@@ -1,16 +1,17 @@
-package batis
+package gobatis
 
 import (
 	"container/list"
 	"fmt"
+	"reflect"
+	"strings"
+	"sync"
+
 	"github.com/antlr/antlr4/runtime/Go/antlr"
 	"github.com/gobatis/gobatis/cast"
 	"github.com/gobatis/gobatis/dtd"
 	"github.com/gobatis/gobatis/parser/expr"
 	"github.com/gobatis/gobatis/parser/xml"
-	"reflect"
-	"strings"
-	"sync"
 )
 
 const (
@@ -40,12 +41,12 @@ func parseConfig(engine *DB, file, content string) (err error) {
 }
 
 func parseMapper(db *DB, file, content string) (err error) {
-	
+
 	defer func() {
 		e := recover()
 		err = castRecoverError(file, e)
 	}()
-	
+
 	l := &xmlParser{
 		file:          file,
 		stack:         newXMLStack(),
@@ -58,7 +59,7 @@ func parseMapper(db *DB, file, content string) (err error) {
 		throw(file, nil, parseCoveredErr).
 			format("parse mapper token not covered: %d/%d", l.coverage.len(), l.coverage.total)
 	}
-	
+
 	if l.rootNode == nil {
 		db.logger.Warnf("empty mapperCache file: %s", file)
 		return
@@ -101,20 +102,20 @@ func initExprParser(tokens string) (parser *expr.ExprParser) {
 }
 
 func parseFragment(db *DB, file, id string, node *xmlNode) (frag *fragment, err error) {
-	
+
 	defer func() {
 		e := recover()
 		err = castRecoverError(file, e)
 	}()
-	
+
 	frag = &fragment{
 		db:   db,
 		id:   id,
 		node: node,
 	}
-	
+
 	frag.setResultAttribute()
-	
+
 	if node.HasAttribute(dtd.PARAMETER) {
 		frag.in = frag.parseParams(node.GetAttribute(dtd.PARAMETER))
 	}
@@ -365,7 +366,7 @@ type xmlParser struct {
 }
 
 func (p *xmlParser) validateNode(node *xmlNode, elem *dtd.Element) {
-	
+
 	// check required attributes
 	if elem.Attributes != nil {
 		for k, v := range elem.Attributes {
@@ -375,38 +376,38 @@ func (p *xmlParser) validateNode(node *xmlNode, elem *dtd.Element) {
 			}
 		}
 	}
-	
+
 	switch node.Name {
 	case dtd.SELECT, dtd.INSERT, dtd.UPDATE, dtd.DELETE:
 		p.checkResultConflict(node)
 	}
-	
+
 	for _, childNode := range node.Nodes {
-		
+
 		if childNode.textOnly {
 			continue
 		}
-		
+
 		// check not supported node
 		if !elem.HasNode(childNode.Name) {
 			throw(p.file, childNode.ctx, validateXMLNodeErr).
 				format("element: %s not support child element: %s", node.Name, childNode.Name)
 		}
-		
+
 		// check at most once node
 		if elem.GetNodeCount(childNode.Name) == dtd.AT_MOST_ONCE && node.countNode(childNode.Name) > 1 {
 			throw(p.file, childNode.ctx, validateXMLNodeErr).
 				format("element: %s not support duplicate element: %s", node.Name, childNode.Name)
 		}
-		
+
 		childElem, err := p.elementGetter(childNode.Name)
 		if err != nil {
 			throw(p.file, childNode.ctx, validateXMLNodeErr).with(err)
 		}
-		
+
 		p.validateNode(childNode, childElem)
 	}
-	
+
 	// check at least once node
 	if elem.Nodes != nil {
 		for k, v := range elem.Nodes {
@@ -475,7 +476,7 @@ func (p *xmlParser) exitElement(_ *xml.ElementContext) {
 	}
 	p.depth--
 	child := p.stack.Pop()
-	
+
 	if p.stack.Len() > 0 {
 		p.stack.Peak().AddNode(child)
 	} else {
@@ -524,7 +525,7 @@ func (p *xmlParser) EnterEveryRule(ctx antlr.ParserRuleContext) {
 	case xml.XMLParserRULE_prolog, xml.XMLParserRULE_misc:
 		p.coverage.add(ctx)
 	}
-	
+
 }
 
 func (p *xmlParser) ExitEveryRule(ctx antlr.ParserRuleContext) {
@@ -548,7 +549,7 @@ func (p param) Type() string {
 }
 
 func (p param) expected(vt reflect.Type) bool {
-	
+
 	vt = reflectTypeElem(vt)
 	if p.slice {
 		if vt.Kind() != reflect.Slice && vt.Kind() != reflect.Array {
@@ -557,7 +558,7 @@ func (p param) expected(vt reflect.Type) bool {
 		vt = vt.Elem()
 	}
 	vt = reflectTypeElem(vt)
-	
+
 	switch p._type {
 	case reflect.Interface.String():
 		return true
@@ -675,13 +676,13 @@ func (p *exprValue) int() (v int, err error) {
 }
 
 func (p *exprValue) visitMember(name string) (r *exprValue, err error) {
-	
+
 	elem := toReflectValueElem(p.value)
 	if elem.Kind() != reflect.Struct {
 		err = fmt.Errorf("visit '%s.%s' is not struct", p.alias, name)
 		return
 	}
-	
+
 	mv := elem.FieldByName(name)
 	if mv.Kind() == reflect.Invalid {
 		mv = elem.MethodByName(name)
@@ -690,22 +691,22 @@ func (p *exprValue) visitMember(name string) (r *exprValue, err error) {
 			return
 		}
 	}
-	
+
 	r = &exprValue{
 		value: mv.Interface(),
 	}
-	
+
 	return
 }
 
 func (p *exprValue) visitArray(index int) (r *exprValue, err error) {
-	
+
 	elem := toReflectValueElem(p.value)
 	if elem.Kind() != reflect.Array && elem.Kind() != reflect.Slice {
 		err = fmt.Errorf("visit var is not array or slice")
 		return
 	}
-	
+
 	mv := elem.Index(index)
 	if mv.Kind() == reflect.Invalid {
 		err = fmt.Errorf("visit array index '%d' is invalid", index)
@@ -718,13 +719,13 @@ func (p *exprValue) visitArray(index int) (r *exprValue, err error) {
 }
 
 func (p *exprValue) visitMap(index reflect.Value) (r *exprValue, err error) {
-	
+
 	elem := toReflectValueElem(p.value)
 	if elem.Kind() != reflect.Map {
 		err = fmt.Errorf("visit '%s' is not map", elem.Kind())
 		return
 	}
-	
+
 	mv := elem.MapIndex(index)
 	r = &exprValue{}
 	if mv.Kind() == reflect.Invalid {
@@ -736,7 +737,7 @@ func (p *exprValue) visitMap(index reflect.Value) (r *exprValue, err error) {
 }
 
 func (p *exprValue) call(ellipsis bool, params []reflect.Value) (r *exprValue, err error) {
-	
+
 	elem := toReflectValueElem(p.value)
 	if elem.Kind() != reflect.Func {
 		err = fmt.Errorf("visit '%s' is not func", elem.Kind())
@@ -767,7 +768,7 @@ func (p *exprValue) call(ellipsis bool, params []reflect.Value) (r *exprValue, e
 	} else {
 		out = elem.Call(params)
 	}
-	
+
 	if len(out) == 0 {
 		err = fmt.Errorf("function must return one reuslt")
 		return
@@ -775,7 +776,7 @@ func (p *exprValue) call(ellipsis bool, params []reflect.Value) (r *exprValue, e
 		err = fmt.Errorf("function only support one result return")
 		return
 	}
-	
+
 	r = &exprValue{
 		value: out[0].Interface(),
 	}
@@ -877,11 +878,11 @@ func (p *exprParams) set(params ...reflect.Value) {
 }
 
 func (p *exprParams) bind(expected *param, index int) error {
-	
+
 	if expected.name == "" {
 		return fmt.Errorf("parameter name is empty")
 	}
-	
+
 	if p.check == nil {
 		p.check = map[string]int{}
 	} else {
@@ -890,24 +891,24 @@ func (p *exprParams) bind(expected *param, index int) error {
 			return fmt.Errorf("duplicated parameter '%s'", expected.name)
 		}
 	}
-	
+
 	vl := len(p.values) - 1
 	if index < 0 || index > vl {
 		return fmt.Errorf("parameter '%s' index %d out of parameters length %d", expected.name, index, vl)
 	}
-	
+
 	ev := p.values[index]
 	p.check[expected.name] = index
-	
+
 	if cast.IsNil(ev.value) {
 		return nil
 	}
-	
+
 	elem := toReflectValueElem(ev.value)
 	if !expected.expected(elem.Type()) {
 		return fmt.Errorf("parameter '%s' expected '%s', got '%s'", expected.name, expected.Type(), elem.Type())
 	}
-	
+
 	return nil
 }
 
@@ -1085,18 +1086,18 @@ func (p *exprParser) ExitMember(ctx *expr.MemberContext) {
 	if err != nil {
 		p.throw(ctx, visitMemberErr).with(err)
 	}
-	
+
 	p.valueStack.push(mev)
 	p.coverage.add(ctx)
 }
 
 func (p *exprParser) ExitIndex(ctx *expr.IndexContext) {
-	
+
 	index, err := p.valueStack.pop()
 	if err != nil {
 		p.throw(ctx, popValueStackErr).with(err)
 	}
-	
+
 	object, err := p.valueStack.pop()
 	if err != nil {
 		p.throw(ctx, popValueStackErr).with(err)
@@ -1114,12 +1115,12 @@ func (p *exprParser) ExitIndex(ctx *expr.IndexContext) {
 		if err != nil {
 			p.throw(ctx, visitArrayErr).format("parse array index error: %s", err)
 		}
-		
+
 		ev, err = object.visitArray(i)
 		if err != nil {
 			p.throw(ctx, visitArrayErr).format("visit array error: %s", err)
 		}
-		
+
 	} else {
 		p.throw(ctx, indexErr).format("parameter unsupported index")
 	}
@@ -1217,27 +1218,27 @@ func (p *exprParser) ExitNil_(ctx *expr.Nil_Context) {
 
 func (p *exprParser) parseExpression(nodeCtx antlr.ParserRuleContext,
 	expression string) (result interface{}, static bool, err error) {
-	
+
 	defer func() {
 		e := recover()
 		err = castRecoverError(p.file, e)
 	}()
-	
+
 	p.nodeCtx = nodeCtx
 	p.static = false
 	p.valueStack = newValueStack()
 	p.coverage = newCoverage()
-	
+
 	parser := initExprParser(expression)
 	antlr.ParseTreeWalkerDefault.Walk(p, parser.Expressions())
-	
+
 	if !p.coverage.covered() {
 		p.throw(nil, parseCoveredErr).format(
 			"parse expression token not covered: %d/%d",
 			p.coverage.len(), p.coverage.total,
 		)
 	}
-	
+
 	if p.valueStack.len() != 1 {
 		p.throw(nil, popResultErr).format("expect result stack length: 1, got %d", p.valueStack.len())
 	}
@@ -1247,7 +1248,7 @@ func (p *exprParser) parseExpression(nodeCtx antlr.ParserRuleContext,
 	}
 	result = v.value
 	static = p.static
-	
+
 	return
 }
 
@@ -1290,7 +1291,7 @@ func (p *exprParser) popTertiaryOperands() (condition, left, right *exprValue, e
 }
 
 func (p *exprParser) numericStringCalc(left, right *exprValue, ctx antlr.ParserRuleContext, op antlr.Token) {
-	
+
 	var err error
 	var result interface{}
 	switch op.GetTokenType() {
@@ -1320,12 +1321,12 @@ func (p *exprParser) numericStringCalc(left, right *exprValue, ctx antlr.ParserR
 	if err != nil {
 		p.throw(ctx, numericCalcErr).with(err)
 	}
-	
+
 	p.valueStack.push(&exprValue{value: result})
 }
 
 func (p *exprParser) relationCalc(left, right *exprValue, ctx antlr.ParserRuleContext, op antlr.Token) {
-	
+
 	var err error
 	var result bool
 	switch op.GetTokenType() {
@@ -1346,7 +1347,7 @@ func (p *exprParser) relationCalc(left, right *exprValue, ctx antlr.ParserRuleCo
 	}
 	if err != nil {
 		p.throw(ctx, relationCalcError).with(err)
-		
+
 	}
 	p.valueStack.push(&exprValue{value: result})
 }
@@ -1373,7 +1374,7 @@ func (p *exprParser) unaryCalc(left *exprValue, ctx antlr.ParserRuleContext, op 
 }
 
 func (p *exprParser) logicCalc(left, right *exprValue, ctx antlr.ParserRuleContext, op antlr.Token) {
-	
+
 	var err error
 	var result interface{}
 	switch op.GetTokenType() {
@@ -1389,7 +1390,7 @@ func (p *exprParser) logicCalc(left, right *exprValue, ctx antlr.ParserRuleConte
 }
 
 func (p *exprParser) tertiaryCalc(condition, left, right *exprValue, ctx antlr.ParserRuleContext) {
-	
+
 	ok, err := cast.ToBoolE(condition.value)
 	if err != nil {
 		p.throw(ctx, castBoolErr).with(err)

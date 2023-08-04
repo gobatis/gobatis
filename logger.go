@@ -1,4 +1,4 @@
-package batis
+package gobatis
 
 import (
 	"github.com/gozelle/logging"

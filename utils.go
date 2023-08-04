@@ -1,11 +1,12 @@
-package batis
+package gobatis
 
 import (
 	"database/sql"
 	"database/sql/driver"
 	"fmt"
-	"github.com/ttacon/chalk"
 	"reflect"
+
+	"github.com/ttacon/chalk"
 )
 
 var errorType reflect.Type
