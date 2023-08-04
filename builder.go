@@ -1,17 +1,57 @@
 package gobatis
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
-type Builder struct {
+type Builder interface {
+	Build() []session
+}
+
+func NewPaging() *Paging {
+	return &Paging{}
+}
+
+type Paging struct {
 	elems []element
 }
 
-func (b *Builder) addElement(e element) *Builder {
+func (b *Paging) Build() []session {
+	return nil
+}
+
+func (b *Paging) addElement(e element) *Paging {
 	b.elems = append(b.elems, e)
 	return b
 }
 
-func (b *Builder) From(sql string, params ...NameValue) *Builder {
+// Select TODO wrap field
+func (b *Paging) Select(fields ...string) *Paging {
+	b.addElement(element{
+		name: selectTag,
+		sql:  strings.Join(fields, ","),
+	})
+	return b
+}
+
+func (b *Paging) SelectAllExcept(fields ...string) *Paging {
+	b.addElement(element{
+		name: selectExceptTag,
+		sql:  strings.Join(fields, ","),
+	})
+	return b
+}
+
+func (b *Paging) Raw(sql string, params ...NameValue) *Paging {
+	b.addElement(element{
+		name: selectExceptTag,
+		sql:  sql,
+	})
+	return b
+}
+
+func (b *Paging) From(sql string, params ...NameValue) *Paging {
 	b.addElement(element{
 		name:   fromTag,
 		sql:    sql,
@@ -20,7 +60,7 @@ func (b *Builder) From(sql string, params ...NameValue) *Builder {
 	return b
 }
 
-func (b *Builder) Where(sql string, params ...NameValue) *Builder {
+func (b *Paging) Where(sql string, params ...NameValue) *Paging {
 	b.addElement(
 		element{
 			name:   whereTag,
@@ -30,7 +70,7 @@ func (b *Builder) Where(sql string, params ...NameValue) *Builder {
 	return b
 }
 
-func (b *Builder) Count(sql string) *Builder {
+func (b *Paging) Count(sql string) *Paging {
 	b.addElement(element{
 		name: countTag,
 		sql:  sql,
@@ -38,7 +78,7 @@ func (b *Builder) Count(sql string) *Builder {
 	return b
 }
 
-func (b *Builder) Page(page, limit int64) *Builder {
+func (b *Paging) Page(page, limit int64) *Paging {
 	b.addElement(element{
 		name: pagingTag,
 		sql:  fmt.Sprintf("limit %d offset %d", limit, page),
@@ -46,7 +86,7 @@ func (b *Builder) Page(page, limit int64) *Builder {
 	return b
 }
 
-func (b *Builder) Scroll(limit int64, and Element) *Builder {
+func (b *Paging) Scroll(limit int64, and Element) *Paging {
 	b.addElement(element{
 		name: scrollTag,
 		//sql:  fmt.Sprintf("%s limit %d", sql, limit),

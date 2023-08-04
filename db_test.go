@@ -101,8 +101,9 @@ func TestDBInsert(t *testing.T) {
 	
 	var users []User
 	var total int64
-	err := db.Build(
-		Background(), Select("*").
+	err := db.Debug().Build(
+		NewPaging().
+			Select("*").
 			From("users").
 			Where("agg > 0").
 			Page(0, 10).
@@ -111,7 +112,7 @@ func TestDBInsert(t *testing.T) {
 	require.NoError(t, err)
 	
 	err = db.Build(
-		Background(), Raw(`
+		NewPaging().Raw(`
 				select * from a left join b on a.name = b.name where a.age > 18
             `, Param("a", map[string]any{})).
 			Scroll(10, And("a.ab > #{ age }", Param("age", 18))).
@@ -147,9 +148,8 @@ func TestDBQuery2(t *testing.T) {
 	db := &DB{}
 	
 	var user User
-	err := db.Query(
-		Background(),
-		`select * from users where <if test="age >= 10"> id = #{ age  }</if>`,
+	err := db.Debug().Query(
+		`select * from users where id = #{age}`,
 		Param("age", 10),
 	).Scan(&user)
 	

@@ -1,6 +1,7 @@
 package gobatis
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"github.com/gozelle/spew"
@@ -63,6 +64,18 @@ type DB struct {
 	mu      sync.RWMutex
 	stmtMap map[string]*Stmt
 	error   error
+}
+
+func (d *DB) WithContext(ctx context.Context) *DB {
+	return d
+}
+
+func (d *DB) Debug() *DB {
+	return d
+}
+
+func (d *DB) Must() *DB {
+	return d
 }
 
 func (d *DB) SetTag(tag string) {
@@ -310,7 +323,7 @@ func (d *DB) Prepare(sql string, params ...NameValue) *Stmt {
 	return &Stmt{}
 }
 
-func (d *DB) Query(ctx Context, sql string, params ...NameValue) (scanner Scanner) {
+func (d *DB) Query(sql string, params ...NameValue) (scanner Scanner) {
 	
 	var err error
 	defer func() {
@@ -352,7 +365,7 @@ func (d *DB) Query(ctx Context, sql string, params ...NameValue) (scanner Scanne
 	return
 }
 
-func (d *DB) Build(ctx Context, b *Builder) (s Scanner) {
+func (d *DB) Build(b Builder) (s Scanner) {
 	
 	//var sqls []string
 	//var params []NameValue
@@ -383,26 +396,26 @@ func (d *DB) Build(ctx Context, b *Builder) (s Scanner) {
 	return
 }
 
-func (d *DB) Execute(ctx Context, sql string, params ...NameValue) (scanner Scanner) {
+func (d *DB) Execute(sql string, params ...NameValue) (scanner Scanner) {
 	return
 }
 
-func (d *DB) Delete(ctx Context, table string, where Element) (scanner Scanner) {
+func (d *DB) Delete(table string, where Element) (scanner Scanner) {
 	
 	return
 }
 
-func (d *DB) Update(ctx Context, table string, data map[string]any, where Element) (scanner Scanner) {
+func (d *DB) Update(table string, data map[string]any, where Element) (scanner Scanner) {
 	
 	return
 }
 
-func (d *DB) Insert(ctx Context, table string, data any, onConflict ...Element) (scanner Scanner) {
+func (d *DB) Insert(table string, data any, onConflict ...Element) (scanner Scanner) {
 	
 	return
 }
 
-func (d *DB) InsertBatch(ctx Context, table string, data any, batch int, onConflict ...Element) (scanner Scanner) {
+func (d *DB) InsertBatch(table string, data any, batch int, onConflict ...Element) (scanner Scanner) {
 	
 	return
 }

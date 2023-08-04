@@ -1,9 +1,5 @@
 package gobatis
 
-import (
-	"strings"
-)
-
 const (
 	selectTag = iota
 	selectExceptTag
@@ -60,32 +56,4 @@ func And(sql string, params ...NameValue) Element {
 		sql:    sql,
 		params: params,
 	}
-}
-
-// Select TODO wrap field
-func Select(fields ...string) *Builder {
-	b := &Builder{}
-	b.addElement(element{
-		name: selectTag,
-		sql:  strings.Join(fields, ","),
-	})
-	return b
-}
-
-func SelectAllExcept(fields ...string) *Builder {
-	b := &Builder{}
-	b.addElement(element{
-		name: selectExceptTag,
-		sql:  strings.Join(fields, ","),
-	})
-	return b
-}
-
-func Raw(sql string, params ...NameValue) *Builder {
-	b := &Builder{}
-	b.addElement(element{
-		name: selectExceptTag,
-		sql:  sql,
-	})
-	return b
 }
