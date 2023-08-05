@@ -1,10 +1,7 @@
 package batis
 
-type NameValue struct {
-	name  string
-	value any
-}
+import "github.com/gobatis/gobatis/executor"
 
-func Param(name string, value any) NameValue {
-	return NameValue{name: name, value: value}
+func Param(name string, value any) executor.NameValue {
+	return executor.NameValue{Name: name, Value: value}
 }

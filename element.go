@@ -1,5 +1,7 @@
 package batis
 
+import "github.com/gobatis/gobatis/executor"
+
 const (
 	selectTag = iota
 	selectExceptTag
@@ -15,7 +17,7 @@ const (
 
 type Element interface {
 	SQL() string
-	Params() []NameValue
+	Params() []executor.NameValue
 }
 
 var _ Element = (*element)(nil)
@@ -23,18 +25,18 @@ var _ Element = (*element)(nil)
 type element struct {
 	name   int
 	sql    string
-	params []NameValue
+	params []executor.NameValue
 }
 
 func (e element) SQL() string {
 	return e.sql
 }
 
-func (e element) Params() []NameValue {
+func (e element) Params() []executor.NameValue {
 	return e.params
 }
 
-func OnConflict(fields []string, sql string, params ...NameValue) Element {
+func OnConflict(sql string, params ...executor.NameValue) Element {
 	return &element{
 		name:   onConflictTag,
 		sql:    sql,
@@ -42,7 +44,7 @@ func OnConflict(fields []string, sql string, params ...NameValue) Element {
 	}
 }
 
-func Where(sql string, params ...NameValue) Element {
+func Where(sql string, params ...executor.NameValue) Element {
 	return &element{
 		name:   whereTag,
 		sql:    sql,
@@ -50,7 +52,7 @@ func Where(sql string, params ...NameValue) Element {
 	}
 }
 
-func And(sql string, params ...NameValue) Element {
+func And(sql string, params ...executor.NameValue) Element {
 	return &element{
 		name:   whereTag,
 		sql:    sql,

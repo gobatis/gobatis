@@ -1,4 +1,4 @@
-package batis
+package executor
 
 import (
 	"context"
@@ -7,8 +7,6 @@ import (
 	"reflect"
 	"regexp"
 	"strings"
-	"sync"
-	"time"
 	
 	"github.com/gobatis/gobatis/cast"
 	"github.com/gobatis/gobatis/dtd"
@@ -26,66 +24,66 @@ const (
 	result_result_map
 )
 
-type fragmentManager struct {
-	mu        sync.RWMutex
-	list      []*fragment
-	fragments map[string]*fragment
-}
+//type fragmentManager struct {
+//	mu        sync.RWMutex
+//	list      []*fragment
+//	fragments map[string]*fragment
+//}
+//
+//func newMethodManager() *fragmentManager {
+//	return &fragmentManager{}
+//}
 
-func newMethodManager() *fragmentManager {
-	return &fragmentManager{}
-}
+//func (p *fragmentManager) add(m *fragment) error {
+//	p.mu.Lock()
+//	defer p.mu.Unlock()
+//	if p.fragments == nil {
+//		p.fragments = map[string]*fragment{}
+//	}
+//	_, ok := p.fragments[m.id]
+//	if ok {
+//		return fmt.Errorf("duplicated fragment '%s'", m.id)
+//	}
+//	p.fragments[m.id] = m
+//	p.list = append(p.list, m)
+//	return nil
+//}
 
-func (p *fragmentManager) add(m *fragment) error {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	if p.fragments == nil {
-		p.fragments = map[string]*fragment{}
-	}
-	_, ok := p.fragments[m.id]
-	if ok {
-		return fmt.Errorf("duplicated fragment '%s'", m.id)
-	}
-	p.fragments[m.id] = m
-	p.list = append(p.list, m)
-	return nil
-}
+//func (p *fragmentManager) all() []*fragment {
+//	p.mu.RLock()
+//	defer func() {
+//		p.mu.RUnlock()
+//	}()
+//	items := make([]*fragment, len(p.list))
+//	for i, v := range p.list {
+//		items[i] = v
+//	}
+//	return items
+//}
 
-func (p *fragmentManager) all() []*fragment {
-	p.mu.RLock()
-	defer func() {
-		p.mu.RUnlock()
-	}()
-	items := make([]*fragment, len(p.list))
-	for i, v := range p.list {
-		items[i] = v
-	}
-	return items
-}
+//func (p *fragmentManager) replace(m *fragment) error {
+//	p.mu.Lock()
+//	defer p.mu.Unlock()
+//	if p.fragments == nil {
+//		p.fragments = map[string]*fragment{}
+//	}
+//	_, ok := p.fragments[m.id]
+//	if !ok {
+//		return fmt.Errorf("fragment '%s' not exist", m.id)
+//	}
+//	p.fragments[m.id] = m
+//	return nil
+//}
 
-func (p *fragmentManager) replace(m *fragment) error {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	if p.fragments == nil {
-		p.fragments = map[string]*fragment{}
-	}
-	_, ok := p.fragments[m.id]
-	if !ok {
-		return fmt.Errorf("fragment '%s' not exist", m.id)
-	}
-	p.fragments[m.id] = m
-	return nil
-}
-
-func (p *fragmentManager) get(id string) (m *fragment, ok bool) {
-	p.mu.RLock()
-	defer p.mu.RUnlock()
-	if p.fragments == nil {
-		return
-	}
-	m, ok = p.fragments[id]
-	return
-}
+//func (p *fragmentManager) get(id string) (m *fragment, ok bool) {
+//	p.mu.RLock()
+//	defer p.mu.RUnlock()
+//	if p.fragments == nil {
+//		return
+//	}
+//	m, ok = p.fragments[id]
+//	return
+//}
 
 type execer interface {
 	ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
@@ -112,28 +110,28 @@ func (p *psr) merge(s ...*psr) {
 }
 
 type fragment struct {
-	db              *DB
-	id              string
-	node            *xmlNode
-	in              []*param
-	out             []*param
-	resultAttribute int
-	must            bool
-	stmt            bool
-	_stmt           *Stmt
+	//db              *DB
+	//id              string
+	node *xmlNode
+	in   []*param
+	//out             []*param
+	//resultAttribute int
+	//must            bool
+	//stmt bool
+	//_stmt *Stmt
 }
 
 func (p *fragment) fork() *fragment {
 	n := new(fragment)
-	n.db = p.db
-	n.id = p.id
+	//n.db = p.db
+	//n.id = p.id
 	n.node = p.node
 	n.in = p.in
-	n.out = p.out
-	n.resultAttribute = p.resultAttribute
-	n.must = p.must
-	n.stmt = p.stmt
-	n._stmt = p._stmt
+	//n.out = p.out
+	//n.resultAttribute = p.resultAttribute
+	//n.must = p.must
+	//n.stmt = p.stmt
+	//n._stmt = p._stmt
 	return n
 }
 
@@ -145,7 +143,7 @@ func (p *fragment) proxy(field reflect.Value) {
 
 func (p *fragment) call(_type reflect.Type, in ...reflect.Value) []reflect.Value {
 	
-	c := &caller{fragment: p, args: in, logger: p.db.logger}
+	c := &caller{fragment: p, args: in}
 	for i := 0; i < _type.NumOut()-1; i++ {
 		if _type.Out(i).Kind() == reflect.Ptr {
 			c.values = append(c.values, reflect.New(_type.Out(i).Elem()))
@@ -154,14 +152,14 @@ func (p *fragment) call(_type reflect.Type, in ...reflect.Value) []reflect.Value
 		}
 	}
 	
-	err := c.call()
+	var err error
 	if err != nil {
 		if err == sql.ErrNoRows {
-			if p.must {
-				c.values = append(c.values, reflect.ValueOf(err))
-			} else {
-				c.values = append(c.values, reflect.Zero(errorType))
-			}
+			//if p.must {
+			//	c.values = append(c.values, reflect.ValueOf(err))
+			//} else {
+			//	c.values = append(c.values, reflect.Zero(errorType))
+			//}
 		} else {
 			c.values = append(c.values, reflect.ValueOf(err))
 		}
@@ -214,76 +212,76 @@ func (p *fragment) checkParameter(ft reflect.Type, mn, fn string) {
 	}
 }
 
-func (p *fragment) checkResult(ft reflect.Type, mn, fn string) {
-	
-	if ft.NumOut() == 0 || !isErrorType(ft.Out(ft.NumOut()-1)) {
-		throw(p.node.File, p.node.ctx, checkResultErr).
-			format("out expect error at last, got %s", ft.Out(ft.NumOut()-1).String())
-	}
-	
-	switch p.node.Name {
-	case dtd.SELECT:
-		switch p.resultAttribute {
-		case result_result:
-			if len(p.out) == 0 {
-				if ft.NumOut() > 1 {
-					switch ft.Out(0).Kind() {
-					case reflect.Ptr:
-						switch ft.Out(0).Elem().Kind() {
-						case reflect.Struct, reflect.Map:
-							return
-						}
-					case reflect.Slice:
-						switch ft.Out(0).Elem().Kind() {
-						case reflect.Ptr:
-							switch ft.Out(0).Elem().Elem().Kind() {
-							case reflect.Struct, reflect.Map:
-								return
-							}
-						case reflect.Struct, reflect.Map:
-							return
-						}
-					case reflect.Struct, reflect.Map:
-						return
-					}
-					throw(p.node.File, p.node.ctx, checkResultErr).
-						format("%s.%s out[0] expect (struct | []struct | map | []map), got: %s", mn, fn, ft.Out(0))
-				}
-			} else {
-				for i, v := range p.out {
-					if !v.expected(ft.Out(i)) {
-						throw(p.node.File, p.node.ctx, varBindErr).
-							format("%s.%s bind result '%s' expect '%s', got '%s'", mn, fn, v.name, v.Type(), ft.Out(i))
-					}
-				}
-			}
-			
-		}
-	case dtd.INSERT, dtd.UPDATE, dtd.DELETE:
-		if ft.NumOut() > 1 {
-			elem := ft.Out(0)
-			if elem.Kind() == reflect.Ptr {
-				elem = elem.Elem()
-			}
-			switch elem.Kind() {
-			case reflect.Int,
-				reflect.Int8,
-				reflect.Int16,
-				reflect.Int32,
-				reflect.Int64,
-				reflect.Uint,
-				reflect.Uint8,
-				reflect.Uint16,
-				reflect.Uint32,
-				reflect.Uint64:
-				return
-			default:
-				throw(p.node.File, p.node.ctx, checkResultErr).
-					format("%s.%s out[0] expect integer, got: %s", mn, fn, ft.Out(0).Name())
-			}
-		}
-	}
-}
+//func (p *fragment) checkResult(ft reflect.Type, mn, fn string) {
+//	
+//	if ft.NumOut() == 0 || !isErrorType(ft.Out(ft.NumOut()-1)) {
+//		throw(p.node.File, p.node.ctx, checkResultErr).
+//			format("out expect error at last, got %s", ft.Out(ft.NumOut()-1).String())
+//	}
+//	
+//	switch p.node.Name {
+//	case dtd.SELECT:
+//		switch p.resultAttribute {
+//		case result_result:
+//			if len(p.out) == 0 {
+//				if ft.NumOut() > 1 {
+//					switch ft.Out(0).Kind() {
+//					case reflect.Ptr:
+//						switch ft.Out(0).Elem().Kind() {
+//						case reflect.Struct, reflect.Map:
+//							return
+//						}
+//					case reflect.Slice:
+//						switch ft.Out(0).Elem().Kind() {
+//						case reflect.Ptr:
+//							switch ft.Out(0).Elem().Elem().Kind() {
+//							case reflect.Struct, reflect.Map:
+//								return
+//							}
+//						case reflect.Struct, reflect.Map:
+//							return
+//						}
+//					case reflect.Struct, reflect.Map:
+//						return
+//					}
+//					throw(p.node.File, p.node.ctx, checkResultErr).
+//						format("%s.%s out[0] expect (struct | []struct | map | []map), got: %s", mn, fn, ft.Out(0))
+//				}
+//			} else {
+//				for i, v := range p.out {
+//					if !v.expected(ft.Out(i)) {
+//						throw(p.node.File, p.node.ctx, varBindErr).
+//							format("%s.%s bind result '%s' expect '%s', got '%s'", mn, fn, v.name, v.Type(), ft.Out(i))
+//					}
+//				}
+//			}
+//			
+//		}
+//	case dtd.INSERT, dtd.UPDATE, dtd.DELETE:
+//		if ft.NumOut() > 1 {
+//			elem := ft.Out(0)
+//			if elem.Kind() == reflect.Ptr {
+//				elem = elem.Elem()
+//			}
+//			switch elem.Kind() {
+//			case reflect.Int,
+//				reflect.Int8,
+//				reflect.Int16,
+//				reflect.Int32,
+//				reflect.Int64,
+//				reflect.Uint,
+//				reflect.Uint8,
+//				reflect.Uint16,
+//				reflect.Uint32,
+//				reflect.Uint64:
+//				return
+//			default:
+//				throw(p.node.File, p.node.ctx, checkResultErr).
+//					format("%s.%s out[0] expect integer, got: %s", mn, fn, ft.Out(0).Name())
+//			}
+//		}
+//	}
+//}
 
 func (p *fragment) parseStatement(args ...reflect.Value) (sql string, exprs []string, vars []interface{},
 	dynamic bool, err error) {
@@ -577,9 +575,9 @@ func (p *fragment) parseForeachChild(parser *exprParser, node *xmlNode, frags *[
 
 type caller struct {
 	fragment *fragment
-	logger   Logger
-	args     []reflect.Value
-	values   []reflect.Value
+	//logger   Logger
+	args   []reflect.Value
+	values []reflect.Value
 }
 
 //func (p *caller) Scan(pointers ...interface{}) (err error) {
@@ -595,24 +593,24 @@ type caller struct {
 //	return p.call()
 //}
 
-func (p *caller) call() (err error) {
-	
-	start := time.Now()
-	defer func() {
-		p.logger.Debugf("[gobatis] [%s] cost: %s", p.fragment.id, time.Since(start))
-	}()
-	
-	switch p.fragment.node.Name {
-	case dtd.SELECT:
-		return p.query(p.args...)
-	case dtd.INSERT, dtd.DELETE, dtd.UPDATE:
-		return p.exec(p.args...)
-	default:
-		throw(p.fragment.node.File, p.fragment.node.ctx, callerErr).
-			format("unsupported call method '%s'", p.fragment.node.Name)
-		return
-	}
-}
+//func (p *caller) call() (err error) {
+//	
+//	start := time.Now()
+//	defer func() {
+//		p.logger.Debugf("[gobatis] [%s] cost: %s", p.fragment.id, time.Since(start))
+//	}()
+//	
+//	switch p.fragment.node.Name {
+//	case dtd.SELECT:
+//		return p.query(p.args...)
+//	case dtd.INSERT, dtd.DELETE, dtd.UPDATE:
+//		return p.exec(p.args...)
+//	default:
+//		throw(p.fragment.node.File, p.fragment.node.ctx, callerErr).
+//			format("unsupported call method '%s'", p.fragment.node.Name)
+//		return
+//	}
+//}
 
 func (p *caller) exec(in ...reflect.Value) (err error) {
 	
@@ -637,18 +635,18 @@ func (p *caller) exec(in ...reflect.Value) (err error) {
 	//	return p.fragment._stmt.exec(false, ctx, in)
 	//}
 	//
-	//var conn *sql.Conn
+	//var Conn *sql.Conn
 	//if _execer == nil {
-	//	conn, err = p.fragment.db.Conn(ctx)
+	//	Conn, err = p.fragment.db.Conn(ctx)
 	//	if err != nil {
 	//		return
 	//	}
-	//	_execer = conn
+	//	_execer = Conn
 	//}
 	//defer func() {
-	//	if conn != nil && p.fragment._stmt == nil {
-	//		if _err := conn.Close(); _err != nil {
-	//			p.logger.Errorf("[gobatis] [%s] close conn error: %s", p.fragment.id, err)
+	//	if Conn != nil && p.fragment._stmt == nil {
+	//		if _err := Conn.Close(); _err != nil {
+	//			p.logger.Errorf("[gobatis] [%s] close Conn error: %s", p.fragment.id, err)
 	//		}
 	//	}
 	//}()
@@ -677,7 +675,7 @@ func (p *caller) exec(in ...reflect.Value) (err error) {
 	//			stmt:   _stmt,
 	//			exprs:  exprs,
 	//			sql:    s,
-	//			conn:   conn,
+	//			Conn:   Conn,
 	//			caller: p,
 	//		}
 	//		if tx != nil {
@@ -703,127 +701,128 @@ func (p *caller) exec(in ...reflect.Value) (err error) {
 	return
 }
 
-func (p *caller) parseExecResult(res sql.Result, values []reflect.Value) error {
-	// ignore RowsAffected to support database that not support
-	affected, _ := res.RowsAffected()
-	if p.fragment.must && affected != 1 {
-		return fmt.Errorf("expect affect 1 row, got %d", affected)
-	}
-	return (&execResult{affected: affected, values: values}).scan()
-}
+//func (p *caller) parseExecResult(res sql.Result, values []reflect.Value) error {
+//	// ignore RowsAffected to support database that not support
+//	affected, _ := res.RowsAffected()
+//	if p.fragment.must && affected != 1 {
+//		return fmt.Errorf("expect affect 1 row, got %d", affected)
+//	}
+//	return (&execResult{affected: affected, values: values}).scan()
+//}
 
-func (p *caller) query(in ...reflect.Value) (err error) {
-	
-	//ctx, index := p.context(in)
-	//if index > -1 {
-	//	in = p.removeParam(in, index)
-	//}
-	//
-	//_queryer, index := p.queryer(in)
-	//if index > -1 {
-	//	in = p.removeParam(in, index)
-	//}
-	//
-	//tx, _ := _queryer.(*DB)
-	//if tx != nil {
-	//	stmt := tx.getStmt(p.fragment.id)
-	//	if stmt != nil {
-	//		err = stmt.query(true, ctx, in, p.values)
-	//		if err != nil {
-	//			return
-	//		}
-	//		return
-	//	}
-	//}
-	//
-	//if p.fragment._stmt != nil {
-	//	err = p.fragment._stmt.query(false, ctx, in, p.values)
-	//	if err != nil {
-	//		return
-	//	}
-	//	return
-	//}
-	//
-	//var conn *sql.Conn
-	//if _queryer == nil {
-	//	conn, err = p.fragment.db.Conn(ctx)
-	//	if err != nil {
-	//		return
-	//	}
-	//	_queryer = conn
-	//}
-	//defer func() {
-	//	if conn != nil && p.fragment._stmt == nil {
-	//		if _err := conn.Close(); _err != nil {
-	//			p.logger.Errorf("[gobatis] [%s] close conn error: %s", p.fragment.id, err)
-	//		}
-	//	}
-	//}()
-	//
-	//s, exprs, vars, dynamic, err := p.fragment.parseStatement(in...)
-	//if err != nil {
-	//	return
-	//}
-	//
-	//p.logger.Debugf("[gobatis] [%s] query statement: %s", p.fragment.id, s)
-	//p.logger.Debugf("[gobatis] [%s] query parameter: [%+v]", p.fragment.id, printVars(vars))
-	//
-	//var rows *sql.Rows
-	//if p.fragment.stmt {
-	//	var _stmt *sql.Stmt
-	//	_stmt, err = _queryer.PrepareContext(ctx, s)
-	//	if err != nil {
-	//		p.logger.Errorf("[gobatis] [%s] exec statement: %s", p.fragment.id, s)
-	//		p.logger.Errorf("[gobatis] [%s] exec parameter: %s", p.fragment.id, printVars(vars))
-	//		p.logger.Errorf("[gobatis] [%s] prepare error: %v", p.fragment.id, err)
-	//		return err
-	//	}
-	//	
-	//	if p.fragment.stmt && !dynamic {
-	//		stmt := &Stmt{
-	//			stmt:   _stmt,
-	//			exprs:  exprs,
-	//			sql:    s,
-	//			conn:   conn,
-	//			caller: p,
-	//		}
-	//		if tx != nil {
-	//			tx.addStmt(stmt)
-	//		} else {
-	//			p.fragment._stmt = stmt
-	//		}
-	//	}
-	//	
-	//	rows, err = _stmt.QueryContext(ctx, vars...)
-	//} else {
-	//	rows, err = _queryer.QueryContext(ctx, s, vars...)
-	//}
-	//if err != nil {
-	//	p.logger.Errorf("[gobatis] [%s] query statement: %s", p.fragment.id, s)
-	//	p.logger.Errorf("[gobatis] [%s] query parameter: [%+v]", p.fragment.id, printVars(vars))
-	//	p.logger.Errorf("[gobatis] [%s] query error: %v", p.fragment.id, err)
-	//	return
-	//}
-	//err = p.parseQueryResult(rows, p.values)
-	//if err != nil {
-	//	return
-	//}
-	return
-}
+//func (p *caller) query(in ...reflect.Value) (err error) {
+//	
+//	ctx, index := p.context(in)
+//	if index > -1 {
+//		in = p.removeParam(in, index)
+//	}
+//	
+//	_queryer, index := p.queryer(in)
+//	if index > -1 {
+//		in = p.removeParam(in, index)
+//	}
+//	
+//	tx, _ := _queryer.(*DB)
+//	if tx != nil {
+//		stmt := tx.getStmt(p.fragment.id)
+//		if stmt != nil {
+//			err = stmt.query(true, ctx, in, p.values)
+//			if err != nil {
+//				return
+//			}
+//			return
+//		}
+//	}
+//	
+//	if p.fragment._stmt != nil {
+//		err = p.fragment._stmt.query(false, ctx, in, p.values)
+//		if err != nil {
+//			return
+//		}
+//		return
+//	}
+//	
+//	var Conn *sql.Conn
+//	if _queryer == nil {
+//		Conn, err = p.fragment.db.Conn(ctx)
+//		if err != nil {
+//			return
+//		}
+//		_queryer = Conn
+//	}
+//	defer func() {
+//		if Conn != nil && p.fragment._stmt == nil {
+//			if _err := Conn.Close(); _err != nil {
+//				p.logger.Errorf("[gobatis] [%s] close Conn error: %s", p.fragment.id, err)
+//			}
+//		}
+//	}()
+//	
+//	s, exprs, vars, dynamic, err := p.fragment.parseStatement(in...)
+//	if err != nil {
+//		return
+//	}
+//	
+//	p.logger.Debugf("[gobatis] [%s] query statement: %s", p.fragment.id, s)
+//	p.logger.Debugf("[gobatis] [%s] query parameter: [%+v]", p.fragment.id, printVars(vars))
+//	
+//	var rows *sql.Rows
+//	if p.fragment.stmt {
+//		var _stmt *sql.Stmt
+//		_stmt, err = _queryer.PrepareContext(ctx, s)
+//		if err != nil {
+//			p.logger.Errorf("[gobatis] [%s] exec statement: %s", p.fragment.id, s)
+//			p.logger.Errorf("[gobatis] [%s] exec parameter: %s", p.fragment.id, printVars(vars))
+//			p.logger.Errorf("[gobatis] [%s] prepare error: %v", p.fragment.id, err)
+//			return err
+//		}
+//		
+//		if p.fragment.stmt && !dynamic {
+//			stmt := &Stmt{
+//				stmt:   _stmt,
+//				exprs:  exprs,
+//				sql:    s,
+//				Conn:   Conn,
+//				caller: p,
+//			}
+//			if tx != nil {
+//				tx.addStmt(stmt)
+//			} else {
+//				p.fragment._stmt = stmt
+//			}
+//		}
+//		
+//		rows, err = _stmt.QueryContext(ctx, vars...)
+//	} else {
+//		rows, err = _queryer.QueryContext(ctx, s, vars...)
+//	}
+//	if err != nil {
+//		p.logger.Errorf("[gobatis] [%s] query statement: %s", p.fragment.id, s)
+//		p.logger.Errorf("[gobatis] [%s] query parameter: [%+v]", p.fragment.id, printVars(vars))
+//		p.logger.Errorf("[gobatis] [%s] query error: %v", p.fragment.id, err)
+//		return
+//	}
+//	err = p.parseQueryResult(rows, p.values)
+//	if err != nil {
+//		return
+//	}
+//	return
+//}
 
 func (p *caller) parseQueryResult(rows *sql.Rows, values []reflect.Value) (err error) {
-	defer func() {
-		if _err := rows.Close(); _err != nil {
-			p.logger.Errorf("[gobatis] [%s] close rows error: %s", p.fragment.id, _err)
-		}
-	}()
+	//defer func() {
+	//	if _err := rows.Close(); _err != nil {
+	//		p.logger.Errorf("[gobatis] [%s] close rows error: %s", p.fragment.id, _err)
+	//	}
+	//}()
 	
-	res := queryResult{rows: rows}
-	err = res.setSelected(p.fragment.resultAttribute, p.fragment.out, values)
-	if err != nil {
-		return err
-	}
-	return res.scan()
+	//res := queryResult{rows: rows}
+	//err = res.setSelected(p.fragment.resultAttribute, p.fragment.out, values)
+	//if err != nil {
+	//	return err
+	//}
+	//return res.scan()
+	return
 }
 
 func (p *caller) removeParam(a []reflect.Value, i int) []reflect.Value {

@@ -20,7 +20,7 @@ func main() {
 	}
 	
 	user := entity.User{}
-	err = db.Insert("users", user, batis.OnConflict([]string{}, "do update set a = columnd.a")).Error()
+	err = db.Insert("users", user, batis.OnConflict("do update set a = columnd.a")).Error()
 	if err != nil {
 		return
 	}

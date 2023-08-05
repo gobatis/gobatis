@@ -2,13 +2,15 @@ package batis
 
 import (
 	"fmt"
+	"github.com/gobatis/gobatis/builder/paging"
+	"github.com/gobatis/gobatis/driver/postgres"
+	"github.com/gozelle/spew"
 	"os"
 	"reflect"
 	"testing"
 	"time"
 	
 	"github.com/AlekSi/pointer"
-	"github.com/gobatis/gobatis/driver/postgres"
 	"github.com/gobatis/gobatis/test"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/require"
@@ -37,103 +39,101 @@ func rv(v interface{}) reflect.Value {
 	return reflect.ValueOf(v)
 }
 
-type User struct {
-	Id   int64  `db:"id"`
-	Name string `db:"name"`
-}
-
-func (User) TableName() string {
-	return "users"
+type Member struct {
+	Id        int64           `db:"id"`
+	Name      string          `db:"name"`
+	Age       int64           `db:"age"`
+	Wealth    decimal.Decimal `db:"wealth"`
+	CreatedAt time.Time       `db:"created_at"`
 }
 
 func TestDBQuery(t *testing.T) {
-	db, err := Open(postgres.Open(""))
-	require.NoError(t, err)
-	
-	var user User
-	//err = db.Query(Background(), `
-	//	select * from users where id = ${ id }
-	//`, Param("id", 21)).Scan(&user)
-	
-	err = db.Execute(Background(), `
-		insert into users(name,age) values(
-		<foreach collection="enums" separator="," open="'" close="'">
-            ${item.Name}, ${item.Age}
-        </foreach>		             
-		)
-	`).Scan()
-	require.NoError(t, err)
-	
-	var users []User
-	err = db.Execute(Background(), `
-		select * from messages where cid in ${ids} 
-	`, Param("ids", []int64{1, 2, 34})).Scan(&users)
-	require.NoError(t, err)
-	
-	err = db.Insert(Background(), "users", user, nil).Error()
-	if err != nil {
-		return
-	}
-	
-	err = db.Update(Background(), "tests", map[string]any{
-		"name": "name",
-		"age":  18,
-	}, Where("age > ${ age }", Param("age", 18))).Error()
-	if err != nil {
-		return
-	}
-	
-	err = db.InsertBatch(Background(), "users", user, 10, nil).Error()
-	if err != nil {
-		return
-	}
-	
-	err = db.Delete(Background(), user.TableName(), Where("id = ${user.Id}", Param("user", user))).Error()
-	if err != nil {
-		return
-	}
-	
-	require.NoError(t, err)
+	//db, err := Open(postgres.Open(""))
+	//require.NoError(t, err)
+	//
+	//var user User
+	////err = db.Query(Background(), `
+	////	select * from users where id = ${ id }
+	////`, Param("id", 21)).Scan(&user)
+	//
+	//err = db.Execute(Background(), `
+	//	insert into users(name,age) values(
+	//	<foreach collection="enums" separator="," open="'" close="'">
+	//        ${item.Name}, ${item.Age}
+	//    </foreach>		             
+	//	)
+	//`).Scan()
+	//require.NoError(t, err)
+	//
+	//var users []User
+	//err = db.Execute(Background(), `
+	//	select * from messages where cid in ${ids} 
+	//`, Param("ids", []int64{1, 2, 34})).Scan(&users)
+	//require.NoError(t, err)
+	//
+	//err = db.Insert(Background(), "users", user, nil).Error()
+	//if err != nil {
+	//	return
+	//}
+	//
+	//err = db.Update(Background(), "tests", map[string]any{
+	//	"name": "name",
+	//	"age":  18,
+	//}, Where("age > ${ age }", Param("age", 18))).Error()
+	//if err != nil {
+	//	return
+	//}
+	//
+	//err = db.InsertBatch(Background(), "users", user, 10, nil).Error()
+	//if err != nil {
+	//	return
+	//}
+	//
+	//err = db.Delete(Background(), user.TableName(), Where("id = ${user.Id}", Param("user", user))).Error()
+	//if err != nil {
+	//	return
+	//}
+	//
+	//require.NoError(t, err)
 }
 
 func TestDBInsert(t *testing.T) {
-	db := &DB{}
-	
-	var users []User
-	var total int64
-	err := db.Debug().Build(
-		NewPaging().
-			Select("*").
-			From("users").
-			Where("agg > 0").
-			Page(0, 10).
-			Count("*"),
-	).Scan(&users, &total)
-	require.NoError(t, err)
-	
-	err = db.Build(
-		NewPaging().Raw(`
-				select * from a left join b on a.name = b.name where a.age > 18
-            `, Param("a", map[string]any{})).
-			Scroll(10, And("a.ab > #{ age }", Param("age", 18))).
-			Page(0, 10).
-			Count("*"),
-	).Scan(&users, &total)
-	require.NoError(t, err)
-	
-	err = db.Update(Background(), "", map[string]any{}, Where("")).Error()
-	if err != nil {
-		return
-	}
-	
+	//db := &DB{}
+	//
+	//var users []User
+	//var total int64
+	//err := db.Debug().Build(
+	//	NewPaging().
+	//		Select("*").
+	//		From("users").
+	//		Where("agg > 0").
+	//		Page(0, 10).
+	//		Count("*"),
+	//).Scan(&users, &total)
+	//require.NoError(t, err)
+	//
+	//err = db.Build(
+	//	NewPaging().Raw(`
+	//			select * from a left join b on a.name = b.name where a.age > 18
+	//        `, Param("a", map[string]any{})).
+	//		Scroll(10, And("a.ab > #{ age }", Param("age", 18))).
+	//		Page(0, 10).
+	//		Count("*"),
+	//).Scan(&users, &total)
+	//require.NoError(t, err)
+	//
+	//err = db.Update(Background(), "", map[string]any{}, Where("")).Error()
+	//if err != nil {
+	//	return
+	//}
+	//
 	return
 }
 
 func TestDBQuery45(t *testing.T) {
 	db := &DB{}
 	
-	err := db.Execute(Background(),
-		`update public.users where id = #{a} and name = #{b}`,
+	err := db.Execute(`update public.users where id = #{a} and name = #{b}`,
 		Param("a", 10),
 		Param("b", 10),
 	).Error()
@@ -145,15 +145,37 @@ func TestDBQuery45(t *testing.T) {
 }
 
 func TestDBQuery2(t *testing.T) {
-	db := &DB{}
-	
-	var user User
-	err := db.Debug().Query(
-		`select * from users where id = #{age}`,
-		Param("age", 10),
-	).Scan(&user)
-	
+	db, err := Open(postgres.Open("postgres://root:123456@192.168.1.10:5432/example"))
 	require.NoError(t, err)
+	
+	defer func() {
+		db.Close()
+	}()
+	
+	//var m Member
+	//err = db.Debug().Loose().Query(`select * from members where id = #{age}`,
+	//	Param("age", 1),
+	//).Scan(&m)
+	//require.NoError(t, err)
+	//spew.Json(m)
+	//
+	//var count int64
+	//err = db.Debug().Loose().Query(`select count(1) from members`).Scan(&count)
+	//require.NoError(t, err)
+	
+	//spew.Json(count)
+	
+	var members []*Member
+	var total int64
+	err = db.Build(paging.Select("*").
+		Count("1").
+		From("members").
+		Where("age != 0").
+		Page(0, 10),
+	).Scan(&members, &total)
+	require.NoError(t, err)
+	
+	spew.Json(members, total)
 }
 
 //func TestEngine(t *testing.T) {

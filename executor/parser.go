@@ -1,4 +1,4 @@
-package batis
+package executor
 
 import (
 	"container/list"
@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	config_xml = "gobatis.xml"
+	config_xml = "goxml"
 	none       = "<none>"
 	anonymous  = "<anonymous>"
 )
@@ -159,8 +159,8 @@ func parseFragment(file, id string, node *xmlNode) (frag *fragment, err error) {
 	}()
 	
 	frag = &fragment{
-		db:   nil,
-		id:   id,
+		//db:   nil,
+		//id:   id,
 		node: node,
 	}
 	

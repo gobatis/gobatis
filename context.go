@@ -2,6 +2,7 @@ package batis
 
 import (
 	"context"
+	"github.com/gobatis/gobatis/executor"
 	"time"
 )
 
@@ -34,7 +35,7 @@ type Context struct {
 	must    bool
 	cost    time.Duration
 	sql     string
-	params  []*NameValue
+	params  []*executor.NameValue
 	tx      *DB
 	error   error
 	exact   bool

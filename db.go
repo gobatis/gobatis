@@ -5,8 +5,8 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/gobatis/gobatis/builder"
-	"github.com/gozelle/spew"
-	"reflect"
+	"github.com/gobatis/gobatis/executor"
+	"golang.org/x/sync/errgroup"
 	"sync"
 )
 
@@ -14,13 +14,13 @@ func Open(d Dialector, options ...Option) (db *DB, err error) {
 	
 	db = &DB{
 		//bundle:          nil,
-		fragmentManager: nil,
-		db:              nil,
-		logger:          newLogger(),
-		tx:              nil,
-		mu:              sync.RWMutex{},
+		//fragmentManager: nil,
+		db:     nil,
+		logger: newLogger(),
+		tx:     nil,
+		mu:     sync.RWMutex{},
 		//stmtMap:         nil,
-		error: nil,
+		err: nil,
 	}
 	
 	db.db, err = d.DB()
@@ -28,10 +28,10 @@ func Open(d Dialector, options ...Option) (db *DB, err error) {
 		return
 	}
 	
-	//err = db.Ping()
-	//if err != nil {
-	//	return
-	//}
+	err = db.Ping()
+	if err != nil {
+		return
+	}
 	
 	return
 }
@@ -55,7 +55,7 @@ func Open(d Dialector, options ...Option) (db *DB, err error) {
 
 type DB struct {
 	//bundle          Bundle
-	fragmentManager *fragmentManager
+	//fragmentManager *fragmentManager
 	//driver          string
 	//dsn             string
 	db     *sql.DB
@@ -66,20 +66,21 @@ type DB struct {
 	ctx   context.Context
 	debug bool
 	must  bool
-	error error
+	loose bool
+	err   error
 }
 
 func (d *DB) fork() *DB {
 	return &DB{
-		fragmentManager: nil,
-		db:              d.db,
-		logger:          d.logger,
-		tx:              d.tx,
-		mu:              sync.RWMutex{},
-		ctx:             d.ctx,
-		debug:           d.debug,
-		must:            d.must,
-		error:           d.error,
+		//fragmentManager: nil,
+		db:     d.db,
+		logger: d.logger,
+		tx:     d.tx,
+		mu:     sync.RWMutex{},
+		ctx:    d.ctx,
+		debug:  d.debug,
+		must:   d.must,
+		err:    d.err,
 	}
 }
 
@@ -101,9 +102,9 @@ func (d *DB) Must() *DB {
 	return dd
 }
 
-func (d *DB) SetTag(tag string) {
-	reflect_tag = tag
-}
+//func (d *DB) SetTag(tag string) {
+//	executor.reflect_tag = tag
+//}
 
 func (d *DB) SetLogLevel(level Level) {
 	d.logger.SetLevel(level)
@@ -142,16 +143,16 @@ func (d *DB) useLogger() Logger {
 //}
 
 func (d *DB) Close() {
-	if d.fragmentManager != nil {
-		for _, v := range d.fragmentManager.all() {
-			if v._stmt != nil {
-				err := v._stmt.Close()
-				if err != nil {
-					d.logger.Errorf("[gobatis] close stmt error: %s", err)
-				}
-			}
-		}
-	}
+	//if d.fragmentManager != nil {
+	//	for _, v := range d.fragmentManager.all() {
+	//		if v._stmt != nil {
+	//			err := v._stmt.Close()
+	//			if err != nil {
+	//				d.logger.Errorf("[gobatis] close stmt error: %s", err)
+	//			}
+	//		}
+	//	}
+	//}
 	_ = d.db.Close()
 }
 
@@ -338,111 +339,90 @@ func (d *DB) Stats() sql.DBStats {
 	return d.db.Stats()
 }
 
-func (d *DB) Prepare(sql string, params ...NameValue) *Stmt {
-	return &Stmt{}
+func (d *DB) Loose() *DB {
+	dd := d.fork()
+	dd.loose = true
+	return dd
 }
 
-func (d *DB) Query(sql string, params ...NameValue) (scanner Scanner) {
+//func (d *DB) Prepare(sql string, params ...executor.NameValue) *Stmt {
+//	return &Stmt{}
+//}
+
+func (d *DB) exec(_type int, sql string, params []executor.NameValue) executor.Scanner {
+	s := &executor.Scanner{}
+	e := &executor.Executor{
+		Type:   _type,
+		SQL:    sql,
+		Params: params,
+		Err:    d.err,
+		Conn:   d.db,
+	}
+	e.Exec(s)
+	return *s
+}
+
+func (d *DB) Query(sql string, params ...executor.NameValue) executor.Scanner {
+	return d.exec(executor.Query, sql, params)
+}
+
+func (d *DB) Build(b builder.Builder) executor.Scanner {
 	
-	var err error
-	defer func() {
-		if err != nil {
-			scanner.err = err
-		}
-	}()
-	
-	node, err := parseSQL("test.file", fmt.Sprintf("<sql>%s</sql>", sql))
+	es, err := b.Build()
 	if err != nil {
-		return
+		return executor.WithErrScanner(err)
 	}
 	
-	frag := &fragment{
-		db:   nil,
-		id:   "id",
-		node: node,
-		in: []*param{{
-			name:  "age",
-			_type: "int",
-			slice: false,
-		}},
-		out:             nil,
-		resultAttribute: 0,
-		must:            false,
-		stmt:            false,
-		_stmt:           nil,
+	s := &executor.Scanner{}
+	g := errgroup.Group{}
+	for _, v := range es {
+		e := v
+		e.Conn = d.db
+		e.Err = d.err
+		g.Go(func() error {
+			// todo auto cancel
+			e.Exec(s)
+			return e.Err
+		})
 	}
-	
-	s, exprs, vars, dynamic, err := frag.parseStatement(reflect.ValueOf(10))
+	err = g.Wait()
 	if err != nil {
-		return
+		return executor.WithErrScanner(err)
 	}
-	spew.Json(s, exprs, vars, dynamic)
-	//c := &caller{fragment: frag, args: nil, logger: newLogger()}
-	//
-	//c.call()
 	
-	return
+	return *s
 }
 
-func (d *DB) Build(b builder.Builder) (s Scanner) {
+func (d *DB) Execute(sql string, params ...executor.NameValue) executor.Scanner {
+	return d.exec(executor.Exec, sql, params)
 	
-	//var sqls []string
-	//var params []NameValue
-	//for _, v := range elements {
-	//	sqls = append(sqls, v.SQL())
-	//	params = append(params, v.Params()...)
-	//}
-	
-	//walkXMLNodes()
-	
-	//var f *fragment
-	//f, d.error = parseFragment(d, none, anonymous, &xmlNode{
-	//	File:       "",
-	//	Name:       "",
-	//	Text:       "",
-	//	Attributes: nil,
-	//	Nodes:      nil,
-	//	nodesCount: nil,
-	//	start:      nil,
-	//	ctx:        nil,
-	//	textOnly:   false,
-	//})
-	//if d.error != nil {
-	//	return
-	//}
-	////f.call()
-	//_ 
-	return
 }
 
-func (d *DB) Execute(sql string, params ...NameValue) (scanner Scanner) {
-	return
+func (d *DB) Delete(table string, where Element) executor.Scanner {
+	s := fmt.Sprintf("delete from %s %s", table, where.SQL())
+	return d.exec(executor.Exec, s, where.Params())
 }
 
-func (d *DB) Delete(table string, where Element) (scanner Scanner) {
+func (d *DB) Update(table string, data map[string]any, where Element) executor.Scanner {
 	
-	return
+	s := fmt.Sprintf("update %s set %s", table, where.SQL())
+	return d.exec(executor.Exec, s, where.Params())
+}
+func (d *DB) Insert(table string, data any, onConflict ...Element) executor.Scanner {
+	
+	s := fmt.Sprintf("insert into %s", table)
+	return d.exec(executor.Exec, s, nil)
 }
 
-func (d *DB) Update(table string, data map[string]any, where Element) (scanner Scanner) {
-	
-	return
-}
-
-func (d *DB) Insert(table string, data any, onConflict ...Element) (scanner Scanner) {
-	
-	return
-}
-
-func (d *DB) InsertBatch(table string, data any, batch int, onConflict ...Element) (scanner Scanner) {
-	
-	return
+func (d *DB) InsertBatch(table string, data any, batch int, onConflict ...Element) executor.Scanner {
+	s := fmt.Sprintf("insert into %s", table)
+	return d.exec(executor.Exec, s, nil)
 }
 
 func (d *DB) Begin() *DB {
-	if d.error != nil {
+	if d.err != nil {
 		return d
 	}
-	d.tx, d.error = d.db.Begin()
+	d.tx, d.err = d.db.Begin()
 	return d
 }

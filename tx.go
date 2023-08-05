@@ -43,10 +43,10 @@ func (d *DB) Rollback() error {
 	return d.tx.Rollback()
 }
 
-func (d *DB) ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
-	return d.tx.ExecContext(ctx, query, args...)
-}
-
-func (d *DB) QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error) {
-	return d.tx.QueryContext(ctx, query, args...)
-}
+//func (d *DB) ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
+//	return d.tx.ExecContext(ctx, query, args...)
+//}
+//
+//func (d *DB) QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error) {
+//	return d.tx.QueryContext(ctx, query, args...)
+//}

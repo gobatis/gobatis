@@ -1,4 +1,4 @@
-package batis
+package executor
 
 import (
 	"database/sql"
@@ -12,83 +12,19 @@ import (
 )
 
 var (
-	reflect_tag = "db"
+	reflectTag = "db"
 )
 
 type queryResult struct {
-	rows     *sql.Rows
-	first    bool
-	reflect  bool
-	all      bool
-	selected map[string]int
-	values   []reflect.Value
+	rows  *sql.Rows
+	loose bool
 }
 
 func (p *queryResult) Tag() string {
-	return reflect_tag
+	return reflectTag
 }
 
-func (p *queryResult) Rows() *sql.Rows {
-	return p.rows
-}
-
-func (p *queryResult) setSelected(typeAttribute int, params []*param, values []reflect.Value) error {
-	
-	p.values = values
-	p.reflect = len(params) == 0
-	
-	if typeAttribute != result_result {
-		return nil
-	}
-	
-	var el int
-	if p.reflect {
-		el = 1
-	} else {
-		el = len(params)
-	}
-	
-	if el != len(values) {
-		return fmt.Errorf("expected to receive %d result filed(s), got %d (except error)", el, len(values))
-	}
-	
-	if p.reflect {
-		return nil
-	}
-	
-	p.first = true
-	for i, v := range params {
-		err := p.addSelected(i, v.name)
-		if err != nil {
-			return err
-		}
-		if v.slice {
-			p.first = false
-		}
-	}
-	
-	return nil
-}
-
-func (p *queryResult) addSelected(index int, name string) error {
-	if p.selected == nil {
-		p.selected = map[string]int{}
-	}
-	if _, ok := p.selected[name]; ok {
-		return fmt.Errorf("duplicated result filed '%s'", name)
-	}
-	p.selected[name] = index
-	return nil
-}
-func (p *queryResult) isSelected(field string) bool {
-	if p.selected == nil {
-		return false
-	}
-	_, ok := p.selected[field]
-	return ok
-}
-
-func (p *queryResult) scan() (err error) {
+func (p *queryResult) scan(ptr reflect.Value) (err error) {
 	columns, err := p.rows.Columns()
 	if err != nil {
 		return
@@ -107,15 +43,16 @@ func (p *queryResult) scan() (err error) {
 			_ = p.rows.Close()
 			return
 		}
-		err = p.reflectRow(columns, row)
+		var first bool
+		first, err = p.reflectRow(columns, row, ptr)
 		if err != nil {
 			return
 		}
-		if p.first {
+		if first {
 			break
 		}
 	}
-	if len(p.values) > 0 && c == 0 {
+	if c == 0 {
 		err = sql.ErrNoRows
 		return
 	}
@@ -123,38 +60,35 @@ func (p *queryResult) scan() (err error) {
 	return
 }
 
-func (p *queryResult) reflectRow(columns []string, row []interface{}) error {
-	
-	if p.reflect {
-		if p.values[0].Elem().Kind() == reflect.Slice {
-			return p.reflectStructs(newRowMap(columns, row))
-		} else {
-			p.first = true
-			return p.reflectStruct(newRowMap(columns, row))
-		}
+func (p *queryResult) reflectRow(columns []string, row []interface{}, ptr reflect.Value) (bool, error) {
+	if ptr.Elem().Kind() == reflect.Slice {
+		return false, p.reflectStructs(newRowMap(columns, row), ptr)
 	} else {
-		for i, column := range columns {
-			if p.isSelected(column) && row[i] != nil {
-				err := p.reflectValue(column, p.values[p.selected[column]].Elem(), row[i])
-				if err != nil {
-					return err
-				}
-			}
+		if ptr.Elem().Kind() == reflect.Struct {
+			return true, p.reflectStruct(newRowMap(columns, row), ptr)
+		} else {
+			return true, p.reflectValue("anonymity", ptr.Elem(), row[0])
 		}
 	}
-	return nil
 }
 
-func (p *queryResult) reflectStruct(r rowMap) error {
-	dv := p.values[0]
+func (p *queryResult) reflectStruct(r rowMap, ptr reflect.Value) error {
+	dv := ptr
 	if dv.Kind() == reflect.Ptr {
 		dv = dv.Elem()
 	}
 	_type := dv.Type()
 	
+	tags := map[string]struct{}{}
 	for i := 0; i < _type.NumField(); i++ {
 		field := _type.Field(i).Tag.Get(p.Tag())
 		field = p.trimComma(field)
+		if field != "" {
+			if _, ok := tags[field]; ok {
+				return fmt.Errorf("field tag: '%s' is duplicated in struct: '%s'", field, _type)
+			}
+			tags[field] = struct{}{}
+		}
 		v, ok := r[field]
 		if ok && v != nil {
 			if dv.Field(i).Kind() == reflect.Ptr {
@@ -177,14 +111,14 @@ func (p *queryResult) trimComma(field string) string {
 	return field
 }
 
-func (p *queryResult) reflectStructs(r rowMap) error {
+func (p *queryResult) reflectStructs(r rowMap, ptr reflect.Value) error {
 	var _type reflect.Type
-	if p.values[0].Type().Elem().Elem().Kind() != reflect.Ptr {
+	if ptr.Type().Elem().Elem().Kind() != reflect.Ptr {
 		// var test []Test => Test
-		_type = p.values[0].Type().Elem().Elem()
+		_type = ptr.Type().Elem().Elem()
 	} else {
 		// var test []*Test => Test
-		_type = p.values[0].Type().Elem().Elem().Elem()
+		_type = ptr.Type().Elem().Elem().Elem()
 	}
 	elem := reflect.New(_type)
 	for i := 0; i < _type.NumField(); i++ {
@@ -201,10 +135,10 @@ func (p *queryResult) reflectStructs(r rowMap) error {
 			}
 		}
 	}
-	if p.values[0].Type().Elem().Elem().Kind() != reflect.Ptr {
-		p.values[0].Elem().Set(reflect.Append(p.values[0].Elem(), elem.Elem()))
+	if ptr.Type().Elem().Elem().Kind() != reflect.Ptr {
+		ptr.Elem().Set(reflect.Append(ptr.Elem(), elem.Elem()))
 	} else {
-		p.values[0].Elem().Set(reflect.Append(p.values[0].Elem(), elem))
+		ptr.Elem().Set(reflect.Append(ptr.Elem(), elem))
 	}
 	return nil
 }
@@ -332,7 +266,7 @@ func (p *queryResult) reflectValue(column string, dest reflect.Value, value inte
 		}
 	}
 	if err != nil {
-		return fmt.Errorf("scan field %s error: %s", column, err.Error())
+		return fmt.Errorf("scan field '%s' error: %s", column, err.Error())
 	}
 	
 	return fmt.Errorf("can't scan field '%s' type '%s' to '%s'", column, reflect.TypeOf(value), dest.Type())
