@@ -1,11 +1,11 @@
-package gobatis
+package batis
 
 import (
 	"database/sql"
 	"database/sql/driver"
 	"fmt"
 	"reflect"
-
+	
 	"github.com/ttacon/chalk"
 )
 

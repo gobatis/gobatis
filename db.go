@@ -1,12 +1,12 @@
-package gobatis
+package batis
 
 import (
 	"context"
 	"database/sql"
 	"fmt"
+	"github.com/gobatis/gobatis/builder"
 	"github.com/gozelle/spew"
 	"reflect"
-	"strings"
 	"sync"
 )
 
@@ -19,8 +19,8 @@ func Open(d Dialector, options ...Option) (db *DB, err error) {
 		logger:          newLogger(),
 		tx:              nil,
 		mu:              sync.RWMutex{},
-		stmtMap:         nil,
-		error:           nil,
+		//stmtMap:         nil,
+		error: nil,
 	}
 	
 	db.db, err = d.DB()
@@ -58,32 +58,51 @@ type DB struct {
 	fragmentManager *fragmentManager
 	//driver          string
 	//dsn             string
-	db      *sql.DB
-	logger  Logger
-	tx      *sql.Tx
-	mu      sync.RWMutex
-	stmtMap map[string]*Stmt
-	error   error
+	db     *sql.DB
+	logger Logger
+	tx     *sql.Tx
+	mu     sync.RWMutex
+	//stmtMap map[string]*Stmt
+	ctx   context.Context
+	debug bool
+	must  bool
+	error error
+}
+
+func (d *DB) fork() *DB {
+	return &DB{
+		fragmentManager: nil,
+		db:              d.db,
+		logger:          d.logger,
+		tx:              d.tx,
+		mu:              sync.RWMutex{},
+		ctx:             d.ctx,
+		debug:           d.debug,
+		must:            d.must,
+		error:           d.error,
+	}
 }
 
 func (d *DB) WithContext(ctx context.Context) *DB {
-	return d
+	dd := d.fork()
+	dd.ctx = ctx
+	return dd
 }
 
 func (d *DB) Debug() *DB {
-	return d
+	dd := d.fork()
+	dd.debug = true
+	return dd
 }
 
 func (d *DB) Must() *DB {
-	return d
+	dd := d.fork()
+	dd.debug = true
+	return dd
 }
 
 func (d *DB) SetTag(tag string) {
 	reflect_tag = tag
-}
-
-func (d *DB) UseJsonTag() {
-	reflect_tag = "json"
 }
 
 func (d *DB) SetLogLevel(level Level) {
@@ -159,50 +178,50 @@ func (d *DB) Close() {
 //	return
 //}
 
-func (d *DB) bindMapper(mapper interface{}) (err error) {
-	
-	rv := reflect.ValueOf(mapper)
-	if rv.Kind() != reflect.Ptr || rv.Elem().Kind() != reflect.Struct {
-		return fmt.Errorf("exptect *struct, got: %s", rv.Type())
-	}
-	rv = rv.Elem()
-	rt := rv.Type()
-	for i := 0; i < rt.NumField(); i++ {
-		if rv.Field(i).Kind() != reflect.Func {
-			continue
-		}
-		must := false
-		stmt := false
-		id := rt.Field(i).Name
-		if strings.HasPrefix(id, must_prefix) {
-			id = strings.TrimPrefix(id, must_prefix)
-			must = true
-		}
-		if strings.HasSuffix(id, stmt_suffix) {
-			id = strings.TrimSuffix(id, stmt_suffix)
-			stmt = true
-		}
-		if strings.HasSuffix(id, tx_suffix) {
-			id = strings.TrimSuffix(id, tx_suffix)
-		}
-		m, ok := d.fragmentManager.get(id)
-		if !ok {
-			if must {
-				return fmt.Errorf("%s.(Must)%s statement not defined", rt.Name(), id)
-			}
-			return fmt.Errorf("%s.%s statement not defined", rt.Name(), id)
-		}
-		m = m.fork()
-		m.must = must
-		m.stmt = stmt
-		m.id = rt.Field(i).Name
-		ft := rv.Field(i).Type()
-		m.checkParameter(ft, rt.Name(), rv.Type().Field(i).Name)
-		m.checkResult(ft, rt.Name(), rv.Type().Field(i).Name)
-		m.proxy(rv.Field(i))
-	}
-	return
-}
+//func (d *DB) bindMapper(mapper interface{}) (err error) {
+//	
+//	rv := reflect.ValueOf(mapper)
+//	if rv.Kind() != reflect.Ptr || rv.Elem().Kind() != reflect.Struct {
+//		return fmt.Errorf("exptect *struct, got: %s", rv.Type())
+//	}
+//	rv = rv.Elem()
+//	rt := rv.Type()
+//	for i := 0; i < rt.NumField(); i++ {
+//		if rv.Field(i).Kind() != reflect.Func {
+//			continue
+//		}
+//		must := false
+//		stmt := false
+//		id := rt.Field(i).Name
+//		if strings.HasPrefix(id, must_prefix) {
+//			id = strings.TrimPrefix(id, must_prefix)
+//			must = true
+//		}
+//		if strings.HasSuffix(id, stmt_suffix) {
+//			id = strings.TrimSuffix(id, stmt_suffix)
+//			stmt = true
+//		}
+//		if strings.HasSuffix(id, tx_suffix) {
+//			id = strings.TrimSuffix(id, tx_suffix)
+//		}
+//		m, ok := d.fragmentManager.get(id)
+//		if !ok {
+//			if must {
+//				return fmt.Errorf("%s.(Must)%s statement not defined", rt.Name(), id)
+//			}
+//			return fmt.Errorf("%s.%s statement not defined", rt.Name(), id)
+//		}
+//		m = m.fork()
+//		m.must = must
+//		m.stmt = stmt
+//		m.id = rt.Field(i).Name
+//		ft := rv.Field(i).Type()
+//		m.checkParameter(ft, rt.Name(), rv.Type().Field(i).Name)
+//		m.checkResult(ft, rt.Name(), rv.Type().Field(i).Name)
+//		m.proxy(rv.Field(i))
+//	}
+//	return
+//}
 
 //func (d *DB) parseConfig() (err error) {
 //	if d.bundle == nil {
@@ -365,7 +384,7 @@ func (d *DB) Query(sql string, params ...NameValue) (scanner Scanner) {
 	return
 }
 
-func (d *DB) Build(b Builder) (s Scanner) {
+func (d *DB) Build(b builder.Builder) (s Scanner) {
 	
 	//var sqls []string
 	//var params []NameValue

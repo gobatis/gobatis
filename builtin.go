@@ -1,10 +1,10 @@
-package gobatis
+package batis
 
 import (
 	"reflect"
 	"strings"
 	"sync"
-
+	
 	"github.com/gobatis/gobatis/cast"
 	"github.com/shopspring/decimal"
 )

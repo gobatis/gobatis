@@ -1,4 +1,4 @@
-package gobatis
+package batis
 
 import (
 	"context"
@@ -13,28 +13,28 @@ func (d *DB) PrepareContext(ctx context.Context, query string) (*sql.Stmt, error
 	return d.tx.PrepareContext(ctx, query)
 }
 
-func (d *DB) addStmt(stmt *Stmt) {
-	d.mu.Lock()
-	defer func() {
-		d.mu.Unlock()
-	}()
-	if d.stmtMap == nil {
-		d.stmtMap = map[string]*Stmt{}
-	}
-	_, ok := d.stmtMap[stmt.caller.fragment.id]
-	if ok {
-		return
-	}
-	d.stmtMap[stmt.caller.fragment.id] = stmt
-}
-
-func (d *DB) getStmt(id string) *Stmt {
-	d.mu.RLock()
-	defer func() {
-		d.mu.RUnlock()
-	}()
-	return d.stmtMap[id]
-}
+//func (d *DB) addStmt(stmt *Stmt) {
+//	d.mu.Lock()
+//	defer func() {
+//		d.mu.Unlock()
+//	}()
+//	if d.stmtMap == nil {
+//		d.stmtMap = map[string]*Stmt{}
+//	}
+//	_, ok := d.stmtMap[stmt.caller.fragment.id]
+//	if ok {
+//		return
+//	}
+//	d.stmtMap[stmt.caller.fragment.id] = stmt
+//}
+//
+//func (d *DB) getStmt(id string) *Stmt {
+//	d.mu.RLock()
+//	defer func() {
+//		d.mu.RUnlock()
+//	}()
+//	return d.stmtMap[id]
+//}
 
 func (d *DB) Commit() error {
 	return d.tx.Commit()

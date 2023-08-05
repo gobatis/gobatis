@@ -1,4 +1,4 @@
-package gobatis
+package batis
 
 import (
 	"database/sql"
@@ -6,13 +6,13 @@ import (
 	"reflect"
 	"strings"
 	"time"
-
+	
 	"github.com/gobatis/gobatis/cast"
 	"github.com/shopspring/decimal"
 )
 
 var (
-	reflect_tag = "sql"
+	reflect_tag = "db"
 )
 
 type queryResult struct {
@@ -33,29 +33,29 @@ func (p *queryResult) Rows() *sql.Rows {
 }
 
 func (p *queryResult) setSelected(typeAttribute int, params []*param, values []reflect.Value) error {
-
+	
 	p.values = values
 	p.reflect = len(params) == 0
-
+	
 	if typeAttribute != result_result {
 		return nil
 	}
-
+	
 	var el int
 	if p.reflect {
 		el = 1
 	} else {
 		el = len(params)
 	}
-
+	
 	if el != len(values) {
 		return fmt.Errorf("expected to receive %d result filed(s), got %d (except error)", el, len(values))
 	}
-
+	
 	if p.reflect {
 		return nil
 	}
-
+	
 	p.first = true
 	for i, v := range params {
 		err := p.addSelected(i, v.name)
@@ -66,7 +66,7 @@ func (p *queryResult) setSelected(typeAttribute int, params []*param, values []r
 			p.first = false
 		}
 	}
-
+	
 	return nil
 }
 
@@ -119,12 +119,12 @@ func (p *queryResult) scan() (err error) {
 		err = sql.ErrNoRows
 		return
 	}
-
+	
 	return
 }
 
 func (p *queryResult) reflectRow(columns []string, row []interface{}) error {
-
+	
 	if p.reflect {
 		if p.values[0].Elem().Kind() == reflect.Slice {
 			return p.reflectStructs(newRowMap(columns, row))
@@ -151,7 +151,7 @@ func (p *queryResult) reflectStruct(r rowMap) error {
 		dv = dv.Elem()
 	}
 	_type := dv.Type()
-
+	
 	for i := 0; i < _type.NumField(); i++ {
 		field := _type.Field(i).Tag.Get(p.Tag())
 		field = p.trimComma(field)
@@ -217,7 +217,7 @@ func (p *queryResult) reflectValue(column string, dest reflect.Value, value inte
 		dt = reflectTypeElem(dt.Elem())
 	}
 	dtv := reflect.New(dt)
-
+	
 	if dtv.Type().Implements(scannerType) {
 		errs := dtv.MethodByName("Scan").Call([]reflect.Value{reflect.ValueOf(value)})
 		if len(errs) > 0 && errs[0].Interface() != nil {
@@ -334,7 +334,7 @@ func (p *queryResult) reflectValue(column string, dest reflect.Value, value inte
 	if err != nil {
 		return fmt.Errorf("scan field %s error: %s", column, err.Error())
 	}
-
+	
 	return fmt.Errorf("can't scan field '%s' type '%s' to '%s'", column, reflect.TypeOf(value), dest.Type())
 }
 

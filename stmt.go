@@ -1,4 +1,4 @@
-package gobatis
+package batis
 
 import (
 	"context"
@@ -26,7 +26,7 @@ func (p *Stmt) Close() error {
 }
 
 func (p *Stmt) exec(tx bool, ctx context.Context, in []reflect.Value) (err error) {
-
+	
 	parser := newExprParser(in...)
 	for i, v := range p.caller.fragment.in {
 		err = parser.paramsStack.list.Front().Next().Value.(*exprParams).bind(v, i)
@@ -34,7 +34,7 @@ func (p *Stmt) exec(tx bool, ctx context.Context, in []reflect.Value) (err error
 			throw(p.caller.fragment.node.File, p.caller.fragment.node.ctx, parasFragmentErr).with(err)
 		}
 	}
-
+	
 	vars := make([]interface{}, 0)
 	for _, v := range p.exprs {
 		var _var interface{}
@@ -44,15 +44,15 @@ func (p *Stmt) exec(tx bool, ctx context.Context, in []reflect.Value) (err error
 		}
 		vars = append(vars, _var)
 	}
-
+	
 	tf := ""
 	if tx {
 		tf = "[tx]"
 	}
-
+	
 	p.caller.logger.Debugf("[gobatis] [%s]%s[stmt] exec statement: %s", p.caller.fragment.id, tf, p.sql)
 	p.caller.logger.Debugf("[gobatis] [%s]%s[stmt] exec parameter: %s", p.caller.fragment.id, tf, printVars(vars))
-
+	
 	res, err := p.stmt.ExecContext(ctx, vars...)
 	if err != nil {
 		p.caller.logger.Errorf("[gobatis][%s]%s[stmt] exec statement: %s", p.caller.fragment.id, tf, p.sql)
@@ -60,12 +60,12 @@ func (p *Stmt) exec(tx bool, ctx context.Context, in []reflect.Value) (err error
 		p.caller.logger.Errorf("[gobatis][%s]%s[stmt] exec error: %v", p.caller.fragment.id, tf, err)
 		return
 	}
-
+	
 	return p.caller.parseExecResult(res, p.caller.values)
 }
 
 func (p *Stmt) query(tx bool, ctx context.Context, in []reflect.Value, values []reflect.Value) (err error) {
-
+	
 	parser := newExprParser(in...)
 	for i, v := range p.caller.fragment.in {
 		err = parser.paramsStack.list.Front().Next().Value.(*exprParams).bind(v, i)
@@ -73,7 +73,7 @@ func (p *Stmt) query(tx bool, ctx context.Context, in []reflect.Value, values []
 			throw(p.caller.fragment.node.File, p.caller.fragment.node.ctx, parasFragmentErr).with(err)
 		}
 	}
-
+	
 	vars := make([]interface{}, 0)
 	for _, v := range p.exprs {
 		var _var interface{}
@@ -83,15 +83,15 @@ func (p *Stmt) query(tx bool, ctx context.Context, in []reflect.Value, values []
 		}
 		vars = append(vars, _var)
 	}
-
+	
 	tf := ""
 	if tx {
 		tf = "[tx]"
 	}
-
+	
 	p.caller.logger.Debugf("[gobatis] [%s]%s[stmt] exec statement: %s", p.caller.fragment.id, tf, p.sql)
 	p.caller.logger.Debugf("[gobatis] [%s]%s[stmt] exec parameter: %s", p.caller.fragment.id, tf, printVars(vars))
-
+	
 	rows, err := p.stmt.QueryContext(ctx, vars...)
 	if err != nil {
 		p.caller.logger.Errorf("[gobatis][%s]%s[stmt] query statement: %s", p.caller.fragment.id, tf, p.sql)
@@ -99,11 +99,11 @@ func (p *Stmt) query(tx bool, ctx context.Context, in []reflect.Value, values []
 		p.caller.logger.Errorf("[gobatis][%s]%s[stmt] query error: %v", p.caller.fragment.id, tf, err)
 		return
 	}
-
+	
 	err = p.caller.parseQueryResult(rows, values)
 	if err != nil {
 		return
 	}
-
+	
 	return
 }
