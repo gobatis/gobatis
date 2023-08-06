@@ -20,9 +20,17 @@ type Scanner struct {
 	result []*sql.Result
 }
 
-func (s Scanner) Scan(ptr ...any) error {
+func (s Scanner) Scan(ptr ...any) (err error) {
+	
+	defer func() {
+		if err != nil {
+			s.printError()
+		}
+	}()
+	
 	if s.err != nil {
-		return s.err
+		err = s.err
+		return
 	}
 	
 	l1 := len(ptr)
@@ -35,7 +43,7 @@ func (s Scanner) Scan(ptr ...any) error {
 		qr := queryResult{
 			rows: s.rows[i],
 		}
-		err := qr.scan(reflect.ValueOf(ptr[i]))
+		err = qr.scan(reflect.ValueOf(ptr[i]))
 		if err != nil {
 			return fmt.Errorf("scan rows error: %s", err)
 		}
@@ -44,10 +52,28 @@ func (s Scanner) Scan(ptr ...any) error {
 	return nil
 }
 
+func (s Scanner) printError() {
+	debugLog("****", s.err)
+}
+
 func (s Scanner) Error() error {
+	if s.err != nil {
+		s.printError()
+	}
 	return s.err
 }
 
-func (s Scanner) AffectRows() (int, error) {
+func (s Scanner) AffectRows() (affectedRows int, err error) {
+	defer func() {
+		if err != nil {
+			s.printError()
+		}
+	}()
+	
+	if s.err != nil {
+		err = s.err
+		return
+	}
+	
 	return 0, nil
 }

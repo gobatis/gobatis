@@ -4,8 +4,12 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"fmt"
+	"github.com/gozelle/color"
 	"reflect"
+	"regexp"
 	"runtime"
+	"strings"
+	"time"
 	
 	"github.com/ttacon/chalk"
 )
@@ -125,14 +129,33 @@ func replaceIsolatedLessThanWithEntity(s string) string {
 	return string(r)
 }
 
-func debug(raw string) {
-	fmt.Printf("%s\n%s\n", runFuncPos(5), raw)
+func debugLog(raw string, err error) {
+	if err != nil {
+		fmt.Printf("%s [error]%s\n%s\n", time.Now().Format("2006-01-02 15:04:05"), color.RedString(runFuncPos(5)), raw)
+	} else {
+		fmt.Printf("%s [debug]%s\n%s\n", time.Now().Format("2006-01-02 15:04:05"), runFuncPos(5), raw)
+	}
 }
 
+// runFuncPos returns the file name and line number of the caller of the function calling it.
+// skip: 0 for the current function, 1 for the caller of the current function
 func runFuncPos(skip int) string {
-	_, file, line, ok := runtime.Caller(skip)
-	if !ok {
-		return ""
+	i := skip
+	for {
+		_, file, line, ok := runtime.Caller(i)
+		if !ok || i > 10 {
+			break
+		}
+		if !strings.Contains(file, "gobatis/executor/") || strings.HasSuffix(file, "_test.go") {
+			return fmt.Sprintf("%s:%d", file, line)
+		}
+		i++
 	}
-	return fmt.Sprintf("%s:%d", file, line)
+	return ""
+}
+
+func toSnakeCase(s string) string {
+	var re = regexp.MustCompile(`([^A-Z_])([A-Z])`)
+	snakeStr := re.ReplaceAllString(s, "${1}_${2}")
+	return strings.ToLower(snakeStr)
 }

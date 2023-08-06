@@ -31,6 +31,7 @@ func (p *queryResult) scan(ptr reflect.Value) (err error) {
 	}
 	l := len(columns)
 	c := 0
+	first := false
 	for p.rows.Next() {
 		c++
 		row := make([]interface{}, l)
@@ -43,12 +44,15 @@ func (p *queryResult) scan(ptr reflect.Value) (err error) {
 			_ = p.rows.Close()
 			return
 		}
-		var first bool
-		first, err = p.reflectRow(columns, row, ptr)
+		if !first {
+			first = true
+		}
+		var end bool
+		end, err = p.reflectRow(columns, row, ptr, first)
 		if err != nil {
 			return
 		}
-		if first {
+		if end {
 			break
 		}
 	}
@@ -60,41 +64,47 @@ func (p *queryResult) scan(ptr reflect.Value) (err error) {
 	return
 }
 
-func (p *queryResult) reflectRow(columns []string, row []interface{}, ptr reflect.Value) (bool, error) {
+func (p *queryResult) reflectRow(columns []string, row []interface{}, ptr reflect.Value, first bool) (bool, error) {
 	if ptr.Elem().Kind() == reflect.Slice {
 		return false, p.reflectStructs(newRowMap(columns, row), ptr)
 	} else {
 		if ptr.Elem().Kind() == reflect.Struct {
-			return true, p.reflectStruct(newRowMap(columns, row), ptr)
+			return true, p.reflectStruct(newRowMap(columns, row), ptr, first)
 		} else {
 			return true, p.reflectValue("anonymity", ptr.Elem(), row[0])
 		}
 	}
 }
 
-func (p *queryResult) reflectStruct(r rowMap, ptr reflect.Value) error {
+func (p *queryResult) reflectStruct(r rowMap, ptr reflect.Value, first bool) error {
 	dv := ptr
 	if dv.Kind() == reflect.Ptr {
 		dv = dv.Elem()
 	}
 	_type := dv.Type()
 	
-	tags := map[string]struct{}{}
+	var tags map[string]struct{}
+	if first {
+		tags = map[string]struct{}{}
+	}
 	for i := 0; i < _type.NumField(); i++ {
-		field := _type.Field(i).Tag.Get(p.Tag())
-		field = p.trimComma(field)
-		if field != "" {
-			if _, ok := tags[field]; ok {
-				return fmt.Errorf("field tag: '%s' is duplicated in struct: '%s'", field, _type)
+		n := p.prepareFieldName(_type.Field(i))
+		if first {
+			if _, ok := tags[n]; ok {
+				return fmt.Errorf("field tag: '%s' is duplicated in struct: '%s'", n, _type)
 			}
-			tags[field] = struct{}{}
+			tags[n] = struct{}{}
 		}
-		v, ok := r[field]
-		if ok && v != nil {
+		v, ok := r[n]
+		if !ok {
+			if !p.loose {
+				return fmt.Errorf("no data for struct: '%s' field: '%s'", _type, _type.Field(i).Name)
+			}
+		} else if v != nil {
 			if dv.Field(i).Kind() == reflect.Ptr {
 				dv.Field(i).Set(reflect.New(dv.Field(i).Type().Elem()))
 			}
-			err := p.reflectValue(field, dv.Field(i), v)
+			err := p.reflectValue(n, dv.Field(i), v)
 			if err != nil {
 				return err
 			}
@@ -103,8 +113,16 @@ func (p *queryResult) reflectStruct(r rowMap, ptr reflect.Value) error {
 	return nil
 }
 
+func (p *queryResult) prepareFieldName(f reflect.StructField) string {
+	
+	field := f.Tag.Get(p.Tag())
+	if field == "" {
+		field = toSnakeCase(f.Name)
+	}
+	return p.trimComma(field)
+}
+
 func (p *queryResult) trimComma(field string) string {
-	// TODO 也许可以更加优化
 	if strings.Contains(field, ",") {
 		return strings.TrimSpace(strings.Split(field, ",")[0])
 	}

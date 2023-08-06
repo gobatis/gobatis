@@ -25,3 +25,23 @@ func TestReplaceIsolatedLessThan(t *testing.T) {
 		require.Equal(t, test.expected, result)
 	}
 }
+
+func TestToSnakeCase(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected string
+	}{
+		{"HelloWorld", "hello_world"},
+		{"HelloWorldExample", "hello_world_example"},
+		{"anotherExampleWithID", "another_example_with_id"},
+		{"simple", "simple"},
+		{"with_SomeID", "with_some_id"},
+		{"already_snake_case", "already_snake_case"},
+		{"WithNumbers123And456", "with_numbers123_and456"},
+	}
+	
+	for _, tt := range tests {
+		result := toSnakeCase(tt.input)
+		require.Equal(t, tt.expected, result)
+	}
+}

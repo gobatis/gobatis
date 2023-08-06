@@ -2,7 +2,6 @@ package batis
 
 import (
 	"fmt"
-	"github.com/gobatis/gobatis/builder/paging"
 	"github.com/gobatis/gobatis/driver/postgres"
 	"github.com/gozelle/spew"
 	"os"
@@ -41,11 +40,11 @@ func rv(v interface{}) reflect.Value {
 }
 
 type Member struct {
-	Id        int64           `db:"id"`
-	Name      string          `db:"name"`
-	Age       int64           `db:"age"`
-	Wealth    decimal.Decimal `db:"wealth"`
-	CreatedAt time.Time       `db:"created_at"`
+	Id        int64  `db:"id"`
+	Name      string `db:"name"`
+	Age       int64  `db:"age"`
+	Wealth    decimal.Decimal
+	CreatedAt time.Time
 }
 
 func TestDBQuery(t *testing.T) {
@@ -153,30 +152,30 @@ func TestDBQuery2(t *testing.T) {
 		db.Close()
 	}()
 	
-	//var m Member
-	//err = db.Debug().Loose().Query(`select * from members where id = #{age}`,
-	//	Param("age", 1),
-	//).Scan(&m)
-	//require.NoError(t, err)
-	//spew.Json(m)
+	var m Member
+	err = db.Debug().Query(`select * from members where id = #{age}`,
+		Param("age", 1),
+	).Scan(&m)
+	require.NoError(t, err)
+	spew.Json(m)
 	//
-	var count int64
-	err = db.Debug().Loose().Query(`select count(1) from members where age > 0`).Scan(&count)
-	require.NoError(t, err)
-	
-	spew.Json(count)
-	
-	var members []*Member
-	var total int64
-	err = db.Build(paging.Select("*").
-		Count("1").
-		From("members").
-		Where("age < 20").
-		Page(0, 10),
-	).Scan(&members, &total)
-	require.NoError(t, err)
-	
-	spew.Json(members, total)
+	//var count int64
+	//err = db.Debug().Loose().Query(`select count(1) from members where age > 0`).Scan(&count)
+	//require.NoError(t, err)
+	//
+	//spew.Json(count)
+	//
+	//var members []*Member
+	//var total int64
+	//err = db.Build(paging.Select("*").
+	//	Count("1").
+	//	From("members").
+	//	Where("age < 20").
+	//	Page(0, 10),
+	//).Scan(&members, &total)
+	//require.NoError(t, err)
+	//
+	//spew.Json(members, total)
 }
 
 //func TestEngine(t *testing.T) {

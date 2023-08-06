@@ -43,10 +43,12 @@ func (e *Executor) Exec(s *Scanner) () {
 	}
 	
 	var err error
+	var raw string
 	defer func() {
-		if err != nil {
-			s.err = err
+		if err != nil || e.debug {
+			debugLog(raw, err)
 		}
+		s.err = err
 	}()
 	
 	var _params []*param
@@ -76,12 +78,6 @@ func (e *Executor) Exec(s *Scanner) () {
 	//spew.Json(raw, exprs, vars, dynamic)
 	_ = exprs
 	_ = dynamic
-	
-	debug(raw)
-	
-	if e.debug {
-		
-	}
 	
 	switch e.Type {
 	case Exec:
