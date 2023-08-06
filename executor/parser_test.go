@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/gobatis/gobatis"
+	
 	"os"
 	"path/filepath"
 	"reflect"
@@ -253,29 +253,29 @@ func writeError(t *testing.T, title string, test interface{}, _err error) {
 	require.NoError(t, err)
 }
 
-func execTestFragment(t *testing.T, engine *batis.DB, tests []testFragment) {
-	//reg := regexp.MustCompile(`\s+`)
-	//for _, test := range tests {
-	//	vars := make([]reflect.Value, 0)
-	//	for _, v := range test.Parameter {
-	//		vars = append(vars, batis.rv(v))
-	//	}
-	//	
-	//	frag, ok := engine.fragmentManager.get(test.Id)
-	//	require.True(t, ok, test)
-	//	sql, exprs, _vars, dynamic, err := frag.parseStatement(vars...)
-	//	require.NoError(t, err)
-	//	_ = dynamic
-	//	_ = exprs
-	//	if test.Err > 0 {
-	//		require.Error(t, err, test)
-	//	} else {
-	//		require.NoError(t, err, test)
-	//		require.Equal(t, reg.ReplaceAllString(test.SQL, ""), reg.ReplaceAllString(sql, ""), test)
-	//		require.Equal(t, len(_vars), test.Vars, test)
-	//	}
-	//}
-}
+//func execTestFragment(t *testing.T, engine *batis.DB, tests []testFragment) {
+//reg := regexp.MustCompile(`\s+`)
+//for _, test := range tests {
+//	vars := make([]reflect.Value, 0)
+//	for _, v := range test.Parameter {
+//		vars = append(vars, batis.rv(v))
+//	}
+//	
+//	frag, ok := engine.fragmentManager.get(test.Id)
+//	require.True(t, ok, test)
+//	sql, exprs, _vars, dynamic, err := frag.parseStatement(vars...)
+//	require.NoError(t, err)
+//	_ = dynamic
+//	_ = exprs
+//	if test.Err > 0 {
+//		require.Error(t, err, test)
+//	} else {
+//		require.NoError(t, err, test)
+//		require.Equal(t, reg.ReplaceAllString(test.SQL, ""), reg.ReplaceAllString(sql, ""), test)
+//		require.Equal(t, len(_vars), test.Vars, test)
+//	}
+//}
+//}
 
 func testCorrectParseExprExpression(t *testing.T, tests []testExpression) {
 	for i, test := range tests {

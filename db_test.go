@@ -7,6 +7,7 @@ import (
 	"github.com/gozelle/spew"
 	"os"
 	"reflect"
+	"regexp"
 	"testing"
 	"time"
 	
@@ -604,4 +605,14 @@ func testSelectStructs(t *testing.T, _testMapper *test.TestMapper) {
 	//d, err = json.MarshalIndent(item2, "", "\t")
 	require.NoError(t, err)
 	//fmt.Println(string(d))
+}
+
+func TestLessThan(t *testing.T) {
+	xmlStr := `This is a <test> string with a single < and another <tag> and one more <.`
+	
+	// 使用正则表达式查找 < 后面是非单词字符或字符串末尾的情况
+	re := regexp.MustCompile(`<(?=\W|$)`)
+	xmlStr = re.ReplaceAllString(xmlStr, "$")
+	
+	fmt.Println(xmlStr)
 }

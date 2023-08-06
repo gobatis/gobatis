@@ -101,6 +101,9 @@ func parseSQL(file, content string) (node *xmlNode, err error) {
 		elementGetter: dtd.MapperElement,
 	}
 	
+	// replace single < to &lt;
+	content = replaceIsolatedLessThanWithEntity(content)
+	
 	walkXMLNodes(l, content)
 	if !l.coverage.covered() {
 		throw(file, nil, parseCoveredErr).

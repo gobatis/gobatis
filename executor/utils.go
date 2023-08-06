@@ -85,3 +85,46 @@ func printVars(vars []interface{}) string {
 	}
 	return r
 }
+
+const lt = "&lt;"
+
+func replaceIsolatedLessThanWithEntity(s string) string {
+	// 将字符串转换为 rune 切片，以支持多字节字符
+	runes := []rune(s)
+	lastLeftBracket := -1
+	pos := map[int]struct{}{}
+	for i, r := range runes {
+		switch r {
+		case '<':
+			// 如果之前已经有标记的 '<'，替换它
+			if lastLeftBracket != -1 {
+				pos[lastLeftBracket] = struct{}{}
+			}
+			lastLeftBracket = i
+		case '>':
+			// 清除之前标记的 '<'
+			lastLeftBracket = -1
+		}
+	}
+	
+	// 检查是否在字符串的结尾有一个标记的 '<'
+	if lastLeftBracket != -1 {
+		pos[lastLeftBracket] = struct{}{}
+	}
+	
+	var r []rune
+	for i := range runes {
+		if _, ok := pos[i]; ok {
+			r = append(r, []rune(lt)...)
+		} else {
+			r = append(r, runes[i])
+		}
+	}
+	
+	return string(r)
+}
+
+// 替换在指定位置的 rune 为新的字符串，并返回新的 rune 切片
+//func replaceRuneAt(runes []rune, i int, replacement string) []rune {
+//	return append(runes[:i], append([]rune(replacement), runes[i+1:]...)...)
+//}
