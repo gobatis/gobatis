@@ -5,6 +5,7 @@ import (
 	"database/sql/driver"
 	"fmt"
 	"reflect"
+	"runtime"
 	
 	"github.com/ttacon/chalk"
 )
@@ -124,7 +125,14 @@ func replaceIsolatedLessThanWithEntity(s string) string {
 	return string(r)
 }
 
-// 替换在指定位置的 rune 为新的字符串，并返回新的 rune 切片
-//func replaceRuneAt(runes []rune, i int, replacement string) []rune {
-//	return append(runes[:i], append([]rune(replacement), runes[i+1:]...)...)
-//}
+func debug(raw string) {
+	fmt.Printf("%s\n%s\n", runFuncPos(5), raw)
+}
+
+func runFuncPos(skip int) string {
+	_, file, line, ok := runtime.Caller(skip)
+	if !ok {
+		return ""
+	}
+	return fmt.Sprintf("%s:%d", file, line)
+}

@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"github.com/gozelle/spew"
 	"reflect"
 )
 
@@ -27,6 +26,8 @@ type Executor struct {
 	Conn   conn
 	rows   *sql.Rows
 	result *sql.Result
+	debug  bool
+	must   bool
 }
 
 func (e *Executor) Merge(s Executor) {
@@ -69,8 +70,18 @@ func (e *Executor) Exec(s *Scanner) () {
 	if err != nil {
 		return
 	}
+	//raw = strings.ReplaceAll(raw, "\\u003e", ">")
+	//raw = strings.ReplaceAll(raw, "\\u003c", "<")
 	
-	spew.Json(raw, exprs, vars, dynamic)
+	//spew.Json(raw, exprs, vars, dynamic)
+	_ = exprs
+	_ = dynamic
+	
+	debug(raw)
+	
+	if e.debug {
+		
+	}
 	
 	switch e.Type {
 	case Exec:

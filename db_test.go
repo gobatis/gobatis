@@ -160,18 +160,18 @@ func TestDBQuery2(t *testing.T) {
 	//require.NoError(t, err)
 	//spew.Json(m)
 	//
-	//var count int64
-	//err = db.Debug().Loose().Query(`select count(1) from members`).Scan(&count)
-	//require.NoError(t, err)
+	var count int64
+	err = db.Debug().Loose().Query(`select count(1) from members where age > 0`).Scan(&count)
+	require.NoError(t, err)
 	
-	//spew.Json(count)
+	spew.Json(count)
 	
 	var members []*Member
 	var total int64
 	err = db.Build(paging.Select("*").
 		Count("1").
 		From("members").
-		Where("age != 0").
+		Where("age < 20").
 		Page(0, 10),
 	).Scan(&members, &total)
 	require.NoError(t, err)
