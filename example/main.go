@@ -32,11 +32,13 @@ func main() {
 	
 	db.Update("users", map[string]any{}, batis.Where(""))
 	
-	err = db.Build(paging.Select("select *").
-		Count("select count(1)").
+	var users []*entity.User
+	var total int64
+	err = db.Build(paging.Select("id,username").
+		Count("*").
 		From("public.users").
-		Where("a left join"),
-	).Scan()
+		Where("age > 18"),
+	).Scan(&users, &total)
 	if err != nil {
 		return
 	}

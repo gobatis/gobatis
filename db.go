@@ -408,6 +408,7 @@ func (d *DB) Update(table string, data map[string]any, where Element) executor.S
 	s := fmt.Sprintf("update %s set %s", table, where.SQL())
 	return d.exec(executor.Exec, s, where.Params())
 }
+
 func (d *DB) Insert(table string, data any, onConflict ...Element) executor.Scanner {
 	
 	s := fmt.Sprintf("insert into %s", table)
@@ -417,6 +418,10 @@ func (d *DB) Insert(table string, data any, onConflict ...Element) executor.Scan
 func (d *DB) InsertBatch(table string, data any, batch int, onConflict ...Element) executor.Scanner {
 	s := fmt.Sprintf("insert into %s", table)
 	return d.exec(executor.Exec, s, nil)
+}
+
+func (d *DB) Fetch(sql string, params ...executor.NameValue) <-chan executor.Executor {
+	return nil
 }
 
 func (d *DB) Begin() *DB {
