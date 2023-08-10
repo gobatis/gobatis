@@ -136,7 +136,7 @@ func TestDBQuery45(t *testing.T) {
 	err := db.Execute(`update public.users where id = #{a} and name = #{b}`,
 		Param("a", 10),
 		Param("b", 10),
-	).Error()
+	).Error
 	if err != nil {
 		return
 	}

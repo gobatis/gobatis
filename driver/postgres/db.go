@@ -2,7 +2,9 @@ package postgres
 
 import (
 	"database/sql"
+	"fmt"
 	_ "github.com/jackc/pgx/v4/stdlib"
+	"strings"
 )
 
 func Open(dsn string) *Dialector {
@@ -18,4 +20,11 @@ type Dialector struct {
 
 func (d Dialector) DB() (*sql.DB, error) {
 	return d.db, d.err
+}
+
+func (d Dialector) WrapName(name string) string {
+	if strings.HasPrefix(name, "\"") {
+		return name
+	}
+	return fmt.Sprintf("\"%s\"", name)
 }

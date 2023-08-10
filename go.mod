@@ -23,6 +23,7 @@ require (
 	github.com/gozelle/atomic v1.10.10 // indirect
 	github.com/gozelle/color v1.14.1 // indirect
 	github.com/gozelle/isatty v0.0.17 // indirect
+	github.com/gozelle/logger v0.0.0-20230808060726-844dbcc32ecf // indirect
 	github.com/gozelle/multierr v1.9.10 // indirect
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
 	github.com/jackc/pgconn v1.8.1 // indirect

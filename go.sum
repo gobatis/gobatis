@@ -112,6 +112,8 @@ github.com/gozelle/go-spew v1.1.10 h1:kFDq5IDd/Wk3l7UutORhveCt5fUdW8b9afnDYtuHmE
 github.com/gozelle/goleak v1.2.1 h1:e9B5tGt96ak+/85Nv0rj2DjoehP7FgqwlFvHlzIr5ts=
 github.com/gozelle/isatty v0.0.17 h1:1ka2GcKL1hNwIHIl5JFHfHOAzl+vXRH4Jx3dlFa88nM=
 github.com/gozelle/isatty v0.0.17/go.mod h1:u77FICFTx4IXjAoAaYstj8NvStDRVhwe3NNZCKzXVGo=
+github.com/gozelle/logger v0.0.0-20230808060726-844dbcc32ecf h1:WlZZqWV96S4kw7kH2Nzjc5QjpR7phfsSh6Yi/MhclVk=
+github.com/gozelle/logger v0.0.0-20230808060726-844dbcc32ecf/go.mod h1:rg2J/CZh/Ue3TxzruCvt6NHFjpo/U9M66mLm4S/tE9E=
 github.com/gozelle/logging v0.0.0-20230111081457-6f16f4dd5a46 h1:hV0LqMjLl6oDbp4qXvia9pplS95kQtfq92YHvDZFGww=
 github.com/gozelle/logging v0.0.0-20230111081457-6f16f4dd5a46/go.mod h1:uYLWg4Ida/VxwbumW4/N6HPAj/3ShN+2x2Kj2hAtD8U=
 github.com/gozelle/multierr v1.9.10 h1:EUU22u5Yx82/mQm55fH1WF6ztp0w4U+cZl9lCzuyUvE=

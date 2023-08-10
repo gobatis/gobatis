@@ -1,7 +1,7 @@
 package batis
 
 import (
-	"github.com/gozelle/logging"
+	logging "github.com/gozelle/logger"
 	"github.com/gozelle/zap"
 )
 
@@ -29,7 +29,7 @@ type Logger interface {
 
 func newLogger() Logger {
 	return &logger{
-		log: logging.Logger("[gobatis]").SugaredLogger,
+		log: logging.NewLogger("[gobatis]").SugaredLogger,
 	}
 }
 

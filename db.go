@@ -3,76 +3,52 @@ package batis
 import (
 	"context"
 	"database/sql"
-	"fmt"
+	"strings"
+	"sync"
+	
 	"github.com/gobatis/gobatis/builder"
 	"github.com/gobatis/gobatis/executor"
 	"golang.org/x/sync/errgroup"
-	"sync"
 )
 
 func Open(d Dialector, options ...Option) (db *DB, err error) {
-	
 	db = &DB{
-		//bundle:          nil,
-		//fragmentManager: nil,
 		db:     nil,
 		logger: newLogger(),
 		tx:     nil,
 		mu:     sync.RWMutex{},
-		//stmtMap:         nil,
-		err: nil,
+		err:    nil,
+		namer:  d.WrapName,
 	}
 	
 	db.db, err = d.DB()
 	if err != nil {
 		return
 	}
-	
-	err = db.Ping()
-	if err != nil {
-		return
-	}
-	
 	return
 }
 
-//func (d *DB) initDB() (err error) {
-//	switch d.driver {
-//	case postgresql.PGX:
-//		d.db, err = postgresql.InitDB(d.dsn)
-//	case mysql.MySQL:
-//		d.db, err = mysql.InitDB(d.dsn)
-//	default:
-//		d.db, err = sql.Open(d.driver, d.dsn)
-//		if err != nil {
-//			err = fmt.Errorf("%s connnet error: %s", d.driver, err)
-//			return
-//		}
-//	}
-//	d.dsn = ""
-//	return
-//}
+const contextTxKey = "GOBATIS_TX"
+
+func NewTxContext(parent context.Context, tx *DB) context.Context {
+	return context.WithValue(parent, contextTxKey, tx)
+}
 
 type DB struct {
-	//bundle          Bundle
-	//fragmentManager *fragmentManager
-	//driver          string
-	//dsn             string
 	db     *sql.DB
 	logger Logger
 	tx     *sql.Tx
 	mu     sync.RWMutex
-	//stmtMap map[string]*Stmt
-	ctx   context.Context
-	debug bool
-	must  bool
-	loose bool
-	err   error
+	ctx    context.Context
+	debug  bool
+	must   bool
+	loose  bool
+	err    error
+	namer  func(name string) string
 }
 
 func (d *DB) fork() *DB {
 	return &DB{
-		//fragmentManager: nil,
 		db:     d.db,
 		logger: d.logger,
 		tx:     d.tx,
@@ -85,26 +61,28 @@ func (d *DB) fork() *DB {
 }
 
 func (d *DB) WithContext(ctx context.Context) *DB {
-	dd := d.fork()
-	dd.ctx = ctx
-	return dd
+	v, ok := ctx.Value(contextTxKey).(*DB)
+	if ok {
+		f := v.fork()
+		f.ctx = ctx
+		return f
+	}
+	f := d.fork()
+	f.ctx = ctx
+	return f
 }
 
 func (d *DB) Debug() *DB {
-	dd := d.fork()
-	dd.debug = true
-	return dd
+	f := d.fork()
+	f.debug = true
+	return f
 }
 
 func (d *DB) Must() *DB {
-	dd := d.fork()
-	dd.debug = true
-	return dd
+	f := d.fork()
+	f.debug = true
+	return f
 }
-
-//func (d *DB) SetTag(tag string) {
-//	executor.reflect_tag = tag
-//}
 
 func (d *DB) SetLogLevel(level Level) {
 	d.logger.SetLevel(level)
@@ -121,211 +99,9 @@ func (d *DB) useLogger() Logger {
 	return d.logger
 }
 
-//func (d *DB) Init(bundle Bundle) (err error) {
-//
-//	if d.logger == nil {
-//		d.logger = _log.NewStdLogger()
-//		d.logger.SetLevel(InfoLevel)
-//	}
-//
-//	d.bundle = bundle
-//	err = d.parseBundle()
-//	if err != nil {
-//		return
-//	}
-//	//err = d.master.initDB()
-//	//d.master.logger = d.logger
-//	//if err != nil {
-//	//	err = fmt.Errorf("init master db error: %s", err)
-//	//	return
-//	//}
-//	return
-//}
-
 func (d *DB) Close() {
-	//if d.fragmentManager != nil {
-	//	for _, v := range d.fragmentManager.all() {
-	//		if v._stmt != nil {
-	//			err := v._stmt.Close()
-	//			if err != nil {
-	//				d.logger.Errorf("[gobatis] close stmt error: %s", err)
-	//			}
-	//		}
-	//	}
-	//}
 	_ = d.db.Close()
 }
-
-//func (d *DB) parseBundle() (err error) {
-//	err = d.parseConfig()
-//	if err != nil {
-//		return
-//	}
-//	
-//	err = d.parseMappers()
-//	if err != nil {
-//		return
-//	}
-//	return
-//}
-//
-//func (d *DB) BindMapper(bundle Bundle, ptr ...interface{}) (err error) {
-//	for _, v := range ptr {
-//		err = d.bindMapper(v)
-//		if err != nil {
-//			return
-//		}
-//	}
-//	return
-//}
-
-//func (d *DB) bindMapper(mapper interface{}) (err error) {
-//	
-//	rv := reflect.ValueOf(mapper)
-//	if rv.Kind() != reflect.Ptr || rv.Elem().Kind() != reflect.Struct {
-//		return fmt.Errorf("exptect *struct, got: %s", rv.Type())
-//	}
-//	rv = rv.Elem()
-//	rt := rv.Type()
-//	for i := 0; i < rt.NumField(); i++ {
-//		if rv.Field(i).Kind() != reflect.Func {
-//			continue
-//		}
-//		must := false
-//		stmt := false
-//		id := rt.Field(i).Name
-//		if strings.HasPrefix(id, must_prefix) {
-//			id = strings.TrimPrefix(id, must_prefix)
-//			must = true
-//		}
-//		if strings.HasSuffix(id, stmt_suffix) {
-//			id = strings.TrimSuffix(id, stmt_suffix)
-//			stmt = true
-//		}
-//		if strings.HasSuffix(id, tx_suffix) {
-//			id = strings.TrimSuffix(id, tx_suffix)
-//		}
-//		m, ok := d.fragmentManager.get(id)
-//		if !ok {
-//			if must {
-//				return fmt.Errorf("%s.(Must)%s statement not defined", rt.Name(), id)
-//			}
-//			return fmt.Errorf("%s.%s statement not defined", rt.Name(), id)
-//		}
-//		m = m.fork()
-//		m.must = must
-//		m.stmt = stmt
-//		m.id = rt.Field(i).Name
-//		ft := rv.Field(i).Type()
-//		m.checkParameter(ft, rt.Name(), rv.Type().Field(i).Name)
-//		m.checkResult(ft, rt.Name(), rv.Type().Field(i).Name)
-//		m.proxy(rv.Field(i))
-//	}
-//	return
-//}
-
-//func (d *DB) parseConfig() (err error) {
-//	if d.bundle == nil {
-//		err = fmt.Errorf("no bundle")
-//		return
-//	}
-//	
-//	f, err := d.bundle.Open(config_xml)
-//	if err != nil {
-//		err = nil
-//		return
-//	}
-//	_ = f.Close()
-//	
-//	bs, err := d.readBundleFile(config_xml)
-//	if err != nil {
-//		return
-//	}
-//	d.logger.Infof("[gobatis] register fragment: gobatis.xml")
-//	err = parseConfig(d, config_xml, string(bs))
-//	if err != nil {
-//		return
-//	}
-//	return
-//}
-
-//func (d *DB) readBundleFile(path string) (bs []byte, err error) {
-//	file, err := d.bundle.Open(path)
-//	if err != nil {
-//		err = fmt.Errorf("open %s error: %s", path, err)
-//		return
-//	}
-//	defer func() {
-//		_ = file.Close()
-//	}()
-//	
-//	bs, err = io.ReadAll(file)
-//	if err != nil {
-//		err = fmt.Errorf("read %s content error: %s", path, err)
-//		return
-//	}
-//	return
-//}
-
-//func (d *DB) parseMappers() (err error) {
-//	files, err := d.walkMappers("/")
-//	if err != nil {
-//		return
-//	}
-//	for _, v := range files {
-//		var bs []byte
-//		bs, err = d.readBundleFile(v)
-//		if err != nil {
-//			return
-//		}
-//		d.logger.Infof("register fragment: %s.xml", v)
-//		err = parseMapper(d, v, string(bs))
-//		if err != nil {
-//			return
-//		}
-//	}
-//	return
-//}
-
-//func (d *DB) walkMappers(root string) (files []string, err error) {
-//	handle, err := d.bundle.Open(root)
-//	if err != nil {
-//		return
-//	}
-//	defer func() {
-//		_ = handle.Close()
-//	}()
-//	res, err := handle.Readdir(-1)
-//	for _, v := range res {
-//		path := filepath.Join(root, v.Name())
-//		if v.IsDir() {
-//			var _files []string
-//			_files, err = d.walkMappers(path)
-//			if err != nil {
-//				return
-//			}
-//			files = append(files, _files...)
-//		} else {
-//			if path != filepath.Join("/", config_xml) {
-//				files = append(files, path)
-//			}
-//		}
-//	}
-//	return
-//}
-
-//func (d *DB) addFragment(file string, ctx antlr.ParserRuleContext, id string, node *xmlNode) {
-//	
-//	f, err := parseFragment(d, file, id, node)
-//	if err != nil {
-//		return
-//	}
-//	err = d.fragmentManager.add(f)
-//	if err != nil {
-//		throw(file, ctx, parseMapperErr).with(err)
-//	}
-//	return
-//}
 
 func (d *DB) DB() *sql.DB {
 	return d.db
@@ -340,14 +116,45 @@ func (d *DB) Stats() sql.DBStats {
 }
 
 func (d *DB) Loose() *DB {
-	dd := d.fork()
-	dd.loose = true
-	return dd
+	f := d.fork()
+	f.loose = true
+	return f
 }
 
 //func (d *DB) Prepare(sql string, params ...executor.NameValue) *Stmt {
 //	return &Stmt{}
 //}
+const space = " "
+
+func (d *DB) exec2(et int, elems ...Element) executor.Scanner {
+	var sqls []string
+	params := map[string]executor.NameValue{}
+	for _, v := range elems {
+		s, err := v.SQL(d.namer)
+		if err != nil {
+			return executor.Scanner{
+				Error: err,
+			}
+		}
+		sqls = append(sqls, s)
+		for _, vv := range v.Params() {
+			params[vv.Name] = vv
+		}
+	}
+	s := &executor.Scanner{}
+	e := &executor.Executor{
+		Type: et,
+		SQL:  strings.Join(sqls, space),
+		Err:  d.err,
+		Conn: d.db,
+	}
+	for _, v := range params {
+		e.Params = append(e.Params, v)
+	}
+	e.Exec(s)
+	
+	return *s
+}
 
 func (d *DB) exec(_type int, sql string, params []executor.NameValue) executor.Scanner {
 	s := &executor.Scanner{}
@@ -370,7 +177,7 @@ func (d *DB) Build(b builder.Builder) executor.Scanner {
 	
 	es, err := b.Build()
 	if err != nil {
-		return executor.WithErrScanner(err)
+		return executor.Scanner{Error: err}
 	}
 	
 	s := &executor.Scanner{}
@@ -387,7 +194,8 @@ func (d *DB) Build(b builder.Builder) executor.Scanner {
 	}
 	err = g.Wait()
 	if err != nil {
-		return executor.WithErrScanner(err)
+		s.Error = err
+		return *s
 	}
 	
 	return *s
@@ -395,33 +203,59 @@ func (d *DB) Build(b builder.Builder) executor.Scanner {
 
 func (d *DB) Execute(sql string, params ...executor.NameValue) executor.Scanner {
 	return d.exec(executor.Exec, sql, params)
-	
 }
 
 func (d *DB) Delete(table string, where Element) executor.Scanner {
-	s := fmt.Sprintf("delete from %s %s", table, where.SQL())
-	return d.exec(executor.Exec, s, where.Params())
+	//s := fmt.Sprintf("delete from %s %s", table, where.SQL())
+	//return d.exec(executor.Exec, s, where.Params())
+	e := &_delete{
+		table: table,
+		where: where,
+	}
+	return d.exec2(executor.Exec, e)
 }
 
 func (d *DB) Update(table string, data map[string]any, where Element) executor.Scanner {
-	
-	s := fmt.Sprintf("update %s set %s", table, where.SQL())
-	return d.exec(executor.Exec, s, where.Params())
+	u := &update{
+		table: "",
+		data:  nil,
+		where: where,
+	}
+	return d.exec2(executor.Exec, u)
 }
 
 func (d *DB) Insert(table string, data any, onConflict ...Element) executor.Scanner {
+	//s := fmt.Sprintf("insert into %s", table)
+	//return d.exec(executor.Exec, s, nil)
+	i := &insert{
+		table: table,
+		data:  data,
+		elems: onConflict,
+	}
+	return d.exec2(executor.Query, i)
 	
-	s := fmt.Sprintf("insert into %s", table)
-	return d.exec(executor.Exec, s, nil)
 }
 
 func (d *DB) InsertBatch(table string, data any, batch int, onConflict ...Element) executor.Scanner {
-	s := fmt.Sprintf("insert into %s", table)
-	return d.exec(executor.Exec, s, nil)
+	//s := fmt.Sprintf("insert into %s", table)
+	//return d.exec(executor.Exec, s, nil)
+	ib := &insertBatch{
+		table: table,
+		data:  data,
+		batch: batch,
+		elems: onConflict,
+	}
+	return d.exec2(executor.Exec, ib)
 }
 
-func (d *DB) Fetch(sql string, params ...executor.NameValue) <-chan executor.Executor {
-	return nil
+func (d *DB) Fetch(sql string, params ...executor.NameValue) <-chan executor.Scanner {
+	
+	ch := make(chan executor.Scanner)
+	
+	f := &fetch{}
+	d.exec2(executor.Query, f)
+	
+	return ch
 }
 
 func (d *DB) Begin() *DB {
@@ -430,4 +264,21 @@ func (d *DB) Begin() *DB {
 	}
 	d.tx, d.err = d.db.Begin()
 	return d
+}
+
+func (d *DB) Prepare(ctx context.Context, sql string, params ...executor.NameValue) (*sql.Stmt, error) {
+	//return d.tx.PrepareContext(ctx, query)
+	panic("todo")
+}
+
+func (d *DB) PrepareContext(sql string, params ...executor.NameValue) (*sql.Stmt, error) {
+	panic("todo")
+}
+
+func (d *DB) Commit() error {
+	return d.tx.Commit()
+}
+
+func (d *DB) Rollback() error {
+	return d.tx.Rollback()
 }
