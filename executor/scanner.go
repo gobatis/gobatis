@@ -7,13 +7,21 @@ import (
 	"reflect"
 )
 
+func NewErrorScanner(err error) Scanner {
+	return Scanner{err: err}
+}
+
 type Scanner struct {
-	Error  error
+	err    error
 	ctx    context.Context
 	rows   []*sql.Rows
 	must   bool
 	debug  bool
 	result []*sql.Result
+}
+
+func (s Scanner) Error() error {
+	return s.err
 }
 
 func (s Scanner) Scan(ptr ...any) (err error) {
@@ -24,8 +32,8 @@ func (s Scanner) Scan(ptr ...any) (err error) {
 		}
 	}()
 	
-	if s.Error != nil {
-		err = s.Error
+	if s.err != nil {
+		err = s.err
 		return
 	}
 	
@@ -49,7 +57,7 @@ func (s Scanner) Scan(ptr ...any) (err error) {
 }
 
 func (s Scanner) printError() {
-	debugLog("****", s.Error)
+	debugLog("****", s.err)
 }
 
 func (s Scanner) AffectRows() (affectedRows int, err error) {
@@ -59,8 +67,8 @@ func (s Scanner) AffectRows() (affectedRows int, err error) {
 		}
 	}()
 	
-	if s.Error != nil {
-		err = s.Error
+	if s.err != nil {
+		err = s.err
 		return
 	}
 	

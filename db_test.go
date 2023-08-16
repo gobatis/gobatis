@@ -133,10 +133,10 @@ func TestDBInsert(t *testing.T) {
 func TestDBQuery45(t *testing.T) {
 	db := &DB{}
 	
-	err := db.Execute(`update public.users where id = #{a} and name = #{b}`,
+	err := db.Exec(`update public.users where id = #{a} and name = #{b}`,
 		Param("a", 10),
 		Param("b", 10),
-	).Error
+	).Error()
 	if err != nil {
 		return
 	}

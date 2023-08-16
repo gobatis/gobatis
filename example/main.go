@@ -5,6 +5,7 @@ import (
 	"github.com/gobatis/gobatis/builder/paging"
 	"github.com/gobatis/gobatis/driver/postgres"
 	"github.com/gobatis/gobatis/example/entity"
+	"github.com/gobatis/gobatis/reflects"
 )
 
 func main() {
@@ -20,7 +21,7 @@ func main() {
 	}
 	
 	user := entity.User{}
-	err = db.Insert("users", user, batis.OnConflict([]string{}, "do update set a = columnd.a")).Error
+	err = db.Insert("users", user, batis.OnConflict("", "do update set a = columnd.a")).Error()
 	if err != nil {
 		return
 	}
@@ -43,16 +44,21 @@ func main() {
 		return
 	}
 	
-	db.Insert("users", users, batis.OnConflict([]string{"a,", "b"}, "do noting"))
-	
+	db.Insert("users", users, batis.OnConflict("a,b", "do noting"), batis.Returning("*"))
+	db.InsertBatch("users", 10, reflects.Except(user, "id"))
 	db.Delete("users", batis.Where("id = ?"))
-	
 	db.Update("users", map[string]any{}, batis.Where("id = ?"))
+	db.Query(``, batis.Param("", ""))
+	db.Exec(``, batis.Param("", ""))
+	db.Build(paging.Select("").
+		Count("").
+		From("").
+		Where(""))
 	
 	ch := db.Fetch("select * from users")
 	for a := range ch {
 		_ = a.Error
 	}
 	
-	db.Execute(``, batis.Param("user", ""))
+	db.Exec(``, batis.Param("user", ""))
 }

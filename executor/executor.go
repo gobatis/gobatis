@@ -38,7 +38,7 @@ func (e *Executor) Merge(s Executor) {
 func (e *Executor) Exec(s *Scanner) () {
 	
 	if e.Err != nil {
-		s.Error = e.Err
+		s.err = e.Err
 		return
 	}
 	
@@ -48,7 +48,7 @@ func (e *Executor) Exec(s *Scanner) () {
 		if err != nil || e.debug {
 			debugLog(raw, err)
 		}
-		s.Error = err
+		s.err = err
 	}()
 	
 	var _params []*param
@@ -97,7 +97,7 @@ func (e *Executor) Exec(s *Scanner) () {
 		s.rows = append(s.rows, rows)
 		return
 	default:
-		s.Error = fmt.Errorf("unexpect executor type: %d", e.Type)
+		s.err = fmt.Errorf("unexpect executor type: %d", e.Type)
 		return
 	}
 }

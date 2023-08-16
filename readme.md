@@ -1,57 +1,22 @@
 # Gobatis
 
-适用于 Golang，基于 MyBatis 标签语法的持久层框架。
+面向工程的 ORM，采用 MyBatis 的标签语法。
 
 ## 特性
 
-- 基于 database/sql 实现与数据库无关；
-- 适用 golang 语法，支持多参数传递和多参数返回；
-- 支持 xml 文件打包成 bin 文件；
-- 支持 mybatis 的标签语法；
+* 便捷的增、删、查、改操作；
+* 便捷的变量绑定；
+* 支持语句 Debug
+* 支持执行 hook.
+* 支持事务、Prepare操作；
+* 支持快捷方法：分页查询、批量插入；
+* 更好的并发支持；
 
-## TODO
+## 模块
 
-- 持续性测试；
-- 优化错误返回信息，增加上下文提示；
+* SQL 执行；
+* 事务；
+* 日志，位置打印；
+* Hook；
+* 并发；
 
-## 支持扫描数据类型
-
-- int,int8,int16,int32,int64
-- uint,uint8,uint16,uint32,uint64
-- float32,float64
-- time.Time
-- decimal.Decimal
-
-## 支持顶级 SQL 标签
-
-- insert
-- select
-- update
-- delete
-
-## 支持动态 SQL 标签
-
-- if
-- choose、when、otherwise
-- trim、where、set
-- foreach
-
-## 安装
-
-```
-$ go get -v github.com/gobatis/gobatis
-```
-
-## 初始化
-
-参考 engine_test.go -> TestEngine。
-
-## New
-
-```go
-db := gobatis.New("")
-db.Raw(sql string, gobatis.Param("name", 123)).Scan()
-db.Raw(sql string, gobatis.Param("name", 123)).Find()
-db.Raw(sql string, gobatis.Param("name", 123)).First()
-db.Raw(sql string, gobatis.Param("name", 123)).First()
-```
