@@ -19,20 +19,20 @@ func main() {
 	if err != nil {
 		return
 	}
-	
+
 	user := entity.User{}
 	err = db.Insert("users", user, batis.OnConflict("", "do update set a = columnd.a")).Error()
 	if err != nil {
 		return
 	}
-	
+
 	db.Query(
 		`select * from users where age = #{age}`,
 		batis.Param("age", 1),
 	)
-	
+
 	db.Update("users", map[string]any{}, batis.Where(""))
-	
+
 	var users []*entity.User
 	var total int64
 	err = db.Build(paging.Select("id,username").
@@ -43,7 +43,7 @@ func main() {
 	if err != nil {
 		return
 	}
-	
+
 	db.Insert("users", users, batis.OnConflict("a,b", "do noting"), batis.Returning("*"))
 	db.InsertBatch("users", 10, reflects.Except(user, "id"))
 	db.Delete("users", batis.Where("id = ?"))
@@ -54,11 +54,11 @@ func main() {
 		Count("").
 		From("").
 		Where(""))
-	
+
 	ch := db.Fetch("select * from users")
 	for a := range ch {
 		_ = a.Error
 	}
-	
+
 	db.Exec(``, batis.Param("user", ""))
 }

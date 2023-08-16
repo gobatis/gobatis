@@ -2,10 +2,12 @@ package batis
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/gobatis/gobatis/dialector"
 	"github.com/gobatis/gobatis/executor"
 	"github.com/gobatis/gobatis/reflects"
-	"strings"
+	"github.com/pkg/errors"
 )
 
 var _ Element = (*query)(nil)
@@ -34,7 +36,8 @@ type onConflict struct {
 }
 
 func (o onConflict) SQL(namer dialector.Namer, tag string) (sql string, params []executor.NameValue, err error) {
-	
+	sql = fmt.Sprintf("on confilct(%s) %s", reflects.TrimColumns(o.fields), o.sql)
+	params = o.params
 	return
 }
 
@@ -52,8 +55,9 @@ type where struct {
 }
 
 func (w where) SQL(namer dialector.Namer, tag string) (sql string, params []executor.NameValue, err error) {
-	//TODO implement me
-	panic("implement me")
+	sql = fmt.Sprintf("where %s", strings.TrimSpace(w.sql))
+	params = w.params
+	return
 }
 
 func Where(sql string, params ...executor.NameValue) Element {
@@ -83,28 +87,53 @@ func And(sql string, params ...executor.NameValue) Element {
 type update struct {
 	table string
 	data  map[string]any
-	where Element
+	elems []Element
+	where *where
 }
 
 func (u update) SQL(namer dialector.Namer, tag string) (sql string, params []executor.NameValue, err error) {
-	var updateStmt strings.Builder
-	updateStmt.WriteString(fmt.Sprintf("update %s set ", u.table))
-	for key := range u.data {
-		updateStmt.WriteString(fmt.Sprintf("%s=#{%s}, ", key, key))
+	for _, v := range u.elems {
+		switch vv := v.(type) {
+		case *where:
+			if u.where != nil {
+				err = fmt.Errorf("batis.Where() should be invoked no more than once")
+				return
+			}
+			u.where = vv
+		default:
+			err = fmt.Errorf("method db.Update() accept elements use of batis.Where()")
+			return
+		}
 	}
-	return updateStmt.String(), nil, nil
-}
 
-//func (u update) Params() []executor.NameValue {
-//	var params []executor.NameValue
-//	for k, v := range u.data {
-//		params = append(params, executor.NameValue{
-//			Name:  k,
-//			Value: v,
-//		})
-//	}
-//	return params
-//}
+	var sqls []string
+	sqls = append(sqls, fmt.Sprintf("update %s set", namer.TableName(u.table)))
+
+	var sets []string
+	for k := range u.data {
+		sets = append(sets, fmt.Sprintf("%s=#{%s}", namer.ColumnName(k), k))
+	}
+	sqls = append(sqls, strings.Join(sets, ","))
+	for k, v := range u.data {
+		params = append(params, executor.NameValue{
+			Name:  k,
+			Value: v,
+		})
+	}
+	if u.where != nil {
+		var _s string
+		var _p []executor.NameValue
+		_s, _p, err = u.where.SQL(namer, tag)
+		if err != nil {
+			return
+		}
+		sqls = append(sqls, fmt.Sprintf("%s", _s))
+		params = append(params, _p...)
+	}
+	sql = strings.Join(sqls, space)
+
+	return
+}
 
 type insert struct {
 	table      string
@@ -115,6 +144,13 @@ type insert struct {
 }
 
 func (i insert) SQL(namer dialector.Namer, tag string) (sql string, params []executor.NameValue, err error) {
+
+	defer func() {
+		if err != nil {
+			err = errors.Wrap(err, "build insert sql error")
+		}
+	}()
+
 	for _, v := range i.elems {
 		switch vv := v.(type) {
 		case *onConflict:
@@ -129,13 +165,13 @@ func (i insert) SQL(namer dialector.Namer, tag string) (sql string, params []exe
 				return
 			}
 			i.returning = vv
-		
+
 		default:
 			err = fmt.Errorf("method db.Insert() accept elements use of batis.OnConflict() or batis.Returning()")
 			return
 		}
 	}
-	
+
 	var rows []reflects.Row
 	switch vv := i.data.(type) {
 	case reflects.Rows:
@@ -149,14 +185,45 @@ func (i insert) SQL(namer dialector.Namer, tag string) (sql string, params []exe
 			return
 		}
 	}
-	
+
+	if l := len(rows); l != 1 {
+		err = fmt.Errorf("expect 1 row, got: %d", l)
+		return
+	}
+
 	var sqls []string
+
 	sqls = append(sqls, fmt.Sprintf("insert into %s(%s) values(%s)",
 		namer.TableName(i.table),
-		strings.Join(reflects.RowsColumns(rows, namer), ","),
-		strings.Join(reflects.RowsVars(rows), ","),
+		strings.Join(reflects.RowColumns(rows[0], namer), ","),
+		strings.Join(reflects.RowVars(rows[0]), ","),
 	))
-	
+	params = append(params, reflects.RowParams(rows[0])...)
+
+	if i.onConflict != nil {
+		var _s string
+		var _p []executor.NameValue
+		_s, _p, err = i.onConflict.SQL(namer, tag)
+		if err != nil {
+			return
+		}
+		sqls = append(sqls, _s)
+		params = append(params, _p...)
+	}
+
+	if i.returning != nil {
+		var _s string
+		var _p []executor.NameValue
+		_s, _p, err = i.returning.SQL(namer, tag)
+		if err != nil {
+			return
+		}
+		sqls = append(sqls, _s)
+		params = append(params, _p...)
+	}
+
+	sql = strings.Join(sqls, space)
+
 	return
 }
 
@@ -170,11 +237,38 @@ type insertBatch struct {
 }
 
 func (i insertBatch) SQL(namer dialector.Namer, tag string) (sql string, params []executor.NameValue, err error) {
-	
+
+	defer func() {
+		if err != nil {
+			err = errors.Wrap(err, "build insert batch sql error")
+		}
+	}()
+
+	for _, v := range i.elems {
+		switch vv := v.(type) {
+		case *onConflict:
+			if i.onConflict != nil {
+				err = fmt.Errorf("batis.OnConflict() should be invoked no more than once")
+				return
+			}
+			i.onConflict = vv
+		case *returning:
+			if i.returning != nil {
+				err = fmt.Errorf("batis.Returning() should be invoked no more than once")
+				return
+			}
+			i.returning = vv
+
+		default:
+			err = fmt.Errorf("method db.Insert() accept elements use of batis.OnConflict() or batis.Returning()")
+			return
+		}
+	}
+
 	var rows []reflects.Row
-	switch v := i.data.(type) {
+	switch vv := i.data.(type) {
 	case reflects.Rows:
-		rows, err = v.Reflect(namer, tag)
+		rows, err = vv.Reflect(namer, tag)
 		if err != nil {
 			return
 		}
@@ -184,9 +278,45 @@ func (i insertBatch) SQL(namer dialector.Namer, tag string) (sql string, params 
 			return
 		}
 	}
-	
-	_ = rows
-	
+
+	if l := len(rows); l == 0 {
+		err = fmt.Errorf("expect rows legnth > 0, got: %d", l)
+		return
+	}
+
+	var sqls []string
+
+	sqls = append(sqls, fmt.Sprintf("insert into %s(%s) values%s",
+		namer.TableName(i.table),
+		strings.Join(reflects.RowColumns(rows[0], namer), ","),
+		strings.Join(reflects.RowsVars(rows), ","),
+	))
+	params = append(params, reflects.RowsParams(rows)...)
+
+	if i.onConflict != nil {
+		var _s string
+		var _p []executor.NameValue
+		_s, _p, err = i.onConflict.SQL(namer, tag)
+		if err != nil {
+			return
+		}
+		sqls = append(sqls, _s)
+		params = append(params, _p...)
+	}
+
+	if i.returning != nil {
+		var _s string
+		var _p []executor.NameValue
+		_s, _p, err = i.returning.SQL(namer, tag)
+		if err != nil {
+			return
+		}
+		sqls = append(sqls, _s)
+		params = append(params, _p...)
+	}
+
+	sql = strings.Join(sqls, space)
+
 	return
 }
 
@@ -200,15 +330,41 @@ func (f fetch) SQL(namer dialector.Namer, tag string) (s string, params []execut
 
 type del struct {
 	table string
-	where Element
+	elems []Element
+	where *where
 }
 
 func (d del) SQL(namer dialector.Namer, tag string) (sql string, params []executor.NameValue, err error) {
-	_, ok := d.where.(*where)
-	if !ok {
-		return "", nil, fmt.Errorf("db.Delete excpet where element use batis.Where()")
+	for _, v := range d.elems {
+		switch vv := v.(type) {
+		case *where:
+			if d.where != nil {
+				err = fmt.Errorf("batis.Where() should be invoked no more than once")
+				return
+			}
+			d.where = vv
+		default:
+			err = fmt.Errorf("method db.Delete() accept elements use of batis.Where()")
+			return
+		}
 	}
-	return "", nil, nil
+
+	var sqls []string
+	sqls = append(sqls, fmt.Sprintf("delete from %s", namer.TableName(strings.TrimSpace(d.table))))
+
+	if d.where != nil {
+		var _s string
+		var _p []executor.NameValue
+		_s, _p, err = d.where.SQL(namer, tag)
+		if err != nil {
+			return
+		}
+		sqls = append(sqls, fmt.Sprintf("%s", _s))
+		params = append(params, _p...)
+	}
+	sql = strings.Join(sqls, space)
+
+	return
 }
 
 type query struct {
@@ -217,24 +373,27 @@ type query struct {
 }
 
 func (q query) SQL(namer dialector.Namer, tag string) (sql string, params []executor.NameValue, err error) {
-	//TODO implement me
-	panic("implement me")
+	sql = strings.TrimSpace(sql)
+	params = q.params
+	return
 }
 
 type exec struct {
+	sql    string
+	params []executor.NameValue
 }
 
 func (e exec) SQL(namer dialector.Namer, tag string) (sql string, params []executor.NameValue, err error) {
-	//TODO implement me
-	panic("implement me")
+	sql = strings.TrimSpace(sql)
+	params = e.params
+	return
 }
 
 type build struct {
 }
 
 func (b build) SQL(namer dialector.Namer, tag string) (sql string, params []executor.NameValue, err error) {
-	//TODO implement me
-	panic("implement me")
+	panic("todo")
 }
 
 type returning struct {
@@ -242,7 +401,8 @@ type returning struct {
 }
 
 func (r returning) SQL(namer dialector.Namer, tag string) (sql string, params []executor.NameValue, err error) {
-	return fmt.Sprintf("returning %s", r), nil, nil
+	sql = fmt.Sprintf("returning %s", reflects.TrimColumns(r.sql))
+	return
 }
 
 func Returning(fields string) Element {
@@ -252,10 +412,10 @@ func Returning(fields string) Element {
 }
 
 func buildExecutor(namer dialector.Namer, tag string, et int, elems ...Element) (e *executor.Executor, err error) {
-	
+
 	var sqls []string
 	params := map[string]executor.NameValue{}
-	
+
 	for _, v := range elems {
 		var s string
 		s, _, err = v.SQL(namer, tag)
@@ -267,7 +427,7 @@ func buildExecutor(namer dialector.Namer, tag string, et int, elems ...Element) 
 		//	params[vv.Name] = vv
 		//}
 	}
-	
+
 	e = &executor.Executor{
 		Type:   et,
 		SQL:    strings.Join(sqls, space),
@@ -275,10 +435,10 @@ func buildExecutor(namer dialector.Namer, tag string, et int, elems ...Element) 
 		Err:    nil,
 		Conn:   nil,
 	}
-	
+
 	for _, v := range params {
 		e.Params = append(e.Params, v)
 	}
-	
+
 	return
 }

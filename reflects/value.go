@@ -19,11 +19,11 @@ type SelectColumns struct {
 }
 
 func (s SelectColumns) Reflect(namer dialector.Namer, tag string) (rows []Row, err error) {
-	rows, err = ReflectRows(s.data)
+	rows, err = ReflectRows(s.data, namer, tag)
 	if err != nil {
 		return
 	}
-	
+
 	return
 }
 

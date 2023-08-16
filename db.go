@@ -3,9 +3,9 @@ package batis
 import (
 	"context"
 	"database/sql"
-	"github.com/gobatis/gobatis/dialector"
-	
+
 	"github.com/gobatis/gobatis/builder"
+	"github.com/gobatis/gobatis/dialector"
 	"github.com/gobatis/gobatis/executor"
 	"golang.org/x/sync/errgroup"
 )
@@ -18,7 +18,7 @@ func Open(d dialector.Dialector, options ...Option) (db *DB, err error) {
 		err:    nil,
 		namer:  d.Namer(),
 	}
-	
+
 	db.db, err = d.DB()
 	if err != nil {
 		return
@@ -141,17 +141,17 @@ func (d *DB) exec(typ int, sql string, params []executor.NameValue) executor.Sca
 }
 
 func (d *DB) Query(sql string, params ...executor.NameValue) executor.Scanner {
-	
+
 	return d.exec(executor.Query, sql, params)
 }
 
 func (d *DB) Build(b builder.Builder) executor.Scanner {
-	
+
 	es, err := b.Build()
 	if err != nil {
 		return executor.NewErrorScanner(err)
 	}
-	
+
 	s := &executor.Scanner{}
 	g := errgroup.Group{}
 	for _, v := range es {
@@ -168,7 +168,7 @@ func (d *DB) Build(b builder.Builder) executor.Scanner {
 	if err != nil {
 		return executor.NewErrorScanner(err)
 	}
-	
+
 	return *s
 }
 
@@ -177,12 +177,12 @@ func (d *DB) Exec(sql string, params ...executor.NameValue) executor.Scanner {
 }
 
 func (d *DB) Delete(table string, where Element) executor.Scanner {
-	e := &del{table: table, where: where}
+	e := &del{table: table, elems: []Element{where}}
 	return d.execute(executor.Exec, e)
 }
 
 func (d *DB) Update(table string, data map[string]any, where Element) executor.Scanner {
-	u := &update{table: table, data: data, where: where}
+	u := &update{table: table, data: data, elems: []Element{where}}
 	return d.execute(executor.Exec, u)
 }
 
@@ -214,12 +214,12 @@ func (d *DB) InsertBatch(table string, batch int, data any, onConflict ...Elemen
 }
 
 func (d *DB) Fetch(sql string, params ...executor.NameValue) <-chan executor.Scanner {
-	
+
 	ch := make(chan executor.Scanner)
-	
+
 	f := &fetch{}
 	d.execute(executor.Query, f)
-	
+
 	return ch
 }
 

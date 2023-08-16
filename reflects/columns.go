@@ -2,12 +2,8 @@ package reflects
 
 import "strings"
 
-func SplitColumns(s string) []string {
-	columns := strings.Split(s, ",")
-	for i := range columns {
-		columns[i] = strings.TrimSpace(columns[i])
-	}
-	return columns
+func TrimColumns(s string) string {
+	return strings.TrimSuffix(s, ",")
 }
 
 func ExtractTag(s string) string {
