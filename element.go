@@ -410,35 +410,3 @@ func Returning(fields string) Element {
 		sql: fields,
 	}
 }
-
-func buildExecutor(namer dialector.Namer, tag string, et int, elems ...Element) (e *executor.Executor, err error) {
-
-	var sqls []string
-	params := map[string]executor.NameValue{}
-
-	for _, v := range elems {
-		var s string
-		s, _, err = v.SQL(namer, tag)
-		if err != nil {
-			return
-		}
-		sqls = append(sqls, s)
-		//for _, vv := range v.Params() {
-		//	params[vv.Name] = vv
-		//}
-	}
-
-	e = &executor.Executor{
-		Type:   et,
-		SQL:    strings.Join(sqls, space),
-		Params: nil,
-		Err:    nil,
-		Conn:   nil,
-	}
-
-	for _, v := range params {
-		e.Params = append(e.Params, v)
-	}
-
-	return
-}

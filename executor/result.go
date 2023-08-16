@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"strings"
 	"time"
-	
+
 	"github.com/gobatis/gobatis/cast"
 	"github.com/shopspring/decimal"
 )
@@ -60,11 +60,12 @@ func (p *queryResult) scan(ptr reflect.Value) (err error) {
 		err = sql.ErrNoRows
 		return
 	}
-	
+
 	return
 }
 
 func (p *queryResult) reflectRow(columns []string, row []interface{}, ptr reflect.Value, first bool) (bool, error) {
+
 	if ptr.Elem().Kind() == reflect.Slice {
 		return false, p.reflectStructs(newRowMap(columns, row), ptr)
 	} else {
@@ -82,7 +83,7 @@ func (p *queryResult) reflectStruct(r rowMap, ptr reflect.Value, first bool) err
 		dv = dv.Elem()
 	}
 	_type := dv.Type()
-	
+
 	var tags map[string]struct{}
 	if first {
 		tags = map[string]struct{}{}
@@ -114,7 +115,7 @@ func (p *queryResult) reflectStruct(r rowMap, ptr reflect.Value, first bool) err
 }
 
 func (p *queryResult) prepareFieldName(f reflect.StructField) string {
-	
+
 	field := f.Tag.Get(p.Tag())
 	if field == "" {
 		field = toSnakeCase(f.Name)
@@ -161,15 +162,21 @@ func (p *queryResult) reflectStructs(r rowMap, ptr reflect.Value) error {
 	return nil
 }
 
-func (p *queryResult) reflectValue(column string, dest reflect.Value, value interface{}) error {
-	var err error
-	dv := reflectValueElem(dest)
+func (p *queryResult) reflectValue(column string, dest reflect.Value, value interface{}) (err error) {
+
+	var dv reflect.Value
+	if dest.IsNil() {
+		// TODO
+	} else {
+		dv = reflectValueElem(dest)
+	}
+
 	dt := reflectTypeElem(dest.Type())
 	if dt.Kind() == reflect.Slice {
 		dt = reflectTypeElem(dt.Elem())
 	}
 	dtv := reflect.New(dt)
-	
+
 	if dtv.Type().Implements(scannerType) {
 		errs := dtv.MethodByName("Scan").Call([]reflect.Value{reflect.ValueOf(value)})
 		if len(errs) > 0 && errs[0].Interface() != nil {
@@ -286,11 +293,12 @@ func (p *queryResult) reflectValue(column string, dest reflect.Value, value inte
 	if err != nil {
 		return fmt.Errorf("scan field '%s' error: %s", column, err.Error())
 	}
-	
+
 	return fmt.Errorf("can't scan field '%s' type '%s' to '%s'", column, reflect.TypeOf(value), dest.Type())
 }
 
 func (p *queryResult) set(dest reflect.Value, r interface{}) error {
+	// TODO test
 	if dest.Kind() == reflect.Slice {
 		if dest.Type().Elem().Kind() == reflect.Ptr {
 			v := reflect.New(dest.Type().Elem().Elem())
@@ -299,6 +307,10 @@ func (p *queryResult) set(dest reflect.Value, r interface{}) error {
 		} else {
 			dest.Set(reflect.Append(dest, reflect.ValueOf(r)))
 		}
+	} else if dest.Kind() == reflect.Ptr {
+		v := reflect.New(dest.Type().Elem())
+		v.Set(reflect.ValueOf(r))
+		dest.Set(v)
 	} else {
 		dest.Set(reflect.ValueOf(r))
 	}

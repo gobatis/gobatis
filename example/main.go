@@ -2,11 +2,15 @@ package main
 
 import (
 	"github.com/gobatis/gobatis"
-	"github.com/gobatis/gobatis/builder/paging"
 	"github.com/gobatis/gobatis/driver/postgres"
-	"github.com/gobatis/gobatis/example/entity"
-	"github.com/gobatis/gobatis/reflects"
+	"github.com/gozelle/spew"
 )
+
+type User struct {
+	Id   *int64
+	Name string
+	Age  int64
+}
 
 func main() {
 	var err error
@@ -15,50 +19,68 @@ func main() {
 			panic(err)
 		}
 	}()
-	db, err := batis.Open(postgres.Open("postgresql://postgres:postgres@127.0.0.1:5432/gobatis?connect_timeout=10&sslmode=disable"))
+	db, err := batis.Open(postgres.Open("postgresql://root:123456@127.0.0.1:5432/example?connect_timeout=10&sslmode=disable"))
 	if err != nil {
 		return
 	}
 
-	user := entity.User{}
-	err = db.Insert("users", user, batis.OnConflict("", "do update set a = columnd.a")).Error()
+	err = db.Ping()
 	if err != nil {
 		return
 	}
 
-	db.Query(
-		`select * from users where age = #{age}`,
-		batis.Param("age", 1),
-	)
+	user := &User{
+		Id:   nil,
+		Name: "tom",
+		Age:  18,
+	}
+	id := new(int64)
+	err = db.Debug().Insert("users", user, batis.Returning("id")).Scan(&id)
+	if err != nil {
+		return
+	}
+	spew.Json(id)
 
-	db.Update("users", map[string]any{}, batis.Where(""))
-
-	var users []*entity.User
-	var total int64
-	err = db.Build(paging.Select("id,username").
-		Count("*").
-		From("public.users").
-		Where("age > 18"),
-	).Scan(&users, &total)
+	err = db.Update("users", map[string]any{
+		"age": 20,
+	}, batis.Where("id = #{id}", batis.Param("id", id))).Error()
 	if err != nil {
 		return
 	}
 
-	db.Insert("users", users, batis.OnConflict("a,b", "do noting"), batis.Returning("*"))
-	db.InsertBatch("users", 10, reflects.Except(user, "id"))
-	db.Delete("users", batis.Where("id = ?"))
-	db.Update("users", map[string]any{}, batis.Where("id = ?"))
-	db.Query(``, batis.Param("", ""))
-	db.Exec(``, batis.Param("", ""))
-	db.Build(paging.Select("").
-		Count("").
-		From("").
-		Where(""))
+	//db.Query(
+	//	`select * from users where age = #{age}`,
+	//	batis.Param("age", 1),
+	//)
 
-	ch := db.Fetch("select * from users")
-	for a := range ch {
-		_ = a.Error
-	}
-
-	db.Exec(``, batis.Param("user", ""))
+	//db.Update("users", map[string]any{}, batis.Where(""))
+	//
+	//var users []*entity.User
+	//var total int64
+	//err = db.Build(paging.Select("id,username").
+	//	Count("*").
+	//	From("public.users").
+	//	Where("age > 18"),
+	//).Scan(&users, &total)
+	//if err != nil {
+	//	return
+	//}
+	//
+	//db.Insert("users", users, batis.OnConflict("a,b", "do noting"), batis.Returning("*"))
+	//db.InsertBatch("users", 10, batis.Except(user, "id"))
+	//db.Delete("users", batis.Where("id = ?"))
+	//db.Update("users", map[string]any{}, batis.Where("id = ?"))
+	//db.Query(``, batis.Param("", ""))
+	//db.Exec(``, batis.Param("", ""))
+	//db.Build(paging.Select("").
+	//	Count("").
+	//	From("").
+	//	Where(""))
+	//
+	//ch := db.Fetch("select * from users")
+	//for a := range ch {
+	//	_ = a.Error
 }
+
+//db.Exec(``, batis.Param("user", ""))
+//}

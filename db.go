@@ -52,7 +52,9 @@ func (d *DB) fork() *DB {
 		ctx:    d.ctx,
 		debug:  d.debug,
 		must:   d.must,
+		loose:  d.loose,
 		err:    d.err,
+		namer:  d.namer,
 	}
 }
 
@@ -123,13 +125,14 @@ func (d *DB) Loose() *DB {
 
 const space = " "
 
-func (d *DB) execute(et int, elems ...Element) executor.Scanner {
-	s := &executor.Scanner{}
-	c, err := buildExecutor(d.namer, "db", et, elems...)
-	if err != nil {
-		return executor.NewErrorScanner(err)
+func (d *DB) execute(et int, elem Element) executor.Scanner {
+	e := &executor.Executor{Type: et, Conn: d.db}
+	e.SQL, e.Params, e.Err = elem.SQL(d.namer, "db")
+	if e.Err != nil {
+		return executor.NewErrorScanner(e.Err)
 	}
-	c.Exec(s)
+	s := &executor.Scanner{}
+	e.Exec(s)
 	return *s
 }
 
@@ -191,26 +194,9 @@ func (d *DB) Insert(table string, data any, elems ...Element) executor.Scanner {
 	return d.execute(executor.Query, i)
 }
 
-func (d *DB) InsertBatch(table string, batch int, data any, onConflict ...Element) executor.Scanner {
-	panic("todo")
-	//if batch <= 0 {
-	//	return executor.NewErrorScanner(fmt.Errorf("batch must greater than 0"))
-	//}
-	//
-	//l := len(elems)
-	//if l > 2 {
-	//	return executor.NewErrorScanner(fmt.Errorf("accepts at most 2 argument"))
-	//}
-	//i := &insertBatch{table: table, data: data, elems: elems}
-	//if l == 1 {
-	//	v, ok := elems[0].(*onConflict)
-	//	if !ok {
-	//		executor.NewErrorScanner(fmt.Errorf("only accept OnConflict"))
-	//	}
-	//	i.elems = append(i.elems, v)
-	//}
-	//
-	//return d.execute(executor.Query, i)
+func (d *DB) InsertBatch(table string, batch int, data any, onConflict Element) executor.Scanner {
+	i := &insertBatch{table: table, batch: batch, data: data, elems: []Element{onConflict}}
+	return d.execute(executor.Query, i)
 }
 
 func (d *DB) Fetch(sql string, params ...executor.NameValue) <-chan executor.Scanner {
