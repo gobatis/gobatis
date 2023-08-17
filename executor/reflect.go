@@ -1,12 +1,11 @@
-package reflects
+package executor
 
 import (
 	"fmt"
 	"reflect"
 	"strings"
-
+	
 	"github.com/gobatis/gobatis/dialector"
-	"github.com/gobatis/gobatis/executor"
 )
 
 type Row []*Column
@@ -17,29 +16,29 @@ type Column struct {
 }
 
 func ReflectRows(v any, namer dialector.Namer, tag string) (rows []Row, err error) {
-
+	
 	rv := reflect.ValueOf(v)
 	if rv.Kind() == reflect.Ptr {
 		rv = rv.Elem()
 	}
-
+	
 	rt := rv.Type()
 	multiple := false
-
+	
 	if rv.Kind() == reflect.Slice || rv.Kind() == reflect.Array {
 		multiple = true
 		rt = rv.Type().Elem()
 	}
-
+	
 	if rt.Kind() == reflect.Ptr {
 		rt = rt.Elem()
 	}
-
+	
 	if rt.Kind() != reflect.Struct {
 		err = fmt.Errorf("only accept struct, got: %s", rt.Kind())
 		return
 	}
-
+	
 	if multiple {
 		for i := 0; i < rv.Len(); i++ {
 			rows = append(rows, reflectStruct(rt, rv.Index(i), namer, tag))
@@ -47,7 +46,7 @@ func ReflectRows(v any, namer dialector.Namer, tag string) (rows []Row, err erro
 	} else {
 		rows = append(rows, reflectStruct(rt, rv, namer, tag))
 	}
-
+	
 	return
 }
 
@@ -56,7 +55,7 @@ func reflectStruct(rt reflect.Type, rv reflect.Value, namer dialector.Namer, tag
 	if rv.Kind() == reflect.Ptr {
 		rv = rv.Elem()
 	}
-
+	
 	var r Row
 	for i := 0; i < rt.NumField(); i++ {
 		f := rt.Field(i)
@@ -74,7 +73,7 @@ func reflectStruct(rt reflect.Type, rv reflect.Value, namer dialector.Namer, tag
 			})
 		}
 	}
-
+	
 	return r
 }
 
@@ -102,9 +101,9 @@ func RowVars(row Row) (vars []string) {
 	return
 }
 
-func RowParams(row Row) (params []executor.NameValue) {
+func RowParams(row Row) (params []NameValue) {
 	for _, v := range row {
-		params = append(params, executor.NameValue{
+		params = append(params, NameValue{
 			Name:  v.column,
 			Value: v.value,
 		})
@@ -123,15 +122,15 @@ func RowsVars(rows []Row) (vars []string) {
 	return
 }
 
-func RowsParams(rows []Row) (params []executor.NameValue) {
+func RowsParams(rows []Row) (params []NameValue) {
 	for i, v := range rows {
 		for _, vv := range v {
-			params = append(params, executor.NameValue{
+			params = append(params, NameValue{
 				Name:  fmt.Sprintf("%s%d", vv.column, i),
 				Value: vv.value,
 			})
 		}
-
+		
 	}
 	return
 }

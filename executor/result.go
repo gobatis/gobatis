@@ -3,10 +3,11 @@ package executor
 import (
 	"database/sql"
 	"fmt"
+	"github.com/gobatis/gobatis/reflects"
 	"reflect"
 	"strings"
 	"time"
-
+	
 	"github.com/gobatis/gobatis/cast"
 	"github.com/shopspring/decimal"
 )
@@ -24,7 +25,7 @@ func (p *queryResult) Tag() string {
 	return reflectTag
 }
 
-func (p *queryResult) scan(ptr reflect.Value) (err error) {
+func (p *queryResult) scan(ptr any) (err error) {
 	columns, err := p.rows.Columns()
 	if err != nil {
 		return
@@ -48,7 +49,7 @@ func (p *queryResult) scan(ptr reflect.Value) (err error) {
 			first = true
 		}
 		var end bool
-		end, err = p.reflectRow(columns, row, ptr, first)
+		end, err = reflects.ReflectRow(columns, row, ptr, first)
 		if err != nil {
 			return
 		}
@@ -60,12 +61,11 @@ func (p *queryResult) scan(ptr reflect.Value) (err error) {
 		err = sql.ErrNoRows
 		return
 	}
-
+	
 	return
 }
 
 func (p *queryResult) reflectRow(columns []string, row []interface{}, ptr reflect.Value, first bool) (bool, error) {
-
 	if ptr.Elem().Kind() == reflect.Slice {
 		return false, p.reflectStructs(newRowMap(columns, row), ptr)
 	} else {
@@ -83,7 +83,7 @@ func (p *queryResult) reflectStruct(r rowMap, ptr reflect.Value, first bool) err
 		dv = dv.Elem()
 	}
 	_type := dv.Type()
-
+	
 	var tags map[string]struct{}
 	if first {
 		tags = map[string]struct{}{}
@@ -115,7 +115,7 @@ func (p *queryResult) reflectStruct(r rowMap, ptr reflect.Value, first bool) err
 }
 
 func (p *queryResult) prepareFieldName(f reflect.StructField) string {
-
+	
 	field := f.Tag.Get(p.Tag())
 	if field == "" {
 		field = toSnakeCase(f.Name)
@@ -163,20 +163,20 @@ func (p *queryResult) reflectStructs(r rowMap, ptr reflect.Value) error {
 }
 
 func (p *queryResult) reflectValue(column string, dest reflect.Value, value interface{}) (err error) {
-
+	
 	var dv reflect.Value
 	if dest.IsNil() {
 		// TODO
 	} else {
 		dv = reflectValueElem(dest)
 	}
-
+	
 	dt := reflectTypeElem(dest.Type())
 	if dt.Kind() == reflect.Slice {
 		dt = reflectTypeElem(dt.Elem())
 	}
 	dtv := reflect.New(dt)
-
+	
 	if dtv.Type().Implements(scannerType) {
 		errs := dtv.MethodByName("Scan").Call([]reflect.Value{reflect.ValueOf(value)})
 		if len(errs) > 0 && errs[0].Interface() != nil {
@@ -293,7 +293,7 @@ func (p *queryResult) reflectValue(column string, dest reflect.Value, value inte
 	if err != nil {
 		return fmt.Errorf("scan field '%s' error: %s", column, err.Error())
 	}
-
+	
 	return fmt.Errorf("can't scan field '%s' type '%s' to '%s'", column, reflect.TypeOf(value), dest.Type())
 }
 

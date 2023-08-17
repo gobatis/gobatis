@@ -3,10 +3,9 @@ package batis
 import (
 	"fmt"
 	"strings"
-
+	
 	"github.com/gobatis/gobatis/dialector"
 	"github.com/gobatis/gobatis/executor"
-	"github.com/gobatis/gobatis/reflects"
 	"github.com/pkg/errors"
 )
 
@@ -36,7 +35,7 @@ type onConflict struct {
 }
 
 func (o onConflict) SQL(namer dialector.Namer, tag string) (sql string, params []executor.NameValue, err error) {
-	sql = fmt.Sprintf("on confilct(%s) %s", reflects.TrimColumns(o.fields), o.sql)
+	sql = fmt.Sprintf("on confilct(%s) %s", executor.TrimColumns(o.fields), o.sql)
 	params = o.params
 	return
 }
@@ -105,10 +104,10 @@ func (u update) SQL(namer dialector.Namer, tag string) (sql string, params []exe
 			return
 		}
 	}
-
+	
 	var sqls []string
 	sqls = append(sqls, fmt.Sprintf("update %s set", namer.TableName(u.table)))
-
+	
 	var sets []string
 	for k := range u.data {
 		sets = append(sets, fmt.Sprintf("%s=#{%s}", namer.ColumnName(k), k))
@@ -131,7 +130,7 @@ func (u update) SQL(namer dialector.Namer, tag string) (sql string, params []exe
 		params = append(params, _p...)
 	}
 	sql = strings.Join(sqls, space)
-
+	
 	return
 }
 
@@ -144,13 +143,13 @@ type insert struct {
 }
 
 func (i insert) SQL(namer dialector.Namer, tag string) (sql string, params []executor.NameValue, err error) {
-
+	
 	defer func() {
 		if err != nil {
 			err = errors.Wrap(err, "build insert sql error")
 		}
 	}()
-
+	
 	for _, v := range i.elems {
 		switch vv := v.(type) {
 		case *onConflict:
@@ -165,41 +164,41 @@ func (i insert) SQL(namer dialector.Namer, tag string) (sql string, params []exe
 				return
 			}
 			i.returning = vv
-
+		
 		default:
 			err = fmt.Errorf("method db.Insert() accept elements use of batis.OnConflict() or batis.Returning()")
 			return
 		}
 	}
-
-	var rows []reflects.Row
+	
+	var rows []executor.Row
 	switch vv := i.data.(type) {
-	case reflects.Rows:
+	case executor.Rows:
 		rows, err = vv.Reflect(namer, tag)
 		if err != nil {
 			return
 		}
 	default:
-		rows, err = reflects.ReflectRows(i.data, namer, tag)
+		rows, err = executor.ReflectRows(i.data, namer, tag)
 		if err != nil {
 			return
 		}
 	}
-
+	
 	if l := len(rows); l != 1 {
 		err = fmt.Errorf("expect 1 row, got: %d", l)
 		return
 	}
-
+	
 	var sqls []string
-
+	
 	sqls = append(sqls, fmt.Sprintf("insert into %s(%s) values(%s)",
 		namer.TableName(i.table),
-		strings.Join(reflects.RowColumns(rows[0], namer), ","),
-		strings.Join(reflects.RowVars(rows[0]), ","),
+		strings.Join(executor.RowColumns(rows[0], namer), ","),
+		strings.Join(executor.RowVars(rows[0]), ","),
 	))
-	params = append(params, reflects.RowParams(rows[0])...)
-
+	params = append(params, executor.RowParams(rows[0])...)
+	
 	if i.onConflict != nil {
 		var _s string
 		var _p []executor.NameValue
@@ -210,7 +209,7 @@ func (i insert) SQL(namer dialector.Namer, tag string) (sql string, params []exe
 		sqls = append(sqls, _s)
 		params = append(params, _p...)
 	}
-
+	
 	if i.returning != nil {
 		var _s string
 		var _p []executor.NameValue
@@ -221,9 +220,9 @@ func (i insert) SQL(namer dialector.Namer, tag string) (sql string, params []exe
 		sqls = append(sqls, _s)
 		params = append(params, _p...)
 	}
-
+	
 	sql = strings.Join(sqls, space)
-
+	
 	return
 }
 
@@ -237,13 +236,13 @@ type insertBatch struct {
 }
 
 func (i insertBatch) SQL(namer dialector.Namer, tag string) (sql string, params []executor.NameValue, err error) {
-
+	
 	defer func() {
 		if err != nil {
 			err = errors.Wrap(err, "build insert batch sql error")
 		}
 	}()
-
+	
 	for _, v := range i.elems {
 		switch vv := v.(type) {
 		case *onConflict:
@@ -258,41 +257,41 @@ func (i insertBatch) SQL(namer dialector.Namer, tag string) (sql string, params 
 				return
 			}
 			i.returning = vv
-
+		
 		default:
 			err = fmt.Errorf("method db.Insert() accept elements use of batis.OnConflict() or batis.Returning()")
 			return
 		}
 	}
-
-	var rows []reflects.Row
+	
+	var rows []executor.Row
 	switch vv := i.data.(type) {
-	case reflects.Rows:
+	case executor.Rows:
 		rows, err = vv.Reflect(namer, tag)
 		if err != nil {
 			return
 		}
 	default:
-		rows, err = reflects.ReflectRows(i.data, namer, tag)
+		rows, err = executor.ReflectRows(i.data, namer, tag)
 		if err != nil {
 			return
 		}
 	}
-
+	
 	if l := len(rows); l == 0 {
 		err = fmt.Errorf("expect rows legnth > 0, got: %d", l)
 		return
 	}
-
+	
 	var sqls []string
-
+	
 	sqls = append(sqls, fmt.Sprintf("insert into %s(%s) values%s",
 		namer.TableName(i.table),
-		strings.Join(reflects.RowColumns(rows[0], namer), ","),
-		strings.Join(reflects.RowsVars(rows), ","),
+		strings.Join(executor.RowColumns(rows[0], namer), ","),
+		strings.Join(executor.RowsVars(rows), ","),
 	))
-	params = append(params, reflects.RowsParams(rows)...)
-
+	params = append(params, executor.RowsParams(rows)...)
+	
 	if i.onConflict != nil {
 		var _s string
 		var _p []executor.NameValue
@@ -303,7 +302,7 @@ func (i insertBatch) SQL(namer dialector.Namer, tag string) (sql string, params 
 		sqls = append(sqls, _s)
 		params = append(params, _p...)
 	}
-
+	
 	if i.returning != nil {
 		var _s string
 		var _p []executor.NameValue
@@ -314,9 +313,9 @@ func (i insertBatch) SQL(namer dialector.Namer, tag string) (sql string, params 
 		sqls = append(sqls, _s)
 		params = append(params, _p...)
 	}
-
+	
 	sql = strings.Join(sqls, space)
-
+	
 	return
 }
 
@@ -348,10 +347,10 @@ func (d del) SQL(namer dialector.Namer, tag string) (sql string, params []execut
 			return
 		}
 	}
-
+	
 	var sqls []string
 	sqls = append(sqls, fmt.Sprintf("delete from %s", namer.TableName(strings.TrimSpace(d.table))))
-
+	
 	if d.where != nil {
 		var _s string
 		var _p []executor.NameValue
@@ -363,7 +362,7 @@ func (d del) SQL(namer dialector.Namer, tag string) (sql string, params []execut
 		params = append(params, _p...)
 	}
 	sql = strings.Join(sqls, space)
-
+	
 	return
 }
 
@@ -401,7 +400,7 @@ type returning struct {
 }
 
 func (r returning) SQL(namer dialector.Namer, tag string) (sql string, params []executor.NameValue, err error) {
-	sql = fmt.Sprintf("returning %s", reflects.TrimColumns(r.sql))
+	sql = fmt.Sprintf("returning %s", executor.TrimColumns(r.sql))
 	return
 }
 
