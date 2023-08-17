@@ -3,7 +3,6 @@ package executor
 import (
 	"database/sql"
 	"fmt"
-	"github.com/gobatis/gobatis/reflects"
 	"reflect"
 	"strings"
 	"time"
@@ -26,6 +25,13 @@ func (p *queryResult) Tag() string {
 }
 
 func (p *queryResult) scan(ptr any) (err error) {
+	
+	pv := reflect.ValueOf(ptr)
+	if pv.Kind() != reflect.Pointer || pv.IsNil() {
+		return &InvalidUnmarshalError{pv.Type()}
+	}
+	pv = indirect(pv, false)
+	
 	columns, err := p.rows.Columns()
 	if err != nil {
 		return
@@ -49,7 +55,7 @@ func (p *queryResult) scan(ptr any) (err error) {
 			first = true
 		}
 		var end bool
-		end, err = reflects.ReflectRow(columns, row, ptr, first)
+		end, err = ReflectRow(columns, row, pv, first)
 		if err != nil {
 			return
 		}
@@ -65,54 +71,54 @@ func (p *queryResult) scan(ptr any) (err error) {
 	return
 }
 
-func (p *queryResult) reflectRow(columns []string, row []interface{}, ptr reflect.Value, first bool) (bool, error) {
-	if ptr.Elem().Kind() == reflect.Slice {
-		return false, p.reflectStructs(newRowMap(columns, row), ptr)
-	} else {
-		if ptr.Elem().Kind() == reflect.Struct {
-			return true, p.reflectStruct(newRowMap(columns, row), ptr, first)
-		} else {
-			return true, p.reflectValue("anonymity", ptr.Elem(), row[0])
-		}
-	}
-}
+//func (p *queryResult) reflectRow(columns []string, row []interface{}, ptr reflect.Value, first bool) (bool, error) {
+//	if ptr.Elem().Kind() == reflect.Slice {
+//		return false, p.reflectStructs(newRowMap(columns, row), ptr)
+//	} else {
+//		if ptr.Elem().Kind() == reflect.Struct {
+//			return true, p.reflectStruct(newRowMap(columns, row), ptr, first)
+//		} else {
+//			return true, p.reflectValue("anonymity", ptr.Elem(), row[0])
+//		}
+//	}
+//}
 
-func (p *queryResult) reflectStruct(r rowMap, ptr reflect.Value, first bool) error {
-	dv := ptr
-	if dv.Kind() == reflect.Ptr {
-		dv = dv.Elem()
-	}
-	_type := dv.Type()
-	
-	var tags map[string]struct{}
-	if first {
-		tags = map[string]struct{}{}
-	}
-	for i := 0; i < _type.NumField(); i++ {
-		n := p.prepareFieldName(_type.Field(i))
-		if first {
-			if _, ok := tags[n]; ok {
-				return fmt.Errorf("field tag: '%s' is duplicated in struct: '%s'", n, _type)
-			}
-			tags[n] = struct{}{}
-		}
-		v, ok := r[n]
-		if !ok {
-			if !p.loose {
-				return fmt.Errorf("no data for struct: '%s' field: '%s'", _type, _type.Field(i).Name)
-			}
-		} else if v != nil {
-			if dv.Field(i).Kind() == reflect.Ptr {
-				dv.Field(i).Set(reflect.New(dv.Field(i).Type().Elem()))
-			}
-			err := p.reflectValue(n, dv.Field(i), v)
-			if err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}
+//func (p *queryResult) reflectStruct(r rowMap, ptr reflect.Value, first bool) error {
+//	dv := ptr
+//	if dv.Kind() == reflect.Ptr {
+//		dv = dv.Elem()
+//	}
+//	_type := dv.Type()
+//	
+//	var tags map[string]struct{}
+//	if first {
+//		tags = map[string]struct{}{}
+//	}
+//	for i := 0; i < _type.NumField(); i++ {
+//		n := p.prepareFieldName(_type.Field(i))
+//		if first {
+//			if _, ok := tags[n]; ok {
+//				return fmt.Errorf("field tag: '%s' is duplicated in struct: '%s'", n, _type)
+//			}
+//			tags[n] = struct{}{}
+//		}
+//		v, ok := r[n]
+//		if !ok {
+//			if !p.loose {
+//				return fmt.Errorf("no data for struct: '%s' field: '%s'", _type, _type.Field(i).Name)
+//			}
+//		} else if v != nil {
+//			if dv.Field(i).Kind() == reflect.Ptr {
+//				dv.Field(i).Set(reflect.New(dv.Field(i).Type().Elem()))
+//			}
+//			err := p.reflectValue(n, dv.Field(i), v)
+//			if err != nil {
+//				return err
+//			}
+//		}
+//	}
+//	return nil
+//}
 
 func (p *queryResult) prepareFieldName(f reflect.StructField) string {
 	
@@ -316,16 +322,6 @@ func (p *queryResult) set(dest reflect.Value, r interface{}) error {
 	}
 	return nil
 }
-
-func newRowMap(columns []string, values []interface{}) rowMap {
-	m := rowMap{}
-	for i, v := range columns {
-		m[v] = values[i]
-	}
-	return m
-}
-
-type rowMap map[string]interface{}
 
 type execResult struct {
 	affected int64

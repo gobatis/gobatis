@@ -1,4 +1,4 @@
-package reflects
+package executor
 
 import (
 	"github.com/stretchr/testify/require"

@@ -41,7 +41,7 @@ func main() {
 	//}
 	//spew.Json(user)
 	
-	var user User
+	var user []****User
 	err = db.Query(`select * from users where id = #{id}`, batis.Param("id", 18)).Scan(&user)
 	if err != nil {
 		return

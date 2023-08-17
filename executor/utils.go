@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/gozelle/color"
 	"reflect"
-	"regexp"
 	"runtime"
 	"strings"
 	"time"
@@ -154,8 +153,8 @@ func runFuncPos(skip int) string {
 	return ""
 }
 
-func toSnakeCase(s string) string {
-	var re = regexp.MustCompile(`([^A-Z_])([A-Z])`)
-	snakeStr := re.ReplaceAllString(s, "${1}_${2}")
-	return strings.ToLower(snakeStr)
-}
+//func toSnakeCase(s string) string {
+//	var re = regexp.MustCompile(`([^A-Z_])([A-Z])`)
+//	snakeStr := re.ReplaceAllString(s, "${1}_${2}")
+//	return strings.ToLower(snakeStr)
+//}

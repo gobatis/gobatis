@@ -1,4 +1,4 @@
-package reflects
+package executor
 
 import (
 	"fmt"
@@ -7,13 +7,7 @@ import (
 	"strings"
 )
 
-func ReflectRow(columns []string, row []interface{}, ptr any, first bool) (bool, error) {
-	
-	pv := reflect.ValueOf(ptr)
-	if pv.Kind() != reflect.Pointer || pv.IsNil() {
-		return false, &InvalidUnmarshalError{pv.Type()}
-	}
-	pv = indirect(pv, false)
+func ReflectRow(columns []string, row []interface{}, pv reflect.Value, first bool) (bool, error) {
 	
 	switch pv.Kind() {
 	case reflect.Slice, reflect.Array:
@@ -57,37 +51,37 @@ func newRowMap(columns []string, values []interface{}) rowMap {
 
 type rowMap map[string]interface{}
 
-func reflectStructs(r rowMap, ptr reflect.Value) error {
-	var _type reflect.Type
-	if ptr.Type().Elem().Kind() != reflect.Ptr {
-		// var test []Test => Test
-		_type = ptr.Type().Elem().Elem()
-	} else {
-		// var test []*Test => Test
-		_type = ptr.Type().Elem().Elem()
-	}
-	elem := reflect.New(_type)
-	for i := 0; i < _type.NumField(); i++ {
-		field := _type.Field(i).Tag.Get("db")
-		field = trimComma(field)
-		v, ok := r[field]
-		if ok && v != nil {
-			if elem.Elem().Field(i).Kind() == reflect.Ptr {
-				elem.Elem().Field(i).Set(reflect.New(elem.Elem().Field(i).Type().Elem()))
-			}
-			err := SetValue(elem.Elem().Field(i), v)
-			if err != nil {
-				return err
-			}
-		}
-	}
-	if ptr.Type().Elem().Elem().Kind() != reflect.Ptr {
-		ptr.Elem().Set(reflect.Append(ptr.Elem(), elem.Elem()))
-	} else {
-		ptr.Elem().Set(reflect.Append(ptr.Elem(), elem))
-	}
-	return nil
-}
+//func reflectStructs(r rowMap, ptr reflect.Value) error {
+//	var _type reflect.Type
+//	if ptr.Type().Elem().Kind() != reflect.Ptr {
+//		// var test []Test => Test
+//		_type = ptr.Type().Elem().Elem()
+//	} else {
+//		// var test []*Test => Test
+//		_type = ptr.Type().Elem().Elem()
+//	}
+//	elem := reflect.New(_type)
+//	for i := 0; i < _type.NumField(); i++ {
+//		field := _type.Field(i).Tag.Get("db")
+//		field = trimComma(field)
+//		v, ok := r[field]
+//		if ok && v != nil {
+//			if elem.Elem().Field(i).Kind() == reflect.Ptr {
+//				elem.Elem().Field(i).Set(reflect.New(elem.Elem().Field(i).Type().Elem()))
+//			}
+//			err := SetValue(elem.Elem().Field(i), v)
+//			if err != nil {
+//				return err
+//			}
+//		}
+//	}
+//	if ptr.Type().Elem().Elem().Kind() != reflect.Ptr {
+//		ptr.Elem().Set(reflect.Append(ptr.Elem(), elem.Elem()))
+//	} else {
+//		ptr.Elem().Set(reflect.Append(ptr.Elem(), elem))
+//	}
+//	return nil
+//}
 
 // An InvalidUnmarshalError describes an invalid argument passed to Unmarshal.
 // (The argument to Unmarshal must be a non-nil pointer.)
@@ -135,20 +129,28 @@ func SetValue(pv reflect.Value, v any) error {
 
 func setArray(pv reflect.Value, r rowMap) (err error) {
 	
-	t := pv.Type()
-	
-	if t.Elem().Kind() == reflect.Ptr {
-		t = t.Elem().Elem()
+	t := pv.Type().Elem()
+	ptr := false
+	if t.Kind() == reflect.Ptr {
+		ptr = true
+		for {
+			if t.Kind() != reflect.Ptr {
+				break
+			}
+			t = t.Elem()
+		}
 	}
-	
 	switch t.Kind() {
 	case reflect.Struct:
-		i := reflect.New(t)
-		err = setStruct(i.Elem(), r)
+		if ptr {
+			pv.Set(reflect.Append(pv, reflect.New(pv.Type().Elem().Elem())))
+		} else {
+			pv.Set(reflect.Append(pv, reflect.New(pv.Type().Elem()).Elem()))
+		}
+		err = setStruct(indirect(pv.Index(pv.Len()-1), false), r)
 		if err != nil {
 			return
 		}
-		pv = reflect.Append(pv, i)
 	default:
 		err = fmt.Errorf("expect struct, got: %s", t.Elem())
 		return
