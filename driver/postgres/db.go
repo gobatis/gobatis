@@ -3,10 +3,11 @@ package postgres
 import (
 	"database/sql"
 	"fmt"
-	"github.com/gobatis/gobatis/dialector"
-	_ "github.com/jackc/pgx/v4/stdlib"
 	"regexp"
 	"strings"
+
+	"github.com/gobatis/gobatis/dialector"
+	_ "github.com/jackc/pgx/v4/stdlib"
 )
 
 var _ dialector.Dialector = (*Dialector)(nil)
@@ -20,6 +21,11 @@ func Open(dsn string) *Dialector {
 type Dialector struct {
 	db  *sql.DB
 	err error
+}
+
+func (d Dialector) Explain(sql string, vars ...interface{}) string {
+	//TODO implement me
+	panic("implement me")
 }
 
 func (d Dialector) Namer() dialector.Namer {

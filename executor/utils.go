@@ -4,12 +4,13 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"fmt"
-	"github.com/gozelle/color"
 	"reflect"
 	"runtime"
 	"strings"
 	"time"
-	
+
+	"github.com/gozelle/color"
+	"github.com/gozelle/logger"
 	"github.com/ttacon/chalk"
 )
 
@@ -110,12 +111,12 @@ func replaceIsolatedLessThanWithEntity(s string) string {
 			lastLeftBracket = -1
 		}
 	}
-	
+
 	// 检查是否在字符串的结尾有一个标记的 '<'
 	if lastLeftBracket != -1 {
 		pos[lastLeftBracket] = struct{}{}
 	}
-	
+
 	var r []rune
 	for i := range runes {
 		if _, ok := pos[i]; ok {
@@ -124,16 +125,24 @@ func replaceIsolatedLessThanWithEntity(s string) string {
 			r = append(r, runes[i])
 		}
 	}
-	
+
 	return string(r)
 }
 
-func debugLog(raw string, err error) {
+func log(logger logger.EventLogger, raw string, cost time.Duration, err error) {
+	info := &strings.Builder{}
+	var status string
+	var out func(args ...interface{})
 	if err != nil {
-		fmt.Printf("%s [error]%s\n%s\n", time.Now().Format("2006-01-02 15:04:05"), color.RedString(runFuncPos(5)), raw)
+		status = color.RedString("Error")
+		out = logger.Error
 	} else {
-		fmt.Printf("%s [debug]%s\n%s\n", time.Now().Format("2006-01-02 15:04:05"), runFuncPos(5), raw)
+		status = color.GreenString("Success")
+		out = logger.Debug
 	}
+	info.WriteString(fmt.Sprintf("\n[%s][%s]%s %s", status, color.WhiteString(cost.String()), color.CyanString("[Tx][1692287996356]"), color.RedString(runFuncPos(4))))
+	info.WriteString(fmt.Sprintf("\n%s", color.YellowString(raw)))
+	out(info.String())
 }
 
 // runFuncPos returns the file name and line number of the caller of the function calling it.
@@ -145,7 +154,9 @@ func runFuncPos(skip int) string {
 		if !ok || i > 10 {
 			break
 		}
-		if !strings.Contains(file, "gobatis/executor/") || strings.HasSuffix(file, "_test.go") {
+		if (!strings.Contains(file, "gobatis/executor/") &&
+			!strings.Contains(file, "gobatis/db.go")) ||
+			strings.HasSuffix(file, "_test.go") {
 			return fmt.Sprintf("%s:%d", file, line)
 		}
 		i++

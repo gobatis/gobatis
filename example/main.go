@@ -18,16 +18,17 @@ func main() {
 			panic(err)
 		}
 	}()
-	db, err := batis.Open(postgres.Open("postgresql://root:123456@192.168.1.189:5432/example?connect_timeout=10&sslmode=disable"))
+	//db, err := batis.Open(postgres.Open("postgresql://root:123456@192.168.1.189:5432/example?connect_timeout=10&sslmode=disable"))
+	db, err := batis.Open(postgres.Open("postgresql://root:123456@127.0.0.1:5432/example?connect_timeout=10&sslmode=disable"))
 	if err != nil {
 		return
 	}
-	
+
 	err = db.Ping()
 	if err != nil {
 		return
 	}
-	
+
 	//user := &User{
 	//	Id:   nil,
 	//	Name: "tom",
@@ -47,19 +48,19 @@ func main() {
 	//}
 	//
 	//spew.Json(user)
-	
-	err = db.Update("users", map[string]any{
+
+	err = db.Debug().Update("users", map[string]any{
 		"age": 99,
 	}, batis.Where("id = #{id}", batis.Param("id", 18))).Error()
 	if err != nil {
 		return
 	}
-	
+
 	//db.Query(
 	//	`select * from users where age = #{age}`,
 	//	batis.Param("age", 1),
 	//)
-	
+
 	//db.Update("users", map[string]any{}, batis.Where(""))
 	//
 	//var users []*entity.User

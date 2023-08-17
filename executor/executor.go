@@ -5,6 +5,9 @@ import (
 	"database/sql"
 	"fmt"
 	"reflect"
+	"time"
+
+	"github.com/gozelle/logger"
 )
 
 type conn interface {
@@ -21,12 +24,13 @@ const (
 type Executor struct {
 	Type   int
 	SQL    string
+	Logger logger.EventLogger
 	Params []NameValue
 	Err    error
 	Conn   conn
 	rows   *sql.Rows
 	result *sql.Result
-	debug  bool
+	Debug  bool
 	must   bool
 }
 
@@ -35,22 +39,23 @@ func (e *Executor) Merge(s Executor) {
 	e.Params = append(e.Params, s.Params...)
 }
 
-func (e *Executor) Exec(s *Scanner) () {
-	
+func (e *Executor) Exec(s *Scanner) {
+
 	if e.Err != nil {
 		s.err = e.Err
 		return
 	}
-	
+
 	var err error
 	var raw string
+	now := time.Now()
 	defer func() {
-		if err != nil || e.debug {
-			debugLog(raw, err)
+		if err != nil || e.Debug {
+			log(e.Logger, raw, time.Since(now), err)
 		}
 		s.err = err
 	}()
-	
+
 	var _params []*param
 	var _vars []reflect.Value
 	for _, v := range e.Params {
@@ -60,25 +65,25 @@ func (e *Executor) Exec(s *Scanner) () {
 		})
 		_vars = append(_vars, reflect.ValueOf(v.Value))
 	}
-	
+
 	node, err := parseSQL("test.file", fmt.Sprintf("<sql>%s</sql>", e.SQL))
 	if err != nil {
 		return
 	}
-	
+
 	frag := &fragment{node: node, in: _params}
-	
+
 	raw, exprs, vars, dynamic, err := frag.parseStatement(_vars...)
 	if err != nil {
 		return
 	}
 	//raw = strings.ReplaceAll(raw, "\\u003e", ">")
 	//raw = strings.ReplaceAll(raw, "\\u003c", "<")
-	
+
 	//spew.Json(raw, exprs, vars, dynamic)
 	_ = exprs
 	_ = dynamic
-	
+
 	switch e.Type {
 	case Exec:
 		var result sql.Result

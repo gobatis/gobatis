@@ -7,13 +7,14 @@ import (
 	"github.com/gobatis/gobatis/builder"
 	"github.com/gobatis/gobatis/dialector"
 	"github.com/gobatis/gobatis/executor"
+	"github.com/gozelle/logger"
 	"golang.org/x/sync/errgroup"
 )
 
 func Open(d dialector.Dialector, options ...Option) (db *DB, err error) {
 	db = &DB{
 		db:     nil,
-		logger: newLogger(),
+		logger: logger.NewLogger("[gobatis]"),
 		tx:     nil,
 		err:    nil,
 		namer:  d.Namer(),
@@ -34,7 +35,7 @@ func NewTxContext(parent context.Context, tx *DB) context.Context {
 
 type DB struct {
 	db     *sql.DB
-	logger Logger
+	logger logger.EventLogger
 	tx     *sql.Tx
 	ctx    context.Context
 	debug  bool
@@ -44,7 +45,7 @@ type DB struct {
 	namer  dialector.Namer
 }
 
-func (d *DB) fork() *DB {
+func (d *DB) clone() *DB {
 	return &DB{
 		db:     d.db,
 		logger: d.logger,
@@ -61,41 +62,41 @@ func (d *DB) fork() *DB {
 func (d *DB) WithContext(ctx context.Context) *DB {
 	v, ok := ctx.Value(contextTxKey).(*DB)
 	if ok {
-		f := v.fork()
-		f.ctx = ctx
-		return f
+		c := v.clone()
+		c.ctx = ctx
+		return c
 	}
-	f := d.fork()
-	f.ctx = ctx
-	return f
+	c := d.clone()
+	c.ctx = ctx
+	return c
 }
 
 func (d *DB) Debug() *DB {
-	f := d.fork()
-	f.debug = true
-	return f
+	c := d.clone()
+	c.debug = true
+	return c
 }
 
 func (d *DB) Must() *DB {
-	f := d.fork()
-	f.debug = true
-	return f
+	c := d.clone()
+	c.debug = true
+	return c
 }
 
-func (d *DB) SetLogLevel(level Level) {
-	d.logger.SetLevel(level)
-}
-
-func (d *DB) SetLogger(logger Logger) {
-	d.logger = logger
-}
-
-func (d *DB) useLogger() Logger {
-	if d.logger == nil {
-		d.logger = newLogger()
-	}
-	return d.logger
-}
+//func (d *DB) SetLogLevel(level Level) {
+//	d.logger.SetLevel(level)
+//}
+//
+//func (d *DB) SetLogger(logger Logger) {
+//	d.logger = logger
+//}
+//
+//func (d *DB) useLogger() Logger {
+//	if d.logger == nil {
+//		d.logger = newLogger()
+//	}
+//	return d.logger
+//}
 
 func (d *DB) Close() {
 	_ = d.db.Close()
@@ -114,7 +115,7 @@ func (d *DB) Stats() sql.DBStats {
 }
 
 func (d *DB) Loose() *DB {
-	f := d.fork()
+	f := d.clone()
 	f.loose = true
 	return f
 }
@@ -126,7 +127,7 @@ func (d *DB) Loose() *DB {
 const space = " "
 
 func (d *DB) execute(et int, elem Element) executor.Scanner {
-	e := &executor.Executor{Type: et, Conn: d.db}
+	e := &executor.Executor{Type: et, Conn: d.db, Debug: d.debug, Logger: d.logger}
 	e.SQL, e.Params, e.Err = elem.SQL(d.namer, "db")
 	if e.Err != nil {
 		return executor.NewErrorScanner(e.Err)
@@ -136,16 +137,15 @@ func (d *DB) execute(et int, elem Element) executor.Scanner {
 	return *s
 }
 
-func (d *DB) exec(typ int, sql string, params []executor.NameValue) executor.Scanner {
-	s := &executor.Scanner{}
-	e := &executor.Executor{Type: typ, SQL: sql, Params: params, Err: d.err, Conn: d.db}
-	e.Exec(s)
-	return *s
-}
+//func (d *DB) exec(typ int, sql string, params []executor.NameValue) executor.Scanner {
+//	s := &executor.Scanner{}
+//	e := &executor.Executor{Type: typ, SQL: sql, Params: params, Err: d.err, Conn: d.db}
+//	e.Exec(s)
+//	return *s
+//}
 
 func (d *DB) Query(sql string, params ...executor.NameValue) executor.Scanner {
-
-	return d.exec(executor.Query, sql, params)
+	return d.execute(executor.Query, query{sql: sql, params: params})
 }
 
 func (d *DB) Build(b builder.Builder) executor.Scanner {
@@ -176,7 +176,7 @@ func (d *DB) Build(b builder.Builder) executor.Scanner {
 }
 
 func (d *DB) Exec(sql string, params ...executor.NameValue) executor.Scanner {
-	return d.exec(executor.Exec, sql, params)
+	return d.execute(executor.Exec, exec{sql: sql, params: params})
 }
 
 func (d *DB) Delete(table string, where Element) executor.Scanner {
@@ -185,8 +185,7 @@ func (d *DB) Delete(table string, where Element) executor.Scanner {
 }
 
 func (d *DB) Update(table string, data map[string]any, where Element) executor.Scanner {
-	u := &update{table: table, data: data, elems: []Element{where}}
-	return d.execute(executor.Exec, u)
+	return d.execute(executor.Exec, update{table: table, data: data, elems: []Element{where}})
 }
 
 func (d *DB) Insert(table string, data any, elems ...Element) executor.Scanner {
