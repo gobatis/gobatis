@@ -3,7 +3,6 @@ package main
 import (
 	"github.com/gobatis/gobatis"
 	"github.com/gobatis/gobatis/driver/postgres"
-	"github.com/gozelle/spew"
 )
 
 type User struct {
@@ -40,21 +39,21 @@ func main() {
 	//	return
 	//}
 	//spew.Json(user)
-	
-	var user []****User
-	err = db.Query(`select * from users where id = #{id}`, batis.Param("id", 18)).Scan(&user)
-	if err != nil {
-		return
-	}
-	
-	spew.Json(user)
-	
-	//err = db.Update("users", map[string]any{
-	//	"age": 20,
-	//}, batis.Where("id = #{id}", batis.Param("id", id))).Error()
+	//
+	//var users []****User
+	//err = db.Query(`select * from users where id = #{id}`, batis.Param("id", 18)).Scan(&users)
 	//if err != nil {
 	//	return
 	//}
+	//
+	//spew.Json(user)
+	
+	err = db.Update("users", map[string]any{
+		"age": 99,
+	}, batis.Where("id = #{id}", batis.Param("id", 18))).Error()
+	if err != nil {
+		return
+	}
 	
 	//db.Query(
 	//	`select * from users where age = #{age}`,
