@@ -8,6 +8,6 @@ import "github.com/gobatis/gobatis/executor"
 // The "Name" field is set to the input name string, 
 // and the "Value" field is set to the input value of any type. 
 // This function can be useful for generating parameters to be passed into other functions or APIs. 
-func Param(name string, value any) executor.NameValue {
-	return executor.NameValue{Name: name, Value: value}
+func Param(name string, value any) executor.Param {
+	return executor.Param{Name: name, Value: value}
 }

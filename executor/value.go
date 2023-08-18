@@ -282,7 +282,6 @@ func setBool(pv reflect.Value, vv reflect.Value) (err error) {
 
 // indirect walks down v allocating pointers as needed,
 // until it gets to a non-pointer.
-// If it encounters an Unmarshaler, indirect stops and returns that.
 // If decodingNull is true, indirect stops at the first settable pointer so it
 // can be set to nil.
 func indirect(v reflect.Value, decodingNull bool) reflect.Value {

@@ -7,7 +7,7 @@ const darkCodeTheme = require('prism-react-renderer/themes/dracula');
 /** @type {import('@docusaurus/types').Config} */
 const config = {
     title: 'Gobatis',
-    tagline: 'Make building systems simple and efficient',
+    tagline: 'Make system building simple and efficient',
     favicon: 'img/favicon.ico',
 
     // Set the production url of your site here

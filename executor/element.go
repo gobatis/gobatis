@@ -3,10 +3,10 @@ package executor
 type Element struct {
 	Name   int
 	SQL    string
-	Params []NameValue
+	Params []Param
 }
 
-type NameValue struct {
+type Param struct {
 	Name  string
 	Value any
 }
