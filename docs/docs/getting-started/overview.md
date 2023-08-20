@@ -5,7 +5,7 @@ title: Overview
 
 <img src="/img/logo.png" style={{width: 300, display: 'block', margin:'0 auto'}} />
 
-In database operations, most scenarios involve simple CRUD (Create, Read, Update, Delete) operations. For these cases,
+Most database operation scenarios involve simple CRUD (Create, Read, Update, Delete) operations. For these cases,
 we need straightforward methods. When conducting complex queries, excessive parameter bindings become a headache; at
 these times, a convenient template syntax is required. In some specific scenarios, such as paginated queries, we need
 some quick methods.

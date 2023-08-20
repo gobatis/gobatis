@@ -9,7 +9,6 @@ require (
 	github.com/gozelle/color v1.14.1
 	github.com/gozelle/logger v0.0.0-20230808060726-844dbcc32ecf
 	github.com/gozelle/spew v1.1.17
-	github.com/gozelle/zap v1.24.0
 	github.com/jackc/pgtype v1.7.0
 	github.com/jackc/pgx/v4 v4.11.0
 	github.com/pkg/errors v0.8.1
@@ -25,6 +24,7 @@ require (
 	github.com/gozelle/atomic v1.10.10 // indirect
 	github.com/gozelle/isatty v0.0.17 // indirect
 	github.com/gozelle/multierr v1.9.10 // indirect
+	github.com/gozelle/zap v1.24.0 // indirect
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
 	github.com/jackc/pgconn v1.8.1 // indirect
 	github.com/jackc/pgio v1.0.0 // indirect

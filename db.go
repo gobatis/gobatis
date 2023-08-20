@@ -3,7 +3,7 @@ package batis
 import (
 	"context"
 	"database/sql"
-	
+
 	"github.com/gobatis/gobatis/builder"
 	"github.com/gobatis/gobatis/dialector"
 	"github.com/gobatis/gobatis/executor"
@@ -19,7 +19,7 @@ func Open(d dialector.Dialector, options ...Option) (db *DB, err error) {
 		err:    nil,
 		namer:  d.Namer(),
 	}
-	
+
 	db.db, err = d.DB()
 	if err != nil {
 		return
@@ -83,6 +83,12 @@ func (d *DB) Must() *DB {
 	return c
 }
 
+func (d *DB) Loose() *DB {
+	f := d.clone()
+	f.loose = true
+	return f
+}
+
 //func (d *DB) SetLogLevel(level Level) {
 //	d.logger.SetLevel(level)
 //}
@@ -114,12 +120,6 @@ func (d *DB) Stats() sql.DBStats {
 	return d.db.Stats()
 }
 
-func (d *DB) Loose() *DB {
-	f := d.clone()
-	f.loose = true
-	return f
-}
-
 //func (d *DB) Prepare(sql string, params ...executor.NameValue) *Stmt {
 //	return &Stmt{}
 //}
@@ -137,24 +137,17 @@ func (d *DB) execute(et int, elem Element) executor.Scanner {
 	return *s
 }
 
-//func (d *DB) exec(typ int, sql string, params []executor.NameValue) executor.Scanner {
-//	s := &executor.Scanner{}
-//	e := &executor.Executor{Type: typ, SQL: sql, Params: params, Err: d.err, Conn: d.db}
-//	e.Exec(s)
-//	return *s
-//}
-
 func (d *DB) Query(sql string, params ...executor.Param) executor.Scanner {
 	return d.execute(executor.Query, query{sql: sql, params: params})
 }
 
 func (d *DB) Build(b builder.Builder) executor.Scanner {
-	
+
 	es, err := b.Build()
 	if err != nil {
 		return executor.NewErrorScanner(err)
 	}
-	
+
 	s := &executor.Scanner{}
 	g := errgroup.Group{}
 	for _, v := range es {
@@ -171,7 +164,7 @@ func (d *DB) Build(b builder.Builder) executor.Scanner {
 	if err != nil {
 		return executor.NewErrorScanner(err)
 	}
-	
+
 	return *s
 }
 
@@ -199,12 +192,12 @@ func (d *DB) InsertBatch(table string, batch int, data any, onConflict Element) 
 }
 
 func (d *DB) Fetch(sql string, params ...executor.Param) <-chan executor.Scanner {
-	
+
 	ch := make(chan executor.Scanner)
-	
+
 	f := &fetch{}
 	d.execute(executor.Query, f)
-	
+
 	return ch
 }
 
@@ -214,15 +207,6 @@ func (d *DB) Begin() *DB {
 	}
 	d.tx, d.err = d.db.Begin()
 	return d
-}
-
-func (d *DB) Prepare(ctx context.Context, sql string, params ...executor.Param) (*sql.Stmt, error) {
-	//return d.tx.PrepareContext(ctx, query)
-	panic("todo")
-}
-
-func (d *DB) PrepareContext(sql string, params ...executor.Param) (*sql.Stmt, error) {
-	panic("todo")
 }
 
 func (d *DB) Commit() error {
