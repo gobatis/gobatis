@@ -8,9 +8,8 @@ import (
 	"runtime"
 	"strings"
 	"time"
-
+	
 	"github.com/gozelle/color"
-	"github.com/gozelle/logger"
 	"github.com/ttacon/chalk"
 )
 
@@ -111,12 +110,12 @@ func replaceIsolatedLessThanWithEntity(s string) string {
 			lastLeftBracket = -1
 		}
 	}
-
+	
 	// 检查是否在字符串的结尾有一个标记的 '<'
 	if lastLeftBracket != -1 {
 		pos[lastLeftBracket] = struct{}{}
 	}
-
+	
 	var r []rune
 	for i := range runes {
 		if _, ok := pos[i]; ok {
@@ -125,22 +124,22 @@ func replaceIsolatedLessThanWithEntity(s string) string {
 			r = append(r, runes[i])
 		}
 	}
-
+	
 	return string(r)
 }
 
-func log(logger logger.EventLogger, raw string, cost time.Duration, err error) {
+func log(logger Logger, raw string, cost time.Duration, err error) {
 	info := &strings.Builder{}
 	var status string
-	var out func(args ...interface{})
+	var out func(format string, a ...any)
 	if err != nil {
 		status = color.RedString("Error")
-		out = logger.Error
+		out = logger.Errorf
 	} else {
 		status = color.GreenString("Success")
-		out = logger.Debug
+		out = logger.Debugf
 	}
-	info.WriteString(fmt.Sprintf("\n[%s][%s]%s %s", status, color.WhiteString(cost.String()), color.CyanString("[Tx][1692287996356]"), color.RedString(runFuncPos(4))))
+	info.WriteString(fmt.Sprintf("%s\n[%s][%s]%s", color.RedString(runFuncPos(4)), status, color.WhiteString(cost.String()), color.CyanString("[Tx][1692287996356]")))
 	info.WriteString(fmt.Sprintf("\n%s", color.YellowString(raw)))
 	out(info.String())
 }

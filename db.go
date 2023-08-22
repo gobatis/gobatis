@@ -3,23 +3,21 @@ package batis
 import (
 	"context"
 	"database/sql"
-
+	
 	"github.com/gobatis/gobatis/builder"
 	"github.com/gobatis/gobatis/dialector"
 	"github.com/gobatis/gobatis/executor"
-	"github.com/gozelle/logger"
 	"golang.org/x/sync/errgroup"
 )
 
 func Open(d dialector.Dialector, options ...Option) (db *DB, err error) {
 	db = &DB{
 		db:     nil,
-		logger: logger.NewLogger("[gobatis]"),
+		logger: nil,
 		tx:     nil,
 		err:    nil,
 		namer:  d.Namer(),
 	}
-
 	db.db, err = d.DB()
 	if err != nil {
 		return
@@ -35,7 +33,7 @@ func NewTxContext(parent context.Context, tx *DB) context.Context {
 
 type DB struct {
 	db     *sql.DB
-	logger logger.EventLogger
+	logger executor.Logger
 	tx     *sql.Tx
 	ctx    context.Context
 	debug  bool
@@ -93,16 +91,17 @@ func (d *DB) Loose() *DB {
 //	d.logger.SetLevel(level)
 //}
 //
-//func (d *DB) SetLogger(logger Logger) {
-//	d.logger = logger
-//}
-//
-//func (d *DB) useLogger() Logger {
-//	if d.logger == nil {
-//		d.logger = newLogger()
-//	}
-//	return d.logger
-//}
+
+func (d *DB) SetLogger(logger executor.Logger) {
+	d.logger = logger
+}
+
+func (d *DB) useLogger() executor.Logger {
+	if d.logger == nil {
+		d.logger = executor.DefaultLogger()
+	}
+	return d.logger
+}
 
 func (d *DB) Close() {
 	_ = d.db.Close()
@@ -127,7 +126,7 @@ func (d *DB) Stats() sql.DBStats {
 const space = " "
 
 func (d *DB) execute(et int, elem Element) executor.Scanner {
-	e := &executor.Executor{Type: et, Conn: d.db, Debug: d.debug, Logger: d.logger}
+	e := &executor.Executor{Type: et, Conn: d.db, Debug: d.debug, Logger: d.useLogger()}
 	e.SQL, e.Params, e.Err = elem.SQL(d.namer, "db")
 	if e.Err != nil {
 		return executor.NewErrorScanner(e.Err)
@@ -142,12 +141,12 @@ func (d *DB) Query(sql string, params ...executor.Param) executor.Scanner {
 }
 
 func (d *DB) Build(b builder.Builder) executor.Scanner {
-
+	
 	es, err := b.Build()
 	if err != nil {
 		return executor.NewErrorScanner(err)
 	}
-
+	
 	s := &executor.Scanner{}
 	g := errgroup.Group{}
 	for _, v := range es {
@@ -164,7 +163,7 @@ func (d *DB) Build(b builder.Builder) executor.Scanner {
 	if err != nil {
 		return executor.NewErrorScanner(err)
 	}
-
+	
 	return *s
 }
 
@@ -192,12 +191,9 @@ func (d *DB) InsertBatch(table string, batch int, data any, onConflict Element) 
 }
 
 func (d *DB) Fetch(sql string, params ...executor.Param) <-chan executor.Scanner {
-
 	ch := make(chan executor.Scanner)
-
 	f := &fetch{}
 	d.execute(executor.Query, f)
-
 	return ch
 }
 

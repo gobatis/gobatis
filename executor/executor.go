@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"reflect"
 	"time"
-	
-	"github.com/gozelle/logger"
 )
 
 type conn interface {
@@ -24,7 +22,7 @@ const (
 type Executor struct {
 	Type   int
 	SQL    string
-	Logger logger.EventLogger
+	Logger Logger
 	Params []Param
 	Err    error
 	Conn   conn
@@ -40,7 +38,6 @@ func (e *Executor) Merge(s Executor) {
 }
 
 func (e *Executor) Exec(s *Scanner) {
-	
 	if e.Err != nil {
 		s.err = e.Err
 		return

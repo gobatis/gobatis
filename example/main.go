@@ -3,12 +3,18 @@ package main
 import (
 	"github.com/gobatis/gobatis"
 	"github.com/gobatis/gobatis/driver/postgres"
+	"github.com/gozelle/spew"
+	"github.com/shopspring/decimal"
+	"time"
 )
 
 type User struct {
-	Id   *int64
-	Name string
-	Age  int64
+	Id     *int64
+	Name   string
+	Age    int64
+	Tstz   time.Time
+	Ts     time.Time
+	Wealth decimal.Decimal
 }
 
 func main() {
@@ -18,28 +24,31 @@ func main() {
 			panic(err)
 		}
 	}()
-	//db, err := batis.Open(postgres.Open("postgresql://root:123456@192.168.1.189:5432/example?connect_timeout=10&sslmode=disable"))
-	db, err := batis.Open(postgres.Open("postgresql://root:123456@127.0.0.1:5432/example?connect_timeout=10&sslmode=disable"))
+	db, err := batis.Open(postgres.Open("postgresql://root:123456@192.168.1.189:5432/example?connect_timeout=10&sslmode=disable"))
+	//db, err := batis.Open(postgres.Open("postgresql://root:123456@127.0.0.1:5432/example?connect_timeout=10&sslmode=disable"))
 	if err != nil {
 		return
 	}
-
+	
 	err = db.Ping()
 	if err != nil {
 		return
 	}
-
-	//user := &User{
-	//	Id:   nil,
-	//	Name: "tom",
-	//	Age:  18,
-	//}
-	////id := new(int64)
-	//err = db.Debug().Insert("users", user, batis.Returning("id")).Scan(&user.Id)
-	//if err != nil {
-	//	return
-	//}
-	//spew.Json(user)
+	
+	user := &User{
+		Id:     nil,
+		Name:   "tom",
+		Age:    18,
+		Tstz:   time.Now(),
+		Ts:     time.Now(),
+		Wealth: decimal.NewFromFloat(3.14),
+	}
+	//id := new(int64)
+	err = db.Debug().Insert("users", user, batis.Returning("id")).Scan(&user.Id)
+	if err != nil {
+		return
+	}
+	spew.Json(user)
 	//
 	//var users []****User
 	//err = db.Query(`select * from users where id = #{id}`, batis.Param("id", 18)).Scan(&users)
@@ -48,19 +57,19 @@ func main() {
 	//}
 	//
 	//spew.Json(user)
-
+	
 	err = db.Debug().Update("users", map[string]any{
 		"age": 99,
 	}, batis.Where("id = #{id}", batis.Param("id", 18))).Error()
 	if err != nil {
 		return
 	}
-
+	
 	//db.Query(
 	//	`select * from users where age = #{age}`,
 	//	batis.Param("age", 1),
 	//)
-
+	
 	//db.Update("users", map[string]any{}, batis.Where(""))
 	//
 	//var users []*entity.User
