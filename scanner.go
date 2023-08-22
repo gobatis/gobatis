@@ -19,18 +19,21 @@ type Scanner struct {
 	must   bool
 	debug  bool
 	result []*sql.Result
+	tracer *tracer
 }
 
 func (s Scanner) Scan(ptr ...any) (err error) {
 	
 	defer func() {
 		if err != nil {
-			//s.printError()
+			s.tracer.err = err
+			s.tracer.log()
+			s.Error = err
 		}
 	}()
 	
-	if s.Error != nil {
-		err = s.Error
+	if s.tracer.err != nil {
+		err = s.tracer.err
 		return
 	}
 	
@@ -46,22 +49,26 @@ func (s Scanner) Scan(ptr ...any) (err error) {
 		}
 		err = qr.scan(ptr[i])
 		if err != nil {
-			return fmt.Errorf("scan rows error: %s", err)
+			err = fmt.Errorf("scan rows error: %w", err)
+			return
 		}
 	}
 	
-	return nil
+	return
 }
 
 func (s Scanner) AffectRows() (affectedRows int, err error) {
+	
 	defer func() {
 		if err != nil {
-			//s.printError()
+			s.tracer.err = err
+			s.tracer.log()
+			s.Error = err
 		}
 	}()
 	
-	if s.Error != nil {
-		err = s.Error
+	if s.tracer.err != nil {
+		err = s.tracer.err
 		return
 	}
 	

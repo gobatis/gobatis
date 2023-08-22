@@ -6,7 +6,7 @@ type Paging struct {
 	Common string
 	Page   int64
 	Limit  int64
-	Params []KeyValue
+	Params []NameValue
 	elems  map[int][]Element
 }
 
@@ -17,7 +17,7 @@ func init() {
 		Common: `users where name age > #{age}`,
 		Page:   0,
 		Limit:  0,
-		Params: []KeyValue{
+		Params: []NameValue{
 			{Name: "age", Value: 18},
 		},
 		elems: nil,

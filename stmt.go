@@ -1,12 +1,14 @@
 package batis
 
-//type Stmt struct {
-//	stmt   *sql.Stmt
-//	exprs  []string
-//	sql    string
-//	conn   *sql.Conn
-//	caller *executor.caller
-//}
+import "database/sql"
+
+type Stmt struct {
+	stmt  *sql.Stmt
+	exprs []string
+	sql   string
+	conn  *sql.Conn
+}
+
 //
 //func (p *Stmt) Close() error {
 //	if p.conn != nil {

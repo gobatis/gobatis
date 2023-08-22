@@ -3,10 +3,17 @@ package batis
 import (
 	"context"
 	"database/sql"
+	"time"
 	
 	"github.com/gobatis/gobatis/dialector"
 	"golang.org/x/sync/errgroup"
 )
+
+const txKey = "GOBATIS_TX"
+
+func WithTx(parent context.Context, tx *DB) context.Context {
+	return context.WithValue(parent, txKey, tx)
+}
 
 func Open(d dialector.Dialector, options ...Option) (db *DB, err error) {
 	db = &DB{
@@ -21,12 +28,6 @@ func Open(d dialector.Dialector, options ...Option) (db *DB, err error) {
 		return
 	}
 	return
-}
-
-const contextTxKey = "GOBATIS_TX"
-
-func NewTxContext(parent context.Context, tx *DB) context.Context {
-	return context.WithValue(parent, contextTxKey, tx)
 }
 
 type DB struct {
@@ -56,7 +57,7 @@ func (d *DB) clone() *DB {
 }
 
 func (d *DB) WithContext(ctx context.Context) *DB {
-	v, ok := ctx.Value(contextTxKey).(*DB)
+	v, ok := ctx.Value(txKey).(*DB)
 	if ok {
 		c := v.clone()
 		c.ctx = ctx
@@ -85,11 +86,6 @@ func (d *DB) Loose() *DB {
 	return f
 }
 
-//func (d *DB) SetLogLevel(level Level) {
-//	d.logger.SetLevel(level)
-//}
-//
-
 func (d *DB) SetLogger(logger Logger) {
 	d.logger = logger
 }
@@ -117,31 +113,46 @@ func (d *DB) Stats() sql.DBStats {
 	return d.db.Stats()
 }
 
-//func (d *DB) Prepare(sql string, params ...executor.NameValue) *Stmt {
-//	return &Stmt{}
-//}
+func (d *DB) Prepare(sql string, params ...NameValue) *Stmt {
+	return &Stmt{}
+}
 
 const space = " "
 
-func (d *DB) execute(query bool, elem Element) Scanner {
-	e := &executor{query: query, conn: d.db, Debug: d.debug, logger: d.useLogger()}
-	e.sql, e.Params, e.err = elem.SQL(d.namer, "db")
-	if e.err != nil {
-		return Scanner{Error: e.err}
+func (d *DB) tracer() *tracer {
+	return &tracer{
+		now:    time.Now(),
+		debug:  d.debug,
+		logger: d.useLogger(),
 	}
-	s := &Scanner{}
+}
+
+func (d *DB) execute(query bool, elem Element) Scanner {
+	t := d.tracer()
+	e := &executor{
+		query:  query,
+		conn:   d.db,
+		tracer: t,
+	}
+	e.sql, e.params, e.tracer.err = elem.SQL(d.namer, "db")
+	if e.tracer.err != nil {
+		t.log()
+		return Scanner{Error: t.err}
+	}
+	s := &Scanner{tracer: t}
 	e.Exec(s)
 	return *s
 }
 
-func (d *DB) Query(sql string, params ...KeyValue) Scanner {
+func (d *DB) Query(sql string, params ...NameValue) Scanner {
 	return d.execute(true, query{sql: sql, params: params})
 }
 
 func (d *DB) Build(b Builder) Scanner {
-	
+	t := d.tracer()
 	es, err := b.Build()
 	if err != nil {
+		t.log()
 		return Scanner{Error: err}
 	}
 	
@@ -150,11 +161,11 @@ func (d *DB) Build(b Builder) Scanner {
 	for _, v := range es {
 		e := v
 		e.conn = d.db
-		e.err = d.err
+		t.err = d.err
 		g.Go(func() error {
 			// todo auto cancel
 			e.Exec(s)
-			return e.err
+			return t.err
 		})
 	}
 	err = g.Wait()
@@ -165,7 +176,7 @@ func (d *DB) Build(b Builder) Scanner {
 	return *s
 }
 
-func (d *DB) Exec(sql string, params ...KeyValue) Scanner {
+func (d *DB) Exec(sql string, params ...NameValue) Scanner {
 	return d.execute(false, exec{sql: sql, params: params})
 }
 
@@ -188,7 +199,7 @@ func (d *DB) InsertBatch(table string, batch int, data any, onConflict Element) 
 	return d.execute(false, i)
 }
 
-func (d *DB) Fetch(sql string, params ...KeyValue) <-chan Scanner {
+func (d *DB) Fetch(sql string, params ...NameValue) <-chan Scanner {
 	ch := make(chan Scanner)
 	f := &fetch{}
 	d.execute(true, f)

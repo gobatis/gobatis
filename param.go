@@ -1,6 +1,6 @@
 package batis
 
-type KeyValue struct {
+type NameValue struct {
 	Name  string
 	Value any
 }
@@ -11,8 +11,8 @@ type KeyValue struct {
 // The "Name" field is set to the input name string, 
 // and the "Value" field is set to the input value of any type. 
 // This function can be useful for generating parameters to be passed into other functions or APIs. 
-func Param(name string, value any) KeyValue {
-	return KeyValue{Name: name, Value: value}
+func Param(name string, value any) NameValue {
+	return NameValue{Name: name, Value: value}
 }
 
 func Select(data any, columns string) Rows {

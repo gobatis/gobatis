@@ -17,29 +17,28 @@ var _ Element = (*update)(nil)
 var _ Element = (*del)(nil)
 var _ Element = (*onConflict)(nil)
 var _ Element = (*where)(nil)
-var _ Element = (*and)(nil)
 var _ Element = (*fetch)(nil)
 var _ Element = (*build)(nil)
 
 type Namer func(name string) string
 
 type Element interface {
-	SQL(namer dialector.Namer, tag string) (sql string, params []KeyValue, err error)
+	SQL(namer dialector.Namer, tag string) (sql string, params []NameValue, err error)
 }
 
 type onConflict struct {
 	fields string
 	sql    string
-	params []KeyValue
+	params []NameValue
 }
 
-func (o onConflict) SQL(namer dialector.Namer, tag string) (sql string, params []KeyValue, err error) {
+func (o onConflict) SQL(namer dialector.Namer, tag string) (sql string, params []NameValue, err error) {
 	sql = fmt.Sprintf("on confilct(%s) %s", TrimColumns(o.fields), o.sql)
 	params = o.params
 	return
 }
 
-func OnConflict(fields string, sql string, params ...KeyValue) Element {
+func OnConflict(fields string, sql string, params ...NameValue) Element {
 	return &onConflict{
 		fields: fields,
 		sql:    sql,
@@ -49,34 +48,17 @@ func OnConflict(fields string, sql string, params ...KeyValue) Element {
 
 type where struct {
 	sql    string
-	params []KeyValue
+	params []NameValue
 }
 
-func (w where) SQL(namer dialector.Namer, tag string) (sql string, params []KeyValue, err error) {
+func (w where) SQL(namer dialector.Namer, tag string) (sql string, params []NameValue, err error) {
 	sql = fmt.Sprintf("where %s", strings.TrimSpace(w.sql))
 	params = w.params
 	return
 }
 
-func Where(sql string, params ...KeyValue) Element {
+func Where(sql string, params ...NameValue) Element {
 	return &where{
-		sql:    sql,
-		params: params,
-	}
-}
-
-type and struct {
-	sql    string
-	params []KeyValue
-}
-
-func (a and) SQL(namer dialector.Namer, tag string) (sql string, params []KeyValue, err error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func And(sql string, params ...KeyValue) Element {
-	return &and{
 		sql:    sql,
 		params: params,
 	}
@@ -89,7 +71,7 @@ type update struct {
 	where *where
 }
 
-func (u update) SQL(namer dialector.Namer, tag string) (sql string, params []KeyValue, err error) {
+func (u update) SQL(namer dialector.Namer, tag string) (sql string, params []NameValue, err error) {
 	for _, v := range u.elems {
 		switch vv := v.(type) {
 		case *where:
@@ -113,14 +95,14 @@ func (u update) SQL(namer dialector.Namer, tag string) (sql string, params []Key
 	}
 	sqls = append(sqls, strings.Join(sets, ","))
 	for k, v := range u.data {
-		params = append(params, KeyValue{
+		params = append(params, NameValue{
 			Name:  k,
 			Value: v,
 		})
 	}
 	if u.where != nil {
 		var _s string
-		var _p []KeyValue
+		var _p []NameValue
 		_s, _p, err = u.where.SQL(namer, tag)
 		if err != nil {
 			return
@@ -141,7 +123,7 @@ type insert struct {
 	elems      []Element
 }
 
-func (i insert) SQL(namer dialector.Namer, tag string) (sql string, params []KeyValue, err error) {
+func (i insert) SQL(namer dialector.Namer, tag string) (sql string, params []NameValue, err error) {
 	
 	defer func() {
 		if err != nil {
@@ -200,7 +182,7 @@ func (i insert) SQL(namer dialector.Namer, tag string) (sql string, params []Key
 	
 	if i.onConflict != nil {
 		var _s string
-		var _p []KeyValue
+		var _p []NameValue
 		_s, _p, err = i.onConflict.SQL(namer, tag)
 		if err != nil {
 			return
@@ -211,7 +193,7 @@ func (i insert) SQL(namer dialector.Namer, tag string) (sql string, params []Key
 	
 	if i.returning != nil {
 		var _s string
-		var _p []KeyValue
+		var _p []NameValue
 		_s, _p, err = i.returning.SQL(namer, tag)
 		if err != nil {
 			return
@@ -234,7 +216,7 @@ type insertBatch struct {
 	returning  *returning
 }
 
-func (i insertBatch) SQL(namer dialector.Namer, tag string) (sql string, params []KeyValue, err error) {
+func (i insertBatch) SQL(namer dialector.Namer, tag string) (sql string, params []NameValue, err error) {
 	
 	defer func() {
 		if err != nil {
@@ -293,7 +275,7 @@ func (i insertBatch) SQL(namer dialector.Namer, tag string) (sql string, params 
 	
 	if i.onConflict != nil {
 		var _s string
-		var _p []KeyValue
+		var _p []NameValue
 		_s, _p, err = i.onConflict.SQL(namer, tag)
 		if err != nil {
 			return
@@ -304,7 +286,7 @@ func (i insertBatch) SQL(namer dialector.Namer, tag string) (sql string, params 
 	
 	if i.returning != nil {
 		var _s string
-		var _p []KeyValue
+		var _p []NameValue
 		_s, _p, err = i.returning.SQL(namer, tag)
 		if err != nil {
 			return
@@ -321,7 +303,7 @@ func (i insertBatch) SQL(namer dialector.Namer, tag string) (sql string, params 
 type fetch struct {
 }
 
-func (f fetch) SQL(namer dialector.Namer, tag string) (s string, params []KeyValue, err error) {
+func (f fetch) SQL(namer dialector.Namer, tag string) (s string, params []NameValue, err error) {
 	//TODO implement me
 	panic("implement me")
 }
@@ -332,7 +314,7 @@ type del struct {
 	where *where
 }
 
-func (d del) SQL(namer dialector.Namer, tag string) (sql string, params []KeyValue, err error) {
+func (d del) SQL(namer dialector.Namer, tag string) (sql string, params []NameValue, err error) {
 	for _, v := range d.elems {
 		switch vv := v.(type) {
 		case *where:
@@ -352,7 +334,7 @@ func (d del) SQL(namer dialector.Namer, tag string) (sql string, params []KeyVal
 	
 	if d.where != nil {
 		var _s string
-		var _p []KeyValue
+		var _p []NameValue
 		_s, _p, err = d.where.SQL(namer, tag)
 		if err != nil {
 			return
@@ -367,10 +349,10 @@ func (d del) SQL(namer dialector.Namer, tag string) (sql string, params []KeyVal
 
 type query struct {
 	sql    string
-	params []KeyValue
+	params []NameValue
 }
 
-func (q query) SQL(namer dialector.Namer, tag string) (sql string, params []KeyValue, err error) {
+func (q query) SQL(namer dialector.Namer, tag string) (sql string, params []NameValue, err error) {
 	sql = strings.TrimSpace(sql)
 	params = q.params
 	return
@@ -378,10 +360,10 @@ func (q query) SQL(namer dialector.Namer, tag string) (sql string, params []KeyV
 
 type exec struct {
 	sql    string
-	params []KeyValue
+	params []NameValue
 }
 
-func (e exec) SQL(namer dialector.Namer, tag string) (sql string, params []KeyValue, err error) {
+func (e exec) SQL(namer dialector.Namer, tag string) (sql string, params []NameValue, err error) {
 	sql = strings.TrimSpace(sql)
 	params = e.params
 	return
@@ -390,7 +372,7 @@ func (e exec) SQL(namer dialector.Namer, tag string) (sql string, params []KeyVa
 type build struct {
 }
 
-func (b build) SQL(namer dialector.Namer, tag string) (sql string, params []KeyValue, err error) {
+func (b build) SQL(namer dialector.Namer, tag string) (sql string, params []NameValue, err error) {
 	panic("todo")
 }
 
@@ -398,7 +380,7 @@ type returning struct {
 	sql string
 }
 
-func (r returning) SQL(namer dialector.Namer, tag string) (sql string, params []KeyValue, err error) {
+func (r returning) SQL(namer dialector.Namer, tag string) (sql string, params []NameValue, err error) {
 	sql = fmt.Sprintf("returning %s", TrimColumns(r.sql))
 	return
 }

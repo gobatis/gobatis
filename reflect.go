@@ -101,9 +101,9 @@ func rowVars(row Row) (vars []string) {
 	return
 }
 
-func rowParams(row Row) (params []KeyValue) {
+func rowParams(row Row) (params []NameValue) {
 	for _, v := range row {
-		params = append(params, KeyValue{
+		params = append(params, NameValue{
 			Name:  v.column,
 			Value: v.value,
 		})
@@ -122,10 +122,10 @@ func rowsVars(rows []Row) (vars []string) {
 	return
 }
 
-func rowsParams(rows []Row) (params []KeyValue) {
+func rowsParams(rows []Row) (params []NameValue) {
 	for i, v := range rows {
 		for _, vv := range v {
-			params = append(params, KeyValue{
+			params = append(params, NameValue{
 				Name:  fmt.Sprintf("%s%d", vv.column, i),
 				Value: vv.value,
 			})
