@@ -1,4 +1,4 @@
-package executor
+package batis
 
 import (
 	"testing"
@@ -20,7 +20,7 @@ func TestReflect(t *testing.T) {
 		Age:  18,
 	}
 	
-	rs, err := ReflectRows(item, postgres.Namer{}, "")
+	rs, err := reflectRows(item, postgres.Namer{}, "")
 	require.NoError(t, err)
 	
 	for _, v := range rs {
@@ -30,7 +30,7 @@ func TestReflect(t *testing.T) {
 		}
 	}
 	
-	ReflectRows([]*entity{item}, postgres.Namer{}, "")
+	reflectRows([]*entity{item}, postgres.Namer{}, "")
 	for _, v := range rs {
 		t.Log("-")
 		for _, vv := range v {

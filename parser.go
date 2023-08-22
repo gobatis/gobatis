@@ -1,4 +1,4 @@
-package executor
+package batis
 
 import (
 	"container/list"
@@ -890,10 +890,11 @@ func (p *exprParams) bind(expected *param, index int) error {
 		return nil
 	}
 	
-	elem := toReflectValueElem(ev.value)
-	if !expected.expected(elem.Type()) {
-		return fmt.Errorf("parameter '%s' expected '%s', got '%s'", expected.name, expected.Type(), elem.Type())
-	}
+	// TODO check
+	//elem := toReflectValueElem(ev.value)
+	//if !expected.expected(elem.Type()) {
+	//	return fmt.Errorf("parameter '%s' expected '%s', got '%s'", expected.name, expected.Type(), elem.Type())
+	//}
 	
 	return nil
 }

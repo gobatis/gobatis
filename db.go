@@ -4,9 +4,7 @@ import (
 	"context"
 	"database/sql"
 	
-	"github.com/gobatis/gobatis/builder"
 	"github.com/gobatis/gobatis/dialector"
-	"github.com/gobatis/gobatis/executor"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -33,7 +31,7 @@ func NewTxContext(parent context.Context, tx *DB) context.Context {
 
 type DB struct {
 	db     *sql.DB
-	logger executor.Logger
+	logger Logger
 	tx     *sql.Tx
 	ctx    context.Context
 	debug  bool
@@ -92,13 +90,13 @@ func (d *DB) Loose() *DB {
 //}
 //
 
-func (d *DB) SetLogger(logger executor.Logger) {
+func (d *DB) SetLogger(logger Logger) {
 	d.logger = logger
 }
 
-func (d *DB) useLogger() executor.Logger {
+func (d *DB) useLogger() Logger {
 	if d.logger == nil {
-		d.logger = executor.DefaultLogger()
+		d.logger = DefaultLogger()
 	}
 	return d.logger
 }
@@ -125,75 +123,75 @@ func (d *DB) Stats() sql.DBStats {
 
 const space = " "
 
-func (d *DB) execute(et int, elem Element) executor.Scanner {
-	e := &executor.Executor{Type: et, Conn: d.db, Debug: d.debug, Logger: d.useLogger()}
-	e.SQL, e.Params, e.Err = elem.SQL(d.namer, "db")
-	if e.Err != nil {
-		return executor.NewErrorScanner(e.Err)
+func (d *DB) execute(query bool, elem Element) Scanner {
+	e := &executor{query: query, conn: d.db, Debug: d.debug, logger: d.useLogger()}
+	e.sql, e.Params, e.err = elem.SQL(d.namer, "db")
+	if e.err != nil {
+		return Scanner{Error: e.err}
 	}
-	s := &executor.Scanner{}
+	s := &Scanner{}
 	e.Exec(s)
 	return *s
 }
 
-func (d *DB) Query(sql string, params ...executor.Param) executor.Scanner {
-	return d.execute(executor.Query, query{sql: sql, params: params})
+func (d *DB) Query(sql string, params ...KeyValue) Scanner {
+	return d.execute(true, query{sql: sql, params: params})
 }
 
-func (d *DB) Build(b builder.Builder) executor.Scanner {
+func (d *DB) Build(b Builder) Scanner {
 	
 	es, err := b.Build()
 	if err != nil {
-		return executor.NewErrorScanner(err)
+		return Scanner{Error: err}
 	}
 	
-	s := &executor.Scanner{}
+	s := &Scanner{}
 	g := errgroup.Group{}
 	for _, v := range es {
 		e := v
-		e.Conn = d.db
-		e.Err = d.err
+		e.conn = d.db
+		e.err = d.err
 		g.Go(func() error {
 			// todo auto cancel
 			e.Exec(s)
-			return e.Err
+			return e.err
 		})
 	}
 	err = g.Wait()
 	if err != nil {
-		return executor.NewErrorScanner(err)
+		return Scanner{Error: err}
 	}
 	
 	return *s
 }
 
-func (d *DB) Exec(sql string, params ...executor.Param) executor.Scanner {
-	return d.execute(executor.Exec, exec{sql: sql, params: params})
+func (d *DB) Exec(sql string, params ...KeyValue) Scanner {
+	return d.execute(false, exec{sql: sql, params: params})
 }
 
-func (d *DB) Delete(table string, where Element) executor.Scanner {
+func (d *DB) Delete(table string, where Element) Scanner {
 	e := &del{table: table, elems: []Element{where}}
-	return d.execute(executor.Exec, e)
+	return d.execute(false, e)
 }
 
-func (d *DB) Update(table string, data map[string]any, where Element) executor.Scanner {
-	return d.execute(executor.Exec, update{table: table, data: data, elems: []Element{where}})
+func (d *DB) Update(table string, data map[string]any, where Element) Scanner {
+	return d.execute(false, update{table: table, data: data, elems: []Element{where}})
 }
 
-func (d *DB) Insert(table string, data any, elems ...Element) executor.Scanner {
+func (d *DB) Insert(table string, data any, elems ...Element) Scanner {
 	i := &insert{table: table, data: data, elems: elems}
-	return d.execute(executor.Query, i)
+	return d.execute(true, i)
 }
 
-func (d *DB) InsertBatch(table string, batch int, data any, onConflict Element) executor.Scanner {
+func (d *DB) InsertBatch(table string, batch int, data any, onConflict Element) Scanner {
 	i := &insertBatch{table: table, batch: batch, data: data, elems: []Element{onConflict}}
-	return d.execute(executor.Query, i)
+	return d.execute(false, i)
 }
 
-func (d *DB) Fetch(sql string, params ...executor.Param) <-chan executor.Scanner {
-	ch := make(chan executor.Scanner)
+func (d *DB) Fetch(sql string, params ...KeyValue) <-chan Scanner {
+	ch := make(chan Scanner)
 	f := &fetch{}
-	d.execute(executor.Query, f)
+	d.execute(true, f)
 	return ch
 }
 

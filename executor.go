@@ -1,4 +1,4 @@
-package executor
+package batis
 
 import (
 	"context"
@@ -19,27 +19,27 @@ const (
 	Exec
 )
 
-type Executor struct {
-	Type   int
-	SQL    string
-	Logger Logger
-	Params []Param
-	Err    error
-	Conn   conn
+type executor struct {
+	query  bool
+	sql    string
+	logger Logger
+	Params []KeyValue
+	err    error
+	conn   conn
 	rows   *sql.Rows
 	result *sql.Result
 	Debug  bool
 	must   bool
 }
 
-func (e *Executor) Merge(s Executor) {
-	e.SQL = fmt.Sprintf("%s %s", e.SQL, s.SQL)
+func (e *executor) Merge(s executor) {
+	e.sql = fmt.Sprintf("%s %s", e.sql, s.sql)
 	e.Params = append(e.Params, s.Params...)
 }
 
-func (e *Executor) Exec(s *Scanner) {
-	if e.Err != nil {
-		s.err = e.Err
+func (e *executor) Exec(s *Scanner) {
+	if e.err != nil {
+		s.Error = e.err
 		return
 	}
 	
@@ -48,9 +48,9 @@ func (e *Executor) Exec(s *Scanner) {
 	now := time.Now()
 	defer func() {
 		if err != nil || e.Debug {
-			log(e.Logger, raw, time.Since(now), err)
+			log(e.logger, raw, time.Since(now), err)
 		}
-		s.err = err
+		s.Error = err
 	}()
 	
 	var _params []*param
@@ -63,7 +63,7 @@ func (e *Executor) Exec(s *Scanner) {
 		_vars = append(_vars, reflect.ValueOf(v.Value))
 	}
 	
-	node, err := parseSQL("test.file", fmt.Sprintf("<sql>%s</sql>", e.SQL))
+	node, err := parseSQL("test.file", fmt.Sprintf("<sql>%s</sql>", e.sql))
 	if err != nil {
 		return
 	}
@@ -74,32 +74,26 @@ func (e *Executor) Exec(s *Scanner) {
 	if err != nil {
 		return
 	}
-	//raw = strings.ReplaceAll(raw, "\\u003e", ">")
-	//raw = strings.ReplaceAll(raw, "\\u003c", "<")
 	
 	//spew.Json(raw, exprs, vars, dynamic)
 	_ = exprs
 	_ = dynamic
 	
-	switch e.Type {
-	case Exec:
+	if e.query {
 		var result sql.Result
-		result, err = e.Conn.ExecContext(context.Background(), raw, vars...)
+		result, err = e.conn.ExecContext(context.Background(), raw, vars...)
 		if err != nil {
 			return
 		}
 		s.result = append(s.result, &result)
 		return
-	case Query:
+	} else {
 		var rows *sql.Rows
-		rows, err = e.Conn.QueryContext(context.Background(), raw, vars...)
+		rows, err = e.conn.QueryContext(context.Background(), raw, vars...)
 		if err != nil {
 			return
 		}
 		s.rows = append(s.rows, rows)
-		return
-	default:
-		s.err = fmt.Errorf("unexpect executor type: %d", e.Type)
 		return
 	}
 }

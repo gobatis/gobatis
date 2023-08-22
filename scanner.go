@@ -1,15 +1,72 @@
-package executor
+package batis
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
+	"github.com/gobatis/gobatis/cast"
+	"github.com/shopspring/decimal"
 	"reflect"
 	"strings"
 	"time"
-	
-	"github.com/gobatis/gobatis/cast"
-	"github.com/shopspring/decimal"
 )
+
+type Scanner struct {
+	Error  error
+	ctx    context.Context
+	logger Logger
+	rows   []*sql.Rows
+	must   bool
+	debug  bool
+	result []*sql.Result
+}
+
+func (s Scanner) Scan(ptr ...any) (err error) {
+	
+	defer func() {
+		if err != nil {
+			//s.printError()
+		}
+	}()
+	
+	if s.Error != nil {
+		err = s.Error
+		return
+	}
+	
+	l1 := len(ptr)
+	l2 := len(s.rows)
+	if l1 > l2 {
+		return fmt.Errorf("the receiving result ptrs length: %d > result length: %d", l1, l2)
+	}
+	
+	for i := 0; i < l2; i++ {
+		qr := queryResult{
+			rows: s.rows[i],
+		}
+		err = qr.scan(ptr[i])
+		if err != nil {
+			return fmt.Errorf("scan rows error: %s", err)
+		}
+	}
+	
+	return nil
+}
+
+func (s Scanner) AffectRows() (affectedRows int, err error) {
+	defer func() {
+		if err != nil {
+			//s.printError()
+		}
+	}()
+	
+	if s.Error != nil {
+		err = s.Error
+		return
+	}
+	
+	return 0, nil
+}
 
 var (
 	reflectTag = "db"
@@ -70,55 +127,6 @@ func (p *queryResult) scan(ptr any) (err error) {
 	
 	return
 }
-
-//func (p *queryResult) reflectRow(columns []string, row []interface{}, ptr reflect.Value, first bool) (bool, error) {
-//	if ptr.Elem().Kind() == reflect.Slice {
-//		return false, p.reflectStructs(newRowMap(columns, row), ptr)
-//	} else {
-//		if ptr.Elem().Kind() == reflect.Struct {
-//			return true, p.reflectStruct(newRowMap(columns, row), ptr, first)
-//		} else {
-//			return true, p.reflectValue("anonymity", ptr.Elem(), row[0])
-//		}
-//	}
-//}
-
-//func (p *queryResult) reflectStruct(r rowMap, ptr reflect.Value, first bool) error {
-//	dv := ptr
-//	if dv.Kind() == reflect.Ptr {
-//		dv = dv.Elem()
-//	}
-//	_type := dv.Type()
-//	
-//	var tags map[string]struct{}
-//	if first {
-//		tags = map[string]struct{}{}
-//	}
-//	for i := 0; i < _type.NumField(); i++ {
-//		n := p.prepareFieldName(_type.Field(i))
-//		if first {
-//			if _, ok := tags[n]; ok {
-//				return fmt.Errorf("field tag: '%s' is duplicated in struct: '%s'", n, _type)
-//			}
-//			tags[n] = struct{}{}
-//		}
-//		v, ok := r[n]
-//		if !ok {
-//			if !p.loose {
-//				return fmt.Errorf("no data for struct: '%s' field: '%s'", _type, _type.Field(i).Name)
-//			}
-//		} else if v != nil {
-//			if dv.Field(i).Kind() == reflect.Ptr {
-//				dv.Field(i).Set(reflect.New(dv.Field(i).Type().Elem()))
-//			}
-//			err := p.reflectValue(n, dv.Field(i), v)
-//			if err != nil {
-//				return err
-//			}
-//		}
-//	}
-//	return nil
-//}
 
 func (p *queryResult) prepareFieldName(f reflect.StructField) string {
 	
@@ -319,75 +327,6 @@ func (p *queryResult) set(dest reflect.Value, r interface{}) error {
 		dest.Set(v)
 	} else {
 		dest.Set(reflect.ValueOf(r))
-	}
-	return nil
-}
-
-type execResult struct {
-	affected int64
-	values   []reflect.Value
-}
-
-func (p *execResult) scan() error {
-	if len(p.values) > 0 {
-		switch p.values[0].Elem().Kind() {
-		case reflect.Int:
-			r, e := cast.ToIntE(p.affected)
-			if e != nil {
-				return e
-			}
-			p.values[0].Elem().SetInt(int64(r))
-		case reflect.Int8:
-			r, e := cast.ToInt8E(p.affected)
-			if e != nil {
-				return e
-			}
-			p.values[0].Elem().SetInt(int64(r))
-		case reflect.Int16:
-			r, e := cast.ToInt16E(p.affected)
-			if e != nil {
-				return e
-			}
-			p.values[0].Elem().SetInt(int64(r))
-		case reflect.Int32:
-			r, e := cast.ToInt32E(p.affected)
-			if e != nil {
-				return e
-			}
-			p.values[0].Elem().SetInt(int64(r))
-		case reflect.Int64:
-			p.values[0].Elem().SetInt(p.affected)
-		case reflect.Uint:
-			r, e := cast.ToUintE(p.affected)
-			if e != nil {
-				return e
-			}
-			p.values[0].Elem().SetUint(uint64(r))
-		case reflect.Uint8:
-			r, e := cast.ToUint8E(p.affected)
-			if e != nil {
-				return e
-			}
-			p.values[0].Elem().SetUint(uint64(r))
-		case reflect.Uint16:
-			r, e := cast.ToUint16E(p.affected)
-			if e != nil {
-				return e
-			}
-			p.values[0].Elem().SetUint(uint64(r))
-		case reflect.Uint32:
-			r, e := cast.ToUint32E(p.affected)
-			if e != nil {
-				return e
-			}
-			p.values[0].Elem().SetUint(uint64(r))
-		case reflect.Uint64:
-			r, e := cast.ToUint64E(p.affected)
-			if e != nil {
-				return e
-			}
-			p.values[0].Elem().SetUint(r)
-		}
 	}
 	return nil
 }

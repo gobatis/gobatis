@@ -2,17 +2,11 @@ package batis
 
 import (
 	"testing"
-
+	
 	"github.com/gobatis/gobatis/driver/postgres"
 	"github.com/gozelle/spew"
 	"github.com/stretchr/testify/require"
 )
-
-type entity struct {
-	Id   *int64
-	Name string
-	Age  int
-}
 
 func TestInset(t *testing.T) {
 	item := &entity{
@@ -74,17 +68,17 @@ func TestDelete(t *testing.T) {
 }
 
 func TestPage(t *testing.T) {
-
+	
 }
 
 func TestQuery(t *testing.T) {
-
+	
 }
 
 func TestExec(t *testing.T) {
-
+	
 }
 
 func TestBuild(t *testing.T) {
-
+	
 }

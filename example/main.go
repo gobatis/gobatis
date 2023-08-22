@@ -60,7 +60,7 @@ func main() {
 	
 	err = db.Debug().Update("users", map[string]any{
 		"age": 99,
-	}, batis.Where("id = #{id}", batis.Param("id", 18))).Error()
+	}, batis.Where("id = #{id}", batis.Param("id", 18))).Error
 	if err != nil {
 		return
 	}
