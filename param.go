@@ -11,3 +11,11 @@ import "github.com/gobatis/gobatis/executor"
 func Param(name string, value any) executor.Param {
 	return executor.Param{Name: name, Value: value}
 }
+
+func Select(data any, columns string) executor.Rows {
+	return executor.NewSelectColumns(data, columns)
+}
+
+func Except(data any, columns string) executor.Rows {
+	return executor.NewExceptColumns(data, columns)
+}
