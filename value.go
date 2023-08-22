@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-func ReflectRow(columns []string, row []interface{}, pv reflect.Value, first bool) (bool, error) {
+func reflectRow(columns []string, row []interface{}, pv reflect.Value, first bool) (bool, error) {
 	
 	switch pv.Kind() {
 	case reflect.Slice, reflect.Array:

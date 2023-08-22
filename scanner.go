@@ -112,7 +112,7 @@ func (p *queryResult) scan(ptr any) (err error) {
 			first = true
 		}
 		var end bool
-		end, err = ReflectRow(columns, row, pv, first)
+		end, err = reflectRow(columns, row, pv, first)
 		if err != nil {
 			return
 		}
