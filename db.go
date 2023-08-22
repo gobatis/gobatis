@@ -31,15 +31,16 @@ func Open(d dialector.Dialector, options ...Option) (db *DB, err error) {
 }
 
 type DB struct {
-	db     *sql.DB
-	logger Logger
-	tx     *sql.Tx
-	ctx    context.Context
-	debug  bool
-	must   bool
-	loose  bool
-	err    error
-	namer  dialector.Namer
+	db      *sql.DB
+	logger  Logger
+	tx      *sql.Tx
+	ctx     context.Context
+	debug   bool
+	must    bool
+	loose   bool
+	err     error
+	namer   dialector.Namer
+	traceId string
 }
 
 func (d *DB) clone() *DB {
@@ -120,11 +121,13 @@ func (d *DB) Prepare(sql string, params ...NameValue) *Stmt {
 const space = " "
 
 func (d *DB) tracer() *tracer {
-	return &tracer{
-		now:    time.Now(),
-		debug:  d.debug,
-		logger: d.useLogger(),
+	t := &tracer{
+		now:     time.Now(),
+		debug:   d.debug,
+		logger:  d.useLogger(),
+		traceId: d.traceId,
 	}
+	return t
 }
 
 func (d *DB) execute(query bool, elem Element) Scanner {

@@ -5,11 +5,7 @@ import (
 	"database/sql/driver"
 	"fmt"
 	"reflect"
-	"runtime"
-	"strings"
-	"time"
 	
-	"github.com/gozelle/color"
 	"github.com/ttacon/chalk"
 )
 
@@ -126,41 +122,6 @@ func replaceIsolatedLessThanWithEntity(s string) string {
 	}
 	
 	return string(r)
-}
-
-func log(logger Logger, raw string, cost time.Duration, err error) {
-	info := &strings.Builder{}
-	var status string
-	var out func(format string, a ...any)
-	if err != nil {
-		status = color.RedString("Error")
-		out = logger.Errorf
-	} else {
-		status = color.GreenString("Success")
-		out = logger.Debugf
-	}
-	info.WriteString(fmt.Sprintf("%s\n[%s][%s]%s", color.RedString(runFuncPos(4)), status, color.WhiteString(cost.String()), color.CyanString("[Tx][1692287996356]")))
-	info.WriteString(fmt.Sprintf("\n%s", color.YellowString(raw)))
-	out(info.String())
-}
-
-// runFuncPos returns the file name and line number of the caller of the function calling it.
-// skip: 0 for the current function, 1 for the caller of the current function
-func runFuncPos(skip int) string {
-	i := skip
-	for {
-		_, file, line, ok := runtime.Caller(i)
-		if !ok || i > 10 {
-			break
-		}
-		if (!strings.Contains(file, "gobatis/executor/") &&
-			!strings.Contains(file, "gobatis/db.go")) ||
-			strings.HasSuffix(file, "_test.go") {
-			return fmt.Sprintf("%s:%d", file, line)
-		}
-		i++
-	}
-	return ""
 }
 
 //func toSnakeCase(s string) string {

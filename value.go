@@ -16,7 +16,7 @@ func reflectRow(columns []string, row []interface{}, pv reflect.Value, first boo
 		return true, setStruct(pv, newRowMap(columns, row))
 	}
 	
-	return true, SetValue(pv, row[0])
+	return true, setValue(pv, row[0])
 }
 
 func prepareFieldName(f reflect.StructField) string {
@@ -100,7 +100,7 @@ func (e *InvalidUnmarshalError) Error() string {
 	return "gobatis: Unmarshal(nil " + e.Type.String() + ")"
 }
 
-func SetValue(pv reflect.Value, v any) error {
+func setValue(pv reflect.Value, v any) error {
 	
 	vv := reflect.ValueOf(v)
 	
@@ -182,7 +182,7 @@ func setStruct(pv reflect.Value, r rowMap) (err error) {
 			//	return fmt.Errorf("no data for struct: '%s' field: '%s'", _type, _type.Field(i).Name)
 			//}
 		} else if v != nil {
-			err = SetValue(indirect(pv.Field(i), false), v)
+			err = setValue(indirect(pv.Field(i), false), v)
 			if err != nil {
 				return
 			}

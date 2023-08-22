@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/gobatis/gobatis"
 	"github.com/gobatis/gobatis/driver/postgres"
 	"github.com/gozelle/spew"
@@ -21,7 +22,8 @@ func main() {
 	var err error
 	defer func() {
 		if err != nil {
-			panic(err)
+			fmt.Println()
+			panic(fmt.Errorf("exmaple error: %s", err))
 		}
 	}()
 	db, err := batis.Open(postgres.Open("postgresql://root:123456@192.168.1.189:5432/example?connect_timeout=10&sslmode=disable"))
@@ -44,7 +46,7 @@ func main() {
 		Wealth: decimal.NewFromFloat(3.14),
 	}
 	//id := new(int64)
-	err = db.Debug().Insert("users", user, batis.Returning("id")).Scan(&user.Id)
+	err = db.Insert("users", user, batis.Returning("id")).Scan(&user.Id)
 	if err != nil {
 		return
 	}
@@ -58,7 +60,7 @@ func main() {
 	//
 	//spew.Json(user)
 	
-	err = db.Debug().Update("users", map[string]any{
+	err = db.Update("users", map[string]any{
 		"age": 99,
 	}, batis.Where("id = #{id}", batis.Param("id", 18))).Error
 	if err != nil {

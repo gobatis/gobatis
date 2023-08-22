@@ -5,7 +5,6 @@ import (
 	"github.com/gobatis/gobatis/driver/postgres"
 	"github.com/gozelle/spew"
 	"os"
-	"reflect"
 	"regexp"
 	"testing"
 	"time"
@@ -33,10 +32,6 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-}
-
-func rv(v interface{}) reflect.Value {
-	return reflect.ValueOf(v)
 }
 
 type Member struct {
@@ -136,7 +131,7 @@ func TestDBQuery45(t *testing.T) {
 	err := db.Exec(`update public.users where id = #{a} and name = #{b}`,
 		Param("a", 10),
 		Param("b", 10),
-	).Error()
+	).Error
 	if err != nil {
 		return
 	}

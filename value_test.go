@@ -25,22 +25,26 @@ func TestIndirect(t *testing.T) {
 func TestSetValueBasic(t *testing.T) {
 	
 	var a *int
-	err := SetValue(&a, 1)
+	rv := reflect.ValueOf(&a)
+	err := setValue(rv, 1)
 	require.NoError(t, err)
 	t.Log(*a)
 	
 	var b int8
-	err = SetValue(&b, 9)
+	rv = reflect.ValueOf(&b)
+	err = setValue(rv, 9)
 	require.NoError(t, err)
 	t.Log(b)
 	
 	var c float32
-	err = SetValue(&c, 3)
+	rv = reflect.ValueOf(&c)
+	err = setValue(rv, 3)
 	require.NoError(t, err)
 	t.Log(c)
 	
 	var d string
-	err = SetValue(&d, "hello world")
+	rv = reflect.ValueOf(&d)
+	err = setValue(rv, "hello world")
 	require.NoError(t, err)
 	t.Log(d)
 }

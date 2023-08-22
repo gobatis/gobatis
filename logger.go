@@ -19,17 +19,17 @@ type logger struct {
 }
 
 func (l logger) Debugf(format string, a ...any) {
-	syslog.Println(format, a)
+	syslog.Printf(format, a...)
 }
 
 func (l logger) Infof(format string, a ...any) {
-	syslog.Println(format, a)
+	syslog.Printf(format, a...)
 }
 
 func (l logger) Errorf(format string, a ...any) {
-	syslog.Println(format, a)
+	syslog.Printf(format, a...)
 }
 
 func (l logger) Warnf(format string, a ...any) {
-	syslog.Println(format, a)
+	syslog.Printf(format, a...)
 }

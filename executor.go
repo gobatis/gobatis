@@ -34,6 +34,13 @@ func (e *executor) Exec(s *Scanner) {
 		}
 	}()
 	
+	defer func() {
+		r := recover()
+		if r != nil {
+			e.tracer.err = fmt.Errorf("%v", r)
+		}
+	}()
+	
 	var _params []*param
 	var _vars []reflect.Value
 	for _, v := range e.params {
@@ -56,6 +63,7 @@ func (e *executor) Exec(s *Scanner) {
 	if e.tracer.err != nil {
 		return
 	}
+	e.tracer.sql = e.tracer.raw
 	
 	if e.query {
 		var result sql.Result
