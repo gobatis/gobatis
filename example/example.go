@@ -51,21 +51,21 @@ func main() {
 		return
 	}
 	spew.Json(user)
-	//
-	//var users []****User
-	//err = db.Query(`select * from users where id = #{id}`, batis.Param("id", 18)).Scan(&users)
+	
+	//var users []User
+	//err = db.Query(`select * from users where id = #{id}`, batis.Param("id", user.Id)).Scan(&users)
 	//if err != nil {
 	//	return
 	//}
 	//
 	//spew.Json(user)
 	
-	err = db.Update("users", map[string]any{
-		"age": 99,
-	}, batis.Where("id = #{id}", batis.Param("id", 18))).Error
-	if err != nil {
-		return
-	}
+	//err = db.Update("users", map[string]any{
+	//	"age": 99,
+	//}, batis.Where("id = #{id}", batis.Param("id", 18))).Error
+	//if err != nil {
+	//	return
+	//}
 	
 	//db.Query(
 	//	`select * from users where age = #{age}`,

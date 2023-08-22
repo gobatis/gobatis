@@ -122,6 +122,7 @@ const space = " "
 
 func (d *DB) tracer() *tracer {
 	t := &tracer{
+		err:     d.err,
 		now:     time.Now(),
 		debug:   d.debug,
 		logger:  d.useLogger(),
@@ -132,15 +133,23 @@ func (d *DB) tracer() *tracer {
 
 func (d *DB) execute(query bool, elem Element) Scanner {
 	t := d.tracer()
+	if t.err != nil {
+		t.log()
+		return Scanner{Error: t.err, tracer: t}
+	}
 	e := &executor{
 		query:  query,
-		conn:   d.db,
 		tracer: t,
+	}
+	if d.tx != nil {
+		e.conn = d.tx
+	} else {
+		e.conn = d.db
 	}
 	e.sql, e.params, e.tracer.err = elem.SQL(d.namer, "db")
 	if e.tracer.err != nil {
 		t.log()
-		return Scanner{Error: t.err}
+		return Scanner{Error: t.err, tracer: t}
 	}
 	s := &Scanner{tracer: t}
 	e.Exec(s)
