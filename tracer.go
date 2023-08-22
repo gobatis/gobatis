@@ -2,10 +2,11 @@ package batis
 
 import (
 	"fmt"
-	"github.com/gozelle/color"
 	"runtime"
 	"strings"
 	"time"
+
+	"github.com/gozelle/color"
 )
 
 type tracer struct {
@@ -46,8 +47,8 @@ func (t tracer) log() {
 	if t.tx {
 		tx = fmt.Sprintf("[%s]", color.CyanString("Tx"))
 	}
-	info.WriteString(fmt.Sprintf("%s %s\n[%s][%s]%s%s", color.MagentaString("[gobatis]"), color.RedString(t.runFuncPos(4)), status, cost, traceId, tx))
-	info.WriteString(fmt.Sprintf("\n%s", color.YellowString(t.sql)))
+	info.WriteString(fmt.Sprintf("%s %s", color.MagentaString("[gobatis]"), color.RedString(t.runFuncPos(4))))
+	info.WriteString(fmt.Sprintf("\n[%s][%s]%s%s %s", status, cost, traceId, tx, color.YellowString(t.sql)))
 	if t.err != nil {
 		info.WriteString(fmt.Sprintf("\n%s", color.RedString(t.err.Error())))
 	}

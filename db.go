@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"time"
-	
+
 	"github.com/gobatis/gobatis/dialector"
 	"golang.org/x/sync/errgroup"
 )
@@ -131,12 +131,25 @@ func (d *DB) tracer() *tracer {
 	return t
 }
 
+func (d *DB) context() context.Context {
+	if d.ctx == nil {
+		return context.Background()
+	}
+	return d.ctx
+}
+
 func (d *DB) execute(query bool, elem Element) Scanner {
 	t := d.tracer()
 	if t.err != nil {
 		t.log()
 		return Scanner{Error: t.err, tracer: t}
 	}
+	var c *sql.Conn
+	defer func() {
+		if c != nil {
+			_ = c.Close()
+		}
+	}()
 	e := &executor{
 		query:  query,
 		tracer: t,
@@ -144,7 +157,12 @@ func (d *DB) execute(query bool, elem Element) Scanner {
 	if d.tx != nil {
 		e.conn = d.tx
 	} else {
-		e.conn = d.db
+		c, t.err = d.db.Conn(d.context())
+		if t.err != nil {
+			t.log()
+			return Scanner{Error: t.err, tracer: t}
+		}
+		e.conn = c
 	}
 	e.sql, e.params, e.tracer.err = elem.SQL(d.namer, "db")
 	if e.tracer.err != nil {
@@ -153,6 +171,9 @@ func (d *DB) execute(query bool, elem Element) Scanner {
 	}
 	s := &Scanner{tracer: t}
 	e.Exec(s)
+	for _, v := range s.rows {
+		_ = v.Close()
+	}
 	return *s
 }
 
@@ -167,7 +188,7 @@ func (d *DB) Build(b Builder) Scanner {
 		t.log()
 		return Scanner{Error: err}
 	}
-	
+
 	s := &Scanner{}
 	g := errgroup.Group{}
 	for _, v := range es {
@@ -184,7 +205,7 @@ func (d *DB) Build(b Builder) Scanner {
 	if err != nil {
 		return Scanner{Error: err}
 	}
-	
+
 	return *s
 }
 
@@ -203,7 +224,8 @@ func (d *DB) Update(table string, data map[string]any, where Element) Scanner {
 
 func (d *DB) Insert(table string, data any, elems ...Element) Scanner {
 	i := &insert{table: table, data: data, elems: elems}
-	return d.execute(true, i)
+	s := d.execute(true, i)
+	return s
 }
 
 func (d *DB) InsertBatch(table string, batch int, data any, onConflict Element) Scanner {

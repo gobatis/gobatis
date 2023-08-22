@@ -27,20 +27,20 @@ type executor struct {
 }
 
 func (e *executor) Exec(s *Scanner) {
-	
+
 	defer func() {
 		if e.tracer.err != nil {
 			e.tracer.log()
 		}
 	}()
-	
+
 	defer func() {
 		r := recover()
 		if r != nil {
 			e.tracer.err = fmt.Errorf("%v", r)
 		}
 	}()
-	
+
 	var _params []*param
 	var _vars []reflect.Value
 	for _, v := range e.params {
@@ -50,21 +50,20 @@ func (e *executor) Exec(s *Scanner) {
 		})
 		_vars = append(_vars, reflect.ValueOf(v.Value))
 	}
-	
+
 	var node *xmlNode
 	node, e.tracer.err = parseSQL("test.file", fmt.Sprintf("<sql>%s</sql>", e.sql))
 	if e.tracer.err != nil {
 		return
 	}
-	
+
 	frag := &fragment{node: node, in: _params}
-	
+
 	e.tracer.raw, e.tracer.exprs, e.tracer.vars, e.tracer.dynamic, e.tracer.err = frag.parseStatement(_vars...)
 	if e.tracer.err != nil {
 		return
 	}
 	e.tracer.sql = e.tracer.raw
-	
 	if e.query {
 		var rows *sql.Rows
 		rows, e.tracer.err = e.conn.QueryContext(context.Background(), e.tracer.raw, e.tracer.vars...)
