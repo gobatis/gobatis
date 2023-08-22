@@ -44,7 +44,8 @@ OPEN        :   '<'                     -> pushMode(INSIDE) ;
 XMLDeclOpen :   '<?xml' S               -> pushMode(INSIDE) ;
 SPECIAL_OPEN:   '<?' Name               -> more, pushMode(PROC_INSTR) ;
 
-TEXT        :   ~[<&]+ ;        // match any 16 bit char other than < and &
+//TEXT        :   ~[<&]+ ;        // match any 16 bit char other than < and &
+TEXT        :   ~[&]+ ;        // match any 16 bit char other than < and &
 
 // ----------------- Everything INSIDE of a tag ---------------------
 mode INSIDE;
