@@ -66,20 +66,20 @@ func (e *executor) Exec(s *Scanner) {
 	e.tracer.sql = e.tracer.raw
 	
 	if e.query {
-		var result sql.Result
-		result, e.tracer.err = e.conn.ExecContext(context.Background(), e.tracer.raw, e.tracer.vars...)
-		if e.tracer.err != nil {
-			return
-		}
-		s.result = append(s.result, &result)
-		return
-	} else {
 		var rows *sql.Rows
 		rows, e.tracer.err = e.conn.QueryContext(context.Background(), e.tracer.raw, e.tracer.vars...)
 		if e.tracer.err != nil {
 			return
 		}
 		s.rows = append(s.rows, rows)
+		return
+	} else {
+		var result sql.Result
+		result, e.tracer.err = e.conn.ExecContext(context.Background(), e.tracer.raw, e.tracer.vars...)
+		if e.tracer.err != nil {
+			return
+		}
+		s.result = append(s.result, &result)
 		return
 	}
 }
