@@ -77,6 +77,7 @@ const config = {
                         position: 'left',
                         label: 'Documentation',
                     },
+                    {to: '/blog', label: 'Community', position: 'left'},
                     {to: '/blog', label: 'Batisboard', position: 'left'},
                     {to: '/blog', label: 'Blog', position: 'left'},
                     {

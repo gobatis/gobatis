@@ -1,6 +1,6 @@
 ---
 slug: long-blog-post
-title: Long Blog Post
+title: Gobatis vs MyBatis
 authors: endi
 tags: [hello, docusaurus]
 ---

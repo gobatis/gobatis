@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"sync/atomic"
-	
+
 	"github.com/gobatis/gobatis/dialector"
 )
 
@@ -66,7 +66,7 @@ func (d *DB) clone() *DB {
 func (d *DB) WithTraceId(traceId string) *DB {
 	c := d.clone()
 	c.traceId = traceId
-	
+
 	return c
 }
 
@@ -127,35 +127,35 @@ func (d *DB) context() context.Context {
 }
 
 func (d *DB) execute(dest ...any) {
-	
+
 	defer func() {
 		if d.Error != nil {
 			// log
 		}
 	}()
-	
+
 	if d.Error != nil {
 		return
 	}
-	
+
 	if d.executed.Swap(true) {
 		d.Error = fmt.Errorf("db has executed")
 		return
 	}
-	
+
 	l1 := len(dest)
 	l2 := len(d.executors)
-	
+
 	if l2 == 0 {
 		d.Error = fmt.Errorf("no exector")
 		return
 	}
-	
+
 	if l1 > l2 {
 		d.Error = fmt.Errorf("expect %d dest, got %d exector", l1, l2)
 		return
 	}
-	
+
 	for i, v := range d.executors {
 		var vv any
 		if i < l1 {
@@ -166,24 +166,24 @@ func (d *DB) execute(dest ...any) {
 			return
 		}
 	}
-	
+
 	return
 }
 
 func (d *DB) prepare(query bool, elem Element) {
-	
+
 	var err error
 	defer func() {
 		if err != nil {
 			d.Error = err
 		}
 	}()
-	
+
 	if d.Error != nil {
 		err = d.Error
 		return
 	}
-	
+
 	e := executor{query: query}
 	if d.tx != nil {
 		e.conn = d.tx
@@ -197,28 +197,19 @@ func (d *DB) prepare(query bool, elem Element) {
 	if err != nil {
 		return
 	}
-	
+
 	return
 }
 
 // Query 执行查询语句
 func (d *DB) Query(sql string, params ...NameValue) *DB {
-	//d.prepare(true, query{sql: sql, params: params})
-	//queryer.Queries()
+	d.prepare(true, query{sql: sql, params: params})
 	return d
 }
 
-func test2() {
-	db := &DB{}
-	var users []string
-	err := db.Query(`select * from public.users where active = #{args.Paging} and age < #{args.Node}`,
-		Param("args", 18)).Scan(&users).Error
-	_ = err
-}
-
 // Scan 扫描结果集
-func (d *DB) Scan(dest ...any) *DB {
-	d.execute(dest...)
+func (d *DB) Scan(dest any) *DB {
+	d.execute(dest)
 	return d
 }
 
@@ -246,7 +237,7 @@ func (d *DB) Scan(dest ...any) *DB {
 //	//if err != nil {
 //	//	return Scanner{Error: err}
 //	//}
-//	
+//
 //	return *s
 //}
 
@@ -298,7 +289,7 @@ func (d *DB) InsertBatch(table string, batch int, data any, onConflict Element) 
 }
 
 func (d *DB) ParallelQuery(queryer ...Queryer) *DB {
-	
+
 	return d
 }
 
@@ -314,7 +305,7 @@ func test() {
 		Params: nil,
 		Scan:   []any{&items},
 	})
-	
+
 	d.ParallelQuery(
 		&Query{
 			SQL:    "",
