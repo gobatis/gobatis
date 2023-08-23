@@ -129,3 +129,11 @@ func replaceIsolatedLessThanWithEntity(s string) string {
 //	snakeStr := re.ReplaceAllString(s, "${1}_${2}")
 //	return strings.ToLower(snakeStr)
 //}
+
+func Extract[T any, V any](items []T, fn func(item T) V) []V {
+	var r []V
+	for _, v := range items {
+		r = append(r, fn(v))
+	}
+	return r
+}

@@ -7,7 +7,7 @@ import (
 	"reflect"
 	"strings"
 	"time"
-
+	
 	"github.com/gobatis/gobatis/cast"
 	"github.com/shopspring/decimal"
 )
@@ -24,55 +24,55 @@ type Scanner struct {
 }
 
 func (s Scanner) Scan(ptr ...any) (err error) {
-
-	defer func() {
-		if err != nil {
-			s.tracer.err = err
-			s.tracer.log()
-			s.Error = err
-		}
-	}()
-
-	if s.tracer.err != nil {
-		err = s.tracer.err
-		return
-	}
-
-	l1 := len(ptr)
-	l2 := len(s.rows)
-	if l1 > l2 {
-		return fmt.Errorf("scanning ptrs length: %d > result length: %d", l1, l2)
-	}
-
-	for i := 0; i < l2; i++ {
-		qr := queryResult{
-			rows: s.rows[i],
-		}
-		err = qr.scan(ptr[i])
-		if err != nil {
-			err = fmt.Errorf("scan rows error: %w", err)
-			return
-		}
-	}
-
+	
+	//defer func() {
+	//	if err != nil {
+	//		s.tracer.err = err
+	//		s.tracer.log()
+	//		s.Error = err
+	//	}
+	//}()
+	//
+	//if s.tracer.err != nil {
+	//	err = s.tracer.err
+	//	return
+	//}
+	//
+	//l1 := len(ptr)
+	//l2 := len(s.rows)
+	//if l1 > l2 {
+	//	return fmt.Errorf("scanning ptrs length: %d > result length: %d", l1, l2)
+	//}
+	//
+	//for i := 0; i < l2; i++ {
+	//	qr := queryResult{
+	//		rows: s.rows[i],
+	//	}
+	//	err = qr.scan(ptr[i])
+	//	if err != nil {
+	//		err = fmt.Errorf("scan rows error: %w", err)
+	//		return
+	//	}
+	//}
+	
 	return
 }
 
 func (s Scanner) AffectRows() (affectedRows int, err error) {
-
-	defer func() {
-		if err != nil {
-			s.tracer.err = err
-			s.tracer.log()
-			s.Error = err
-		}
-	}()
-
-	if s.tracer.err != nil {
-		err = s.tracer.err
-		return
-	}
-
+	
+	//defer func() {
+	//	if err != nil {
+	//		s.tracer.err = err
+	//		s.tracer.log()
+	//		s.Error = err
+	//	}
+	//}()
+	//
+	//if s.tracer.err != nil {
+	//	err = s.tracer.err
+	//	return
+	//}
+	
 	return 0, nil
 }
 
@@ -90,17 +90,17 @@ func (p *queryResult) Tag() string {
 }
 
 func (p *queryResult) scan(ptr any) (err error) {
-
+	
 	defer func() {
 		_ = p.rows.Close()
 	}()
-
+	
 	pv := reflect.ValueOf(ptr)
 	if pv.Kind() != reflect.Pointer || pv.IsNil() {
 		return &InvalidUnmarshalError{pv.Type()}
 	}
 	pv = indirect(pv, false)
-
+	
 	columns, err := p.rows.Columns()
 	if err != nil {
 		return
@@ -135,12 +135,12 @@ func (p *queryResult) scan(ptr any) (err error) {
 		err = sql.ErrNoRows
 		return
 	}
-
+	
 	return
 }
 
 func (p *queryResult) prepareFieldName(f reflect.StructField) string {
-
+	
 	field := f.Tag.Get(p.Tag())
 	if field == "" {
 		field = toSnakeCase(f.Name)
@@ -188,20 +188,20 @@ func (p *queryResult) reflectStructs(r rowMap, ptr reflect.Value) error {
 }
 
 func (p *queryResult) reflectValue(column string, dest reflect.Value, value interface{}) (err error) {
-
+	
 	var dv reflect.Value
 	if dest.IsNil() {
 		// TODO
 	} else {
 		dv = reflectValueElem(dest)
 	}
-
+	
 	dt := reflectTypeElem(dest.Type())
 	if dt.Kind() == reflect.Slice {
 		dt = reflectTypeElem(dt.Elem())
 	}
 	dtv := reflect.New(dt)
-
+	
 	if dtv.Type().Implements(scannerType) {
 		errs := dtv.MethodByName("Scan").Call([]reflect.Value{reflect.ValueOf(value)})
 		if len(errs) > 0 && errs[0].Interface() != nil {
@@ -318,7 +318,7 @@ func (p *queryResult) reflectValue(column string, dest reflect.Value, value inte
 	if err != nil {
 		return fmt.Errorf("scan field '%s' error: %s", column, err.Error())
 	}
-
+	
 	return fmt.Errorf("can't scan field '%s' type '%s' to '%s'", column, reflect.TypeOf(value), dest.Type())
 }
 

@@ -19,20 +19,20 @@ type tracer struct {
 	raw    string
 	exprs  []string
 	vars   []interface{}
-	//tx      bool
+	tx     bool
 	//dynamic bool
 	append bool
 }
 
-func (t tracer) log() {
-	if !t.debug && t.err == nil {
+func (t tracer) log(err error) {
+	if !t.debug && err == nil {
 		return
 	}
 	cost := time.Since(t.now)
 	info := &strings.Builder{}
 	var status string
 	var out func(format string, a ...any)
-	if t.err != nil {
+	if err != nil {
 		status = color.RedString("Error")
 		out = t.logger.Errorf
 	} else {
@@ -49,8 +49,8 @@ func (t tracer) log() {
 	}
 	info.WriteString(fmt.Sprintf("%s %s", color.MagentaString("[gobatis]"), color.RedString(t.runFuncPos(4))))
 	info.WriteString(fmt.Sprintf("\n[%s][%s]%s%s %s", status, cost, traceId, tx, color.YellowString(t.sql)))
-	if t.err != nil {
-		info.WriteString(fmt.Sprintf("\n%s", color.RedString(t.err.Error())))
+	if err != nil {
+		info.WriteString(fmt.Sprintf("\n%s", color.RedString(err.Error())))
 	}
 	out(info.String())
 }

@@ -150,7 +150,7 @@ func TestDBQuery2(t *testing.T) {
 	var m Member
 	err = db.Debug().Query(`select * from members where id = #{age}`,
 		Param("age", 1),
-	).Scan(&m)
+	).Scan(&m).Error
 	require.NoError(t, err)
 	spew.Json(m)
 	//

@@ -7,7 +7,6 @@ import (
 	"time"
 	
 	"github.com/gobatis/gobatis/dialector"
-	"golang.org/x/sync/errgroup"
 )
 
 const txKey = "GOBATIS_TX"
@@ -127,7 +126,7 @@ const space = " "
 
 func (d *DB) initTracer() *tracer {
 	t := &tracer{
-		err:     d.err,
+		//err:     d.err,
 		now:     time.Now(),
 		debug:   d.debug,
 		logger:  d.useLogger(),
@@ -163,40 +162,40 @@ func (d *DB) execute(query bool, elem Element) {
 		return
 	}
 	
-	if t.err != nil {
-		t.log()
-		return
-	}
-	var c *sql.Conn
-	defer func() {
-		if c != nil {
-			_ = c.Close()
-		}
-	}()
-	e := &executor{
-		query:  query,
-		tracer: t,
-	}
-	if d.tx != nil {
-		e.conn = d.tx
-	} else {
-		c, t.err = d.db.Conn(d.context())
-		if t.err != nil {
-			t.log()
-			return
-		}
-		e.conn = c
-	}
-	e.sql, e.params, e.tracer.err = elem.SQL(d.namer, "db")
-	if e.tracer.err != nil {
-		t.log()
-		return
-	}
-	s := &Scanner{tracer: t}
-	e.Exec(s)
-	for _, v := range s.rows {
-		_ = v.Close()
-	}
+	//if t.err != nil {
+	//	t.log()
+	//	return
+	//}
+	//var c *sql.Conn
+	//defer func() {
+	//	if c != nil {
+	//		_ = c.Close()
+	//	}
+	//}()
+	//e := &executor{
+	//	query:  query,
+	//	tracer: t,
+	//}
+	//if d.tx != nil {
+	//	e.conn = d.tx
+	//} else {
+	//	c, t.err = d.db.Conn(d.context())
+	//	if t.err != nil {
+	//		t.log()
+	//		return
+	//	}
+	//	e.conn = c
+	//}
+	//e.sql, e.params, e.tracer.err = elem.SQL(d.namer, "db")
+	//if e.tracer.err != nil {
+	//	t.log()
+	//	return
+	//}
+	//s := &Scanner{tracer: t}
+	//e.Exec(s)
+	//for _, v := range s.rows {
+	//	_ = v.Close()
+	//}
 	return
 }
 
@@ -206,29 +205,29 @@ func (d *DB) Query(sql string, params ...NameValue) *DB {
 }
 
 func (d *DB) Build(b Builder) Scanner {
-	t := d.initTracer()
-	es, err := b.Build()
-	if err != nil {
-		t.log()
-		return Scanner{Error: err}
-	}
-	
+	//t := d.initTracer()
+	//es, err := b.Build()
+	//if err != nil {
+	//	t.log()
+	//	return Scanner{Error: err}
+	//}
+	//
 	s := &Scanner{}
-	g := errgroup.Group{}
-	for _, v := range es {
-		e := v
-		e.conn = d.db
-		t.err = d.err
-		g.Go(func() error {
-			// todo auto cancel
-			e.Exec(s)
-			return t.err
-		})
-	}
-	err = g.Wait()
-	if err != nil {
-		return Scanner{Error: err}
-	}
+	//g := errgroup.Group{}
+	//for _, v := range es {
+	//	e := v
+	//	e.conn = d.db
+	//	t.err = d.err
+	//	g.Go(func() error {
+	//		// todo auto cancel
+	//		e.Exec(s)
+	//		return t.err
+	//	})
+	//}
+	//err = g.Wait()
+	//if err != nil {
+	//	return Scanner{Error: err}
+	//}
 	
 	return *s
 }
@@ -324,12 +323,12 @@ type LDest struct {
 
 	db.Query().LooseScan(batis.LooseDest(&users, "$..Posts","$..Orders")).Error
 
-    db.Query(`select * from posts where user_id in #{userIds}`,batis.Param("userIds", userIds)).Associate(&users, "user_id => $..Id", "$..Posts").Error
+    db.Query(`select * from posts where user_id in #{userIds}`,batis.Param("userIds", userIds)).Link(&users, "user_id => $..Id", "$..Posts").Error
 
 	postIds := mapping.Map(users, func())
 
-	db.Query(`select * from tags where post_id in #{postIds}`, batis.Param("postIds", postIds)).Associate(&users, "user_id => $..Posts[*].Id", "$..Post[*].Tags").Error
+	db.Query(`select * from tags where post_id in #{postIds}`, batis.Param("postIds", postIds)).Link(&users, "user_id => $..Posts[*].Id", "$..Post[*].Tags").Error
 
-    db.Query(`select * from orders where user_id in #{userIds}`,batis.Param("userIds", userIds)).Associate(&users, "user_id => $..Id", "$..Orders").Error
+    db.Query(`select * from orders where user_id in #{userIds}`,batis.Param("userIds", userIds)).Link(&users, "user_id => $..Id", "$..Orders").Error
 
 */

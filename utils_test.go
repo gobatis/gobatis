@@ -45,3 +45,20 @@ func TestToSnakeCase(t *testing.T) {
 		require.Equal(t, tt.expected, result)
 	}
 }
+
+func TestExtract(t *testing.T) {
+	type R struct {
+		A int64
+	}
+	
+	items := []R{
+		{A: 1},
+		{A: 2},
+		{A: 3},
+	}
+	
+	r := Extract[R, int64](items, func(item R) int64 {
+		return item.A
+	})
+	t.Log(r)
+}
