@@ -37,7 +37,6 @@ type DB struct {
 	ctx     context.Context
 	debug   bool
 	must    bool
-	loose   bool
 	err     error
 	namer   dialector.Namer
 	traceId string
@@ -54,7 +53,6 @@ func (d *DB) clone() *DB {
 		ctx:    d.ctx,
 		debug:  d.debug,
 		must:   d.must,
-		loose:  d.loose,
 		err:    d.err,
 		namer:  d.namer,
 		tracer: d.tracer,
@@ -77,18 +75,6 @@ func (d *DB) Debug() *DB {
 	c := d.clone()
 	c.debug = true
 	return c
-}
-
-func (d *DB) Must() *DB {
-	c := d.clone()
-	c.debug = true
-	return c
-}
-
-func (d *DB) Loose() *DB {
-	f := d.clone()
-	f.loose = true
-	return f
 }
 
 func (d *DB) SetLogger(logger Logger) {
@@ -285,11 +271,11 @@ func (d *DB) Rollback() error {
 
 // Scan 扫描结果集
 func (d *DB) Scan(dest ...any) *DB {
-	
 	return d
 }
 
 // LooseScan 宽松扫描模式
+// 可以忽略 struct 中的指定字段可以没有值
 func (d *DB) LooseScan(dest ...LDest) *DB {
 	return d
 }
@@ -317,7 +303,10 @@ type LDest struct {
 	}
 
 	var users []User
-	db.Query(`select * from users`).Scan(&users);
+
+    db.Must().Query(`select * from users`).LooseScan(&users, "$..Posts");
+
+	db.Must().Exec(`select`)
 
 	userIds := mapping.Merge(users, func())
 
