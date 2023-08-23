@@ -3,8 +3,9 @@ package batis
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"time"
-
+	
 	"github.com/gobatis/gobatis/dialector"
 	"golang.org/x/sync/errgroup"
 )
@@ -41,6 +42,9 @@ type DB struct {
 	err     error
 	namer   dialector.Namer
 	traceId string
+	Error   error
+	tracer  *tracer
+	dirty   bool
 }
 
 func (d *DB) clone() *DB {
@@ -54,6 +58,7 @@ func (d *DB) clone() *DB {
 		loose:  d.loose,
 		err:    d.err,
 		namer:  d.namer,
+		tracer: d.tracer,
 	}
 }
 
@@ -120,7 +125,7 @@ func (d *DB) Prepare(sql string, params ...NameValue) *Stmt {
 
 const space = " "
 
-func (d *DB) tracer() *tracer {
+func (d *DB) initTracer() *tracer {
 	t := &tracer{
 		err:     d.err,
 		now:     time.Now(),
@@ -138,11 +143,29 @@ func (d *DB) context() context.Context {
 	return d.ctx
 }
 
-func (d *DB) execute(query bool, elem Element) Scanner {
-	t := d.tracer()
+func (d *DB) execute(query bool, elem Element) {
+	
+	d.tracer = d.initTracer()
+	
+	var err error
+	defer func() {
+		if err != nil {
+			d.Error = err
+		}
+	}()
+	
+	if d.Error != nil {
+		err = d.Error
+		return
+	}
+	if d.tracer != nil {
+		d.Error = fmt.Errorf("db is dirty")
+		return
+	}
+	
 	if t.err != nil {
 		t.log()
-		return Scanner{Error: t.err, tracer: t}
+		return
 	}
 	var c *sql.Conn
 	defer func() {
@@ -160,35 +183,36 @@ func (d *DB) execute(query bool, elem Element) Scanner {
 		c, t.err = d.db.Conn(d.context())
 		if t.err != nil {
 			t.log()
-			return Scanner{Error: t.err, tracer: t}
+			return
 		}
 		e.conn = c
 	}
 	e.sql, e.params, e.tracer.err = elem.SQL(d.namer, "db")
 	if e.tracer.err != nil {
 		t.log()
-		return Scanner{Error: t.err, tracer: t}
+		return
 	}
 	s := &Scanner{tracer: t}
 	e.Exec(s)
 	for _, v := range s.rows {
 		_ = v.Close()
 	}
-	return *s
+	return
 }
 
-func (d *DB) Query(sql string, params ...NameValue) Scanner {
-	return d.execute(true, query{sql: sql, params: params})
+func (d *DB) Query(sql string, params ...NameValue) *DB {
+	d.execute(true, query{sql: sql, params: params})
+	return d
 }
 
 func (d *DB) Build(b Builder) Scanner {
-	t := d.tracer()
+	t := d.initTracer()
 	es, err := b.Build()
 	if err != nil {
 		t.log()
 		return Scanner{Error: err}
 	}
-
+	
 	s := &Scanner{}
 	g := errgroup.Group{}
 	for _, v := range es {
@@ -205,40 +229,44 @@ func (d *DB) Build(b Builder) Scanner {
 	if err != nil {
 		return Scanner{Error: err}
 	}
-
+	
 	return *s
 }
 
-func (d *DB) Exec(sql string, params ...NameValue) Scanner {
-	return d.execute(false, exec{sql: sql, params: params})
+func (d *DB) Exec(sql string, params ...NameValue) *DB {
+	d.execute(false, exec{sql: sql, params: params})
+	return d
 }
 
-func (d *DB) Delete(table string, where Element) Scanner {
+func (d *DB) Delete(table string, where Element) *DB {
 	e := &del{table: table, elems: []Element{where}}
-	return d.execute(false, e)
+	d.execute(false, e)
+	return d
 }
 
-func (d *DB) Update(table string, data map[string]any, where Element) Scanner {
-	return d.execute(false, update{table: table, data: data, elems: []Element{where}})
+func (d *DB) Update(table string, data map[string]any, where Element) *DB {
+	d.execute(false, update{table: table, data: data, elems: []Element{where}})
+	return d
 }
 
-func (d *DB) Insert(table string, data any, elems ...Element) Scanner {
+func (d *DB) Insert(table string, data any, elems ...Element) *DB {
 	i := &insert{table: table, data: data, elems: elems}
-	s := d.execute(true, i)
-	return s
+	d.execute(true, i)
+	return d
 }
 
-func (d *DB) InsertBatch(table string, batch int, data any, onConflict Element) Scanner {
+func (d *DB) InsertBatch(table string, batch int, data any, onConflict Element) *DB {
 	i := &insertBatch{table: table, batch: batch, data: data, elems: []Element{onConflict}}
-	return d.execute(false, i)
+	d.execute(false, i)
+	return d
 }
 
-func (d *DB) Fetch(sql string, params ...NameValue) <-chan Scanner {
-	ch := make(chan Scanner)
-	f := &fetch{}
-	d.execute(true, f)
-	return ch
-}
+//func (d *DB) Fetch(sql string, params ...NameValue) <-chan Scanner {
+//	ch := make(chan Scanner)
+//	f := &fetch{}
+//	d.execute(true, f)
+//	return ch
+//}
 
 func (d *DB) Begin() *DB {
 	if d.err != nil {
@@ -255,3 +283,53 @@ func (d *DB) Commit() error {
 func (d *DB) Rollback() error {
 	return d.tx.Rollback()
 }
+
+// Scan 扫描结果集
+func (d *DB) Scan(dest ...any) *DB {
+	
+	return d
+}
+
+// LooseScan 宽松扫描模式
+func (d *DB) LooseScan(dest ...LDest) *DB {
+	return d
+}
+
+func LooseDest(dest any, fields ...string) LDest {
+	return LDest{dest: dest, fields: fields}
+}
+
+type LDest struct {
+	dest   any
+	fields []string
+}
+
+/*
+    type User struct {
+		Id     int64
+		Name   string
+		Posts  []string
+		Orders []string
+	}
+
+	type Post struct {
+		Id   int64
+		Tags []string
+	}
+
+	var users []User
+	db.Query(`select * from users`).Scan(&users);
+
+	userIds := mapping.Merge(users, func())
+
+	db.Query().LooseScan(batis.LooseDest(&users, "$..Posts","$..Orders")).Error
+
+    db.Query(`select * from posts where user_id in #{userIds}`,batis.Param("userIds", userIds)).Associate(&users, "user_id => $..Id", "$..Posts").Error
+
+	postIds := mapping.Map(users, func())
+
+	db.Query(`select * from tags where post_id in #{postIds}`, batis.Param("postIds", postIds)).Associate(&users, "user_id => $..Posts[*].Id", "$..Post[*].Tags").Error
+
+    db.Query(`select * from orders where user_id in #{userIds}`,batis.Param("userIds", userIds)).Associate(&users, "user_id => $..Id", "$..Orders").Error
+
+*/

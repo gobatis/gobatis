@@ -5,23 +5,23 @@ import (
 	"runtime"
 	"strings"
 	"time"
-
+	
 	"github.com/gozelle/color"
 )
 
 type tracer struct {
 	now     time.Time
 	traceId string
-	err     error
-	logger  Logger
-	debug   bool
-	sql     string
-	raw     string
-	exprs   []string
-	vars    []interface{}
-	tx      bool
-	dynamic bool
-	append  bool
+	//err     error
+	logger Logger
+	debug  bool
+	sql    string
+	raw    string
+	exprs  []string
+	vars   []interface{}
+	//tx      bool
+	//dynamic bool
+	append bool
 }
 
 func (t tracer) log() {
