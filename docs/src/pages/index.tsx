@@ -12,7 +12,7 @@ function HomepageHeader() {
     return (
         <header className={clsx('hero hero--primary', styles.heroBanner)}>
             <div className="container">
-                {/*<img className={styles.logo} src="img/logo.png" alt="Gobatis Logo"/>*/}
+                <img className={styles.logo} src="img/logo.png" alt="Gobatis Logo"/>
                 <h1 className="hero__title">{siteConfig.title}</h1>
                 <p className="hero__subtitle">{siteConfig.tagline}</p>
                 <div className={styles.buttons}>
@@ -31,7 +31,7 @@ export default function Home(): JSX.Element {
     const {siteConfig} = useDocusaurusContext();
     return (
         <Layout
-            title={`Hello from ${siteConfig.title}`}
+            title={`${siteConfig.title}`}
             description="Description will go into a meta tag in <head />">
             <HomepageHeader/>
             <main>

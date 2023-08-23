@@ -39,6 +39,7 @@ const config = {
             ({
                 docs: {
                     sidebarPath: require.resolve('./sidebars.js'),
+                    sidebarCollapsible: false,
                     // Please change this to your repo.
                     // Remove this to remove the "edit this page" links.
                     editUrl:
@@ -76,6 +77,7 @@ const config = {
                         position: 'left',
                         label: 'Documentation',
                     },
+                    {to: '/blog', label: 'Batisboard', position: 'left'},
                     {to: '/blog', label: 'Blog', position: 'left'},
                     {
                         href: 'https://github.com/facebook/docusaurus',
