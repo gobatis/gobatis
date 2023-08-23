@@ -1,7 +1,6 @@
 package batis
 
 import (
-	"context"
 	"database/sql"
 	"fmt"
 	"reflect"
@@ -11,70 +10,6 @@ import (
 	"github.com/gobatis/gobatis/cast"
 	"github.com/shopspring/decimal"
 )
-
-type Scanner struct {
-	Error  error
-	ctx    context.Context
-	logger Logger
-	rows   []*sql.Rows
-	must   bool
-	debug  bool
-	result []*sql.Result
-	tracer *tracer
-}
-
-func (s Scanner) Scan(ptr ...any) (err error) {
-	
-	//defer func() {
-	//	if err != nil {
-	//		s.tracer.err = err
-	//		s.tracer.log()
-	//		s.Error = err
-	//	}
-	//}()
-	//
-	//if s.tracer.err != nil {
-	//	err = s.tracer.err
-	//	return
-	//}
-	//
-	//l1 := len(ptr)
-	//l2 := len(s.rows)
-	//if l1 > l2 {
-	//	return fmt.Errorf("scanning ptrs length: %d > result length: %d", l1, l2)
-	//}
-	//
-	//for i := 0; i < l2; i++ {
-	//	qr := queryResult{
-	//		rows: s.rows[i],
-	//	}
-	//	err = qr.scan(ptr[i])
-	//	if err != nil {
-	//		err = fmt.Errorf("scan rows error: %w", err)
-	//		return
-	//	}
-	//}
-	
-	return
-}
-
-func (s Scanner) AffectRows() (affectedRows int, err error) {
-	
-	//defer func() {
-	//	if err != nil {
-	//		s.tracer.err = err
-	//		s.tracer.log()
-	//		s.Error = err
-	//	}
-	//}()
-	//
-	//if s.tracer.err != nil {
-	//	err = s.tracer.err
-	//	return
-	//}
-	
-	return 0, nil
-}
 
 var (
 	reflectTag = "db"

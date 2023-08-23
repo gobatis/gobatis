@@ -65,10 +65,11 @@ func Where(sql string, params ...NameValue) Element {
 }
 
 type update struct {
-	table string
-	data  map[string]any
-	elems []Element
-	where *where
+	table     string
+	data      map[string]any
+	elems     []Element
+	where     *where
+	returning *returning
 }
 
 func (u update) SQL(namer dialector.Namer, tag string) (sql string, params []NameValue, err error) {
@@ -309,9 +310,10 @@ func (f fetch) SQL(namer dialector.Namer, tag string) (s string, params []NameVa
 }
 
 type del struct {
-	table string
-	elems []Element
-	where *where
+	table     string
+	elems     []Element
+	where     *where
+	returning *returning
 }
 
 func (d del) SQL(namer dialector.Namer, tag string) (sql string, params []NameValue, err error) {

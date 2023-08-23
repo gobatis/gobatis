@@ -4,23 +4,26 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"time"
+	"sync/atomic"
 	
 	"github.com/gobatis/gobatis/dialector"
 )
 
-const txKey = "GOBATIS_TX"
+const (
+	txKey = "GOBATIS_TX"
+	space = " "
+)
 
-func WithTx(parent context.Context, tx *DB) context.Context {
+func WrapTx(parent context.Context, tx *DB) context.Context {
 	return context.WithValue(parent, txKey, tx)
 }
 
 func Open(d dialector.Dialector, options ...Option) (db *DB, err error) {
 	db = &DB{
+		Error:  nil,
 		db:     nil,
 		logger: nil,
 		tx:     nil,
-		err:    nil,
 		namer:  d.Namer(),
 	}
 	db.db, err = d.DB()
@@ -31,32 +34,40 @@ func Open(d dialector.Dialector, options ...Option) (db *DB, err error) {
 }
 
 type DB struct {
-	db      *sql.DB
-	logger  Logger
-	tx      *sql.Tx
-	ctx     context.Context
-	debug   bool
-	must    bool
-	err     error
-	namer   dialector.Namer
-	traceId string
-	Error   error
-	tracer  *tracer
-	dirty   bool
+	Error        error
+	RowsAffected *int64
+	LastInsertId *int64
+	db           *sql.DB
+	logger       Logger
+	tx           *tx
+	ctx          context.Context
+	debug        bool
+	must         bool
+	namer        dialector.Namer
+	traceId      string
+	executors    []executor
+	executed     atomic.Bool
 }
 
 func (d *DB) clone() *DB {
 	return &DB{
-		db:     d.db,
-		logger: d.logger,
-		tx:     d.tx,
-		ctx:    d.ctx,
-		debug:  d.debug,
-		must:   d.must,
-		err:    d.err,
-		namer:  d.namer,
-		tracer: d.tracer,
+		db:      d.db,
+		logger:  d.logger,
+		tx:      d.tx,
+		ctx:     d.ctx,
+		debug:   d.debug,
+		must:    d.must,
+		Error:   d.Error,
+		namer:   d.namer,
+		traceId: "",
 	}
+}
+
+func (d *DB) WithTraceId(traceId string) *DB {
+	c := d.clone()
+	c.traceId = traceId
+	
+	return c
 }
 
 func (d *DB) WithContext(ctx context.Context) *DB {
@@ -108,19 +119,6 @@ func (d *DB) Prepare(sql string, params ...NameValue) *Stmt {
 	return &Stmt{}
 }
 
-const space = " "
-
-func (d *DB) initTracer() *tracer {
-	t := &tracer{
-		//err:     d.err,
-		now:     time.Now(),
-		debug:   d.debug,
-		logger:  d.useLogger(),
-		traceId: d.traceId,
-	}
-	return t
-}
-
 func (d *DB) context() context.Context {
 	if d.ctx == nil {
 		return context.Background()
@@ -128,9 +126,51 @@ func (d *DB) context() context.Context {
 	return d.ctx
 }
 
-func (d *DB) execute(query bool, elem Element) {
+func (d *DB) execute(dest ...any) {
 	
-	d.tracer = d.initTracer()
+	defer func() {
+		if d.Error != nil {
+			// log
+		}
+	}()
+	
+	if d.Error != nil {
+		return
+	}
+	
+	if d.executed.Swap(true) {
+		d.Error = fmt.Errorf("db has executed")
+		return
+	}
+	
+	l1 := len(dest)
+	l2 := len(d.executors)
+	
+	if l2 == 0 {
+		d.Error = fmt.Errorf("no exector")
+		return
+	}
+	
+	if l1 > l2 {
+		d.Error = fmt.Errorf("expect %d dest, got %d exector", l1, l2)
+		return
+	}
+	
+	for i, v := range d.executors {
+		var vv any
+		if i < l1 {
+			vv = dest[i]
+		}
+		d.RowsAffected, d.LastInsertId, d.Error = v.Exec(vv)
+		if d.Error != nil {
+			return
+		}
+	}
+	
+	return
+}
+
+func (d *DB) prepare(query bool, elem Element) {
 	
 	var err error
 	defer func() {
@@ -143,121 +183,162 @@ func (d *DB) execute(query bool, elem Element) {
 		err = d.Error
 		return
 	}
-	if d.tracer != nil {
-		d.Error = fmt.Errorf("db is dirty")
+	
+	e := executor{query: query}
+	if d.tx != nil {
+		e.conn = d.tx
+	} else {
+		e.conn, err = d.db.Conn(d.context())
+		if err != nil {
+			return
+		}
+	}
+	e.sql, e.params, err = elem.SQL(d.namer, "db")
+	if err != nil {
 		return
 	}
 	
-	//if t.err != nil {
-	//	t.log()
-	//	return
-	//}
-	//var c *sql.Conn
-	//defer func() {
-	//	if c != nil {
-	//		_ = c.Close()
-	//	}
-	//}()
-	//e := &executor{
-	//	query:  query,
-	//	tracer: t,
-	//}
-	//if d.tx != nil {
-	//	e.conn = d.tx
-	//} else {
-	//	c, t.err = d.db.Conn(d.context())
-	//	if t.err != nil {
-	//		t.log()
-	//		return
-	//	}
-	//	e.conn = c
-	//}
-	//e.sql, e.params, e.tracer.err = elem.SQL(d.namer, "db")
-	//if e.tracer.err != nil {
-	//	t.log()
-	//	return
-	//}
-	//s := &Scanner{tracer: t}
-	//e.Exec(s)
-	//for _, v := range s.rows {
-	//	_ = v.Close()
-	//}
 	return
 }
 
+// Query 执行查询语句
 func (d *DB) Query(sql string, params ...NameValue) *DB {
-	d.execute(true, query{sql: sql, params: params})
+	d.prepare(true, query{sql: sql, params: params})
 	return d
 }
 
-func (d *DB) Build(b Builder) Scanner {
-	//t := d.initTracer()
-	//es, err := b.Build()
-	//if err != nil {
-	//	t.log()
-	//	return Scanner{Error: err}
-	//}
-	//
-	s := &Scanner{}
-	//g := errgroup.Group{}
-	//for _, v := range es {
-	//	e := v
-	//	e.conn = d.db
-	//	t.err = d.err
-	//	g.Go(func() error {
-	//		// todo auto cancel
-	//		e.Exec(s)
-	//		return t.err
-	//	})
-	//}
-	//err = g.Wait()
-	//if err != nil {
-	//	return Scanner{Error: err}
-	//}
-	
-	return *s
+// Scan 扫描结果集
+func (d *DB) Scan(dest ...any) *DB {
+	d.execute(dest...)
+	return d
 }
 
+//func (d *DB) Build(b Builder) Scanner {
+//	//t := d.initTracer()
+//	//es, err := b.Build()
+//	//if err != nil {
+//	//	t.log()
+//	//	return Scanner{Error: err}
+//	//}
+//	//
+//	s := &Scanner{}
+//	//g := errgroup.Group{}
+//	//for _, v := range es {
+//	//	e := v
+//	//	e.conn = d.db
+//	//	t.err = d.err
+//	//	g.Go(func() error {
+//	//		// todo auto cancel
+//	//		e.Exec(s)
+//	//		return t.err
+//	//	})
+//	//}
+//	//err = g.Wait()
+//	//if err != nil {
+//	//	return Scanner{Error: err}
+//	//}
+//	
+//	return *s
+//}
+
 func (d *DB) Exec(sql string, params ...NameValue) *DB {
-	d.execute(false, exec{sql: sql, params: params})
+	d.prepare(false, exec{sql: sql, params: params})
+	d.execute()
 	return d
 }
 
 func (d *DB) Delete(table string, where Element) *DB {
 	e := &del{table: table, elems: []Element{where}}
-	d.execute(false, e)
+	q := e.returning != nil
+	d.prepare(q, e)
+	if !q {
+		d.execute()
+	}
 	return d
 }
 
 func (d *DB) Update(table string, data map[string]any, where Element) *DB {
-	d.execute(false, update{table: table, data: data, elems: []Element{where}})
+	u := update{table: table, data: data, elems: []Element{where}}
+	q := u.returning != nil
+	d.prepare(q, u)
+	if !q {
+		d.execute()
+	}
 	return d
 }
 
 func (d *DB) Insert(table string, data any, elems ...Element) *DB {
 	i := &insert{table: table, data: data, elems: elems}
-	d.execute(true, i)
+	q := i.returning != nil
+	d.prepare(q, i)
+	if !q {
+		d.execute()
+	}
 	return d
 }
 
 func (d *DB) InsertBatch(table string, batch int, data any, onConflict Element) *DB {
 	i := &insertBatch{table: table, batch: batch, data: data, elems: []Element{onConflict}}
-	d.execute(false, i)
+	d.prepare(false, i)
+	q := i.returning != nil
+	d.prepare(q, i)
+	if !q {
+		d.execute()
+	}
 	return d
+}
+
+func (d *DB) ParallelQuery(queryer ...ParallelQueryer) *DB {
+	
+	return d
+}
+
+func test() {
+	d := &DB{}
+	d.ParallelQuery(&Paging{
+		Select: "",
+		Count:  "",
+		Common: "",
+		Page:   0,
+		Limit:  0,
+		Params: nil,
+	})
+	
+	d.ParallelQuery(
+		&Query{
+			SQL:    "",
+			Params: nil,
+			Scan:   nil,
+		},
+		&Query{
+			SQL:    "",
+			Params: nil,
+			Scan:   nil,
+		},
+	)
+}
+
+type ParallelQueryer interface {
+	Queries() ([]executor, error)
 }
 
 //func (d *DB) Fetch(sql string, params ...NameValue) <-chan Scanner {
 //	ch := make(chan Scanner)
 //	f := &fetch{}
-//	d.execute(true, f)
+//	d.prepareExecutor(true, f)
 //	return ch
 //}
 
 func (d *DB) Begin() *DB {
-	if d.err != nil {
+	if d.Error != nil {
 		return d
 	}
-	d.tx, d.err = d.db.Begin()
+	var t *sql.Tx
+	t, d.Error = d.db.Begin()
+	if d.Error != nil {
+		return d
+	}
+	d.tx = &tx{Tx: t}
 	return d
 }
 
@@ -269,22 +350,12 @@ func (d *DB) Rollback() error {
 	return d.tx.Rollback()
 }
 
-// Scan 扫描结果集
-func (d *DB) Scan(dest ...any) *DB {
-	return d
+func LooseDest(dest any, fields ...string) Dest {
+	return Dest{loose: true, dest: dest, fields: fields}
 }
 
-// LooseScan 宽松扫描模式
-// 可以忽略 struct 中的指定字段可以没有值
-func (d *DB) LooseScan(dest ...LDest) *DB {
-	return d
-}
-
-func LooseDest(dest any, fields ...string) LDest {
-	return LDest{dest: dest, fields: fields}
-}
-
-type LDest struct {
+type Dest struct {
+	loose  bool
 	dest   any
 	fields []string
 }
