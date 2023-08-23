@@ -203,8 +203,17 @@ func (d *DB) prepare(query bool, elem Element) {
 
 // Query 执行查询语句
 func (d *DB) Query(sql string, params ...NameValue) *DB {
-	d.prepare(true, query{sql: sql, params: params})
+	//d.prepare(true, query{sql: sql, params: params})
+	//queryer.Queries()
 	return d
+}
+
+func test2() {
+	db := &DB{}
+	var users []string
+	err := db.Query(`select * from public.users where active = #{args.Paging} and age < #{args.Node}`,
+		Param("args", 18)).Scan(&users).Error
+	_ = err
 }
 
 // Scan 扫描结果集
@@ -288,13 +297,14 @@ func (d *DB) InsertBatch(table string, batch int, data any, onConflict Element) 
 	return d
 }
 
-func (d *DB) ParallelQuery(queryer ...ParallelQueryer) *DB {
+func (d *DB) ParallelQuery(queryer ...Queryer) *DB {
 	
 	return d
 }
 
 func test() {
 	d := &DB{}
+	var items []string
 	d.ParallelQuery(&Paging{
 		Select: "",
 		Count:  "",
@@ -302,6 +312,7 @@ func test() {
 		Page:   0,
 		Limit:  0,
 		Params: nil,
+		Scans:  []any{&items},
 	})
 	
 	d.ParallelQuery(
@@ -318,7 +329,7 @@ func test() {
 	)
 }
 
-type ParallelQueryer interface {
+type Queryer interface {
 	Queries() ([]executor, error)
 }
 

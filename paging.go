@@ -2,7 +2,7 @@ package batis
 
 type Query struct {
 	SQL    string
-	Params []NameValue
+	Params map[string]any
 	Scan   any
 }
 
@@ -16,8 +16,8 @@ type Paging struct {
 	Common string
 	Page   int64
 	Limit  int64
-	Params []NameValue
-	Scan   []any
+	Params map[string]any
+	Scans  []any
 	elems  map[int][]Element
 }
 
@@ -28,10 +28,10 @@ func init() {
 		Common: `users where name age > #{age}`,
 		Page:   0,
 		Limit:  0,
-		Params: []NameValue{
-			{Name: "age", Value: 18},
+		Params: map[string]any{
+			"age": 18,
 		},
-		Scan:  []any{nil, nil},
+		Scans: []any{nil, nil},
 		elems: nil,
 	}
 	_ = a
