@@ -46,7 +46,7 @@ func main() {
 		Wealth: decimal.NewFromFloat(3.14),
 	}
 	//id := new(int64)
-	err = db.Insert("users", user, batis.Returning("id")).Scan(&user.Id)
+	err = db.Insert("users", user, batis.Returning("id")).Scan(&user.Id).Error
 	if err != nil {
 		return
 	}
