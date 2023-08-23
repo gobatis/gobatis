@@ -17,7 +17,7 @@ type Paging struct {
 	Page   int64
 	Limit  int64
 	Params map[string]any
-	Scans  []any
+	Scan   []any
 	elems  map[int][]Element
 }
 
@@ -31,7 +31,7 @@ func init() {
 		Params: map[string]any{
 			"age": 18,
 		},
-		Scans: []any{nil, nil},
+		Scan:  []any{nil, nil},
 		elems: nil,
 	}
 	_ = a

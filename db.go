@@ -312,7 +312,7 @@ func test() {
 		Page:   0,
 		Limit:  0,
 		Params: nil,
-		Scans:  []any{&items},
+		Scan:   []any{&items},
 	})
 	
 	d.ParallelQuery(
