@@ -4,72 +4,81 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"time"
 
 	"github.com/gobatis/gobatis/dialector"
+	"github.com/gozelle/spew"
 )
 
 const (
-	txKey = "GOBATIS_TX"
-	space = " "
+	txKey      = "GOBATIS_TX"
+	traceIdKey = "GOBATIS_TRACE_ID"
+	space      = " "
 )
 
-func WrapTx(parent context.Context, tx *DB) context.Context {
+func WithTx(parent context.Context, tx *sql.Tx) context.Context {
 	return context.WithValue(parent, txKey, tx)
 }
 
+func WithTraceId(parent context.Context, traceId string) context.Context {
+	return context.WithValue(parent, traceIdKey, traceId)
+}
+
+func WithDebug(parent context.Context, debug bool) context.Context {
+	return context.WithValue(parent, "debug", debug)
+}
+
 func Open(d dialector.Dialector, options ...Option) (db *DB, err error) {
-	db = &DB{
-		Error:  nil,
-		db:     nil,
-		logger: nil,
-		tx:     nil,
-		namer:  d.Namer(),
+	config := &Config{
+		CreateBatchSize: 10,
+		Plugins:         nil,
+		NowFunc: func() time.Time {
+			return time.Now()
+		},
+		Dialector: d,
+		Logger:    &logger{},
+		db:        nil,
 	}
-	db.db, err = d.DB()
+	config.db, err = d.DB()
 	if err != nil {
 		return
 	}
+	db = &DB{
+		Error: nil,
+		tx:    nil,
+	}
+
 	return
 }
 
 type DB struct {
+	*Config
+	*executor
 	Error        error
-	RowsAffected *int64
-	LastInsertId *int64
-	db           *sql.DB
-	logger       Logger
+	rowsAffected *int64
+	lastInsertId *int64
 	tx           *tx
 	ctx          context.Context
 	debug        bool
 	must         bool
-	namer        dialector.Namer
 	traceId      string
-	executor     *executor
-	tracer       *tracer
+}
+
+func (d *DB) addError(err error) {
+	if d.Error == nil {
+		d.Error = err
+	} else if err != nil {
+		d.Error = fmt.Errorf("%v; %w", d.Error, err)
+	}
 }
 
 func (d *DB) clone() *DB {
-	return &DB{
-		Error:        d.Error,
-		RowsAffected: nil,
-		LastInsertId: nil,
-		db:           d.db,
-		logger:       d.logger,
-		tx:           d.tx,
-		ctx:          d.ctx,
-		debug:        d.debug,
-		must:         d.must,
-		namer:        d.namer,
-		traceId:      "",
-		executor:     nil,
-		tracer:       nil,
-	}
+	return &DB{Config: d.Config, Error: d.Error}
 }
 
 func (d *DB) WithTraceId(traceId string) *DB {
 	c := d.clone()
 	c.traceId = traceId
-
 	return c
 }
 
@@ -91,16 +100,16 @@ func (d *DB) Debug() *DB {
 	return c
 }
 
-func (d *DB) SetLogger(logger Logger) {
-	d.logger = logger
-}
-
-func (d *DB) useLogger() Logger {
-	if d.logger == nil {
-		d.logger = DefaultLogger()
-	}
-	return d.logger
-}
+//func (d *DB) SetLogger(logger Logger) {
+//	d.logger = logger
+//}
+//
+//func (d *DB) useLogger() Logger {
+//	if d.logger == nil {
+//		d.logger = DefaultLogger()
+//	}
+//	return d.logger
+//}
 
 func (d *DB) Close() {
 	_ = d.db.Close()
@@ -118,10 +127,6 @@ func (d *DB) Stats() sql.DBStats {
 	return d.db.Stats()
 }
 
-func (d *DB) Prepare(sql string, params ...NameValue) *Stmt {
-	return &Stmt{}
-}
-
 func (d *DB) context() context.Context {
 	if d.ctx == nil {
 		return context.Background()
@@ -130,25 +135,25 @@ func (d *DB) context() context.Context {
 }
 
 func (d *DB) prepare(query bool, elem Element) {
-	if d.Error != nil {
-		return
-	}
 	if d.executor != nil {
-		d.Error = fmt.Errorf("executor overridden")
+		d.addError(fmt.Errorf("executor overridden"))
 		return
 	}
+
+	var err error
 	e := executor{query: query}
 	if d.tx != nil {
 		e.conn = d.tx
-		d.tracer.tx = true
 	} else {
-		e.conn, d.Error = d.db.Conn(d.context())
-		if d.Error != nil {
+		e.conn, err = d.db.Conn(d.context())
+		if err != nil {
+			d.addError(err)
 			return
 		}
 	}
-	e.raw, e.params, d.Error = elem.SQL(d.namer, "db")
-	if d.Error != nil {
+	e.raw, e.params, err = elem.SQL(d.Dialector.Namer(), "db")
+	if err != nil {
+		d.addError(err)
 		return
 	}
 	d.executor = &e
@@ -160,13 +165,19 @@ func (d *DB) exec(dest any) {
 		return
 	}
 	if d.executor == nil {
-		d.Error = fmt.Errorf("no executor")
+		d.addError(fmt.Errorf("no executor"))
 		return
 	}
-	d.RowsAffected, d.LastInsertId, d.Error = d.executor.exec(dest)
-	if d.Error != nil {
+
+	var err error
+	d.rowsAffected, d.lastInsertId, err = d.executor.exec(dest)
+	if err != nil {
+		d.addError(err)
 		return
 	}
+
+	spew.Json("exec done")
+
 	return
 }
 
@@ -221,7 +232,7 @@ func (d *DB) Insert(table string, data any, elems ...Element) *DB {
 	i := &insert{table: table, data: data, elems: elems}
 	q := i.returning != nil
 	c.prepare(q, i)
-	if q {
+	if !q {
 		c.exec(nil)
 	}
 	return c
@@ -233,7 +244,7 @@ func (d *DB) InsertBatch(table string, batch int, data any, onConflict Element) 
 	c.prepare(false, i)
 	q := i.returning != nil
 	c.prepare(q, i)
-	if q {
+	if !q {
 		c.exec(nil)
 	}
 	return c
@@ -264,27 +275,26 @@ type Queryer interface {
 //	return ch
 //}
 
-func (d *DB) Begin() *DB {
-	c := d.clone()
-	if c.Error != nil {
-		c.log()
-		return c
-	}
-	var t *sql.Tx
-	t, c.Error = c.db.Begin()
-	if c.Error != nil {
-		return c
-	}
-	c.tx = &tx{Tx: t}
-	return c
+func (d *DB) Begin() (*sql.Tx, error) {
+	return d.db.Begin()
 }
 
-func (d *DB) Commit() error {
-	return d.tx.Commit()
+func (d *DB) Commit() *DB {
+	if d.tx == nil {
+		d.addError(ErrInvalidTransaction)
+	} else {
+		d.addError(d.tx.Commit())
+	}
+	return d
 }
 
-func (d *DB) Rollback() error {
-	return d.tx.Rollback()
+func (d *DB) Rollback() *DB {
+	if d.tx == nil {
+		d.addError(ErrInvalidTransaction)
+	} else {
+		d.addError(d.tx.Rollback())
+	}
+	return d
 }
 
 func (d *DB) log() {

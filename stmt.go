@@ -1,13 +1,11 @@
 package batis
 
-import "database/sql"
-
-type Stmt struct {
-	stmt  *sql.Stmt
-	exprs []string
-	sql   string
-	conn  *sql.Conn
-}
+//type Stmt struct {
+//	stmt  *sql.Stmt
+//	exprs []string
+//	sql   string
+//	conn  *sql.Conn
+//}
 
 //
 //func (p *Stmt) Close() error {
@@ -22,7 +20,7 @@ type Stmt struct {
 //}
 //
 //func (p *Stmt) exec(tx bool, ctx context.Context, in []reflect.Value) (err error) {
-//	
+//
 //	parser := executor.newExprParser(in...)
 //	for i, v := range p.caller.fragment.in {
 //		err = parser.paramsStack.list.Front().Next().Value.(*executor.exprParams).bind(v, i)
@@ -30,7 +28,7 @@ type Stmt struct {
 //			executor.throw(p.caller.fragment.node.File, p.caller.fragment.node.ctx, executor.parasFragmentErr).with(err)
 //		}
 //	}
-//	
+//
 //	vars := make([]interface{}, 0)
 //	for _, v := range p.exprs {
 //		var _var interface{}
@@ -40,15 +38,15 @@ type Stmt struct {
 //		}
 //		vars = append(vars, _var)
 //	}
-//	
+//
 //	tf := ""
 //	if tx {
 //		tf = "[tx]"
 //	}
-//	
+//
 //	p.caller.logger.Debugf("[gobatis] [%s]%s[stmt] exec statement: %s", p.caller.fragment.id, tf, p.sql)
 //	p.caller.logger.Debugf("[gobatis] [%s]%s[stmt] exec parameter: %s", p.caller.fragment.id, tf, executor.printVars(vars))
-//	
+//
 //	res, err := p.stmt.ExecContext(ctx, vars...)
 //	if err != nil {
 //		p.caller.logger.Errorf("[gobatis][%s]%s[stmt] exec statement: %s", p.caller.fragment.id, tf, p.sql)
@@ -56,12 +54,12 @@ type Stmt struct {
 //		p.caller.logger.Errorf("[gobatis][%s]%s[stmt] exec error: %v", p.caller.fragment.id, tf, err)
 //		return
 //	}
-//	
+//
 //	return p.caller.parseExecResult(res, p.caller.values)
 //}
 //
 //func (p *Stmt) query(tx bool, ctx context.Context, in []reflect.Value, values []reflect.Value) (err error) {
-//	
+//
 //	parser := executor.newExprParser(in...)
 //	for i, v := range p.caller.fragment.in {
 //		err = parser.paramsStack.list.Front().Next().Value.(*executor.exprParams).bind(v, i)
@@ -69,7 +67,7 @@ type Stmt struct {
 //			executor.throw(p.caller.fragment.node.File, p.caller.fragment.node.ctx, executor.parasFragmentErr).with(err)
 //		}
 //	}
-//	
+//
 //	vars := make([]interface{}, 0)
 //	for _, v := range p.exprs {
 //		var _var interface{}
@@ -79,15 +77,15 @@ type Stmt struct {
 //		}
 //		vars = append(vars, _var)
 //	}
-//	
+//
 //	tf := ""
 //	if tx {
 //		tf = "[tx]"
 //	}
-//	
+//
 //	p.caller.logger.Debugf("[gobatis] [%s]%s[stmt] exec statement: %s", p.caller.fragment.id, tf, p.sql)
 //	p.caller.logger.Debugf("[gobatis] [%s]%s[stmt] exec parameter: %s", p.caller.fragment.id, tf, executor.printVars(vars))
-//	
+//
 //	rows, err := p.stmt.QueryContext(ctx, vars...)
 //	if err != nil {
 //		p.caller.logger.Errorf("[gobatis][%s]%s[stmt] query statement: %s", p.caller.fragment.id, tf, p.sql)
@@ -95,11 +93,11 @@ type Stmt struct {
 //		p.caller.logger.Errorf("[gobatis][%s]%s[stmt] query error: %v", p.caller.fragment.id, tf, err)
 //		return
 //	}
-//	
+//
 //	err = p.caller.parseQueryResult(rows, values)
 //	if err != nil {
 //		return
 //	}
-//	
+//
 //	return
 //}

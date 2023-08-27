@@ -1,10 +1,16 @@
 package batis
 
 import (
+	"errors"
 	"fmt"
-	
+
 	"github.com/antlr/antlr4/runtime/Go/antlr"
 	"github.com/gobatis/gobatis/parser/xml"
+)
+
+var (
+	ErrRecordNotFound     = errors.New("record not found")
+	ErrInvalidTransaction = errors.New("invalid transaction")
 )
 
 const (
@@ -89,7 +95,7 @@ func (p *_error) Error() string {
 	if p.ctx != nil {
 		msg += fmt.Sprintf("\n[file]: %s near line %d column %d:\n[context]: %s", p.file, line, column+1, ctx)
 	}
-	
+
 	return msg
 }
 
@@ -112,11 +118,11 @@ func castRecoverError(file string, e interface{}) error {
 }
 
 func getText(ctx antlr.ParserRuleContext) string {
-	
+
 	if ctx.GetChildCount() == 0 {
 		return ""
 	}
-	
+
 	var s string
 	for _, child := range ctx.GetChildren() {
 		_, ok := child.(*xml.AttributeContext)
@@ -126,7 +132,7 @@ func getText(ctx antlr.ParserRuleContext) string {
 			s += child.(antlr.ParseTree).GetText()
 		}
 	}
-	
+
 	return s
 }
 

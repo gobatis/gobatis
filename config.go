@@ -1,6 +1,11 @@
 package batis
 
-import "time"
+import (
+	"database/sql"
+	"time"
+
+	"github.com/gobatis/gobatis/dialector"
+)
 
 type Option interface {
 	Apply(*Config) error
@@ -13,6 +18,9 @@ type Config struct {
 	CreateBatchSize int
 	Plugins         map[string]Plugin
 	NowFunc         func() time.Time
+	Dialector       dialector.Dialector
+	Logger          Logger
+	db              *sql.DB
 }
 
 func (c Config) Apply(config *Config) error {
