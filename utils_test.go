@@ -1,8 +1,10 @@
 package batis
 
 import (
-	"github.com/stretchr/testify/require"
 	"testing"
+
+	"github.com/gobatis/gobatis/driver/postgres"
+	"github.com/stretchr/testify/require"
 )
 
 func TestReplaceIsolatedLessThan(t *testing.T) {
@@ -19,7 +21,7 @@ func TestReplaceIsolatedLessThan(t *testing.T) {
 		{">Hello", ">Hello"},
 		{"<10", "&lt;10"},
 	}
-	
+
 	for _, test := range tests {
 		result := replaceIsolatedLessThanWithEntity(test.input)
 		require.Equal(t, test.expected, result)
@@ -39,7 +41,7 @@ func TestToSnakeCase(t *testing.T) {
 		{"already_snake_case", "already_snake_case"},
 		{"WithNumbers123And456", "with_numbers123_and456"},
 	}
-	
+
 	for _, tt := range tests {
 		result := toSnakeCase(tt.input)
 		require.Equal(t, tt.expected, result)
@@ -50,15 +52,47 @@ func TestExtract(t *testing.T) {
 	type R struct {
 		A int64
 	}
-	
+
 	items := []R{
 		{A: 1},
 		{A: 2},
 		{A: 3},
 	}
-	
+
 	r := Extract[R, int64](items, func(item R) int64 {
 		return item.A
 	})
 	t.Log(r)
+}
+
+type entity struct {
+	Id   *int64
+	Name string
+	Age  int64
+}
+
+func TestReflect(t *testing.T) {
+
+	item := &entity{
+		Name: "tom",
+		Age:  18,
+	}
+
+	rs, err := reflectRows(item, postgres.Namer{}, "")
+	require.NoError(t, err)
+
+	for _, v := range rs {
+		t.Log("-")
+		for _, vv := range v {
+			t.Log(vv.column, vv.value)
+		}
+	}
+
+	reflectRows([]*entity{item}, postgres.Namer{}, "")
+	for _, v := range rs {
+		t.Log("-")
+		for _, vv := range v {
+			t.Log(vv.column, vv.value)
+		}
+	}
 }
