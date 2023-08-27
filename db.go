@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"sync/atomic"
 
 	"github.com/gobatis/gobatis/dialector"
 )
@@ -45,21 +44,25 @@ type DB struct {
 	must         bool
 	namer        dialector.Namer
 	traceId      string
-	executors    []executor
-	executed     atomic.Bool
+	executor     *executor
+	tracer       *tracer
 }
 
 func (d *DB) clone() *DB {
 	return &DB{
-		db:      d.db,
-		logger:  d.logger,
-		tx:      d.tx,
-		ctx:     d.ctx,
-		debug:   d.debug,
-		must:    d.must,
-		Error:   d.Error,
-		namer:   d.namer,
-		traceId: "",
+		Error:        d.Error,
+		RowsAffected: nil,
+		LastInsertId: nil,
+		db:           d.db,
+		logger:       d.logger,
+		tx:           d.tx,
+		ctx:          d.ctx,
+		debug:        d.debug,
+		must:         d.must,
+		namer:        d.namer,
+		traceId:      "",
+		executor:     nil,
+		tracer:       nil,
 	}
 }
 
@@ -126,198 +129,128 @@ func (d *DB) context() context.Context {
 	return d.ctx
 }
 
-func (d *DB) execute(dest ...any) {
-
-	defer func() {
-		if d.Error != nil {
-			// log
-		}
-	}()
-
-	if d.Error != nil {
-		return
-	}
-
-	if d.executed.Swap(true) {
-		d.Error = fmt.Errorf("db has executed")
-		return
-	}
-
-	l1 := len(dest)
-	l2 := len(d.executors)
-
-	if l2 == 0 {
-		d.Error = fmt.Errorf("no exector")
-		return
-	}
-
-	if l1 > l2 {
-		d.Error = fmt.Errorf("expect %d dest, got %d exector", l1, l2)
-		return
-	}
-
-	for i, v := range d.executors {
-		var vv any
-		if i < l1 {
-			vv = dest[i]
-		}
-		d.RowsAffected, d.LastInsertId, d.Error = v.Exec(vv)
-		if d.Error != nil {
-			return
-		}
-	}
-
-	return
-}
-
 func (d *DB) prepare(query bool, elem Element) {
-
-	var err error
-	defer func() {
-		if err != nil {
-			d.Error = err
-		}
-	}()
-
 	if d.Error != nil {
-		err = d.Error
 		return
 	}
-
+	if d.executor != nil {
+		d.Error = fmt.Errorf("executor overridden")
+		return
+	}
 	e := executor{query: query}
 	if d.tx != nil {
 		e.conn = d.tx
+		d.tracer.tx = true
 	} else {
-		e.conn, err = d.db.Conn(d.context())
-		if err != nil {
+		e.conn, d.Error = d.db.Conn(d.context())
+		if d.Error != nil {
 			return
 		}
 	}
-	e.sql, e.params, err = elem.SQL(d.namer, "db")
-	if err != nil {
+	e.raw, e.params, d.Error = elem.SQL(d.namer, "db")
+	if d.Error != nil {
 		return
 	}
-
+	d.executor = &e
 	return
 }
 
-// Query 执行查询语句
+func (d *DB) exec(dest any) {
+	if d.Error != nil {
+		return
+	}
+	if d.executor == nil {
+		d.Error = fmt.Errorf("no executor")
+		return
+	}
+	d.RowsAffected, d.LastInsertId, d.Error = d.executor.exec(dest)
+	if d.Error != nil {
+		return
+	}
+	return
+}
+
+// 执行查询语句
 func (d *DB) Query(sql string, params ...NameValue) *DB {
-	d.prepare(true, query{sql: sql, params: params})
-	return d
+	c := d.clone()
+	c.prepare(true, query{sql: sql, params: params})
+	return c
 }
 
-// Scan 扫描结果集
+// 扫描结果集
 func (d *DB) Scan(dest any) *DB {
-	d.execute(dest)
+	d.exec(dest)
 	return d
 }
 
-//func (d *DB) Build(b Builder) Scanner {
-//	//t := d.initTracer()
-//	//es, err := b.Build()
-//	//if err != nil {
-//	//	t.log()
-//	//	return Scanner{Error: err}
-//	//}
-//	//
-//	s := &Scanner{}
-//	//g := errgroup.Group{}
-//	//for _, v := range es {
-//	//	e := v
-//	//	e.conn = d.db
-//	//	t.err = d.err
-//	//	g.Go(func() error {
-//	//		// todo auto cancel
-//	//		e.Exec(s)
-//	//		return t.err
-//	//	})
-//	//}
-//	//err = g.Wait()
-//	//if err != nil {
-//	//	return Scanner{Error: err}
-//	//}
-//
-//	return *s
-//}
-
+// 执行 SQL 语句
 func (d *DB) Exec(sql string, params ...NameValue) *DB {
-	d.prepare(false, exec{sql: sql, params: params})
-	d.execute()
-	return d
+	c := d.clone()
+	c.prepare(false, exec{sql: sql, params: params})
+	c.exec(nil)
+	return c
 }
 
+// 执行删除操作
 func (d *DB) Delete(table string, where Element) *DB {
+	c := d.clone()
 	e := &del{table: table, elems: []Element{where}}
 	q := e.returning != nil
-	d.prepare(q, e)
+	c.prepare(q, e)
 	if !q {
-		d.execute()
+		c.exec(nil)
 	}
-	return d
+	return c
 }
 
+// 执行更新操作
 func (d *DB) Update(table string, data map[string]any, where Element) *DB {
+	c := d.clone()
 	u := update{table: table, data: data, elems: []Element{where}}
 	q := u.returning != nil
-	d.prepare(q, u)
+	c.prepare(q, u)
 	if !q {
-		d.execute()
+		c.exec(nil)
 	}
-	return d
+	return c
 }
 
+// 插入数据
 func (d *DB) Insert(table string, data any, elems ...Element) *DB {
+	c := d.clone()
 	i := &insert{table: table, data: data, elems: elems}
 	q := i.returning != nil
-	d.prepare(q, i)
-	if !q {
-		d.execute()
+	c.prepare(q, i)
+	if q {
+		c.exec(nil)
 	}
-	return d
+	return c
 }
 
 func (d *DB) InsertBatch(table string, batch int, data any, onConflict Element) *DB {
+	c := d.clone()
 	i := &insertBatch{table: table, batch: batch, data: data, elems: []Element{onConflict}}
-	d.prepare(false, i)
+	c.prepare(false, i)
 	q := i.returning != nil
-	d.prepare(q, i)
-	if !q {
-		d.execute()
+	c.prepare(q, i)
+	if q {
+		c.exec(nil)
 	}
-	return d
+	return c
 }
 
 func (d *DB) ParallelQuery(queryer ...Queryer) *DB {
-
-	return d
-}
-
-func test() {
-	d := &DB{}
-	var items []string
-	d.ParallelQuery(&Paging{
-		Select: "",
-		Count:  "",
-		Common: "",
-		Page:   0,
-		Limit:  0,
-		Params: nil,
-		Scan:   []any{&items},
-	})
-
-	d.ParallelQuery(
-		&Query{
-			SQL:    "",
-			Params: nil,
-			Scan:   nil,
-		},
-		&Query{
-			SQL:    "",
-			Params: nil,
-			Scan:   nil,
-		},
-	)
+	c := d.clone()
+	defer func() {
+		if c.Error != nil {
+			c.log()
+		}
+	}()
+	if len(queryer) == 0 {
+		c.Error = fmt.Errorf("no querer")
+		return c
+	}
+	return c
 }
 
 type Queryer interface {
@@ -332,16 +265,18 @@ type Queryer interface {
 //}
 
 func (d *DB) Begin() *DB {
-	if d.Error != nil {
-		return d
+	c := d.clone()
+	if c.Error != nil {
+		c.log()
+		return c
 	}
 	var t *sql.Tx
-	t, d.Error = d.db.Begin()
-	if d.Error != nil {
-		return d
+	t, c.Error = c.db.Begin()
+	if c.Error != nil {
+		return c
 	}
-	d.tx = &tx{Tx: t}
-	return d
+	c.tx = &tx{Tx: t}
+	return c
 }
 
 func (d *DB) Commit() error {
@@ -350,6 +285,10 @@ func (d *DB) Commit() error {
 
 func (d *DB) Rollback() error {
 	return d.tx.Rollback()
+}
+
+func (d *DB) log() {
+
 }
 
 func LooseDest(dest any, fields ...string) Dest {
@@ -361,36 +300,3 @@ type Dest struct {
 	dest   any
 	fields []string
 }
-
-/*
-    type User struct {
-		Id     int64
-		Name   string
-		Posts  []string
-		Orders []string
-	}
-
-	type Post struct {
-		Id   int64
-		Tags []string
-	}
-
-	var users []User
-
-    db.Must().Query(`select * from users`).LooseScan(&users, "$..Posts");
-
-	db.Must().Exec(`select`)
-
-	userIds := mapping.Merge(users, func())
-
-	db.Query().LooseScan(batis.LooseDest(&users, "$..Posts","$..Orders")).Error
-
-    db.Query(`select * from posts where user_id in #{userIds}`,batis.Param("userIds", userIds)).Link(&users, "user_id => $..Id", "$..Posts").Error
-
-	postIds := mapping.Map(users, func())
-
-	db.Query(`select * from tags where post_id in #{postIds}`, batis.Param("postIds", postIds)).Link(&users, "user_id => $..Posts[*].Id", "$..Post[*].Tags").Error
-
-    db.Query(`select * from orders where user_id in #{userIds}`,batis.Param("userIds", userIds)).Link(&users, "user_id => $..Id", "$..Orders").Error
-
-*/
