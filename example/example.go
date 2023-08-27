@@ -60,12 +60,18 @@ func main() {
 	}
 
 	spew.Json(users)
-	//err = db.Update("users", map[string]any{
-	//	"age": 99,
-	//}, batis.Where("id = #{id}", batis.Param("id", 18))).Error
-	//if err != nil {
-	//	return
-	//}
+
+	err = db.Update("users", map[string]any{
+		"age": 99,
+	}, batis.Where("id = #{id}", batis.Param("id", 19))).Error
+	if err != nil {
+		return
+	}
+
+	err = db.Delete("users", batis.Where("id = #{id}", batis.Param("id", 20))).Error
+	if err != nil {
+		return
+	}
 
 	//db.Query(
 	//	`select * from users where age = #{age}`,

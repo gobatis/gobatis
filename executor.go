@@ -75,8 +75,11 @@ func (e *executor) exec(dest any) (err error) {
 	defer func() {
 		if e.rows != nil {
 			if v := e.rows.Close(); v != nil {
-				err = fmt.Errorf("%v; %w", err, v)
+				err = addError(err, v)
 			}
+		}
+		if v := e.conn.Close(); v != nil {
+			err = addError(err, v)
 		}
 	}()
 

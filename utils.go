@@ -5,7 +5,7 @@ import (
 	"database/sql/driver"
 	"fmt"
 	"reflect"
-	
+
 	"github.com/ttacon/chalk"
 )
 
@@ -106,12 +106,12 @@ func replaceIsolatedLessThanWithEntity(s string) string {
 			lastLeftBracket = -1
 		}
 	}
-	
+
 	// 检查是否在字符串的结尾有一个标记的 '<'
 	if lastLeftBracket != -1 {
 		pos[lastLeftBracket] = struct{}{}
 	}
-	
+
 	var r []rune
 	for i := range runes {
 		if _, ok := pos[i]; ok {
@@ -120,7 +120,7 @@ func replaceIsolatedLessThanWithEntity(s string) string {
 			r = append(r, runes[i])
 		}
 	}
-	
+
 	return string(r)
 }
 
@@ -136,4 +136,13 @@ func Extract[T any, V any](items []T, fn func(item T) V) []V {
 		r = append(r, fn(v))
 	}
 	return r
+}
+
+func addError(err, added error) error {
+	if err == nil {
+		return err
+	} else if added != nil {
+		return fmt.Errorf("%v; %w", err, added)
+	}
+	return nil
 }

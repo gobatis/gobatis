@@ -14,6 +14,7 @@ require (
 	github.com/shopspring/decimal v1.2.0
 	github.com/stretchr/testify v1.7.0
 	github.com/ttacon/chalk v0.0.0-20160626202418-22c06c80ed31
+	go.uber.org/atomic v1.6.0
 )
 
 require (

@@ -62,11 +62,7 @@ type DB struct {
 }
 
 func (d *DB) addError(err error) {
-	if d.Error == nil {
-		d.Error = err
-	} else if err != nil {
-		d.Error = fmt.Errorf("%v; %w", d.Error, err)
-	}
+	d.Error = addError(d.Error, err)
 }
 
 func (d *DB) clone() *DB {
@@ -148,10 +144,6 @@ func (d *DB) prepare(query bool, elem Element) {
 			return
 		}
 	}
-	defer func() {
-		d.addError(e.conn.Close())
-	}()
-	
 	e.raw, e.params, err = elem.SQL(d.Dialector.Namer(), "db")
 	if err != nil {
 		d.addError(err)
