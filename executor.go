@@ -7,10 +7,10 @@ import (
 	"reflect"
 	"runtime"
 	"strings"
-	"sync/atomic"
 	"time"
 
 	"github.com/gozelle/color"
+	"go.uber.org/atomic"
 )
 
 type conn interface {
