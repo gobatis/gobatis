@@ -148,6 +148,10 @@ func (d *DB) prepare(query bool, elem Element) {
 			return
 		}
 	}
+	defer func() {
+		d.addError(e.conn.Close())
+	}()
+	
 	e.raw, e.params, err = elem.SQL(d.Dialector.Namer(), "db")
 	if err != nil {
 		d.addError(err)
