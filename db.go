@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/gobatis/gobatis/dialector"
@@ -137,6 +138,7 @@ func (d *DB) prepare(query bool, elem Element) {
 	e := &executor{query: query, now: d.NowFunc()}
 	if d.tx != nil {
 		e.conn = d.tx
+		e.tx = true
 	} else {
 		e.conn, err = d.db.Conn(d.context())
 		if err != nil {
@@ -161,7 +163,8 @@ func (d *DB) exec(dest any) {
 		d.addError(fmt.Errorf("no executor"))
 		return
 	}
-	d.addError(d.executor.exec(dest))
+	d.dest = dest
+	d.addError(d.executor.exec())
 	d.executor.log(d)
 }
 
@@ -240,6 +243,53 @@ func (d *DB) ParallelQuery(queryer ...Queryer) *DB {
 		c.Error = fmt.Errorf("no querer")
 		return c
 	}
+	if d.executor != nil {
+		c.Error = fmt.Errorf("db has origin executor")
+		return c
+	}
+
+	var executors []*executor
+	for _, v := range queryer {
+		items, err := v.executors(d.Dialector.Namer(), "db")
+		if err != nil {
+			c.addError(err)
+			return c
+		}
+		executors = append(executors, items...)
+	}
+
+	wg := sync.WaitGroup{}
+	lock := sync.Mutex{}
+
+	for _, v := range executors {
+		v.query = true
+		if d.tx != nil {
+			v.conn = d.tx
+			v.tx = true
+		} else {
+			var err error
+			v.conn, err = d.db.Conn(d.context())
+			if err != nil {
+				d.addError(err)
+				return c
+			}
+		}
+		wg.Add(1)
+		go func(v *executor) {
+			defer func() {
+				wg.Done()
+			}()
+			err := v.exec()
+			if err != nil {
+				lock.Lock()
+				c.addError(err)
+				lock.Unlock()
+			}
+		}(v)
+	}
+	wg.Wait()
+	//d.executor.log(d)
+
 	return c
 }
 
@@ -250,10 +300,6 @@ func (d *DB) Result() (r sql.Result, err error) {
 	}
 	r = d.executor.result
 	return
-}
-
-type Queryer interface {
-	Queries() ([]executor, error)
 }
 
 //func (d *DB) Fetch(sql string, params ...NameValue) <-chan Scanner {

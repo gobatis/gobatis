@@ -8,19 +8,18 @@ import (
 )
 
 func reflectRow(columns []string, row []interface{}, pv reflect.Value, first bool) (bool, error) {
-	
+
 	switch pv.Kind() {
 	case reflect.Slice, reflect.Array:
 		return false, setArray(pv, newRowMap(columns, row))
 	case reflect.Struct:
 		return true, setStruct(pv, newRowMap(columns, row))
 	}
-	
 	return true, setValue(pv, row[0])
 }
 
 func prepareFieldName(f reflect.StructField) string {
-	
+
 	field := f.Tag.Get("db")
 	if field == "" {
 		field = toSnakeCase(f.Name)
@@ -93,7 +92,7 @@ func (e *InvalidUnmarshalError) Error() string {
 	if e.Type == nil {
 		return "gobatis: Unmarshal(nil)"
 	}
-	
+
 	if e.Type.Kind() != reflect.Pointer {
 		return "gobatis: Unmarshal(non-pointer " + e.Type.String() + ")"
 	}
@@ -101,9 +100,9 @@ func (e *InvalidUnmarshalError) Error() string {
 }
 
 func setValue(pv reflect.Value, v any) error {
-	
+
 	vv := reflect.ValueOf(v)
-	
+
 	switch vv.Kind() {
 	case reflect.Bool:
 		return setBool(pv, vv)
@@ -123,12 +122,12 @@ func setValue(pv reflect.Value, v any) error {
 	case reflect.String:
 		return setString(pv, vv)
 	}
-	
+
 	return nil
 }
 
 func setArray(pv reflect.Value, r rowMap) (err error) {
-	
+
 	t := pv.Type().Elem()
 	ptr := false
 	if t.Kind() == reflect.Ptr {
@@ -155,17 +154,17 @@ func setArray(pv reflect.Value, r rowMap) (err error) {
 		err = fmt.Errorf("expect struct, got: %s", t.Elem())
 		return
 	}
-	
+
 	return
 }
 
 func setStruct(pv reflect.Value, r rowMap) (err error) {
-	
+
 	//var tags map[string]struct{}
 	//if first {
 	//	tags = map[string]struct{}{}
 	//}
-	
+
 	t := pv.Type()
 	for i := 0; i < t.NumField(); i++ {
 		n := prepareFieldName(t.Field(i))
@@ -188,12 +187,11 @@ func setStruct(pv reflect.Value, r rowMap) (err error) {
 			}
 		}
 	}
-	
+
 	return
 }
 
 func setNumber(pv reflect.Value, vv reflect.Value) (err error) {
-	
 	pv = indirect(pv, false)
 	switch pv.Kind() {
 	case reflect.Int,
@@ -298,7 +296,7 @@ func indirect(v reflect.Value, decodingNull bool) reflect.Value {
 	// preserve the original RW flags contained in reflect.Value.
 	v0 := v
 	haveAddr := false
-	
+
 	// If v is a named type and is addressable,
 	// start with its address, so that if the type has pointer methods,
 	// we find them.
@@ -317,15 +315,15 @@ func indirect(v reflect.Value, decodingNull bool) reflect.Value {
 				continue
 			}
 		}
-		
+
 		if v.Kind() != reflect.Pointer {
 			break
 		}
-		
+
 		if decodingNull && v.CanSet() {
 			break
 		}
-		
+
 		// Prevent infinite loop if v is an interface pointing to its own address:
 		//     var v interface{}
 		//     v = &v
@@ -336,7 +334,7 @@ func indirect(v reflect.Value, decodingNull bool) reflect.Value {
 		if v.IsNil() {
 			v.Set(reflect.New(v.Type().Elem()))
 		}
-		
+
 		if haveAddr {
 			v = v0 // restore original value after round-trip Value.Addr().Elem()
 			haveAddr = false

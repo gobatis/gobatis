@@ -42,9 +42,11 @@ type executor struct {
 	vars     []any
 	dynamic  bool
 	now      time.Time
+	dest     any
+	tx       bool
 }
 
-func (e *executor) exec(dest any) (err error) {
+func (e *executor) exec() (err error) {
 
 	if e.executed.Swap(true) {
 		err = fmt.Errorf("db execution was repeated")
@@ -78,8 +80,10 @@ func (e *executor) exec(dest any) (err error) {
 				err = addError(err, v)
 			}
 		}
-		if v := e.conn.Close(); v != nil {
-			err = addError(err, v)
+		if !e.tx {
+			if v := e.conn.Close(); v != nil {
+				err = addError(err, v)
+			}
 		}
 	}()
 
@@ -88,8 +92,8 @@ func (e *executor) exec(dest any) (err error) {
 		if err != nil {
 			return
 		}
-		if dest != nil {
-			err = e.scan(e.rows, dest)
+		if e.dest != nil {
+			err = e.scan(e.rows, e.dest)
 			if err != nil {
 				return
 			}
@@ -148,7 +152,6 @@ func (e *executor) scan(rows *sql.Rows, ptr any) (err error) {
 		err = sql.ErrNoRows
 		return
 	}
-
 	return
 }
 
@@ -161,10 +164,10 @@ func (e *executor) log(db *DB) {
 	var status string
 	var out func(format string, a ...any)
 	if db.Error != nil {
-		status = color.RedString("Error")
+		status = color.RedString("error")
 		out = db.Logger.Errorf
 	} else {
-		status = color.GreenString("Success")
+		status = color.GreenString("success")
 		out = db.Logger.Debugf
 	}
 	var traceId string

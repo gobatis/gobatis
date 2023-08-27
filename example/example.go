@@ -73,6 +73,28 @@ func main() {
 		return
 	}
 
+	var total int64
+	err = db.Debug().Query(`select count(1) from users`).Scan(&total).Error
+	if err != nil {
+		return
+	}
+	spew.Json(total)
+
+	var items []*User
+	err = db.ParallelQuery(batis.Paging{
+		Select: "*",
+		Count:  "*",
+		From:   "users where id > 10",
+		Page:   0,
+		Limit:  10,
+		Params: nil,
+		Scan:   []any{&items, &total},
+	}).Error
+	if err != nil {
+		return
+	}
+	spew.Json(items, total)
+
 	//db.Query(
 	//	`select * from users where age = #{age}`,
 	//	batis.Param("age", 1),
