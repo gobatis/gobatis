@@ -5,26 +5,22 @@ type NameValue struct {
 	Value any
 }
 
-// Param This function takes in a name and a value, 
-// and returns a struct containing the name-value pair. 
-// The struct has two fields: "Name" and "Value". 
-// The "Name" field is set to the input name string, 
-// and the "Value" field is set to the input value of any type. 
-// This function can be useful for generating parameters to be passed into other functions or APIs. 
+// Param This function takes in a name and a value,
+// and returns a struct containing the name-value pair.
+// The struct has two fields: "Name" and "Value".
+// The "Name" field is set to the input name string,
+// and the "Value" field is set to the input value of any type.
+// This function can be useful for generating parameters to be passed into other functions or APIs.
 func Param(name string, value any) NameValue {
 	return NameValue{Name: name, Value: value}
 }
 
-func Select(data any, columns string) Rows {
-	return &selectColumns{
-		columns: columns,
-		data:    data,
-	}
+func LooseDest(dest any, fields ...string) Dest {
+	return Dest{loose: true, dest: dest, fields: fields}
 }
 
-func Except(data any, columns string) Rows {
-	return &exceptColumns{
-		data:    data,
-		columns: columns,
-	}
+type Dest struct {
+	loose  bool
+	dest   any
+	fields []string
 }

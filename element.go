@@ -3,7 +3,7 @@ package batis
 import (
 	"fmt"
 	"strings"
-	
+
 	"github.com/gobatis/gobatis/dialector"
 	"github.com/pkg/errors"
 )
@@ -86,10 +86,10 @@ func (u update) SQL(namer dialector.Namer, tag string) (sql string, params []Nam
 			return
 		}
 	}
-	
+
 	var sqls []string
 	sqls = append(sqls, fmt.Sprintf("update %s set", namer.TableName(u.table)))
-	
+
 	var sets []string
 	for k := range u.data {
 		sets = append(sets, fmt.Sprintf("%s=#{%s}", namer.ColumnName(k), k))
@@ -112,7 +112,7 @@ func (u update) SQL(namer dialector.Namer, tag string) (sql string, params []Nam
 		params = append(params, _p...)
 	}
 	sql = strings.Join(sqls, space)
-	
+
 	return
 }
 
@@ -125,13 +125,13 @@ type insert struct {
 }
 
 func (i insert) SQL(namer dialector.Namer, tag string) (sql string, params []NameValue, err error) {
-	
+
 	defer func() {
 		if err != nil {
 			err = errors.Wrap(err, "build insert sql error")
 		}
 	}()
-	
+
 	for _, v := range i.elems {
 		switch vv := v.(type) {
 		case *onConflict:
@@ -146,13 +146,13 @@ func (i insert) SQL(namer dialector.Namer, tag string) (sql string, params []Nam
 				return
 			}
 			i.returning = vv
-		
+
 		default:
 			err = fmt.Errorf("method db.Insert() accept elements use of batis.OnConflict() or batis.Returning()")
 			return
 		}
 	}
-	
+
 	var rows []Row
 	switch vv := i.data.(type) {
 	case Rows:
@@ -166,21 +166,21 @@ func (i insert) SQL(namer dialector.Namer, tag string) (sql string, params []Nam
 			return
 		}
 	}
-	
+
 	if l := len(rows); l != 1 {
 		err = fmt.Errorf("expect 1 row, got: %d", l)
 		return
 	}
-	
+
 	var sqls []string
-	
+
 	sqls = append(sqls, fmt.Sprintf("insert into %s(%s) values(%s)",
 		namer.TableName(i.table),
 		strings.Join(rowColumns(rows[0], namer), ","),
 		strings.Join(rowVars(rows[0]), ","),
 	))
 	params = append(params, rowParams(rows[0])...)
-	
+
 	if i.onConflict != nil {
 		var _s string
 		var _p []NameValue
@@ -191,7 +191,7 @@ func (i insert) SQL(namer dialector.Namer, tag string) (sql string, params []Nam
 		sqls = append(sqls, _s)
 		params = append(params, _p...)
 	}
-	
+
 	if i.returning != nil {
 		var _s string
 		var _p []NameValue
@@ -202,9 +202,9 @@ func (i insert) SQL(namer dialector.Namer, tag string) (sql string, params []Nam
 		sqls = append(sqls, _s)
 		params = append(params, _p...)
 	}
-	
+
 	sql = strings.Join(sqls, space)
-	
+
 	return
 }
 
@@ -218,13 +218,13 @@ type insertBatch struct {
 }
 
 func (i insertBatch) SQL(namer dialector.Namer, tag string) (sql string, params []NameValue, err error) {
-	
+
 	defer func() {
 		if err != nil {
 			err = errors.Wrap(err, "build insert batch sql error")
 		}
 	}()
-	
+
 	for _, v := range i.elems {
 		switch vv := v.(type) {
 		case *onConflict:
@@ -239,13 +239,13 @@ func (i insertBatch) SQL(namer dialector.Namer, tag string) (sql string, params 
 				return
 			}
 			i.returning = vv
-		
+
 		default:
 			err = fmt.Errorf("method db.Insert() accept elements use of batis.OnConflict() or batis.Returning()")
 			return
 		}
 	}
-	
+
 	var rows []Row
 	switch vv := i.data.(type) {
 	case Rows:
@@ -259,21 +259,21 @@ func (i insertBatch) SQL(namer dialector.Namer, tag string) (sql string, params 
 			return
 		}
 	}
-	
+
 	if l := len(rows); l == 0 {
 		err = fmt.Errorf("expect rows legnth > 0, got: %d", l)
 		return
 	}
-	
+
 	var sqls []string
-	
+
 	sqls = append(sqls, fmt.Sprintf("insert into %s(%s) values%s",
 		namer.TableName(i.table),
 		strings.Join(rowColumns(rows[0], namer), ","),
 		strings.Join(rowsVars(rows), ","),
 	))
 	params = append(params, rowsParams(rows)...)
-	
+
 	if i.onConflict != nil {
 		var _s string
 		var _p []NameValue
@@ -284,7 +284,7 @@ func (i insertBatch) SQL(namer dialector.Namer, tag string) (sql string, params 
 		sqls = append(sqls, _s)
 		params = append(params, _p...)
 	}
-	
+
 	if i.returning != nil {
 		var _s string
 		var _p []NameValue
@@ -295,9 +295,9 @@ func (i insertBatch) SQL(namer dialector.Namer, tag string) (sql string, params 
 		sqls = append(sqls, _s)
 		params = append(params, _p...)
 	}
-	
+
 	sql = strings.Join(sqls, space)
-	
+
 	return
 }
 
@@ -330,10 +330,10 @@ func (d del) SQL(namer dialector.Namer, tag string) (sql string, params []NameVa
 			return
 		}
 	}
-	
+
 	var sqls []string
 	sqls = append(sqls, fmt.Sprintf("delete from %s", namer.TableName(strings.TrimSpace(d.table))))
-	
+
 	if d.where != nil {
 		var _s string
 		var _p []NameValue
@@ -345,7 +345,7 @@ func (d del) SQL(namer dialector.Namer, tag string) (sql string, params []NameVa
 		params = append(params, _p...)
 	}
 	sql = strings.Join(sqls, space)
-	
+
 	return
 }
 
@@ -355,7 +355,7 @@ type query struct {
 }
 
 func (q query) SQL(namer dialector.Namer, tag string) (sql string, params []NameValue, err error) {
-	sql = strings.TrimSpace(sql)
+	sql = strings.TrimSpace(q.sql)
 	params = q.params
 	return
 }

@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/gobatis/gobatis/dialector"
-	"github.com/gozelle/spew"
 )
 
 const (
@@ -29,6 +28,7 @@ func WithDebug(parent context.Context, debug bool) context.Context {
 }
 
 func Open(d dialector.Dialector, options ...Option) (db *DB, err error) {
+
 	config := &Config{
 		CreateBatchSize: 10,
 		Plugins:         nil,
@@ -39,14 +39,13 @@ func Open(d dialector.Dialector, options ...Option) (db *DB, err error) {
 		Logger:    &logger{},
 		db:        nil,
 	}
+
 	config.db, err = d.DB()
 	if err != nil {
 		return
 	}
-	db = &DB{
-		Error: nil,
-		tx:    nil,
-	}
+
+	db = &DB{Config: config, Error: nil}
 
 	return
 }
@@ -54,14 +53,12 @@ func Open(d dialector.Dialector, options ...Option) (db *DB, err error) {
 type DB struct {
 	*Config
 	*executor
-	Error        error
-	rowsAffected *int64
-	lastInsertId *int64
-	tx           *tx
-	ctx          context.Context
-	debug        bool
-	must         bool
-	traceId      string
+	Error   error
+	tx      *tx
+	ctx     context.Context
+	debug   bool
+	must    bool
+	traceId string
 }
 
 func (d *DB) addError(err error) {
@@ -73,7 +70,16 @@ func (d *DB) addError(err error) {
 }
 
 func (d *DB) clone() *DB {
-	return &DB{Config: d.Config, Error: d.Error}
+	return &DB{
+		Config:   d.Config,
+		Error:    d.Error,
+		tx:       d.tx,
+		ctx:      d.ctx,
+		debug:    d.debug,
+		must:     d.must,
+		traceId:  d.traceId,
+		executor: nil,
+	}
 }
 
 func (d *DB) WithTraceId(traceId string) *DB {
@@ -83,11 +89,13 @@ func (d *DB) WithTraceId(traceId string) *DB {
 }
 
 func (d *DB) WithContext(ctx context.Context) *DB {
-	v, ok := ctx.Value(txKey).(*DB)
-	if ok {
-		c := v.clone()
-		c.ctx = ctx
-		return c
+	v := ctx.Value(txKey)
+	if v != nil {
+		if vv, ok := v.(*DB); ok {
+			c := vv.clone()
+			c.ctx = ctx
+			return c
+		}
 	}
 	c := d.clone()
 	c.ctx = ctx
@@ -100,19 +108,8 @@ func (d *DB) Debug() *DB {
 	return c
 }
 
-//func (d *DB) SetLogger(logger Logger) {
-//	d.logger = logger
-//}
-//
-//func (d *DB) useLogger() Logger {
-//	if d.logger == nil {
-//		d.logger = DefaultLogger()
-//	}
-//	return d.logger
-//}
-
-func (d *DB) Close() {
-	_ = d.db.Close()
+func (d *DB) Close() error {
+	return d.db.Close()
 }
 
 func (d *DB) DB() *sql.DB {
@@ -141,7 +138,7 @@ func (d *DB) prepare(query bool, elem Element) {
 	}
 
 	var err error
-	e := executor{query: query}
+	e := &executor{query: query, now: d.NowFunc()}
 	if d.tx != nil {
 		e.conn = d.tx
 	} else {
@@ -156,7 +153,7 @@ func (d *DB) prepare(query bool, elem Element) {
 		d.addError(err)
 		return
 	}
-	d.executor = &e
+	d.executor = e
 	return
 }
 
@@ -168,17 +165,8 @@ func (d *DB) exec(dest any) {
 		d.addError(fmt.Errorf("no executor"))
 		return
 	}
-
-	var err error
-	d.rowsAffected, d.lastInsertId, err = d.executor.exec(dest)
-	if err != nil {
-		d.addError(err)
-		return
-	}
-
-	spew.Json("exec done")
-
-	return
+	d.addError(d.executor.exec(dest))
+	d.executor.log(d)
 }
 
 // 执行查询语句
@@ -208,7 +196,7 @@ func (d *DB) Delete(table string, where Element) *DB {
 	e := &del{table: table, elems: []Element{where}}
 	q := e.returning != nil
 	c.prepare(q, e)
-	if !q {
+	if q {
 		c.exec(nil)
 	}
 	return c
@@ -220,7 +208,7 @@ func (d *DB) Update(table string, data map[string]any, where Element) *DB {
 	u := update{table: table, data: data, elems: []Element{where}}
 	q := u.returning != nil
 	c.prepare(q, u)
-	if !q {
+	if q {
 		c.exec(nil)
 	}
 	return c
@@ -232,7 +220,7 @@ func (d *DB) Insert(table string, data any, elems ...Element) *DB {
 	i := &insert{table: table, data: data, elems: elems}
 	q := i.returning != nil
 	c.prepare(q, i)
-	if !q {
+	if q {
 		c.exec(nil)
 	}
 	return c
@@ -244,7 +232,7 @@ func (d *DB) InsertBatch(table string, batch int, data any, onConflict Element) 
 	c.prepare(false, i)
 	q := i.returning != nil
 	c.prepare(q, i)
-	if !q {
+	if q {
 		c.exec(nil)
 	}
 	return c
@@ -252,16 +240,20 @@ func (d *DB) InsertBatch(table string, batch int, data any, onConflict Element) 
 
 func (d *DB) ParallelQuery(queryer ...Queryer) *DB {
 	c := d.clone()
-	defer func() {
-		if c.Error != nil {
-			c.log()
-		}
-	}()
 	if len(queryer) == 0 {
 		c.Error = fmt.Errorf("no querer")
 		return c
 	}
 	return c
+}
+
+func (d *DB) Result() (r sql.Result, err error) {
+	if d.executor == nil || d.executor.query {
+		err = fmt.Errorf("no execute result")
+		return
+	}
+	r = d.executor.result
+	return
 }
 
 type Queryer interface {
@@ -275,8 +267,19 @@ type Queryer interface {
 //	return ch
 //}
 
-func (d *DB) Begin() (*sql.Tx, error) {
-	return d.db.Begin()
+func (d *DB) Begin() {
+	c := d.clone()
+	if c.tx != nil {
+		c.addError(fmt.Errorf("tx conflict"))
+	} else {
+		t, err := d.db.Begin()
+		if err != nil {
+			c.addError(err)
+			return
+		}
+		c.tx = &tx{Tx: t}
+	}
+	return
 }
 
 func (d *DB) Commit() *DB {
@@ -295,18 +298,4 @@ func (d *DB) Rollback() *DB {
 		d.addError(d.tx.Rollback())
 	}
 	return d
-}
-
-func (d *DB) log() {
-
-}
-
-func LooseDest(dest any, fields ...string) Dest {
-	return Dest{loose: true, dest: dest, fields: fields}
-}
-
-type Dest struct {
-	loose  bool
-	dest   any
-	fields []string
 }

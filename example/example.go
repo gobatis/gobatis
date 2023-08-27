@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"time"
 
@@ -39,45 +38,28 @@ func main() {
 		return
 	}
 
-	//user := &User{
-	//	Id:     nil,
-	//	Name:   "tom",
-	//	Age:    18,
-	//	Tstz:   time.Now(),
-	//	Ts:     time.Now(),
-	//	Wealth: decimal.NewFromFloat(3.14),
-	//}
-	////id := new(int64)
-	//err = db.Insert("users", user, batis.Returning("id")).Scan(&user.Id).Error
-	//if err != nil {
-	//	return
-	//}
-	//spew.Json(user)
-
-	tx, err := db.Begin()
+	user := &User{
+		Id:     nil,
+		Name:   "tom",
+		Age:    18,
+		Tstz:   time.Now(),
+		Ts:     time.Now(),
+		Wealth: decimal.NewFromFloat(3.14),
+	}
+	//id := new(int64)
+	err = db.Debug().Insert("users", user, batis.Returning("id")).Scan(&user.Id).Error
 	if err != nil {
 		return
 	}
-
-	defer func() {
-		if err != nil {
-			_ = tx.Rollback()
-		}
-	}()
-
-	ctx := batis.WithTx(context.Background(), tx)
-	ctx = batis.WithTraceId(ctx, "123")
-	ctx = batis.WithDebug(ctx, true)
+	spew.Json(user)
 
 	var users []User
-	err = db.Debug().WithContext(ctx).Query(`select * from users where id = #{id}`, batis.Param("id", 19)).Scan(&users).Error
-	err = db.Debug().WithContext(ctx).Query(`select * from users where id = #{id}`, batis.Param("id", 19)).Scan(&users).Error
+	err = db.Debug().Query(`select * from users where id = #{id}`, batis.Param("id", 19)).Scan(&users).Error
 	if err != nil {
 		return
 	}
 
 	spew.Json(users)
-
 	//err = db.Update("users", map[string]any{
 	//	"age": 99,
 	//}, batis.Where("id = #{id}", batis.Param("id", 18))).Error

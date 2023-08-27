@@ -5,7 +5,12 @@ import (
 	"database/sql"
 	"fmt"
 	"reflect"
+	"runtime"
+	"strings"
 	"sync/atomic"
+	"time"
+
+	"github.com/gozelle/color"
 )
 
 type conn interface {
@@ -28,18 +33,18 @@ type executor struct {
 	params   []NameValue
 	conn     conn
 	rows     *sql.Rows
-	result   *sql.Result
+	result   sql.Result
 	must     bool
-	raw      string
 	executed atomic.Bool
-	tracer   *tracer
+	fragment *fragment
+	raw      string
+	exprs    []string
+	vars     []any
+	dynamic  bool
+	now      time.Time
 }
 
-func (e *executor) exec(dest any) (rowsAffected *int64, lastedInsertId *int64, err error) {
-
-	defer func() {
-		//e.log(err)
-	}()
+func (e *executor) exec(dest any) (err error) {
 
 	if e.executed.Swap(true) {
 		err = fmt.Errorf("db execution was repeated")
@@ -61,49 +66,36 @@ func (e *executor) exec(dest any) (rowsAffected *int64, lastedInsertId *int64, e
 	if err != nil {
 		return
 	}
-
-	frag := &fragment{node: node, in: _params}
-
-	raw, exprs, vars, dynamic, err := frag.parseStatement(_vars...)
+	e.fragment = &fragment{node: node, in: _params}
+	e.raw, e.exprs, e.vars, e.dynamic, err = e.fragment.parseStatement(_vars...)
 	if err != nil {
 		return
 	}
-	_ = exprs
-	_ = dynamic
-
-	var rows *sql.Rows
-	var result sql.Result
 
 	defer func() {
-		if rows != nil {
-			_ = rows.Close()
+		if e.rows != nil {
+			if v := e.rows.Close(); v != nil {
+				err = fmt.Errorf("%v; %w", err, v)
+			}
 		}
 	}()
 
 	if e.query {
-		rows, err = e.conn.QueryContext(context.Background(), raw, vars...)
+		e.rows, err = e.conn.QueryContext(context.Background(), e.raw, e.vars...)
 		if err != nil {
 			return
 		}
 		if dest != nil {
-			err = e.scan(rows, dest)
+			err = e.scan(e.rows, dest)
 			if err != nil {
 				return
 			}
 		}
 		return
 	} else {
-		result, err = e.conn.ExecContext(context.Background(), raw, vars...)
+		e.result, err = e.conn.ExecContext(context.Background(), e.raw, e.vars...)
 		if err != nil {
 			return
-		}
-		affected, _err := result.RowsAffected()
-		if _err == nil {
-			rowsAffected = &affected
-		}
-		id, _err := result.LastInsertId()
-		if _err == nil {
-			lastedInsertId = &id
 		}
 		return
 	}
@@ -113,14 +105,96 @@ func (e *executor) scan(rows *sql.Rows, ptr any) (err error) {
 	if ptr == nil {
 		return
 	}
-	qr := queryResult{
-		rows: rows,
+	pv := reflect.ValueOf(ptr)
+	if pv.Kind() != reflect.Pointer || pv.IsNil() {
+		return &InvalidUnmarshalError{pv.Type()}
 	}
-	err = qr.scan(ptr)
+	pv = indirect(pv, false)
+
+	columns, err := rows.Columns()
 	if err != nil {
-		err = fmt.Errorf("scan rows error: %w", err)
+		return
+	}
+	l := len(columns)
+	c := 0
+	first := false
+	for rows.Next() {
+		c++
+		row := make([]interface{}, l)
+		pointers := make([]interface{}, l)
+		for i, _ := range columns {
+			pointers[i] = &row[i]
+		}
+		err = rows.Scan(pointers...)
+		if err != nil {
+			return
+		}
+		if !first {
+			first = true
+		}
+		var end bool
+		end, err = reflectRow(columns, row, pv, first)
+		if err != nil {
+			return
+		}
+		if end {
+			break
+		}
+	}
+	if c == 0 {
+		err = sql.ErrNoRows
 		return
 	}
 
 	return
+}
+
+func (e *executor) log(db *DB) {
+	if !db.debug && db.Error == nil {
+		return
+	}
+	cost := time.Since(db.executor.now)
+	info := &strings.Builder{}
+	var status string
+	var out func(format string, a ...any)
+	if db.Error != nil {
+		status = color.RedString("Error")
+		out = db.Logger.Errorf
+	} else {
+		status = color.GreenString("Success")
+		out = db.Logger.Debugf
+	}
+	var traceId string
+	if db.traceId != "" {
+		traceId = fmt.Sprintf("[%s]", color.CyanString(db.traceId))
+	}
+	var t string
+	if db.tx != nil {
+		t = fmt.Sprintf("[%s]", color.CyanString("Tx"))
+	}
+	info.WriteString(fmt.Sprintf("%s %s", color.MagentaString("[gobatis]"), color.RedString(e.runFuncPos(4))))
+	info.WriteString(fmt.Sprintf("\n[%s][%s]%s%s %s", status, cost, traceId, t, color.YellowString(db.executor.raw)))
+	if db.Error != nil {
+		info.WriteString(fmt.Sprintf("\n%s", color.RedString(db.Error.Error())))
+	}
+	out(info.String())
+}
+
+// runFuncPos returns the file name and line number of the caller of the function calling it.
+// skip: 0 for the current function, 1 for the caller of the current function
+func (e *executor) runFuncPos(skip int) string {
+	i := skip
+	for {
+		_, file, line, ok := runtime.Caller(i)
+		if !ok || i > 10 {
+			break
+		}
+		if (!strings.Contains(file, "gobatis/executor/") &&
+			!strings.Contains(file, "gobatis/db.go")) ||
+			strings.HasSuffix(file, "_test.go") {
+			return fmt.Sprintf("%s:%d", file, line)
+		}
+		i++
+	}
+	return ""
 }
