@@ -80,13 +80,57 @@ func (v visitor) VisitDotnotationExpr(ctx *Dotnotation_exprContext) interface{} 
 //}
 
 func TestVisitor(t *testing.T) {
-	lexer := NewJsonPathLexer(antlr.NewInputStream("$.User[*]"))
+
+	errs := &CustomErrorListener{}
+
+	lexer := NewJsonPathLexer(antlr.NewInputStream("$.User[*]2"))
+	lexer.RemoveErrorListeners()
+	lexer.AddErrorListener(errs)
+
 	stream := antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel)
+
 	p := NewJsonPathParser(stream)
-	p.BuildParseTrees = true
-	p.AddErrorListener(antlr.NewDiagnosticErrorListener(true))
+	//p.BuildParseTrees = true
+	p.RemoveErrorListeners()
+	p.AddErrorListener(errs)
+
+	// 提前构建解析树
+	tree := p.Jsonpath()
+	// 判断过程中是否有语法错误或词法错误
+	t.Log(errs.errors)
 
 	v := &visitor{}
-	a := v.Visit(p.Jsonpath())
+	a := v.Visit(tree)
+	// 判断结果
 	t.Log(a)
+}
+
+var _ antlr.ErrorListener = (*CustomErrorListener)(nil)
+
+type CustomErrorListener struct {
+	errors []string
+}
+
+func (d *CustomErrorListener) ReportAmbiguity(recognizer antlr.Parser, dfa *antlr.DFA, startIndex, stopIndex int, exact bool, ambigAlts *antlr.BitSet, configs *antlr.ATNConfigSet) {
+	errorMsg := fmt.Sprintf("Ambiguity detected between tokens %d and %d. Ambiguous alternatives: %v", startIndex, stopIndex, ambigAlts)
+	d.errors = append(d.errors, errorMsg)
+}
+
+func (d *CustomErrorListener) ReportAttemptingFullContext(recognizer antlr.Parser, dfa *antlr.DFA, startIndex, stopIndex int, conflictingAlts *antlr.BitSet, configs *antlr.ATNConfigSet) {
+	errorMsg := fmt.Sprintf("Attempting full context mode between tokens %d and %d", startIndex, stopIndex)
+	d.errors = append(d.errors, errorMsg)
+}
+
+func (d *CustomErrorListener) ReportContextSensitivity(recognizer antlr.Parser, dfa *antlr.DFA, startIndex, stopIndex, prediction int, configs *antlr.ATNConfigSet) {
+	errorMsg := fmt.Sprintf("Context sensitivity detected between tokens %d and %d", startIndex, stopIndex)
+	d.errors = append(d.errors, errorMsg)
+}
+
+func (d *CustomErrorListener) SyntaxError(recognizer antlr.Recognizer, offendingSymbol interface{}, line, column int, msg string, e antlr.RecognitionException) {
+	errorMsg := fmt.Sprintf("Syntax Error at line %d:%d - %s", line, column, msg)
+	d.errors = append(d.errors, errorMsg)
+}
+
+func (d *CustomErrorListener) GetErrors() []string {
+	return d.errors
 }
