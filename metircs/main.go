@@ -16,7 +16,10 @@ func main() {
 			},
 		)
 	)
-	prometheus.MustRegister(customCounter)
+	//prometheus.MustRegister(customCounter)
+	
+	r := prometheus.NewRegistry()
+	r.MustRegister(customCounter)
 	
 	go func() {
 		for {
@@ -25,6 +28,8 @@ func main() {
 		}
 	}()
 	
-	http.Handle("/metrics", promhttp.Handler())
+	http.Handle("/metrics", promhttp.InstrumentMetricHandler(
+		r, promhttp.HandlerFor(r, promhttp.HandlerOpts{}),
+	))
 	http.ListenAndServe(":8080", nil)
 }
