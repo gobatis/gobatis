@@ -3,7 +3,7 @@ package batis
 import (
 	"database/sql"
 	"time"
-
+	
 	"github.com/gobatis/gobatis/dialector"
 )
 
@@ -20,6 +20,7 @@ type Config struct {
 	NowFunc         func() time.Time
 	Dialector       dialector.Dialector
 	Logger          Logger
+	Hooks           func(db *DB)
 	db              *sql.DB
 }
 
