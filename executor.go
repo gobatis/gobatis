@@ -43,10 +43,9 @@ type executor struct {
 	dynamic  bool
 	now      time.Time
 	dest     any
-	tx       bool
 }
 
-func (e *executor) exec() (err error) {
+func (e *executor) execute() (err error) {
 
 	if e.executed.Swap(true) {
 		err = fmt.Errorf("db execution was repeated")
@@ -77,11 +76,6 @@ func (e *executor) exec() (err error) {
 	defer func() {
 		if e.rows != nil {
 			if v := e.rows.Close(); v != nil {
-				err = addError(err, v)
-			}
-		}
-		if !e.tx {
-			if v := e.conn.Close(); v != nil {
 				err = addError(err, v)
 			}
 		}
@@ -203,4 +197,13 @@ func (e *executor) runFuncPos(skip int) string {
 		i++
 	}
 	return ""
+}
+
+func (e *executor) insertBatch(batch int) (err error) {
+	panic("todo")
+	return
+}
+
+func (e *executor) fetch() (err error) {
+	return
 }

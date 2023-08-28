@@ -214,7 +214,6 @@ type insertBatch struct {
 	batch      int
 	elems      []Element
 	onConflict *onConflict
-	returning  *returning
 }
 
 func (i insertBatch) SQL(namer dialector.Namer, tag string) (sql string, params []NameValue, err error) {
@@ -233,13 +232,6 @@ func (i insertBatch) SQL(namer dialector.Namer, tag string) (sql string, params 
 				return
 			}
 			i.onConflict = vv
-		case *returning:
-			if i.returning != nil {
-				err = fmt.Errorf("batis.Returning() should be invoked no more than once")
-				return
-			}
-			i.returning = vv
-
 		default:
 			err = fmt.Errorf("method db.Insert() accept elements use of batis.OnConflict() or batis.Returning()")
 			return

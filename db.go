@@ -138,7 +138,6 @@ func (d *DB) prepare(query bool, elem Element) {
 	e := &executor{query: query, now: d.NowFunc()}
 	if d.tx != nil {
 		e.conn = d.tx
-		e.tx = true
 	} else {
 		e.conn, err = d.db.Conn(d.context())
 		if err != nil {
@@ -164,7 +163,10 @@ func (d *DB) exec(dest any) {
 		return
 	}
 	d.dest = dest
-	d.addError(d.executor.exec())
+	d.addError(d.executor.execute())
+	if d.tx == nil {
+		d.addError(d.executor.conn.Close())
+	}
 	d.executor.log(d)
 }
 
@@ -227,12 +229,27 @@ func (d *DB) Insert(table string, data any, elems ...Element) *DB {
 
 func (d *DB) InsertBatch(table string, batch int, data any, onConflict Element) *DB {
 	c := d.clone()
+	var t bool
+	if c.tx == nil {
+		c.Begin()
+		t = true
+	}
+	if c.Error != nil {
+		return c
+	}
+	defer func() {
+		if t && c.Error != nil {
+			c.Rollback()
+		}
+		if c.executor.conn != nil {
+			c.addError(c.executor.conn.Close())
+		}
+	}()
 	i := &insertBatch{table: table, batch: batch, data: data, elems: []Element{onConflict}}
 	c.prepare(false, i)
-	q := i.returning != nil
-	c.prepare(q, i)
-	if q {
-		c.exec(nil)
+	c.addError(c.executor.insertBatch(batch))
+	if t && c.Error == nil {
+		c.Commit()
 	}
 	return c
 }
@@ -265,7 +282,6 @@ func (d *DB) ParallelQuery(queryer ...Queryer) *DB {
 		v.query = true
 		if d.tx != nil {
 			v.conn = d.tx
-			v.tx = true
 		} else {
 			var err error
 			v.conn, err = d.db.Conn(d.context())
@@ -279,7 +295,7 @@ func (d *DB) ParallelQuery(queryer ...Queryer) *DB {
 			defer func() {
 				wg.Done()
 			}()
-			err := v.exec()
+			err := v.execute()
 			if err != nil {
 				lock.Lock()
 				c.addError(err)
