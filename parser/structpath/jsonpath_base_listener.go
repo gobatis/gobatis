@@ -1,6 +1,6 @@
 // Code generated from JsonPath.g4 by ANTLR 4.13.0. DO NOT EDIT.
 
-package gpath // JsonPath
+package structpath // JsonPath
 import "github.com/antlr4-go/antlr/v4"
 
 // BaseJsonPathListener is a complete listener for a parse tree produced by JsonPathParser.

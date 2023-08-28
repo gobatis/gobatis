@@ -1,4 +1,4 @@
-package hook
+package plugin
 
 import "time"
 
@@ -17,6 +17,7 @@ type AfterContext struct {
 	AffectRows int64
 }
 
-type BeforeExecute func(ctx BeforeContext)
-
-type AfterExecute func(ctx AfterContext)
+type Plugin interface {
+	BeforeExecute(ctx BeforeContext)
+	AfterExecute(ctx AfterContext)
+}

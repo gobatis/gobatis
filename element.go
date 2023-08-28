@@ -277,17 +277,6 @@ func (i insertBatch) SQL(namer dialector.Namer, tag string) (sql string, params 
 		params = append(params, _p...)
 	}
 
-	if i.returning != nil {
-		var _s string
-		var _p []NameValue
-		_s, _p, err = i.returning.SQL(namer, tag)
-		if err != nil {
-			return
-		}
-		sqls = append(sqls, _s)
-		params = append(params, _p...)
-	}
-
 	sql = strings.Join(sqls, space)
 
 	return

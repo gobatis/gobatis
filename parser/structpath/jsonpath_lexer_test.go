@@ -1,4 +1,4 @@
-package gpath
+package structpath
 
 import (
 	"fmt"

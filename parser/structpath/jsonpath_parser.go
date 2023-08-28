@@ -1,6 +1,6 @@
 // Code generated from JsonPath.g4 by ANTLR 4.13.0. DO NOT EDIT.
 
-package gpath // JsonPath
+package structpath // JsonPath
 import (
 	"fmt"
 	"strconv"
