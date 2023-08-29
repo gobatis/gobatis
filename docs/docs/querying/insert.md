@@ -4,14 +4,20 @@ sidebar_position: 3
 
 # Insert
 
+**postgres:**
 
-with returning:
 ```go
+type User struct {
+	Id *int64
+	Username string
+}
+
 err = batis.Insert("users", user, batis.Returning("id")).Scan(&user.Id).Error
 ```
 
 
-with lastInsertedId:
+**mysql:**
+
 ```go
 r = batis.Insert("users", user, batis.Returning("id"))
 err = r.Error
@@ -23,4 +29,19 @@ id = r.LastInsertId
 
 ```go
 err = batis.InsertBatch("users", 10, users).Error
+```
+
+## Nested Struct
+
+```go
+type Id struct {
+	Id *int64
+}
+
+type User struct {
+	Id
+	Username string
+}
+
+err = batis.Insert("users", user, batis.Returning("id")).Scan(&user.Id).Error
 ```

@@ -2,6 +2,7 @@ package batis
 
 import (
 	syslog "log"
+	"time"
 )
 
 type Logger interface {
@@ -35,4 +36,12 @@ func (l logger) Errorf(format string, a ...any) {
 
 func (l logger) Warnf(format string, a ...any) {
 	syslog.Printf(format, a...)
+}
+
+type LogRecord struct {
+	TraceID string        `json:"trace_id"`
+	Tx      bool          `json:"tx"`
+	SQL     string        `json:"sql"`
+	Error   error         `json:"error"`
+	Cost    time.Duration `json:"cost"`
 }
