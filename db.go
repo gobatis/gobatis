@@ -248,7 +248,7 @@ func (d *DB) InsertBatch(table string, batch int, data any, onConflict, returnin
 	return c
 }
 
-func (d *DB) ParallelQuery(queryer ...Queryer) *DB {
+func (d *DB) ParallelQuery(queryer ...ParallelQueryer) *DB {
 	c := d.clone()
 	//if len(queryer) == 0 {
 	//	c.Error = fmt.Errorf("no querer")
@@ -312,7 +312,7 @@ func (d *DB) Result() (r sql.Result, err error) {
 	return
 }
 
-func (d *DB) Fetch(sql string, params ...NameValue) <-chan Scanner {
+func (d *DB) FetchQuery(query FetchQuery) error {
 
 	c := d.clone()
 
@@ -322,11 +322,11 @@ func (d *DB) Fetch(sql string, params ...NameValue) <-chan Scanner {
 		newExecutor(d.Dialector.Namer(), false, newInnerSQL("commit;")),
 	)
 
-	ch := make(chan Scanner)
+	//ch := make(chan Scanner)
 	//f := &fetch{}
 	//d.prepareExecutor(true, f)
 
-	return ch
+	return nil
 }
 
 func (d *DB) Begin() {

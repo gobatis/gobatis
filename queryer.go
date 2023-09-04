@@ -6,7 +6,7 @@ import (
 	"github.com/gobatis/gobatis/dialector"
 )
 
-type Queryer interface {
+type ParallelQueryer interface {
 	executors(namer dialector.Namer, tag string) ([]*executor, error)
 }
 
@@ -37,7 +37,7 @@ func (q Query) executors(namer dialector.Namer, tag string) ([]*executor, error)
 	return []*executor{e}, nil
 }
 
-var _ Queryer = (*Paging)(nil)
+var _ ParallelQueryer = (*Paging)(nil)
 
 type Paging struct {
 	Select string
@@ -80,4 +80,11 @@ func (p Paging) executors(namer dialector.Namer, tag string) ([]*executor, error
 	c.dest = p.Scan[1]
 
 	return []*executor{q, c}, nil
+}
+
+type FetchQuery struct {
+	SQL     string
+	Params  map[string]any
+	Limit   uint
+	Handler func(scanner Scanner) error
 }

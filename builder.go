@@ -50,3 +50,7 @@ type Scanner struct {
 	rows   *sql.Rows
 	result sql.Result
 }
+
+func (s Scanner) Scan(ptr any) error {
+	return nil
+}
