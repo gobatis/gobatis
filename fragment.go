@@ -7,7 +7,7 @@ import (
 	"reflect"
 	"regexp"
 	"strings"
-	
+
 	"github.com/gobatis/gobatis/cast"
 	"github.com/gobatis/gobatis/dtd"
 )
@@ -55,7 +55,7 @@ func (p *fragment) proxy(field reflect.Value) {
 }
 
 func (p *fragment) call(_type reflect.Type, in ...reflect.Value) []reflect.Value {
-	
+
 	c := &caller{fragment: p, args: in}
 	for i := 0; i < _type.NumOut()-1; i++ {
 		if _type.Out(i).Kind() == reflect.Ptr {
@@ -64,7 +64,7 @@ func (p *fragment) call(_type reflect.Type, in ...reflect.Value) []reflect.Value
 			c.values = append(c.values, reflect.New(_type.Out(i)))
 		}
 	}
-	
+
 	var err error
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -79,7 +79,7 @@ func (p *fragment) call(_type reflect.Type, in ...reflect.Value) []reflect.Value
 	} else {
 		c.values = append(c.values, reflect.Zero(errorType))
 	}
-	
+
 	for i := 0; i < _type.NumOut()-1; i++ {
 		if _type.Out(i).Kind() == reflect.Ptr {
 			if err == sql.ErrNoRows {
@@ -89,7 +89,7 @@ func (p *fragment) call(_type reflect.Type, in ...reflect.Value) []reflect.Value
 			c.values[i] = c.values[i].Elem()
 		}
 	}
-	
+
 	return c.values
 }
 
@@ -109,16 +109,16 @@ func (p *fragment) checkParameter(ft reflect.Type, mn, fn string) {
 
 func (p *fragment) parseStatement(args ...reflect.Value) (sql string, exprs []string, vars []interface{},
 	dynamic bool, err error) {
-	
+
 	defer func() {
 		e := recover()
 		err = castRecoverError(p.node.File, e)
 	}()
-	
+
 	if len(p.in) != len(args) {
 		throw(p.node.File, p.node.ctx, parasFragmentErr).format("expect %d args, got %d", len(p.in), len(args))
 	}
-	
+
 	parser := newExprParser(args...)
 	for i, v := range p.in {
 		err = parser.paramsStack.list.Front().Next().Value.(*exprParams).bind(v, i)
@@ -128,7 +128,7 @@ func (p *fragment) parseStatement(args ...reflect.Value) (sql string, exprs []st
 	}
 	res := new(psr)
 	p.parseBlocks(parser, p.node, res)
-	
+
 	sql = res.sql
 	vars, err = parser.realVars()
 	if err != nil {
@@ -136,7 +136,7 @@ func (p *fragment) parseStatement(args ...reflect.Value) (sql string, exprs []st
 	}
 	exprs = parser.exprs
 	dynamic = res.dynamic
-	
+
 	return
 }
 
@@ -187,7 +187,7 @@ func (p *fragment) parseSql(parser *exprParser, node *xmlNode, res *psr) {
 			inject = false
 		}
 	}
-	
+
 	// to avoid useless space
 	res.sql += s
 }
@@ -237,7 +237,7 @@ func (p *fragment) parseTest(parser *exprParser, node *xmlNode, res *psr) bool {
 		return false
 	}
 	p.parseBlocks(parser, node, res)
-	
+
 	return true
 }
 
@@ -303,7 +303,7 @@ func (p *fragment) parseSet(parser *exprParser, node *xmlNode, res *psr) {
 }
 
 func (p *fragment) parseForeach(parser *exprParser, node *xmlNode, res *psr) {
-	
+
 	_var := node.GetAttribute(dtd.COLLECTION)
 	collection, ok := parser.paramsStack.getVar(_var)
 	if !ok {
@@ -321,12 +321,12 @@ func (p *fragment) parseForeach(parser *exprParser, node *xmlNode, res *psr) {
 	} else {
 		item, slice = handleSlice(item)
 	}
-	indexParam := &param{name: index, _type: reflect.Interface.String(), slice: false}
-	itemParam := &param{name: item, _type: reflect.Interface.String(), slice: slice}
+	indexParam := &param{name: index, rt: reflect.Interface.String(), slice: false}
+	itemParam := &param{name: item, rt: reflect.Interface.String(), slice: slice}
 	open := node.GetAttribute(dtd.OPEN)
 	_close := node.GetAttribute(dtd.CLOSE)
 	separator := node.GetAttribute(dtd.SEPARATOR)
-	
+
 	parser.paramsStack.push(newExprParams())
 	elem := toReflectValueElem(collection.value)
 	frags := make([]string, 0)

@@ -9,6 +9,7 @@ import (
 
 	"github.com/AlekSi/pointer"
 	"github.com/gobatis/gobatis/driver/postgres"
+	"github.com/gobatis/gobatis/test"
 	"github.com/gozelle/spew"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/require"

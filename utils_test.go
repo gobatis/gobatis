@@ -1,6 +1,7 @@
 package batis
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/gobatis/gobatis/driver/postgres"
@@ -95,4 +96,21 @@ func TestReflect(t *testing.T) {
 			t.Log(vv.column, vv.value)
 		}
 	}
+}
+
+func TestIsStructSlice(t *testing.T) {
+
+	type A struct {
+		Name string
+	}
+
+	a := []A{{Name: "a"}}
+	v := reflect.ValueOf(a)
+	ok := isStructSlice(v.Type())
+	require.True(t, ok)
+
+	b := []*A{{Name: "b"}}
+	v = reflect.ValueOf(b)
+	ok = isStructSlice(v.Type())
+	require.True(t, ok)
 }

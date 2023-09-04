@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gobatis/gobatis/dialector"
 	"github.com/gozelle/color"
 	"go.uber.org/atomic"
 )
@@ -28,7 +29,14 @@ func (tx) Close() error {
 	return nil
 }
 
+func newExecutor(namer dialector.Namer, query bool, elem Element) (e *executor) {
+	e = &executor{query: query}
+	e.raw, e.params, e.err = elem.SQL(namer, "db")
+	return
+}
+
 type executor struct {
+	err      error
 	query    bool
 	params   []NameValue
 	conn     conn
@@ -52,14 +60,14 @@ func (e *executor) execute() (err error) {
 		return
 	}
 
-	var _params []*param
-	var _vars []reflect.Value
+	var params []*param
+	var vars []reflect.Value
 	for _, v := range e.params {
-		_params = append(_params, &param{
-			name:  v.Name,
-			_type: reflect.TypeOf(v.Value).Name(),
+		params = append(params, &param{
+			name: v.Name,
+			rt:   reflect.TypeOf(v.Value).Name(),
 		})
-		_vars = append(_vars, reflect.ValueOf(v.Value))
+		vars = append(vars, reflect.ValueOf(v.Value))
 	}
 
 	var node *xmlNode
@@ -67,8 +75,8 @@ func (e *executor) execute() (err error) {
 	if err != nil {
 		return
 	}
-	e.fragment = &fragment{node: node, in: _params}
-	e.raw, e.exprs, e.vars, e.dynamic, err = e.fragment.parseStatement(_vars...)
+	e.fragment = &fragment{node: node, in: params}
+	e.raw, e.exprs, e.vars, e.dynamic, err = e.fragment.parseStatement(vars...)
 	if err != nil {
 		return
 	}
@@ -153,7 +161,7 @@ func (e *executor) log(db *DB) {
 	if !db.debug && db.Error == nil {
 		return
 	}
-	cost := time.Since(db.executor.now)
+	cost := time.Since(time.Now())
 	info := &strings.Builder{}
 	var status string
 	var out func(format string, a ...any)
@@ -173,7 +181,7 @@ func (e *executor) log(db *DB) {
 		t = fmt.Sprintf("[%s]", color.CyanString("Tx"))
 	}
 	info.WriteString(fmt.Sprintf("%s %s", color.MagentaString("[gobatis]"), color.RedString(e.runFuncPos(4))))
-	info.WriteString(fmt.Sprintf("\n[%s][%s]%s%s %s", status, cost, traceId, t, color.YellowString(db.executor.raw)))
+	info.WriteString(fmt.Sprintf("\n[%s][%s]%s%s %s", status, cost, traceId, t, color.YellowString("db.executor.raw")))
 	if db.Error != nil {
 		info.WriteString(fmt.Sprintf("\n%s", color.RedString(db.Error.Error())))
 	}

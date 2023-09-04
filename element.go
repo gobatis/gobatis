@@ -19,11 +19,25 @@ var _ Element = (*onConflict)(nil)
 var _ Element = (*where)(nil)
 var _ Element = (*fetch)(nil)
 var _ Element = (*build)(nil)
+var _ Element = (*innerSQL)(nil)
 
 type Namer func(name string) string
 
 type Element interface {
 	SQL(namer dialector.Namer, tag string) (sql string, params []NameValue, err error)
+}
+
+func newInnerSQL(sql string, params ...NameValue) innerSQL {
+	return innerSQL{sql: sql, params: params}
+}
+
+type innerSQL struct {
+	sql    string
+	params []NameValue
+}
+
+func (i innerSQL) SQL(namer dialector.Namer, tag string) (sql string, params []NameValue, err error) {
+	return i.sql, i.params, nil
 }
 
 type onConflict struct {

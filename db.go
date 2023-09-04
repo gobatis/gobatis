@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"sync"
 	"time"
 
 	"github.com/gobatis/gobatis/dialector"
@@ -53,13 +52,14 @@ func Open(d dialector.Dialector, options ...Option) (db *DB, err error) {
 
 type DB struct {
 	*Config
-	*executor
+	//*executor
 	Error   error
 	tx      *tx
 	ctx     context.Context
 	debug   bool
 	must    bool
 	traceId string
+	closure *closure
 }
 
 func (d *DB) addError(err error) {
@@ -68,14 +68,14 @@ func (d *DB) addError(err error) {
 
 func (d *DB) clone() *DB {
 	return &DB{
-		Config:   d.Config,
-		Error:    d.Error,
-		tx:       d.tx,
-		ctx:      d.ctx,
-		debug:    d.debug,
-		must:     d.must,
-		traceId:  d.traceId,
-		executor: nil,
+		Config:  d.Config,
+		Error:   d.Error,
+		tx:      d.tx,
+		ctx:     d.ctx,
+		debug:   d.debug,
+		must:    d.must,
+		traceId: d.traceId,
+		//executor: nil,
 	}
 }
 
@@ -128,52 +128,31 @@ func (d *DB) context() context.Context {
 	return d.ctx
 }
 
-func (d *DB) prepare(query bool, elem Element) {
-	if d.executor != nil {
-		d.addError(fmt.Errorf("executor overridden"))
-		return
-	}
-
-	var err error
-	e := &executor{query: query, now: d.NowFunc()}
-	if d.tx != nil {
-		e.conn = d.tx
-	} else {
-		e.conn, err = d.db.Conn(d.context())
-		if err != nil {
-			d.addError(err)
-			return
-		}
-	}
-	e.raw, e.params, err = elem.SQL(d.Dialector.Namer(), "db")
-	if err != nil {
-		d.addError(err)
-		return
-	}
-	d.executor = e
-	return
-}
-
 func (d *DB) exec(dest any) {
 	if d.Error != nil {
 		return
 	}
-	if d.executor == nil {
-		d.addError(fmt.Errorf("no executor"))
-		return
-	}
-	d.dest = dest
-	d.addError(d.executor.execute())
-	if d.tx == nil {
-		d.addError(d.executor.conn.Close())
-	}
-	d.executor.log(d)
+	//if d.executor == nil {
+	//	d.addError(fmt.Errorf("no executor"))
+	//	return
+	//}
+	//d.dest = dest
+	//d.addError(d.executor.execute())
+	//if d.tx == nil {
+	//	d.addError(d.executor.conn.Close())
+	//}
+	//d.executor.log(d)
 }
 
 // 执行查询语句
 func (d *DB) Query(sql string, params ...NameValue) *DB {
 	c := d.clone()
-	c.prepare(true, query{sql: sql, params: params})
+	e := newExecutor(c.Dialector.Namer(), true, query{sql: sql, params: params})
+	if e.err != nil {
+		c.addError(e.err)
+		return c
+	}
+	c.closure = newClosure(c.db, c.tx, e)
 	return c
 }
 
@@ -186,7 +165,12 @@ func (d *DB) Scan(dest any) *DB {
 // 执行 SQL 语句
 func (d *DB) Exec(sql string, params ...NameValue) *DB {
 	c := d.clone()
-	c.prepare(false, exec{sql: sql, params: params})
+	e := newExecutor(c.Dialector.Namer(), false, exec{sql: sql, params: params})
+	if e.err != nil {
+		c.addError(e.err)
+		return c
+	}
+	c.closure = newClosure(c.db, c.tx, e)
 	c.exec(nil)
 	return c
 }
@@ -194,12 +178,13 @@ func (d *DB) Exec(sql string, params ...NameValue) *DB {
 // 执行删除操作
 func (d *DB) Delete(table string, where Element) *DB {
 	c := d.clone()
-	e := &del{table: table, elems: []Element{where}}
-	q := e.returning != nil
-	c.prepare(q, e)
-	if q {
-		c.exec(nil)
+	e := newExecutor(c.Dialector.Namer(), false, del{table: table, elems: []Element{where}})
+	if e.err != nil {
+		c.addError(e.err)
+		return c
 	}
+	c.closure = newClosure(c.db, c.tx, e)
+	c.exec(nil)
 	return c
 }
 
@@ -208,7 +193,7 @@ func (d *DB) Update(table string, data map[string]any, where Element) *DB {
 	c := d.clone()
 	u := update{table: table, data: data, elems: []Element{where}}
 	q := u.returning != nil
-	c.prepare(q, u)
+	c.closure = newClosure(c.db, c.tx, newExecutor(d.Dialector.Namer(), q, u))
 	if q {
 		c.exec(nil)
 	}
@@ -220,110 +205,129 @@ func (d *DB) Insert(table string, data any, elems ...Element) *DB {
 	c := d.clone()
 	i := &insert{table: table, data: data, elems: elems}
 	q := i.returning != nil
-	c.prepare(q, i)
+	c.closure = newClosure(c.db, c.tx, newExecutor(c.Dialector.Namer(), q, i))
 	if q {
 		c.exec(nil)
 	}
 	return c
 }
 
-func (d *DB) InsertBatch(table string, batch int, data any, onConflict Element) *DB {
+func (d *DB) InsertBatch(table string, batch int, data any, onConflict, returning Element) *DB {
 	c := d.clone()
-	var t bool
-	if c.tx == nil {
-		c.Begin()
-		t = true
-	}
-	if c.Error != nil {
-		return c
-	}
-	defer func() {
-		if t && c.Error != nil {
-			c.Rollback()
-		}
-		if c.executor.conn != nil {
-			c.addError(c.executor.conn.Close())
-		}
-	}()
-	i := &insertBatch{table: table, batch: batch, data: data, elems: []Element{onConflict}}
-	c.prepare(false, i)
-	c.addError(c.executor.insertBatch(batch))
-	if t && c.Error == nil {
-		c.Commit()
-	}
+	//var t bool
+	//if c.tx == nil {
+	//	c.Begin()
+	//	t = true
+	//}
+	//if c.Error != nil {
+	//	return c
+	//}
+	//defer func() {
+	//	if t && c.Error != nil {
+	//		c.Rollback()
+	//	}
+	//	if c.executor.conn != nil {
+	//		c.addError(c.executor.conn.Close())
+	//	}
+	//}()
+	//i := &insertBatch{
+	//	table: table,
+	//	batch: batch,
+	//	data:  data,
+	//	elems: []Element{
+	//		onConflict,
+	//		returning,
+	//	}}
+	//c.prepare(false, i)
+	//if returning == nil {
+	//	c.addError(c.executor.insertBatch(batch))
+	//}
+	//if t && c.Error == nil {
+	//	c.Commit()
+	//}
 	return c
 }
 
 func (d *DB) ParallelQuery(queryer ...Queryer) *DB {
 	c := d.clone()
-	if len(queryer) == 0 {
-		c.Error = fmt.Errorf("no querer")
-		return c
-	}
-	if d.executor != nil {
-		c.Error = fmt.Errorf("db has origin executor")
-		return c
-	}
-
-	var executors []*executor
-	for _, v := range queryer {
-		items, err := v.executors(d.Dialector.Namer(), "db")
-		if err != nil {
-			c.addError(err)
-			return c
-		}
-		executors = append(executors, items...)
-	}
-
-	wg := sync.WaitGroup{}
-	lock := sync.Mutex{}
-
-	for _, v := range executors {
-		v.query = true
-		if d.tx != nil {
-			v.conn = d.tx
-		} else {
-			var err error
-			v.conn, err = d.db.Conn(d.context())
-			if err != nil {
-				d.addError(err)
-				return c
-			}
-		}
-		wg.Add(1)
-		go func(v *executor) {
-			defer func() {
-				wg.Done()
-			}()
-			err := v.execute()
-			if err != nil {
-				lock.Lock()
-				c.addError(err)
-				lock.Unlock()
-			}
-		}(v)
-	}
-	wg.Wait()
+	//if len(queryer) == 0 {
+	//	c.Error = fmt.Errorf("no querer")
+	//	return c
+	//}
+	//if d.executor != nil {
+	//	c.Error = fmt.Errorf("db has origin executor")
+	//	return c
+	//}
+	//
+	//var executors []*executor
+	//for _, v := range queryer {
+	//	items, err := v.executors(d.Dialector.Namer(), "db")
+	//	if err != nil {
+	//		c.addError(err)
+	//		return c
+	//	}
+	//	executors = append(executors, items...)
+	//}
+	//
+	//wg := sync.WaitGroup{}
+	//lock := sync.Mutex{}
+	//
+	//for _, v := range executors {
+	//	v.query = true
+	//	if d.tx != nil {
+	//		v.conn = d.tx
+	//	} else {
+	//		var err error
+	//		v.conn, err = d.db.Conn(d.context())
+	//		if err != nil {
+	//			d.addError(err)
+	//			return c
+	//		}
+	//	}
+	//	wg.Add(1)
+	//	go func(v *executor) {
+	//		defer func() {
+	//			wg.Done()
+	//		}()
+	//		err := v.execute()
+	//		if err != nil {
+	//			lock.Lock()
+	//			c.addError(err)
+	//			lock.Unlock()
+	//		}
+	//	}(v)
+	//}
+	//wg.Wait()
 	//d.executor.log(d)
 
 	return c
 }
 
 func (d *DB) Result() (r sql.Result, err error) {
-	if d.executor == nil || d.executor.query {
-		err = fmt.Errorf("no execute result")
-		return
-	}
-	r = d.executor.result
+	//if d.executor == nil || d.executor.query {
+	//	err = fmt.Errorf("no execute result")
+	//	return
+	//}
+	//r = d.executor.result
 	return
 }
 
-//func (d *DB) Fetch(sql string, params ...NameValue) <-chan Scanner {
-//	ch := make(chan Scanner)
-//	f := &fetch{}
-//	d.prepareExecutor(true, f)
-//	return ch
-//}
+func (d *DB) Fetch(sql string, params ...NameValue) <-chan Scanner {
+
+	c := d.clone()
+
+	c.closure = newClosure(d.db, d.tx,
+		newExecutor(d.Dialector.Namer(), false, newInnerSQL("begin;")),
+		newExecutor(d.Dialector.Namer(), false, newInnerSQL("forward 10;")),
+		newExecutor(d.Dialector.Namer(), false, newInnerSQL("commit;")),
+	)
+
+	ch := make(chan Scanner)
+	//f := &fetch{}
+	//d.prepareExecutor(true, f)
+
+	return ch
+}
 
 func (d *DB) Begin() {
 	c := d.clone()

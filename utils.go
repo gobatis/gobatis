@@ -51,8 +51,22 @@ func isDB(v reflect.Type) bool {
 	return false
 }
 
-func isErrorType(_type reflect.Type) bool {
-	return _type.Implements(reflect.TypeOf((*error)(nil)).Elem())
+func isError(t reflect.Type) bool {
+	return t.Implements(reflect.TypeOf((*error)(nil)).Elem())
+}
+
+func isStructSlice(r reflect.Type) bool {
+	if r.Kind() != reflect.Slice {
+		return false
+	}
+	elem := r.Elem()
+	for {
+		if elem.Kind() != reflect.Ptr {
+			break
+		}
+		elem = elem.Elem()
+	}
+	return elem.Kind() == reflect.Struct
 }
 
 func reflectValueElem(vt reflect.Value) reflect.Value {
