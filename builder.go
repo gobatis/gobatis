@@ -34,7 +34,7 @@ func (c closure) conn() conn {
 	return nil
 }
 
-func (c closure) exec(executors ...executor) (err error) {
+func (c closure) exec() (err error) {
 	for _, e := range c.executors {
 		//e.conn = c.conn
 		err = e.execute()
