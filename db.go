@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/gobatis/gobatis/dialector"
+	"github.com/gobatis/gobatis/executor"
 )
 
 const (
@@ -36,7 +37,7 @@ func Open(d dialector.Dialector, options ...Option) (db *DB, err error) {
 			return time.Now()
 		},
 		Dialector: d,
-		Logger:    &logger{},
+		Logger:    executor.DefaultLogger(),
 		db:        nil,
 	}
 
@@ -53,29 +54,29 @@ func Open(d dialector.Dialector, options ...Option) (db *DB, err error) {
 type DB struct {
 	*Config
 	//*executor
-	Error   error
-	tx      *tx
-	ctx     context.Context
-	debug   bool
-	must    bool
-	traceId string
-	closure *closure
+	Error    error
+	tx       *executor.Tx
+	ctx      context.Context
+	debug    bool
+	must     bool
+	traceId  string
+	executor executor.Executor
 }
 
 func (d *DB) addError(err error) {
-	d.Error = addError(d.Error, err)
+	d.Error = executor.AddError(d.Error, err)
 }
 
 func (d *DB) clone() *DB {
 	return &DB{
-		Config:  d.Config,
-		Error:   d.Error,
-		tx:      d.tx,
-		ctx:     d.ctx,
-		debug:   d.debug,
-		must:    d.must,
-		traceId: d.traceId,
-		//executor: nil,
+		Config:   d.Config,
+		Error:    d.Error,
+		tx:       d.tx,
+		ctx:      d.ctx,
+		debug:    d.debug,
+		must:     d.must,
+		traceId:  d.traceId,
+		executor: nil,
 	}
 }
 
@@ -128,14 +129,14 @@ func (d *DB) context() context.Context {
 	return d.ctx
 }
 
-func (d *DB) exec(dest any) {
+func (d *DB) execute(dest any) {
 	if d.Error != nil {
 		return
 	}
-	//if d.executor == nil {
-	//	d.addError(fmt.Errorf("no executor"))
-	//	return
-	//}
+	if d.executor == nil {
+		d.addError(fmt.Errorf("no executor"))
+		return
+	}
 	//d.dest = dest
 	//d.addError(d.executor.execute())
 	//if d.tx == nil {
@@ -144,47 +145,65 @@ func (d *DB) exec(dest any) {
 	//d.executor.log(d)
 }
 
+func (d *DB) prepare(query bool, element Element) (conn executor.Conn, raw *executor.Raw, err error) {
+
+	if d.tx != nil {
+		conn = d.tx
+	} else {
+		conn = executor.NewDB(d.db)
+	}
+
+	raw, err = element.Raw(d.Dialector.Namer(), "db")
+	if err != nil {
+		return
+	}
+	raw.Query = query
+	raw.Ctx = d.context()
+
+	return
+}
+
 // 执行查询语句
-func (d *DB) Query(sql string, params ...NameValue) *DB {
+func (d *DB) Query(sql string, params ...executor.Param) *DB {
 	c := d.clone()
-	e := newExecutor(c.Dialector.Namer(), true, query{sql: sql, params: params})
-	if e.err != nil {
-		c.addError(e.err)
+	conn, raw, err := c.prepare(true, query{sql: sql, params: params})
+	if err != nil {
+		c.addError(err)
 		return c
 	}
-	c.closure = newClosure(c.db, c.tx, e)
+	c.executor = executor.NewDefault(conn, raw)
 	return c
 }
 
 // 扫描结果集
 func (d *DB) Scan(dest any) *DB {
-	d.exec(dest)
+	d.execute(dest)
 	return d
 }
 
 // 执行 SQL 语句
-func (d *DB) Exec(sql string, params ...NameValue) *DB {
+func (d *DB) Exec(sql string, params ...executor.Param) *DB {
 	c := d.clone()
-	e := newExecutor(c.Dialector.Namer(), false, exec{sql: sql, params: params})
-	if e.err != nil {
-		c.addError(e.err)
+	conn, raw, err := c.prepare(false, exec{sql: sql, params: params})
+	if err != nil {
+		c.addError(err)
 		return c
 	}
-	c.closure = newClosure(c.db, c.tx, e)
-	c.exec(nil)
+	c.executor = executor.NewDefault(conn, raw)
+	c.execute(nil)
 	return c
 }
 
 // 执行删除操作
 func (d *DB) Delete(table string, where Element) *DB {
 	c := d.clone()
-	e := newExecutor(c.Dialector.Namer(), false, del{table: table, elems: []Element{where}})
-	if e.err != nil {
-		c.addError(e.err)
+	conn, raw, err := c.prepare(false, del{table: table, elems: []Element{where}})
+	if err != nil {
+		c.addError(err)
 		return c
 	}
-	c.closure = newClosure(c.db, c.tx, e)
-	c.exec(nil)
+	c.executor = executor.NewDefault(conn, raw)
+	c.execute(nil)
 	return c
 }
 
@@ -193,9 +212,14 @@ func (d *DB) Update(table string, data map[string]any, where Element) *DB {
 	c := d.clone()
 	u := update{table: table, data: data, elems: []Element{where}}
 	q := u.returning != nil
-	c.closure = newClosure(c.db, c.tx, newExecutor(d.Dialector.Namer(), q, u))
+	conn, raw, err := c.prepare(false, u)
+	if err != nil {
+		c.addError(err)
+		return c
+	}
+	c.executor = executor.NewDefault(conn, raw)
 	if q {
-		c.exec(nil)
+		c.execute(nil)
 	}
 	return c
 }
@@ -205,9 +229,14 @@ func (d *DB) Insert(table string, data any, elems ...Element) *DB {
 	c := d.clone()
 	i := &insert{table: table, data: data, elems: elems}
 	q := i.returning != nil
-	c.closure = newClosure(c.db, c.tx, newExecutor(c.Dialector.Namer(), q, i))
+	conn, raw, err := c.prepare(false, i)
+	if err != nil {
+		c.addError(err)
+		return c
+	}
+	c.executor = executor.NewDefault(conn, raw)
 	if q {
-		c.exec(nil)
+		c.execute(nil)
 	}
 	return c
 }
@@ -303,6 +332,14 @@ func (d *DB) ParallelQuery(queryer ...ParallelQueryer) *DB {
 	return c
 }
 
+func (d *DB) LastInsertId() (int64, error) {
+	return d.executor.Result().LastInsertId()
+}
+
+func (d *DB) RowsAffected() (int64, error) {
+	return d.executor.Result().RowsAffected()
+}
+
 func (d *DB) Result() (r sql.Result, err error) {
 	//if d.executor == nil || d.executor.query {
 	//	err = fmt.Errorf("no execute result")
@@ -314,13 +351,13 @@ func (d *DB) Result() (r sql.Result, err error) {
 
 func (d *DB) FetchQuery(query FetchQuery) error {
 
-	c := d.clone()
+	//c := d.clone()
 
-	c.closure = newClosure(d.db, d.tx,
-		newExecutor(d.Dialector.Namer(), false, newInnerSQL("begin;")),
-		newExecutor(d.Dialector.Namer(), false, newInnerSQL("forward 10;")),
-		newExecutor(d.Dialector.Namer(), false, newInnerSQL("commit;")),
-	)
+	//c.closure = newClosure(d.db, d.tx,
+	//	newExecutor(d.Dialector.Namer(), false, newInnerSQL("begin;")),
+	//	newExecutor(d.Dialector.Namer(), false, newInnerSQL("forward 10;")),
+	//	newExecutor(d.Dialector.Namer(), false, newInnerSQL("commit;")),
+	//)
 
 	//ch := make(chan Scanner)
 	//f := &fetch{}
@@ -334,19 +371,19 @@ func (d *DB) Begin() {
 	if c.tx != nil {
 		c.addError(fmt.Errorf("tx conflict"))
 	} else {
-		t, err := d.db.Begin()
+		tx, err := d.db.Begin()
 		if err != nil {
 			c.addError(err)
 			return
 		}
-		c.tx = &tx{Tx: t}
+		c.tx = executor.NewTx(tx)
 	}
 	return
 }
 
 func (d *DB) Commit() *DB {
 	if d.tx == nil {
-		d.addError(ErrInvalidTransaction)
+		d.addError(executor.ErrInvalidTransaction)
 	} else {
 		d.addError(d.tx.Commit())
 	}
@@ -355,7 +392,7 @@ func (d *DB) Commit() *DB {
 
 func (d *DB) Rollback() *DB {
 	if d.tx == nil {
-		d.addError(ErrInvalidTransaction)
+		d.addError(executor.ErrInvalidTransaction)
 	} else {
 		d.addError(d.tx.Rollback())
 	}

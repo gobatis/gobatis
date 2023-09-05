@@ -1,4 +1,4 @@
-package batis
+package executor
 
 import (
 	"database/sql"
@@ -157,7 +157,7 @@ func Extract[T any, V any](items []T, fn func(item T) V) []V {
 	return r
 }
 
-func addError(err, added error) error {
+func AddError(err, added error) error {
 	if err == nil {
 		return err
 	} else if added != nil {
@@ -511,7 +511,7 @@ type Column struct {
 	value  any
 }
 
-func reflectRows(v any, namer dialector.Namer, tag string) (rows []Row, err error) {
+func ReflectRows(v any, namer dialector.Namer, tag string) (rows []Row, err error) {
 
 	rv := reflect.ValueOf(v)
 	if rv.Kind() == reflect.Ptr {
@@ -544,6 +544,18 @@ func reflectRows(v any, namer dialector.Namer, tag string) (rows []Row, err erro
 	}
 
 	return
+}
+
+func TrimColumns(s string) string {
+	return strings.TrimSuffix(s, ",")
+}
+
+func ExtractTag(s string) string {
+	idx := strings.Index(s, ";")
+	if idx == -1 {
+		return s
+	}
+	return s[:idx]
 }
 
 func reflectStruct(rt reflect.Type, rv reflect.Value, namer dialector.Namer, tag string) Row {
@@ -583,23 +595,23 @@ func isNil(v reflect.Value) bool {
 	return false
 }
 
-func rowColumns(row Row, namer dialector.Namer) (columns []string) {
+func RowColumns(row Row, namer dialector.Namer) (columns []string) {
 	for _, v := range row {
 		columns = append(columns, namer.ReservedName(v.column))
 	}
 	return
 }
 
-func rowVars(row Row) (vars []string) {
+func RowVars(row Row) (vars []string) {
 	for _, v := range row {
 		vars = append(vars, fmt.Sprintf("#{%s}", v.column))
 	}
 	return
 }
 
-func rowParams(row Row) (params []NameValue) {
+func RowParams(row Row) (params []Param) {
 	for _, v := range row {
-		params = append(params, NameValue{
+		params = append(params, Param{
 			Name:  v.column,
 			Value: v.value,
 		})
@@ -607,7 +619,7 @@ func rowParams(row Row) (params []NameValue) {
 	return
 }
 
-func rowsVars(rows []Row) (vars []string) {
+func RowsVars(rows []Row) (vars []string) {
 	for i, v := range rows {
 		var s []string
 		for _, vv := range v {
@@ -618,10 +630,10 @@ func rowsVars(rows []Row) (vars []string) {
 	return
 }
 
-func rowsParams(rows []Row) (params []NameValue) {
+func RowsParams(rows []Row) (params []Param) {
 	for i, v := range rows {
 		for _, vv := range v {
-			params = append(params, NameValue{
+			params = append(params, Param{
 				Name:  fmt.Sprintf("%s%d", vv.column, i),
 				Value: vv.value,
 			})

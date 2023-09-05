@@ -1,4 +1,4 @@
-package batis
+package executor
 
 import (
 	"reflect"

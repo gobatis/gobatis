@@ -1,9 +1,6 @@
 package batis
 
-type NameValue struct {
-	Name  string
-	Value any
-}
+import "github.com/gobatis/gobatis/executor"
 
 // Param This function takes in a name and a value,
 // and returns a struct containing the name-value pair.
@@ -11,8 +8,8 @@ type NameValue struct {
 // The "Name" field is set to the input name string,
 // and the "Value" field is set to the input value of any type.
 // This function can be useful for generating parameters to be passed into other functions or APIs.
-func Param(name string, value any) NameValue {
-	return NameValue{Name: name, Value: value}
+func Param(name string, value any) executor.Param {
+	return executor.Param{Name: name, Value: value}
 }
 
 func LooseDest(dest any, fields ...string) Dest {

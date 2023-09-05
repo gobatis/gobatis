@@ -1,6 +1,9 @@
 package batis
 
-import "github.com/gobatis/gobatis/dialector"
+import (
+	"github.com/gobatis/gobatis/dialector"
+	"github.com/gobatis/gobatis/executor"
+)
 
 func Select(data any, columns string) Rows {
 	return &selectColumns{
@@ -17,7 +20,7 @@ func Except(data any, columns string) Rows {
 }
 
 type Rows interface {
-	Reflect(namer dialector.Namer, tag string) (rows []Row, err error)
+	Reflect(namer dialector.Namer, tag string) (rows []executor.Row, err error)
 }
 
 var _ Rows = (*selectColumns)(nil)
@@ -28,8 +31,8 @@ type selectColumns struct {
 	columns string
 }
 
-func (s selectColumns) Reflect(namer dialector.Namer, tag string) (rows []Row, err error) {
-	rows, err = reflectRows(s.data, namer, tag)
+func (s selectColumns) Reflect(namer dialector.Namer, tag string) (rows []executor.Row, err error) {
+	rows, err = executor.ReflectRows(s.data, namer, tag)
 	if err != nil {
 		return
 	}
@@ -42,7 +45,7 @@ type exceptColumns struct {
 	columns string
 }
 
-func (e exceptColumns) Reflect(namer dialector.Namer, tag string) (rows []Row, err error) {
+func (e exceptColumns) Reflect(namer dialector.Namer, tag string) (rows []executor.Row, err error) {
 	//TODO implement me
 	panic("implement me")
 }

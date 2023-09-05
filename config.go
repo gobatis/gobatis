@@ -3,8 +3,9 @@ package batis
 import (
 	"database/sql"
 	"time"
-	
+
 	"github.com/gobatis/gobatis/dialector"
+	"github.com/gobatis/gobatis/executor"
 )
 
 type Option interface {
@@ -19,7 +20,7 @@ type Config struct {
 	Plugins         map[string]Plugin
 	NowFunc         func() time.Time
 	Dialector       dialector.Dialector
-	Logger          Logger
+	Logger          executor.Logger
 	Hooks           func(db *DB)
 	db              *sql.DB
 }

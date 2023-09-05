@@ -2,14 +2,15 @@ package batis
 
 import (
 	"testing"
-	
+
 	"github.com/gobatis/gobatis/driver/postgres"
+	executor2 "github.com/gobatis/gobatis/executor"
 	"github.com/gozelle/spew"
 	"github.com/stretchr/testify/require"
 )
 
 func TestInset(t *testing.T) {
-	item := &entity{
+	item := &executor2.entity{
 		Name: "tom",
 		Age:  18,
 	}
@@ -18,14 +19,14 @@ func TestInset(t *testing.T) {
 		data:  item,
 		elems: []Element{OnConflict("name,age", "do nothing")},
 	}
-	sql, params, err := i.SQL(postgres.Namer{}, "")
+	sql, params, err := i.Raw(postgres.Namer{}, "")
 	require.NoError(t, err)
 	t.Log(sql)
 	spew.Json(params)
 }
 
 func TestInsertBatch(t *testing.T) {
-	items := []*entity{
+	items := []*executor2.entity{
 		{Name: "tom", Age: 18},
 		{Name: "jack", Age: 19},
 	}
@@ -35,7 +36,7 @@ func TestInsertBatch(t *testing.T) {
 		batch: 2,
 		elems: []Element{OnConflict("name,age", "do nothing")},
 	}
-	sql, params, err := i.SQL(postgres.Namer{}, "")
+	sql, params, err := i.Raw(postgres.Namer{}, "")
 	require.NoError(t, err)
 	t.Log(sql)
 	spew.Json(params)
@@ -50,7 +51,7 @@ func TestUpdate(t *testing.T) {
 		},
 		elems: []Element{Where("age = #{id}", Param("id", 10))},
 	}
-	sql, params, err := i.SQL(postgres.Namer{}, "")
+	sql, params, err := i.Raw(postgres.Namer{}, "")
 	require.NoError(t, err)
 	t.Log(sql)
 	spew.Json(params)
@@ -61,24 +62,24 @@ func TestDelete(t *testing.T) {
 		table: "public.users",
 		elems: []Element{Where("age = #{id}", Param("id", 10))},
 	}
-	sql, params, err := i.SQL(postgres.Namer{}, "")
+	sql, params, err := i.Raw(postgres.Namer{}, "")
 	require.NoError(t, err)
 	t.Log(sql)
 	spew.Json(params)
 }
 
 func TestPage(t *testing.T) {
-	
+
 }
 
 func TestQuery(t *testing.T) {
-	
+
 }
 
 func TestExec(t *testing.T) {
-	
+
 }
 
 func TestBuild(t *testing.T) {
-	
+
 }
