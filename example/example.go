@@ -95,10 +95,21 @@ func main() {
 	}
 	spew.Json(items, total)
 
-	//db.Query(
-	//	`select * from users where age = #{age}`,
-	//	batis.Param("age", 1),
-	//)
+	db.Query(`
+			select * from users 
+    		<where>
+    		     <choose>
+    		     	<when test="groupId == null">
+    		     			group_id is null	
+    		     	</when>
+    		     	<otherwise>
+    		     			group_id = #{groupId}
+    		      	</otherwise>
+    		     </choose>	
+    	     </where>	           
+		     order by id desc`,
+		batis.Param("group_id", 1),
+	)
 
 	//db.Update("users", map[string]any{}, batis.Where(""))
 	//

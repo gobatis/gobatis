@@ -237,6 +237,7 @@ type insertBatch struct {
 	batch      int
 	elems      []Element
 	onConflict *onConflict
+	returning  *returning
 }
 
 func (i insertBatch) Raw(namer dialector.Namer, tag string) (raw *executor.Raw, err error) {

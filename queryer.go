@@ -84,8 +84,8 @@ func (p Paging) executors(namer dialector.Namer, tag string) ([]executor.Executo
 }
 
 type FetchQuery struct {
-	SQL     string
-	Params  map[string]any
-	Limit   uint
-	Handler func(scanner *executor.Scanner) error
+	SQL    string
+	Params map[string]any
+	Limit  uint
+	Scan   func(scanner *executor.Scanner) error
 }

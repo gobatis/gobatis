@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/gobatis/gobatis/dialector"
@@ -57,6 +58,7 @@ type DB struct {
 	Error    error
 	tx       *executor.Tx
 	ctx      context.Context
+	trace    bool
 	debug    bool
 	must     bool
 	traceId  string
@@ -73,6 +75,7 @@ func (d *DB) clone() *DB {
 		Error:    d.Error,
 		tx:       d.tx,
 		ctx:      d.ctx,
+		trace:    d.trace,
 		debug:    d.debug,
 		must:     d.must,
 		traceId:  d.traceId,
@@ -97,6 +100,12 @@ func (d *DB) WithContext(ctx context.Context) *DB {
 	}
 	c := d.clone()
 	c.ctx = ctx
+	return c
+}
+
+func (d *DB) Trace() *DB {
+	c := d.clone()
+	c.trace = true
 	return c
 }
 
@@ -145,13 +154,17 @@ func (d *DB) execute(dest any) {
 	//d.executor.log(d)
 }
 
+func (d *DB) conn() executor.Conn {
+	if d.tx != nil {
+		return d.tx
+	} else {
+		return executor.NewDB(d.db)
+	}
+}
+
 func (d *DB) prepare(query bool, element Element) (conn executor.Conn, raw *executor.Raw, err error) {
 
-	if d.tx != nil {
-		conn = d.tx
-	} else {
-		conn = executor.NewDB(d.db)
-	}
+	conn = d.conn()
 
 	raw, err = element.Raw(d.Dialector.Namer(), "db")
 	if err != nil {
@@ -241,93 +254,76 @@ func (d *DB) Insert(table string, data any, elems ...Element) *DB {
 	return c
 }
 
+func (d *DB) setExecutor(e executor.Executor) {
+	if d.executor != nil {
+		d.addError(fmt.Errorf("executor duplicated"))
+		return
+	}
+	d.executor = e
+}
+
 func (d *DB) InsertBatch(table string, batch int, data any, onConflict, returning Element) *DB {
 	c := d.clone()
-	//var t bool
-	//if c.tx == nil {
-	//	c.Begin()
-	//	t = true
-	//}
-	//if c.Error != nil {
-	//	return c
-	//}
-	//defer func() {
-	//	if t && c.Error != nil {
-	//		c.Rollback()
-	//	}
-	//	if c.executor.conn != nil {
-	//		c.addError(c.executor.conn.Close())
-	//	}
-	//}()
-	//i := &insertBatch{
-	//	table: table,
-	//	batch: batch,
-	//	data:  data,
-	//	elems: []Element{
-	//		onConflict,
-	//		returning,
-	//	}}
-	//c.prepare(false, i)
-	//if returning == nil {
-	//	c.addError(c.executor.insertBatch(batch))
-	//}
-	//if t && c.Error == nil {
-	//	c.Commit()
-	//}
+	i := &insertBatch{
+		table: table,
+		batch: batch,
+		data:  data,
+		elems: []Element{
+			onConflict,
+			returning,
+		}}
+	q := i.returning != nil
+	conn, raw, err := c.prepare(q, i)
+	if err != nil {
+		c.addError(err)
+		return c
+	}
+	c.setExecutor(executor.NewInsertBatch(conn, raw))
+	if !q {
+		c.execute(nil)
+	}
 	return c
 }
 
 func (d *DB) ParallelQuery(queryer ...ParallelQueryer) *DB {
 	c := d.clone()
-	//if len(queryer) == 0 {
-	//	c.Error = fmt.Errorf("no querer")
-	//	return c
-	//}
-	//if d.executor != nil {
-	//	c.Error = fmt.Errorf("db has origin executor")
-	//	return c
-	//}
-	//
-	//var executors []*executor
-	//for _, v := range queryer {
-	//	items, err := v.executors(d.Dialector.Namer(), "db")
-	//	if err != nil {
-	//		c.addError(err)
-	//		return c
-	//	}
-	//	executors = append(executors, items...)
-	//}
-	//
-	//wg := sync.WaitGroup{}
-	//lock := sync.Mutex{}
-	//
-	//for _, v := range executors {
-	//	v.query = true
-	//	if d.tx != nil {
-	//		v.conn = d.tx
-	//	} else {
-	//		var err error
-	//		v.conn, err = d.db.Conn(d.context())
-	//		if err != nil {
-	//			d.addError(err)
-	//			return c
-	//		}
-	//	}
-	//	wg.Add(1)
-	//	go func(v *executor) {
-	//		defer func() {
-	//			wg.Done()
-	//		}()
-	//		err := v.execute()
-	//		if err != nil {
-	//			lock.Lock()
-	//			c.addError(err)
-	//			lock.Unlock()
-	//		}
-	//	}(v)
-	//}
-	//wg.Wait()
-	//d.executor.log(d)
+	if len(queryer) == 0 {
+		c.Error = fmt.Errorf("no querer")
+		return c
+	}
+	if d.executor != nil {
+		c.Error = fmt.Errorf("db executor is not empty")
+		return c
+	}
+
+	var executors []executor.Executor
+	for _, v := range queryer {
+		items, err := v.executors(d.Dialector.Namer(), "db")
+		if err != nil {
+			c.addError(err)
+			return c
+		}
+		executors = append(executors, items...)
+	}
+
+	wg := sync.WaitGroup{}
+	lock := sync.Mutex{}
+
+	for _, v := range executors {
+		wg.Add(1)
+		go func(v executor.Executor) {
+			defer func() {
+				wg.Done()
+			}()
+			err := v.Execute(nil)
+			if err != nil {
+				lock.Lock()
+				c.addError(err)
+				lock.Unlock()
+			}
+		}(v)
+	}
+	wg.Wait()
 
 	return c
 }
@@ -351,19 +347,27 @@ func (d *DB) Result() (r sql.Result, err error) {
 
 func (d *DB) FetchQuery(query FetchQuery) error {
 
-	//c := d.clone()
+	c := d.clone()
 
-	//c.closure = newClosure(d.db, d.tx,
-	//	newExecutor(d.Dialector.Namer(), false, newInnerSQL("begin;")),
-	//	newExecutor(d.Dialector.Namer(), false, newInnerSQL("forward 10;")),
-	//	newExecutor(d.Dialector.Namer(), false, newInnerSQL("commit;")),
-	//)
+	raw := &executor.Raw{
+		Ctx:    d.context(),
+		Query:  true,
+		SQL:    query.SQL,
+		Params: nil,
+	}
 
-	//ch := make(chan Scanner)
-	//f := &fetch{}
-	//d.prepareExecutor(true, f)
+	for k, v := range query.Params {
+		raw.Params = append(raw.Params, executor.Param{
+			Name:  k,
+			Value: v,
+		})
+	}
 
-	return nil
+	d.setExecutor(executor.NewFetchQuery(c.conn(), raw, query.Limit))
+
+	return d.executor.Execute(func(s *executor.Scanner) error {
+		return query.Scan(s)
+	})
 }
 
 func (d *DB) Begin() {

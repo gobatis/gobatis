@@ -95,39 +95,53 @@ func (d *Default) Execute(scan func(s *Scanner) error) (err error) {
 	return
 }
 
-type InsertBatch struct {
+func NewInsertBatch(conn Conn, raw *Raw) *InsertBatch {
+	return &InsertBatch{conn: conn, raw: raw}
 }
 
-func (i InsertBatch) Result() sql.Result {
+type InsertBatch struct {
+	conn Conn
+	raw  *Raw
+}
+
+func (i *InsertBatch) Result() sql.Result {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (i InsertBatch) Execute(scan func(s *Scanner) error) (err error) {
+func (i *InsertBatch) Execute(scan func(s *Scanner) error) (err error) {
 
 	return
 }
 
 type ParallelQuery struct {
+	conn Conn
 }
 
-func (p ParallelQuery) Result() sql.Result {
+func (p *ParallelQuery) Result() sql.Result {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (p ParallelQuery) Execute(scan func(s *Scanner) error) (err error) {
+func (p *ParallelQuery) Execute(scan func(s *Scanner) error) (err error) {
 	return
 }
 
-type FetchQuery struct {
+func NewFetchQuery(conn Conn, raw *Raw, limit uint) *FetchQuery {
+	return &FetchQuery{conn: conn, raw: raw, limit: limit}
 }
 
-func (f FetchQuery) Result() sql.Result {
+type FetchQuery struct {
+	conn  Conn
+	raw   *Raw
+	limit uint
+}
+
+func (f *FetchQuery) Result() sql.Result {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (f FetchQuery) Execute(scan func(s *Scanner) error) (err error) {
+func (f *FetchQuery) Execute(scan func(s *Scanner) error) (err error) {
 	return
 }
