@@ -147,10 +147,10 @@ func (d *DB) execute(dest any) {
 		return
 	}
 	//d.dest = dest
-	//d.addError(d.executor.execute())
-	//if d.tx == nil {
-	//	d.addError(d.executor.conn.Close())
-	//}
+	d.addError(d.executor.Execute(func(s *executor.Scanner) error {
+		return s.Scan(dest)
+	}))
+
 	//d.executor.log(d)
 }
 
@@ -162,24 +162,20 @@ func (d *DB) conn() executor.Conn {
 	}
 }
 
-func (d *DB) prepare(query bool, element Element) (conn executor.Conn, raw *executor.Raw, err error) {
-
+func (d *DB) prepare(element Element) (conn executor.Conn, raw *executor.Raw, err error) {
 	conn = d.conn()
-
 	raw, err = element.Raw(d.Dialector.Namer(), "db")
 	if err != nil {
 		return
 	}
-	raw.Query = query
 	raw.Ctx = d.context()
-
 	return
 }
 
 // 执行查询语句
 func (d *DB) Query(sql string, params ...executor.Param) *DB {
 	c := d.clone()
-	conn, raw, err := c.prepare(true, query{sql: sql, params: params})
+	conn, raw, err := c.prepare(query{sql: sql, params: params})
 	if err != nil {
 		c.addError(err)
 		return c
@@ -197,7 +193,7 @@ func (d *DB) Scan(dest any) *DB {
 // 执行 SQL 语句
 func (d *DB) Exec(sql string, params ...executor.Param) *DB {
 	c := d.clone()
-	conn, raw, err := c.prepare(false, exec{sql: sql, params: params})
+	conn, raw, err := c.prepare(exec{sql: sql, params: params})
 	if err != nil {
 		c.addError(err)
 		return c
@@ -210,7 +206,7 @@ func (d *DB) Exec(sql string, params ...executor.Param) *DB {
 // 执行删除操作
 func (d *DB) Delete(table string, where Element) *DB {
 	c := d.clone()
-	conn, raw, err := c.prepare(false, del{table: table, elems: []Element{where}})
+	conn, raw, err := c.prepare(del{table: table, elems: []Element{where}})
 	if err != nil {
 		c.addError(err)
 		return c
@@ -225,7 +221,7 @@ func (d *DB) Update(table string, data map[string]any, where Element) *DB {
 	c := d.clone()
 	u := update{table: table, data: data, elems: []Element{where}}
 	q := u.returning != nil
-	conn, raw, err := c.prepare(false, u)
+	conn, raw, err := c.prepare(u)
 	if err != nil {
 		c.addError(err)
 		return c
@@ -241,14 +237,13 @@ func (d *DB) Update(table string, data map[string]any, where Element) *DB {
 func (d *DB) Insert(table string, data any, elems ...Element) *DB {
 	c := d.clone()
 	i := &insert{table: table, data: data, elems: elems}
-	q := i.returning != nil
-	conn, raw, err := c.prepare(false, i)
+	conn, raw, err := c.prepare(i)
 	if err != nil {
 		c.addError(err)
 		return c
 	}
 	c.executor = executor.NewDefault(conn, raw)
-	if q {
+	if !raw.Query {
 		c.execute(nil)
 	}
 	return c
@@ -273,7 +268,7 @@ func (d *DB) InsertBatch(table string, batch int, data any, onConflict, returnin
 			returning,
 		}}
 	q := i.returning != nil
-	conn, raw, err := c.prepare(q, i)
+	conn, raw, err := c.prepare(i)
 	if err != nil {
 		c.addError(err)
 		return c

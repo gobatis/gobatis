@@ -2,6 +2,7 @@ package executor
 
 import (
 	"database/sql"
+	"fmt"
 	"reflect"
 )
 
@@ -12,6 +13,7 @@ type Scanner struct {
 
 func (s Scanner) Scan(ptr any) (err error) {
 	if ptr == nil {
+		err = fmt.Errorf("ptr is nil")
 		return
 	}
 	pv := reflect.ValueOf(ptr)

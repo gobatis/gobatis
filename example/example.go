@@ -38,78 +38,78 @@ func main() {
 		return
 	}
 
-	user := &User{
-		Id:     nil,
-		Name:   "tom",
-		Age:    18,
-		Tstz:   time.Now(),
-		Ts:     time.Now(),
-		Wealth: decimal.NewFromFloat(3.14),
-	}
-	//id := new(int64)
-	err = db.Debug().Insert("users", user, batis.Returning("id")).Scan(&user.Id).Error
+	//user := &User{
+	//	Id:     nil,
+	//	Name:   "tom",
+	//	Age:    18,
+	//	Tstz:   time.Now(),
+	//	Ts:     time.Now(),
+	//	Wealth: decimal.NewFromFloat(3.14),
+	//}
+	////id := new(int64)
+	//err = db.Debug().Insert("users", user, batis.Returning("id")).Scan(&user.Id).Error
+	//if err != nil {
+	//	return
+	//}
+	//spew.Json(user)
+
+	var user *User
+	err = db.Debug().Query(`select * from users where id = #{id}`, batis.Param("id", 110)).Scan(&user).Error
 	if err != nil {
 		return
 	}
+
 	spew.Json(user)
-
-	var users []User
-	err = db.Debug().Query(`select * from users where id = #{id}`, batis.Param("id", 19)).Scan(&users).Error
-	if err != nil {
-		return
-	}
-
-	spew.Json(users)
-
-	err = db.Update("users", map[string]any{
-		"age": 99,
-	}, batis.Where("id = #{id}", batis.Param("id", 19))).Error
-	if err != nil {
-		return
-	}
-
-	err = db.Delete("users", batis.Where("id = #{id}", batis.Param("id", 20))).Error
-	if err != nil {
-		return
-	}
-
-	var total int64
-	err = db.Debug().Query(`select count(1) from users`).Scan(&total).Error
-	if err != nil {
-		return
-	}
-	spew.Json(total)
-
-	var items []*User
-	err = db.ParallelQuery(batis.Paging{
-		Select: "*",
-		Count:  "*",
-		From:   "users where id > 10",
-		Page:   0,
-		Limit:  10,
-		Params: nil,
-		Scan:   []any{&items, &total},
-	}).Error
-	if err != nil {
-		return
-	}
-	spew.Json(items, total)
-
-	db.Query(`
-			select * from users 
-    		<where>
-    		     <choose>
-    		     	<when test="groupId == null">
-    		     			group_id is null	
-    		     	</when>
-    		     	<otherwise>
-    		     			group_id = #{groupId}
-    		      	</otherwise>
-    		     </choose>	
-    	     </where>	           
-		     order by id desc`,
-		batis.Param("group_id", 1),
-	)
+	//
+	//err = db.Update("users", map[string]any{
+	//	"age": 99,
+	//}, batis.Where("id = #{id}", batis.Param("id", 19))).Error
+	//if err != nil {
+	//	return
+	//}
+	//
+	//err = db.Delete("users", batis.Where("id = #{id}", batis.Param("id", 20))).Error
+	//if err != nil {
+	//	return
+	//}
+	//
+	//var total int64
+	//err = db.Debug().Query(`select count(1) from users`).Scan(&total).Error
+	//if err != nil {
+	//	return
+	//}
+	//spew.Json(total)
+	//
+	//var items []*User
+	//err = db.ParallelQuery(batis.Paging{
+	//	Select: "*",
+	//	Count:  "*",
+	//	From:   "users where id > 10",
+	//	Page:   0,
+	//	Limit:  10,
+	//	Params: nil,
+	//	Scan:   []any{&items, &total},
+	//}).Error
+	//if err != nil {
+	//	return
+	//}
+	//spew.Json(items, total)
+	//
+	//db.Query(`
+	//		select * from users
+	//		<where>
+	//		     <choose>
+	//		     	<when test="groupId == null">
+	//		     			group_id is null
+	//		     	</when>
+	//		     	<otherwise>
+	//		     			group_id = #{groupId}
+	//		      	</otherwise>
+	//		     </choose>
+	//	     </where>
+	//	     order by id desc`,
+	//	batis.Param("group_id", 1),
+	//)
 
 	//db.Update("users", map[string]any{}, batis.Where(""))
 	//

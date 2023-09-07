@@ -62,7 +62,7 @@ func (d *Default) Execute(scan func(s *Scanner) error) (err error) {
 	if err != nil {
 		return
 	}
-
+	
 	defer func() {
 		if d.rows != nil {
 			err = AddError(err, d.rows.Close())

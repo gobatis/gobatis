@@ -9,7 +9,7 @@ import (
 
 	"github.com/AlekSi/pointer"
 	"github.com/gobatis/gobatis/driver/postgres"
-	"github.com/gobatis/gobatis/test"
+	"github.com/gobatis/gobatis/test/backup"
 	"github.com/gozelle/spew"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/require"
@@ -20,10 +20,10 @@ var (
 )
 
 type StmtMapper struct {
-	TestInsertStmtTx  func(tx *DB, user *test.User) error
-	TestInsertStmt2Tx func(tx *DB, user *test.User) error
-	TestQueryStmtTx   func(tx *DB, name string, age int64) ([]*test.User, error)
-	TestQueryStmt2Tx  func(tx *DB, name string, age int64) ([]*test.User, error)
+	TestInsertStmtTx  func(tx *DB, user *backup.User) error
+	TestInsertStmt2Tx func(tx *DB, user *backup.User) error
+	TestQueryStmtTx   func(tx *DB, name string, age int64) ([]*backup.User, error)
+	TestQueryStmt2Tx  func(tx *DB, name string, age int64) ([]*backup.User, error)
 }
 
 func init() {
@@ -370,8 +370,8 @@ func TestDBQuery2(t *testing.T) {
 //	//}
 //}
 
-func testSelectInsert(t *testing.T, _testMapper *test.TestMapper) {
-	id, err := _testMapper.SelectInsert(test.Entity{
+func testSelectInsert(t *testing.T, _testMapper *backup.TestMapper) {
+	id, err := _testMapper.SelectInsert(backup.Entity{
 		Int8:                     1,
 		BigInt:                   2,
 		Int:                      3,
@@ -400,12 +400,12 @@ func testSelectInsert(t *testing.T, _testMapper *test.TestMapper) {
 	}
 }
 
-func testSelectInsertPointer(t *testing.T, _testMapper *test.TestMapper) {
+func testSelectInsertPointer(t *testing.T, _testMapper *backup.TestMapper) {
 	dec := decimal.NewFromFloat(3.14)
 	now := time.Now()
 	interval := 100 * time.Second
 
-	id, err := _testMapper.SelectInsertPointer(&test.EntityPointer{
+	id, err := _testMapper.SelectInsertPointer(&backup.EntityPointer{
 		Int8:                     pointer.ToInt8(1),
 		BigInt:                   pointer.ToInt64(2),
 		Int:                      pointer.ToInt(3),
@@ -434,8 +434,8 @@ func testSelectInsertPointer(t *testing.T, _testMapper *test.TestMapper) {
 	}
 }
 
-func testSelectInsertForeachSlice(t *testing.T, _testMapper *test.TestMapper) {
-	id, err := _testMapper.SelectInsertForeachSlice(test.Entity{
+func testSelectInsertForeachSlice(t *testing.T, _testMapper *backup.TestMapper) {
+	id, err := _testMapper.SelectInsertForeachSlice(backup.Entity{
 		Int8: 1,
 	}, []string{"tom", "alice"})
 	require.NoError(t, err)
@@ -444,12 +444,12 @@ func testSelectInsertForeachSlice(t *testing.T, _testMapper *test.TestMapper) {
 	}
 }
 
-func testSelectInsertForeachSlicePointer(t *testing.T, _testMapper *test.TestMapper) {
+func testSelectInsertForeachSlicePointer(t *testing.T, _testMapper *backup.TestMapper) {
 	enums := [][]*string{
 		{pointer.ToString("tom1"), pointer.ToString("alice1")},
 		{pointer.ToString("tom2"), pointer.ToString("alice2")},
 	}
-	id, err := _testMapper.SelectInsertForeachSlicePointer(&test.EntityPointer{
+	id, err := _testMapper.SelectInsertForeachSlicePointer(&backup.EntityPointer{
 		Int8: pointer.ToInt8(1),
 	}, &enums)
 	require.NoError(t, err)
@@ -458,12 +458,12 @@ func testSelectInsertForeachSlicePointer(t *testing.T, _testMapper *test.TestMap
 	}
 }
 
-func testSelectInsertForeachMap(t *testing.T, _testMapper *test.TestMapper) {
+func testSelectInsertForeachMap(t *testing.T, _testMapper *backup.TestMapper) {
 	enums := map[string][]string{
 		"first":  {"f1", "f2"},
 		"second": {"fs", "s2"},
 	}
-	id, err := _testMapper.SelectInsertForeachMap(test.Entity{
+	id, err := _testMapper.SelectInsertForeachMap(backup.Entity{
 		Int8: 1,
 	}, enums)
 	require.NoError(t, err)
@@ -472,12 +472,12 @@ func testSelectInsertForeachMap(t *testing.T, _testMapper *test.TestMapper) {
 	}
 }
 
-func testSelectInsertForeachMapPointer(t *testing.T, _testMapper *test.TestMapper) {
+func testSelectInsertForeachMapPointer(t *testing.T, _testMapper *backup.TestMapper) {
 	enums := map[string][]*string{
 		"first":  {pointer.ToString("f1"), pointer.ToString("f2")},
 		"second": {pointer.ToString("fs"), pointer.ToString("s2")},
 	}
-	id, err := _testMapper.SelectInsertForeachMapPointer(&test.EntityPointer{
+	id, err := _testMapper.SelectInsertForeachMapPointer(&backup.EntityPointer{
 		Int8: pointer.ToInt8(1),
 	}, &enums)
 	require.NoError(t, err)
@@ -486,8 +486,8 @@ func testSelectInsertForeachMapPointer(t *testing.T, _testMapper *test.TestMappe
 	}
 }
 
-func testSelectInsertForeachStruct(t *testing.T, _testMapper *test.TestMapper) {
-	id, err := _testMapper.SelectInsertForeachStruct(test.Entity{
+func testSelectInsertForeachStruct(t *testing.T, _testMapper *backup.TestMapper) {
+	id, err := _testMapper.SelectInsertForeachStruct(backup.Entity{
 		Int8: 1,
 		Char: "Hello",
 	})
@@ -497,8 +497,8 @@ func testSelectInsertForeachStruct(t *testing.T, _testMapper *test.TestMapper) {
 	}
 }
 
-func testSelectInsertForeachStructPointer(t *testing.T, _testMapper *test.TestMapper) {
-	id, err := _testMapper.SelectInsertForeachStructPointer(&test.EntityPointer{
+func testSelectInsertForeachStructPointer(t *testing.T, _testMapper *backup.TestMapper) {
+	id, err := _testMapper.SelectInsertForeachStructPointer(&backup.EntityPointer{
 		Char: pointer.ToString("Hello"),
 	})
 	require.NoError(t, err)
@@ -523,7 +523,7 @@ func testSelectInsertForeachStructPointer(t *testing.T, _testMapper *test.TestMa
 //	}
 //}
 
-func testInsert(t *testing.T, _testMapper *test.TestMapper) {
+func testInsert(t *testing.T, _testMapper *backup.TestMapper) {
 	rows, err := _testMapper.Insert("Insert", "red", "yellow", "blue")
 	require.NoError(t, err)
 	if rows != 1 {
@@ -531,21 +531,21 @@ func testInsert(t *testing.T, _testMapper *test.TestMapper) {
 	}
 }
 
-func testSelectRow(t *testing.T, _testMapper *test.TestMapper) {
+func testSelectRow(t *testing.T, _testMapper *backup.TestMapper) {
 	tChar, tText, err := _testMapper.SelectRow(950)
 	require.NoError(t, err)
 	require.Equal(t, tChar, "hello")
 	require.Equal(t, tText, "world")
 }
 
-func testSelectRowPointer(t *testing.T, _testMapper *test.TestMapper) {
+func testSelectRowPointer(t *testing.T, _testMapper *backup.TestMapper) {
 	tChar, tText, err := _testMapper.SelectRowPointer(pointer.ToInt(950))
 	require.NoError(t, err)
 	require.Equal(t, *tChar, "hello")
 	require.Equal(t, *tText, "world")
 }
 
-func testSelectRows(t *testing.T, _testMapper *test.TestMapper) {
+func testSelectRows(t *testing.T, _testMapper *backup.TestMapper) {
 	tChar, tText, err := _testMapper.SelectRows(363, 364)
 	require.NoError(t, err)
 	for _, v := range tChar {
@@ -558,7 +558,7 @@ func testSelectRows(t *testing.T, _testMapper *test.TestMapper) {
 	}
 }
 
-func testSelectRowsPointer(t *testing.T, _testMapper *test.TestMapper) {
+func testSelectRowsPointer(t *testing.T, _testMapper *backup.TestMapper) {
 	tChar, tText, err := _testMapper.SelectRowsPointer(pointer.ToInt(47), pointer.ToInt(50))
 	require.NoError(t, err)
 	for _, v := range tChar {
@@ -569,7 +569,7 @@ func testSelectRowsPointer(t *testing.T, _testMapper *test.TestMapper) {
 	}
 }
 
-func testSelectStruct(t *testing.T, _testMapper *test.TestMapper) {
+func testSelectStruct(t *testing.T, _testMapper *backup.TestMapper) {
 	item, err := _testMapper.SelectStruct(47)
 	_ = item
 	require.NoError(t, err)
@@ -585,7 +585,7 @@ func testSelectStruct(t *testing.T, _testMapper *test.TestMapper) {
 	//fmt.Println(string(d))
 }
 
-func testSelectStructs(t *testing.T, _testMapper *test.TestMapper) {
+func testSelectStructs(t *testing.T, _testMapper *backup.TestMapper) {
 	item, err := _testMapper.SelectStructs(47)
 	_ = item
 	require.NoError(t, err)

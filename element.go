@@ -169,15 +169,14 @@ func (i insert) Raw(namer dialector.Namer, tag string) (raw *executor.Raw, err e
 				return
 			}
 			i.returning = vv
-
 		default:
 			err = fmt.Errorf("method db.Insert() accept elements use of batis.OnConflict() or batis.Returning()")
 			return
 		}
 	}
-
-	raw = &executor.Raw{}
-
+	raw = &executor.Raw{
+		Query: i.returning != nil,
+	}
 	var rows []executor.Row
 	switch vv := i.data.(type) {
 	case Rows:
@@ -363,6 +362,7 @@ type query struct {
 
 func (q query) Raw(namer dialector.Namer, tag string) (raw *executor.Raw, err error) {
 	raw = &executor.Raw{
+		Query:  true,
 		SQL:    q.sql,
 		Params: q.params,
 	}
