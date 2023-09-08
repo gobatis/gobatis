@@ -7,13 +7,18 @@ import (
 )
 
 type Scanner struct {
-	rows   *sql.Rows
-	result sql.Result
+	rows         *sql.Rows
+	RowsAffected int64
+	LastInsertId int64
 }
 
-func (s Scanner) Scan(ptr any) (err error) {
+func (s *Scanner) Scan(ptr any) (err error) {
 	if ptr == nil {
 		err = fmt.Errorf("ptr is nil")
+		return
+	}
+	if s.rows == nil {
+		err = fmt.Errorf("rows is nil")
 		return
 	}
 	pv := reflect.ValueOf(ptr)
@@ -27,10 +32,10 @@ func (s Scanner) Scan(ptr any) (err error) {
 		return
 	}
 	l := len(columns)
-	c := 0
 	first := false
+	s.RowsAffected = 0
 	for s.rows.Next() {
-		c++
+		s.RowsAffected++
 		row := make([]interface{}, l)
 		pointers := make([]interface{}, l)
 		for i, _ := range columns {
@@ -52,7 +57,7 @@ func (s Scanner) Scan(ptr any) (err error) {
 			break
 		}
 	}
-	if c == 0 {
+	if s.RowsAffected == 0 {
 		err = sql.ErrNoRows
 		return
 	}

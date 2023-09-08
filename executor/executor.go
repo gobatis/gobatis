@@ -4,10 +4,11 @@ import (
 	"database/sql"
 	"fmt"
 	"reflect"
+	"time"
 )
 
 type Executor interface {
-	Execute(scan func(s *Scanner) error) (err error)
+	Execute(logger Logger, id string, trace, debug bool, affecting any, scan func(s *Scanner) error) (err error)
 	Result() sql.Result
 }
 
@@ -39,7 +40,9 @@ func (d *Default) Result() sql.Result {
 	panic("implement me")
 }
 
-func (d *Default) Execute(scan func(s *Scanner) error) (err error) {
+func (d *Default) Execute(logger Logger, id string, trace, debug bool, affecting any, scan func(s *Scanner) error) (err error) {
+
+	beginAt := time.Now()
 
 	var params []*param
 	var vars []reflect.Value
@@ -62,12 +65,19 @@ func (d *Default) Execute(scan func(s *Scanner) error) (err error) {
 	if err != nil {
 		return
 	}
-	
+
+	var s *Scanner
+
 	defer func() {
 		if d.rows != nil {
 			err = AddError(err, d.rows.Close())
 		}
 		err = AddError(err, d.conn.Close())
+
+		if s == nil {
+			s = &Scanner{}
+		}
+		logger.Trace(trace, debug, beginAt, id, d.conn.IsTx(), d.sql, s.RowsAffected, err)
 	}()
 
 	if d.raw.Query {
@@ -83,10 +93,23 @@ func (d *Default) Execute(scan func(s *Scanner) error) (err error) {
 	}
 
 	if scan != nil {
-		err = scan(&Scanner{
-			rows:   d.rows,
-			result: d.result,
-		})
+		if d.raw.Query {
+			s = &Scanner{
+				rows:         d.rows,
+				RowsAffected: 0,
+				LastInsertId: 0,
+			}
+			err = scan(s)
+		} else {
+			rowsAffected, _ := d.result.RowsAffected()
+			lastInsertId, _ := d.result.LastInsertId()
+			s = &Scanner{
+				rows:         nil,
+				RowsAffected: rowsAffected,
+				LastInsertId: lastInsertId,
+			}
+			err = scan(s)
+		}
 		if err != nil {
 			return
 		}
@@ -109,7 +132,7 @@ func (i *InsertBatch) Result() sql.Result {
 	panic("implement me")
 }
 
-func (i *InsertBatch) Execute(scan func(s *Scanner) error) (err error) {
+func (i *InsertBatch) Execute(logger Logger, id string, trace, debug bool, affecting any, scan func(s *Scanner) error) (err error) {
 
 	return
 }
@@ -123,7 +146,7 @@ func (p *ParallelQuery) Result() sql.Result {
 	panic("implement me")
 }
 
-func (p *ParallelQuery) Execute(scan func(s *Scanner) error) (err error) {
+func (p *ParallelQuery) Execute(logger Logger, id string, trace, debug bool, affecting any, scan func(s *Scanner) error) (err error) {
 	return
 }
 
@@ -142,6 +165,6 @@ func (f *FetchQuery) Result() sql.Result {
 	panic("implement me")
 }
 
-func (f *FetchQuery) Execute(scan func(s *Scanner) error) (err error) {
+func (f *FetchQuery) Execute(logger Logger, id string, trace, debug bool, affecting any, scan func(s *Scanner) error) (err error) {
 	return
 }

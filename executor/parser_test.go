@@ -10,7 +10,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gobatis/gobatis"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/require"
 )
@@ -329,8 +328,8 @@ func testErrorParseExprParameter(t *testing.T, tests []testExpression) {
 func testParseParams(tokens string) (params []*param, err error) {
 	defer func() {
 		e := recover()
-		err = batis.castRecoverError("", e)
+		err = castRecoverError("", e)
 	}()
-	params = (&batis.fragment{node: new(xmlNode)}).parseParams(tokens)
+	params = (&fragment{node: new(xmlNode)}).parseParams(tokens)
 	return
 }

@@ -55,31 +55,33 @@ func Open(d dialector.Dialector, options ...Option) (db *DB, err error) {
 type DB struct {
 	*Config
 	//*executor
-	Error    error
-	tx       *executor.Tx
-	ctx      context.Context
-	trace    bool
-	debug    bool
-	must     bool
-	traceId  string
-	executor executor.Executor
+	Error     error
+	tx        *executor.Tx
+	ctx       context.Context
+	trace     bool
+	debug     bool
+	must      bool
+	traceId   string
+	affecting any
+	executor  executor.Executor
 }
 
-func (d *DB) addError(err error) {
+func (d *DB) handleError(err error) {
 	d.Error = executor.AddError(d.Error, err)
 }
 
 func (d *DB) clone() *DB {
 	return &DB{
-		Config:   d.Config,
-		Error:    d.Error,
-		tx:       d.tx,
-		ctx:      d.ctx,
-		trace:    d.trace,
-		debug:    d.debug,
-		must:     d.must,
-		traceId:  d.traceId,
-		executor: nil,
+		Config:    d.Config,
+		Error:     d.Error,
+		tx:        d.tx,
+		ctx:       d.ctx,
+		trace:     d.trace,
+		debug:     d.debug,
+		must:      d.must,
+		traceId:   d.traceId,
+		affecting: d.affecting,
+		executor:  nil,
 	}
 }
 
@@ -100,6 +102,12 @@ func (d *DB) WithContext(ctx context.Context) *DB {
 	}
 	c := d.clone()
 	c.ctx = ctx
+	return c
+}
+
+func (d *DB) Affect(v any) *DB {
+	c := d.clone()
+	c.affecting = v
 	return c
 }
 
@@ -143,11 +151,11 @@ func (d *DB) execute(dest any) {
 		return
 	}
 	if d.executor == nil {
-		d.addError(fmt.Errorf("no executor"))
+		d.handleError(fmt.Errorf("no executor"))
 		return
 	}
 	//d.dest = dest
-	d.addError(d.executor.Execute(func(s *executor.Scanner) error {
+	d.handleError(d.executor.Execute(d.Logger, "2023423487283", d.trace, d.debug, d.affecting, func(s *executor.Scanner) error {
 		return s.Scan(dest)
 	}))
 
@@ -177,7 +185,7 @@ func (d *DB) Query(sql string, params ...executor.Param) *DB {
 	c := d.clone()
 	conn, raw, err := c.prepare(query{sql: sql, params: params})
 	if err != nil {
-		c.addError(err)
+		c.handleError(err)
 		return c
 	}
 	c.executor = executor.NewDefault(conn, raw)
@@ -195,7 +203,7 @@ func (d *DB) Exec(sql string, params ...executor.Param) *DB {
 	c := d.clone()
 	conn, raw, err := c.prepare(exec{sql: sql, params: params})
 	if err != nil {
-		c.addError(err)
+		c.handleError(err)
 		return c
 	}
 	c.executor = executor.NewDefault(conn, raw)
@@ -208,7 +216,7 @@ func (d *DB) Delete(table string, where Element) *DB {
 	c := d.clone()
 	conn, raw, err := c.prepare(del{table: table, elems: []Element{where}})
 	if err != nil {
-		c.addError(err)
+		c.handleError(err)
 		return c
 	}
 	c.executor = executor.NewDefault(conn, raw)
@@ -223,7 +231,7 @@ func (d *DB) Update(table string, data map[string]any, where Element) *DB {
 	q := u.returning != nil
 	conn, raw, err := c.prepare(u)
 	if err != nil {
-		c.addError(err)
+		c.handleError(err)
 		return c
 	}
 	c.executor = executor.NewDefault(conn, raw)
@@ -239,7 +247,7 @@ func (d *DB) Insert(table string, data any, elems ...Element) *DB {
 	i := &insert{table: table, data: data, elems: elems}
 	conn, raw, err := c.prepare(i)
 	if err != nil {
-		c.addError(err)
+		c.handleError(err)
 		return c
 	}
 	c.executor = executor.NewDefault(conn, raw)
@@ -251,7 +259,7 @@ func (d *DB) Insert(table string, data any, elems ...Element) *DB {
 
 func (d *DB) setExecutor(e executor.Executor) {
 	if d.executor != nil {
-		d.addError(fmt.Errorf("executor duplicated"))
+		d.handleError(fmt.Errorf("executor duplicated"))
 		return
 	}
 	d.executor = e
@@ -270,7 +278,7 @@ func (d *DB) InsertBatch(table string, batch int, data any, onConflict, returnin
 	q := i.returning != nil
 	conn, raw, err := c.prepare(i)
 	if err != nil {
-		c.addError(err)
+		c.handleError(err)
 		return c
 	}
 	c.setExecutor(executor.NewInsertBatch(conn, raw))
@@ -295,14 +303,14 @@ func (d *DB) ParallelQuery(queryer ...ParallelQueryer) *DB {
 	for _, v := range queryer {
 		items, err := v.executors(d.Dialector.Namer(), "db")
 		if err != nil {
-			c.addError(err)
+			c.handleError(err)
 			return c
 		}
 		executors = append(executors, items...)
 	}
 
 	wg := sync.WaitGroup{}
-	lock := sync.Mutex{}
+	//lock := sync.Mutex{}
 
 	for _, v := range executors {
 		wg.Add(1)
@@ -310,12 +318,12 @@ func (d *DB) ParallelQuery(queryer ...ParallelQueryer) *DB {
 			defer func() {
 				wg.Done()
 			}()
-			err := v.Execute(nil)
-			if err != nil {
-				lock.Lock()
-				c.addError(err)
-				lock.Unlock()
-			}
+			//err := v.Execute(nil)
+			//if err != nil {
+			//	lock.Lock()
+			//	c.handleError(err)
+			//	lock.Unlock()
+			//}
 		}(v)
 	}
 	wg.Wait()
@@ -360,19 +368,20 @@ func (d *DB) FetchQuery(query FetchQuery) error {
 
 	d.setExecutor(executor.NewFetchQuery(c.conn(), raw, query.Limit))
 
-	return d.executor.Execute(func(s *executor.Scanner) error {
-		return query.Scan(s)
-	})
+	return nil
+	//return d.executor.Execute(func(s *executor.Scanner) error {
+	//	return query.Scan(s)
+	//})
 }
 
 func (d *DB) Begin() {
 	c := d.clone()
 	if c.tx != nil {
-		c.addError(fmt.Errorf("tx conflict"))
+		c.handleError(fmt.Errorf("tx conflict"))
 	} else {
 		tx, err := d.db.Begin()
 		if err != nil {
-			c.addError(err)
+			c.handleError(err)
 			return
 		}
 		c.tx = executor.NewTx(tx)
@@ -382,18 +391,18 @@ func (d *DB) Begin() {
 
 func (d *DB) Commit() *DB {
 	if d.tx == nil {
-		d.addError(executor.ErrInvalidTransaction)
+		d.handleError(executor.ErrInvalidTransaction)
 	} else {
-		d.addError(d.tx.Commit())
+		d.handleError(d.tx.Commit())
 	}
 	return d
 }
 
 func (d *DB) Rollback() *DB {
 	if d.tx == nil {
-		d.addError(executor.ErrInvalidTransaction)
+		d.handleError(executor.ErrInvalidTransaction)
 	} else {
-		d.addError(d.tx.Rollback())
+		d.handleError(d.tx.Rollback())
 	}
 	return d
 }
