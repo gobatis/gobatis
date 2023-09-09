@@ -52,15 +52,13 @@ func main() {
 	//}
 	//spew.Json(user)
 
-	db = db.WithTraceId("123")
-
 	var count int64
 	err = db.Debug().Query("select count(1) from users").Scan(&count).Error
 	if err != nil {
 		return
 	}
 
-	tx := db.Debug().Begin()
+	tx := db.WithTraceId("123").Debug().Begin()
 	defer func() {
 		if err != nil {
 			tx.Commit()
@@ -72,20 +70,20 @@ func main() {
 	if err != nil {
 		return
 	}
-	
+
 	err = tx.Commit().Error
 	if err != nil {
 		return
 	}
 
 	spew.Json(user)
-	//
-	//err = db.Update("users", map[string]any{
-	//	"age": 99,
-	//}, batis.Where("id = #{id}", batis.Param("id", 19))).Error
-	//if err != nil {
-	//	return
-	//}
+
+	err = db.Debug().Update("users", map[string]any{
+		"age": 99,
+	}, batis.Where("id = #{id}", batis.Param("id", 19))).Error
+	if err != nil {
+		return
+	}
 	//
 	//err = db.Delete("users", batis.Where("id = #{id}", batis.Param("id", 20))).Error
 	//if err != nil {

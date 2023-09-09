@@ -1,10 +1,12 @@
 package executor
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
 
 	"github.com/gobatis/gobatis/driver/postgres"
+	"github.com/gozelle/spew"
 	"github.com/stretchr/testify/require"
 )
 
@@ -113,4 +115,28 @@ func TestIsStructSlice(t *testing.T) {
 	v = reflect.ValueOf(b)
 	ok = isStructSlice(v.Type())
 	require.True(t, ok)
+}
+
+func TestSplitStructSlice(t *testing.T) {
+	type Record struct {
+		Num int
+	}
+	data := []Record{
+		{Num: 1},
+		{Num: 2},
+		{Num: 3},
+		{Num: 4},
+		{Num: 5},
+		{Num: 6},
+		{Num: 7},
+		{Num: 8},
+		{Num: 9},
+	}
+	chunks, err := SplitStructSlice(data, 3)
+	if err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
+
+	spew.Json(chunks)
 }

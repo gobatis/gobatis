@@ -103,13 +103,21 @@ func (u update) Raw(namer dialector.Namer, tag string) (raw *executor.Raw, err e
 				return
 			}
 			u.where = vv
+		case *returning:
+			if u.returning != nil {
+				err = fmt.Errorf("batis.Returning() should be invoked no more than once")
+				return
+			}
+			u.returning = vv
 		default:
 			err = fmt.Errorf("method db.Update() accept elements use of batis.Where()")
 			return
 		}
 	}
 
-	raw = &executor.Raw{}
+	raw = &executor.Raw{
+		Query: u.returning != nil,
+	}
 
 	var sqls []string
 	sqls = append(sqls, fmt.Sprintf("update %s set", namer.TableName(u.table)))
@@ -255,13 +263,21 @@ func (i insertBatch) Raw(namer dialector.Namer, tag string) (raw *executor.Raw, 
 				return
 			}
 			i.onConflict = vv
+		case *returning:
+			if i.returning != nil {
+				err = fmt.Errorf("batis.Returning() should be invoked no more than once")
+				return
+			}
+			i.returning = vv
 		default:
 			err = fmt.Errorf("method db.Insert() accept elements use of batis.OnConflict() or batis.Returning()")
 			return
 		}
 	}
 
-	raw = &executor.Raw{}
+	raw = &executor.Raw{
+		Query: i.returning != nil,
+	}
 
 	var rows []executor.Row
 	switch vv := i.data.(type) {

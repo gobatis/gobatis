@@ -9,16 +9,17 @@ import (
 
 	"github.com/gobatis/gobatis/dialector"
 	"github.com/gobatis/gobatis/executor"
+	"go.uber.org/atomic"
 )
 
 const (
-	txKey      = "GOBATIS_TX"
+	dbKey      = "GOBATIS_DB"
 	traceIdKey = "GOBATIS_TRACE_ID"
 	space      = " "
 )
 
 func WithTx(parent context.Context, tx *sql.Tx) context.Context {
-	return context.WithValue(parent, txKey, tx)
+	return context.WithValue(parent, dbKey, tx)
 }
 
 func WithTraceId(parent context.Context, traceId string) context.Context {
@@ -27,6 +28,18 @@ func WithTraceId(parent context.Context, traceId string) context.Context {
 
 func WithDebug(parent context.Context, debug bool) context.Context {
 	return context.WithValue(parent, "debug", debug)
+}
+
+func UseDB(ctx context.Context) *DB {
+	v := ctx.Value(dbKey)
+	if v != nil {
+		if vv, ok := v.(*DB); ok {
+			c := vv.clone()
+			c.ctx = ctx
+			return c
+		}
+	}
+	return nil
 }
 
 func Open(d dialector.Dialector, options ...Option) (db *DB, err error) {
@@ -54,16 +67,17 @@ func Open(d dialector.Dialector, options ...Option) (db *DB, err error) {
 
 type DB struct {
 	*Config
-	//*executor
-	Error    error
-	tx       *executor.Tx
-	ctx      context.Context
-	trace    bool
-	debug    bool
-	must     bool
-	traceId  string
-	affect   any
-	executor executor.Executor
+	Error        error
+	tx           *executor.Tx
+	ctx          context.Context
+	trace        bool
+	debug        bool
+	traceId      string
+	affect       any
+	executor     executor.Executor
+	executed     atomic.Bool
+	rowsAffected int64
+	lastInsertId int64
 }
 
 func (d *DB) addError(err error) {
@@ -78,21 +92,17 @@ func (d *DB) clone() *DB {
 		ctx:      d.ctx,
 		trace:    d.trace,
 		debug:    d.debug,
-		must:     d.must,
 		traceId:  d.traceId,
 		affect:   d.affect,
+		executed: d.executed,
 		executor: nil,
 	}
 }
 
 func (d *DB) WithContext(ctx context.Context) *DB {
-	v := ctx.Value(txKey)
+	v := UseDB(ctx)
 	if v != nil {
-		if vv, ok := v.(*DB); ok {
-			c := vv.clone()
-			c.ctx = ctx
-			return c
-		}
+		return v
 	}
 	c := d.clone()
 	c.ctx = ctx
@@ -158,7 +168,13 @@ func (d *DB) execute(dest any) {
 		d.addError(fmt.Errorf("no executor"))
 		return
 	}
+	if d.executed.Swap(true) {
+		d.addError(fmt.Errorf("repeat execution"))
+		return
+	}
 	d.addError(d.executor.Execute(d.Logger, d.trace, d.debug, d.affect, func(s *executor.Scanner) error {
+		d.rowsAffected = s.RowsAffected
+		d.lastInsertId = s.LastInsertId
 		return s.Scan(dest)
 	}))
 }
@@ -175,8 +191,7 @@ func (d *DB) conn() executor.Conn {
 	}
 }
 
-func (d *DB) prepare(element Element) (conn executor.Conn, raw *executor.Raw, err error) {
-	conn = d.conn()
+func (d *DB) raw(element Element) (raw *executor.Raw, err error) {
 	raw, err = element.Raw(d.Dialector.Namer(), "db")
 	if err != nil {
 		return
@@ -188,12 +203,12 @@ func (d *DB) prepare(element Element) (conn executor.Conn, raw *executor.Raw, er
 // 执行查询语句
 func (d *DB) Query(sql string, params ...executor.Param) *DB {
 	c := d.clone()
-	conn, raw, err := c.prepare(query{sql: sql, params: params})
+	raw, err := c.raw(query{sql: sql, params: params})
 	if err != nil {
 		c.addError(err)
 		return c
 	}
-	c.executor = executor.NewDefault(conn, raw)
+	c.executor = executor.NewDefault(c.conn(), raw)
 	return c
 }
 
@@ -206,12 +221,12 @@ func (d *DB) Scan(dest any) *DB {
 // 执行 SQL 语句
 func (d *DB) Exec(sql string, params ...executor.Param) *DB {
 	c := d.clone()
-	conn, raw, err := c.prepare(exec{sql: sql, params: params})
+	raw, err := c.raw(exec{sql: sql, params: params})
 	if err != nil {
 		c.addError(err)
 		return c
 	}
-	c.executor = executor.NewDefault(conn, raw)
+	c.executor = executor.NewDefault(c.conn(), raw)
 	c.execute(nil)
 	return c
 }
@@ -219,28 +234,27 @@ func (d *DB) Exec(sql string, params ...executor.Param) *DB {
 // 执行删除操作
 func (d *DB) Delete(table string, where Element) *DB {
 	c := d.clone()
-	conn, raw, err := c.prepare(del{table: table, elems: []Element{where}})
+	raw, err := c.raw(del{table: table, elems: []Element{where}})
 	if err != nil {
 		c.addError(err)
 		return c
 	}
-	c.executor = executor.NewDefault(conn, raw)
+	c.executor = executor.NewDefault(c.conn(), raw)
 	c.execute(nil)
 	return c
 }
 
 // 执行更新操作
-func (d *DB) Update(table string, data map[string]any, where Element) *DB {
+func (d *DB) Update(table string, data map[string]any, where Element, elems ...Element) *DB {
 	c := d.clone()
-	u := update{table: table, data: data, elems: []Element{where}}
-	q := u.returning != nil
-	conn, raw, err := c.prepare(u)
+	u := update{table: table, data: data, elems: append([]Element{where}, elems...)}
+	raw, err := c.raw(u)
 	if err != nil {
 		c.addError(err)
 		return c
 	}
-	c.executor = executor.NewDefault(conn, raw)
-	if q {
+	c.executor = executor.NewDefault(c.conn(), raw)
+	if !raw.Query {
 		c.execute(nil)
 	}
 	return c
@@ -250,12 +264,12 @@ func (d *DB) Update(table string, data map[string]any, where Element) *DB {
 func (d *DB) Insert(table string, data any, elems ...Element) *DB {
 	c := d.clone()
 	i := &insert{table: table, data: data, elems: elems}
-	conn, raw, err := c.prepare(i)
+	raw, err := c.raw(i)
 	if err != nil {
 		c.addError(err)
 		return c
 	}
-	c.executor = executor.NewDefault(conn, raw)
+	c.executor = executor.NewDefault(c.conn(), raw)
 	if !raw.Query {
 		c.execute(nil)
 	}
@@ -270,26 +284,50 @@ func (d *DB) setExecutor(e executor.Executor) {
 	d.executor = e
 }
 
-func (d *DB) InsertBatch(table string, batch int, data any, onConflict, returning Element) *DB {
+func (d *DB) InsertBatch(table string, batch int, data any, elems ...Element) *DB {
 	c := d.clone()
-	i := &insertBatch{
-		table: table,
-		batch: batch,
-		data:  data,
-		elems: []Element{
-			onConflict,
-			returning,
-		}}
-	q := i.returning != nil
-	conn, raw, err := c.prepare(i)
+
+	if batch <= 0 {
+		c.addError(fmt.Errorf("expect batch > 0, got %d", batch))
+		return c
+	}
+
+	if data == nil {
+		c.addError(fmt.Errorf("data is nil"))
+		return c
+	}
+
+	chunks, err := executor.SplitStructSlice(data, batch)
 	if err != nil {
 		c.addError(err)
 		return c
 	}
-	c.setExecutor(executor.NewInsertBatch(conn, raw))
+
+	var raws []*executor.Raw
+	var q bool
+	for _, v := range chunks {
+		i := &insertBatch{
+			table: table,
+			batch: batch,
+			data:  v,
+			elems: elems,
+		}
+		var raw *executor.Raw
+		raw, err = c.raw(i)
+		if err != nil {
+			c.addError(err)
+			return c
+		}
+		if raw.Query {
+			q = true
+		}
+		raws = append(raws, raw)
+	}
+	c.setExecutor(executor.NewInsertBatch(c.conn(), raws))
 	if !q {
 		c.execute(nil)
 	}
+
 	return c
 }
 
@@ -300,7 +338,7 @@ func (d *DB) ParallelQuery(queryer ...ParallelQueryer) *DB {
 		return c
 	}
 	if d.executor != nil {
-		c.Error = fmt.Errorf("db executor is not empty")
+		c.Error = fmt.Errorf("db executor confilct")
 		return c
 	}
 
@@ -315,7 +353,7 @@ func (d *DB) ParallelQuery(queryer ...ParallelQueryer) *DB {
 	}
 
 	wg := sync.WaitGroup{}
-	//lock := sync.Mutex{}
+	lock := sync.Mutex{}
 
 	for _, v := range executors {
 		wg.Add(1)
@@ -323,12 +361,12 @@ func (d *DB) ParallelQuery(queryer ...ParallelQueryer) *DB {
 			defer func() {
 				wg.Done()
 			}()
-			//err := v.Execute(nil)
-			//if err != nil {
-			//	lock.Lock()
-			//	c.handleError(err)
-			//	lock.Unlock()
-			//}
+			err := v.Execute(c.Logger, d.trace, d.debug, nil, nil)
+			if err != nil {
+				lock.Lock()
+				c.addError(err)
+				lock.Unlock()
+			}
 		}(v)
 	}
 	wg.Wait()
@@ -337,20 +375,11 @@ func (d *DB) ParallelQuery(queryer ...ParallelQueryer) *DB {
 }
 
 func (d *DB) LastInsertId() (int64, error) {
-	return d.executor.Result().LastInsertId()
+	return d.lastInsertId, d.Error
 }
 
 func (d *DB) RowsAffected() (int64, error) {
-	return d.executor.Result().RowsAffected()
-}
-
-func (d *DB) Result() (r sql.Result, err error) {
-	//if d.executor == nil || d.executor.query {
-	//	err = fmt.Errorf("no execute result")
-	//	return
-	//}
-	//r = d.executor.result
-	return
+	return d.rowsAffected, d.Error
 }
 
 func (d *DB) FetchQuery(query FetchQuery) error {
@@ -370,13 +399,10 @@ func (d *DB) FetchQuery(query FetchQuery) error {
 			Value: v,
 		})
 	}
-
-	d.setExecutor(executor.NewFetchQuery(c.conn(), raw, query.Limit))
-
-	return nil
-	//return d.executor.Execute(func(s *executor.Scanner) error {
-	//	return query.Scan(s)
-	//})
+	c.setExecutor(executor.NewFetchQuery(c.conn(), raw, query.Limit))
+	return c.executor.Execute(c.Logger, c.trace, c.debug, nil, func(s *executor.Scanner) error {
+		return query.Scan(s)
+	})
 }
 
 func (d *DB) Begin() *DB {

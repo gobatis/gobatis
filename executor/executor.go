@@ -9,7 +9,6 @@ import (
 
 type Executor interface {
 	Execute(logger Logger, trace, debug bool, affecting any, scan func(s *Scanner) error) (err error)
-	Result() sql.Result
 }
 
 var (
@@ -126,13 +125,13 @@ func (d *Default) Execute(logger Logger, trace, debug bool, affecting any, scan 
 	return
 }
 
-func NewInsertBatch(conn Conn, raw *Raw) *InsertBatch {
-	return &InsertBatch{conn: conn, raw: raw}
+func NewInsertBatch(conn Conn, raws []*Raw) *InsertBatch {
+	return &InsertBatch{conn: conn, raws: raws}
 }
 
 type InsertBatch struct {
 	conn Conn
-	raw  *Raw
+	raws []*Raw
 }
 
 func (i *InsertBatch) Result() sql.Result {

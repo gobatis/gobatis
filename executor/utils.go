@@ -69,6 +69,32 @@ func isStructSlice(r reflect.Type) bool {
 	return elem.Kind() == reflect.Struct
 }
 
+func SplitStructSlice(data any, limit int) ([]any, error) {
+	val := reflect.ValueOf(data)
+
+	if !isStructSlice(val.Type()) {
+		return nil, fmt.Errorf("expected a struct slice, got %s", val.Type())
+	}
+
+	sliceLen := val.Len()
+	if sliceLen == 0 {
+		return nil, fmt.Errorf("got empty slice")
+	}
+
+	var result []any
+	for i := 0; i < sliceLen; i += limit {
+		end := i + limit
+		if end > sliceLen {
+			end = sliceLen
+		}
+
+		subSlice := val.Slice(i, end)
+		result = append(result, subSlice.Interface())
+	}
+
+	return result, nil
+}
+
 func reflectValueElem(vt reflect.Value) reflect.Value {
 	for {
 		if vt.Kind() != reflect.Ptr {
