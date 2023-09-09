@@ -5,14 +5,19 @@ import (
 	"database/sql"
 )
 
-func NewTx(tx *sql.Tx) *Tx {
-	return &Tx{Tx: tx}
+func NewTx(tx *sql.Tx, traceID string) *Tx {
+	return &Tx{Tx: tx, traceId: traceID}
 }
 
 var _ Conn = (*Tx)(nil)
 
 type Tx struct {
+	traceId string
 	*sql.Tx
+}
+
+func (t *Tx) TraceId() string {
+	return t.traceId
 }
 
 func (t *Tx) BeginTx(ctx context.Context, opts *sql.TxOptions) (*sql.Tx, error) {

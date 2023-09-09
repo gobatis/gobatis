@@ -8,7 +8,7 @@ import (
 )
 
 type Executor interface {
-	Execute(logger Logger, id string, trace, debug bool, affecting any, scan func(s *Scanner) error) (err error)
+	Execute(logger Logger, trace, debug bool, affecting any, scan func(s *Scanner) error) (err error)
 	Result() sql.Result
 }
 
@@ -40,7 +40,7 @@ func (d *Default) Result() sql.Result {
 	panic("implement me")
 }
 
-func (d *Default) Execute(logger Logger, id string, trace, debug bool, affecting any, scan func(s *Scanner) error) (err error) {
+func (d *Default) Execute(logger Logger, trace, debug bool, affecting any, scan func(s *Scanner) error) (err error) {
 
 	beginAt := time.Now()
 
@@ -72,12 +72,20 @@ func (d *Default) Execute(logger Logger, id string, trace, debug bool, affecting
 		if d.rows != nil {
 			err = AddError(err, d.rows.Close())
 		}
-		err = AddError(err, d.conn.Close())
-
+		if !d.conn.IsTx() {
+			err = AddError(err, d.conn.Close())
+		}
 		if s == nil {
 			s = &Scanner{}
 		}
-		logger.Trace(trace, debug, beginAt, id, d.conn.IsTx(), d.sql, s.RowsAffected, err)
+		logger.Trace(d.conn.TraceId(), d.conn.IsTx(), err, &SQLTrace{
+			Trace:        trace,
+			Debug:        debug,
+			BeginAt:      beginAt,
+			RawSQL:       d.sql,
+			PlainSQL:     "",
+			RowsAffected: s.RowsAffected,
+		})
 	}()
 
 	if d.raw.Query {
@@ -132,7 +140,7 @@ func (i *InsertBatch) Result() sql.Result {
 	panic("implement me")
 }
 
-func (i *InsertBatch) Execute(logger Logger, id string, trace, debug bool, affecting any, scan func(s *Scanner) error) (err error) {
+func (i *InsertBatch) Execute(logger Logger, trace, debug bool, affecting any, scan func(s *Scanner) error) (err error) {
 
 	return
 }
@@ -146,7 +154,7 @@ func (p *ParallelQuery) Result() sql.Result {
 	panic("implement me")
 }
 
-func (p *ParallelQuery) Execute(logger Logger, id string, trace, debug bool, affecting any, scan func(s *Scanner) error) (err error) {
+func (p *ParallelQuery) Execute(logger Logger, trace, debug bool, affecting any, scan func(s *Scanner) error) (err error) {
 	return
 }
 
@@ -165,6 +173,6 @@ func (f *FetchQuery) Result() sql.Result {
 	panic("implement me")
 }
 
-func (f *FetchQuery) Execute(logger Logger, id string, trace, debug bool, affecting any, scan func(s *Scanner) error) (err error) {
+func (f *FetchQuery) Execute(logger Logger, trace, debug bool, affecting any, scan func(s *Scanner) error) (err error) {
 	return
 }

@@ -159,7 +159,7 @@ func Extract[T any, V any](items []T, fn func(item T) V) []V {
 
 func AddError(err, added error) error {
 	if err == nil {
-		return err
+		return added
 	} else if added != nil {
 		return fmt.Errorf("%v; %w", err, added)
 	}

@@ -15,7 +15,7 @@ type Logger interface {
 	Infof(format string, a ...any)
 	Errorf(format string, a ...any)
 	Warnf(format string, a ...any)
-	Trace(trace, debug bool, beginAt time.Time, traceId string, tx bool, sql string, rowsAffected int64, err error)
+	Trace(id string, tx bool, err error, st *SQLTrace)
 }
 
 func DefaultLogger() Logger {
@@ -31,37 +31,38 @@ func (l logger) brand() string {
 	return ""
 }
 
-func (l logger) Trace(trace, debug bool, beginAt time.Time, traceId string, tx bool, sql string, rowsAffected int64, err error) {
-	if !trace && !debug && err == nil {
+func (l logger) Trace(traceId string, tx bool, err error, tr *SQLTrace) {
+	if !tr.Trace && !tr.Debug && err == nil {
 		return
 	}
-	cost := time.Since(beginAt)
 	info := &strings.Builder{}
-	var out func(format string, a ...any)
+	var f func(format string, a ...any)
 	if err != nil {
-		out = l.Errorf
+		f = l.Errorf
 	} else {
-		out = l.Debugf
+		f = l.Debugf
 	}
-
 	if traceId != "" {
 		traceId = fmt.Sprintf("[%s]", color.CyanString(traceId))
 	}
 	var t string
-	tx = true
 	if tx {
-		t = fmt.Sprintf("[%s]", color.MagentaString("transaction"))
+		t = fmt.Sprintf("[%s]", color.MagentaString("tx"))
 	}
 	info.WriteString(fmt.Sprintf("%s%s %s", traceId, t, color.RedString(runFuncPos(4))))
-	err = fmt.Errorf("some error")
 	if err != nil {
 		info.WriteString(color.RedString(fmt.Sprintf(" ERROR: %s", err.Error())))
 	}
-	info.WriteString(fmt.Sprintf("\n%s %s %s",
-		color.YellowString(fmt.Sprintf("[%s]", cost)),
-		color.BlueString(fmt.Sprintf("[rows: %d]", rowsAffected)),
-		sql))
-	out(info.String())
+
+	if tr != nil {
+		cost := time.Since(tr.BeginAt)
+		info.WriteString(fmt.Sprintf("\n%s %s %s",
+			color.YellowString(fmt.Sprintf("[%s]", cost)),
+			color.BlueString(fmt.Sprintf("[rows:%d]", tr.RowsAffected)),
+			tr.RawSQL,
+		))
+	}
+	f(info.String())
 }
 
 func (l logger) Debugf(format string, a ...any) {
@@ -80,6 +81,18 @@ func (l logger) Warnf(format string, a ...any) {
 	syslog.Printf(format, a...)
 }
 
+type SQLTrace struct {
+	Trace        bool
+	Debug        bool
+	BeginAt      time.Time
+	RawSQL       string
+	PlainSQL     string
+	RowsAffected int64
+}
+
+type TraceSQL struct {
+}
+
 // runFuncPos returns the file name and line number of the caller of the function calling it.
 // skip: 0 for the current function, 1 for the caller of the current function
 func runFuncPos(skip int) string {
@@ -89,8 +102,7 @@ func runFuncPos(skip int) string {
 		if !ok || i > 10 {
 			break
 		}
-		if (!strings.Contains(file, "gobatis/executor/") &&
-			!strings.Contains(file, "gobatis/go")) ||
+		if (!strings.Contains(file, "gobatis/executor/") && !strings.Contains(file, "gobatis/db.go")) ||
 			strings.HasSuffix(file, "_test.go") {
 			return fmt.Sprintf("%s:%d", file, line)
 		}

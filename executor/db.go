@@ -4,16 +4,21 @@ import (
 	"database/sql"
 )
 
-func NewDB(db *sql.DB) *DB {
-	return &DB{DB: db}
+func NewDB(db *sql.Conn, traceId string) *DB {
+	return &DB{Conn: db, traceId: traceId}
 }
 
 var _ Conn = (*DB)(nil)
 
 type DB struct {
-	*sql.DB
+	*sql.Conn
+	traceId string
 }
 
-func (D *DB) IsTx() bool {
+func (d *DB) TraceId() string {
+	return d.traceId
+}
+
+func (d *DB) IsTx() bool {
 	return false
 }

@@ -23,8 +23,7 @@ func main() {
 	var err error
 	defer func() {
 		if err != nil {
-			fmt.Println()
-			panic(fmt.Errorf("exmaple error: %s", err))
+			panic(fmt.Errorf("\nexmaple error: %s", err))
 		}
 	}()
 	//db, err := batis.Open(postgres.Open("postgresql://root:123456@192.168.1.189:5432/example?connect_timeout=10&sslmode=disable"))
@@ -53,8 +52,28 @@ func main() {
 	//}
 	//spew.Json(user)
 
+	db = db.WithTraceId("123")
+
+	var count int64
+	err = db.Debug().Query("select count(1) from users").Scan(&count).Error
+	if err != nil {
+		return
+	}
+
+	tx := db.Debug().Begin()
+	defer func() {
+		if err != nil {
+			tx.Commit()
+		}
+	}()
+
 	var user *User
-	err = db.Debug().Query(`select * from users where id = #{id}`, batis.Param("id", 110)).Scan(&user).Error
+	err = tx.Query(`select * from users where id = #{id}`, batis.Param("id", 110)).Scan(&user).Error
+	if err != nil {
+		return
+	}
+	
+	err = tx.Commit().Error
 	if err != nil {
 		return
 	}

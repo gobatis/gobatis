@@ -55,40 +55,34 @@ func Open(d dialector.Dialector, options ...Option) (db *DB, err error) {
 type DB struct {
 	*Config
 	//*executor
-	Error     error
-	tx        *executor.Tx
-	ctx       context.Context
-	trace     bool
-	debug     bool
-	must      bool
-	traceId   string
-	affecting any
-	executor  executor.Executor
+	Error    error
+	tx       *executor.Tx
+	ctx      context.Context
+	trace    bool
+	debug    bool
+	must     bool
+	traceId  string
+	affect   any
+	executor executor.Executor
 }
 
-func (d *DB) handleError(err error) {
+func (d *DB) addError(err error) {
 	d.Error = executor.AddError(d.Error, err)
 }
 
 func (d *DB) clone() *DB {
 	return &DB{
-		Config:    d.Config,
-		Error:     d.Error,
-		tx:        d.tx,
-		ctx:       d.ctx,
-		trace:     d.trace,
-		debug:     d.debug,
-		must:      d.must,
-		traceId:   d.traceId,
-		affecting: d.affecting,
-		executor:  nil,
+		Config:   d.Config,
+		Error:    d.Error,
+		tx:       d.tx,
+		ctx:      d.ctx,
+		trace:    d.trace,
+		debug:    d.debug,
+		must:     d.must,
+		traceId:  d.traceId,
+		affect:   d.affect,
+		executor: nil,
 	}
-}
-
-func (d *DB) WithTraceId(traceId string) *DB {
-	c := d.clone()
-	c.traceId = traceId
-	return c
 }
 
 func (d *DB) WithContext(ctx context.Context) *DB {
@@ -105,9 +99,19 @@ func (d *DB) WithContext(ctx context.Context) *DB {
 	return c
 }
 
+func (d *DB) WithTraceId(traceId string) *DB {
+	c := d.clone()
+	if c.traceId != "" {
+		d.addError(fmt.Errorf("set traceId  repeatedly"))
+		return c
+	}
+	c.traceId = traceId
+	return c
+}
+
 func (d *DB) Affect(v any) *DB {
 	c := d.clone()
-	c.affecting = v
+	c.affect = v
 	return c
 }
 
@@ -151,22 +155,23 @@ func (d *DB) execute(dest any) {
 		return
 	}
 	if d.executor == nil {
-		d.handleError(fmt.Errorf("no executor"))
+		d.addError(fmt.Errorf("no executor"))
 		return
 	}
-	//d.dest = dest
-	d.handleError(d.executor.Execute(d.Logger, "2023423487283", d.trace, d.debug, d.affecting, func(s *executor.Scanner) error {
+	d.addError(d.executor.Execute(d.Logger, d.trace, d.debug, d.affect, func(s *executor.Scanner) error {
 		return s.Scan(dest)
 	}))
-
-	//d.executor.log(d)
 }
 
 func (d *DB) conn() executor.Conn {
 	if d.tx != nil {
 		return d.tx
 	} else {
-		return executor.NewDB(d.db)
+		conn, err := d.db.Conn(d.context())
+		if err != nil {
+			d.addError(err)
+		}
+		return executor.NewDB(conn, d.traceId)
 	}
 }
 
@@ -185,7 +190,7 @@ func (d *DB) Query(sql string, params ...executor.Param) *DB {
 	c := d.clone()
 	conn, raw, err := c.prepare(query{sql: sql, params: params})
 	if err != nil {
-		c.handleError(err)
+		c.addError(err)
 		return c
 	}
 	c.executor = executor.NewDefault(conn, raw)
@@ -203,7 +208,7 @@ func (d *DB) Exec(sql string, params ...executor.Param) *DB {
 	c := d.clone()
 	conn, raw, err := c.prepare(exec{sql: sql, params: params})
 	if err != nil {
-		c.handleError(err)
+		c.addError(err)
 		return c
 	}
 	c.executor = executor.NewDefault(conn, raw)
@@ -216,7 +221,7 @@ func (d *DB) Delete(table string, where Element) *DB {
 	c := d.clone()
 	conn, raw, err := c.prepare(del{table: table, elems: []Element{where}})
 	if err != nil {
-		c.handleError(err)
+		c.addError(err)
 		return c
 	}
 	c.executor = executor.NewDefault(conn, raw)
@@ -231,7 +236,7 @@ func (d *DB) Update(table string, data map[string]any, where Element) *DB {
 	q := u.returning != nil
 	conn, raw, err := c.prepare(u)
 	if err != nil {
-		c.handleError(err)
+		c.addError(err)
 		return c
 	}
 	c.executor = executor.NewDefault(conn, raw)
@@ -247,7 +252,7 @@ func (d *DB) Insert(table string, data any, elems ...Element) *DB {
 	i := &insert{table: table, data: data, elems: elems}
 	conn, raw, err := c.prepare(i)
 	if err != nil {
-		c.handleError(err)
+		c.addError(err)
 		return c
 	}
 	c.executor = executor.NewDefault(conn, raw)
@@ -259,7 +264,7 @@ func (d *DB) Insert(table string, data any, elems ...Element) *DB {
 
 func (d *DB) setExecutor(e executor.Executor) {
 	if d.executor != nil {
-		d.handleError(fmt.Errorf("executor duplicated"))
+		d.addError(fmt.Errorf("executor duplicated"))
 		return
 	}
 	d.executor = e
@@ -278,7 +283,7 @@ func (d *DB) InsertBatch(table string, batch int, data any, onConflict, returnin
 	q := i.returning != nil
 	conn, raw, err := c.prepare(i)
 	if err != nil {
-		c.handleError(err)
+		c.addError(err)
 		return c
 	}
 	c.setExecutor(executor.NewInsertBatch(conn, raw))
@@ -303,7 +308,7 @@ func (d *DB) ParallelQuery(queryer ...ParallelQueryer) *DB {
 	for _, v := range queryer {
 		items, err := v.executors(d.Dialector.Namer(), "db")
 		if err != nil {
-			c.handleError(err)
+			c.addError(err)
 			return c
 		}
 		executors = append(executors, items...)
@@ -374,35 +379,77 @@ func (d *DB) FetchQuery(query FetchQuery) error {
 	//})
 }
 
-func (d *DB) Begin() {
+func (d *DB) Begin() *DB {
 	c := d.clone()
 	if c.tx != nil {
-		c.handleError(fmt.Errorf("tx conflict"))
-	} else {
-		tx, err := d.db.Begin()
-		if err != nil {
-			c.handleError(err)
-			return
-		}
-		c.tx = executor.NewTx(tx)
+		c.addError(fmt.Errorf("tx conflict"))
+		return c
 	}
-	return
+
+	defer func() {
+		d.Logger.Trace(c.traceId, true, d.Error, &executor.SQLTrace{
+			Trace:        d.trace,
+			Debug:        d.debug,
+			BeginAt:      time.Now(),
+			RawSQL:       "begin",
+			PlainSQL:     "begin",
+			RowsAffected: 0,
+		})
+	}()
+
+	tx, err := c.db.Begin()
+	if err != nil {
+		c.addError(err)
+		return c
+	}
+
+	if c.traceId == "" {
+		c.traceId = fmt.Sprintf("%p", d)
+	}
+
+	c.tx = executor.NewTx(tx, c.traceId)
+
+	return c
 }
 
 func (d *DB) Commit() *DB {
 	if d.tx == nil {
-		d.handleError(executor.ErrInvalidTransaction)
-	} else {
-		d.handleError(d.tx.Commit())
+		d.addError(executor.ErrInvalidTransaction)
+		return d
 	}
+
+	defer func() {
+		d.addError(d.tx.Close())
+		d.Logger.Trace(d.traceId, true, d.Error, &executor.SQLTrace{
+			Trace:        d.trace,
+			Debug:        d.debug,
+			BeginAt:      time.Now(),
+			RawSQL:       "commit",
+			PlainSQL:     "commit",
+			RowsAffected: 0,
+		})
+	}()
+
+	d.addError(d.tx.Commit())
 	return d
 }
 
 func (d *DB) Rollback() *DB {
 	if d.tx == nil {
-		d.handleError(executor.ErrInvalidTransaction)
-	} else {
-		d.handleError(d.tx.Rollback())
+		d.addError(executor.ErrInvalidTransaction)
+		return d
 	}
+	defer func() {
+		d.addError(d.tx.Close())
+		d.Logger.Trace(d.traceId, true, d.Error, &executor.SQLTrace{
+			Trace:        d.trace,
+			Debug:        d.debug,
+			BeginAt:      time.Now(),
+			RawSQL:       "rollback",
+			PlainSQL:     "rollback",
+			RowsAffected: 0,
+		})
+	}()
+	d.addError(d.tx.Rollback())
 	return d
 }
