@@ -43,7 +43,6 @@ func UseDB(ctx context.Context) *DB {
 }
 
 func Open(d dialector.Dialector, options ...Option) (db *DB, err error) {
-
 	config := &Config{
 		CreateBatchSize: 10,
 		Plugins:         nil,
@@ -54,14 +53,11 @@ func Open(d dialector.Dialector, options ...Option) (db *DB, err error) {
 		Logger:    executor.DefaultLogger(),
 		db:        nil,
 	}
-
 	config.db, err = d.DB()
 	if err != nil {
 		return
 	}
-
 	db = &DB{Config: config, Error: nil}
-
 	return
 }
 
