@@ -168,9 +168,9 @@ func (d *DB) execute(dest any) {
 		d.addError(fmt.Errorf("repeat execution"))
 		return
 	}
-	d.addError(d.executor.Execute(d.Logger, d.trace, d.debug, d.affect, func(s *executor.Scanner) error {
-		d.rowsAffected = s.RowsAffected
-		d.lastInsertId = s.LastInsertId
+	d.addError(d.executor.Execute(d.Logger, d.trace, d.debug, d.affect, func(s executor.Scanner) error {
+		d.rowsAffected = s.RowsAffected()
+		d.lastInsertId = s.LastInsertId()
 		return s.Scan(dest)
 	}))
 }
@@ -319,11 +319,16 @@ func (d *DB) InsertBatch(table string, batch int, data any, elems ...Element) *D
 		}
 		raws = append(raws, raw)
 	}
-	c.setExecutor(executor.NewInsertBatch(c.conn(), raws))
+
+	conn := c.conn()
+	if !conn.IsTx() {
+		c = c.Begin()
+		conn = c.conn()
+	}
+	c.setExecutor(executor.NewInsertBatch(c.context(), conn, raws))
 	if !q {
 		c.execute(nil)
 	}
-
 	return c
 }
 
@@ -396,7 +401,7 @@ func (d *DB) FetchQuery(query FetchQuery) error {
 		})
 	}
 	c.setExecutor(executor.NewFetchQuery(c.conn(), raw, query.Limit))
-	return c.executor.Execute(c.Logger, c.trace, c.debug, nil, func(s *executor.Scanner) error {
+	return c.executor.Execute(c.Logger, c.trace, c.debug, nil, func(s *executor.scanner) error {
 		return query.Scan(s)
 	})
 }

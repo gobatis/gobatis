@@ -6,13 +6,30 @@ import (
 	"reflect"
 )
 
-type Scanner struct {
-	rows         *sql.Rows
-	RowsAffected int64
-	LastInsertId int64
+type Scanner interface {
+	Scan(ptr any) error
+	RowsAffected() int64
+	LastInsertId() int64
 }
 
-func (s *Scanner) Scan(ptr any) (err error) {
+var _ Scanner = (*scanner)(nil)
+var _ Scanner = (*insertBatchScanner)(nil)
+
+type scanner struct {
+	rows         *sql.Rows
+	rowsAffected int64
+	lastInsertId int64
+}
+
+func (s *scanner) RowsAffected() int64 {
+	return s.rowsAffected
+}
+
+func (s *scanner) LastInsertId() int64 {
+	return s.lastInsertId
+}
+
+func (s *scanner) Scan(ptr any) (err error) {
 	if ptr == nil {
 		err = fmt.Errorf("ptr is nil")
 		return
@@ -33,9 +50,9 @@ func (s *Scanner) Scan(ptr any) (err error) {
 	}
 	l := len(columns)
 	first := false
-	s.RowsAffected = 0
+	s.rowsAffected = 0
 	for s.rows.Next() {
-		s.RowsAffected++
+		s.rowsAffected++
 		row := make([]interface{}, l)
 		pointers := make([]interface{}, l)
 		for i, _ := range columns {
@@ -57,9 +74,29 @@ func (s *Scanner) Scan(ptr any) (err error) {
 			break
 		}
 	}
-	if s.RowsAffected == 0 {
+	if s.rowsAffected == 0 {
 		err = sql.ErrNoRows
 		return
 	}
 	return
+}
+
+type insertBatchScanner struct {
+	rows         []*sql.Rows
+	result       []sql.Result
+	rowsAffected int64
+	lastInsertId int64
+}
+
+func (i insertBatchScanner) Scan(ptr any) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (i insertBatchScanner) RowsAffected() int64 {
+	return i.rowsAffected
+}
+
+func (i insertBatchScanner) LastInsertId() int64 {
+	return i.lastInsertId
 }

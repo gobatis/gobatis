@@ -1,6 +1,7 @@
 package executor
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"reflect"
@@ -8,7 +9,7 @@ import (
 )
 
 type Executor interface {
-	Execute(logger Logger, trace, debug bool, affecting any, scan func(s *Scanner) error) (err error)
+	Execute(logger Logger, trace, debug bool, affecting any, scan func(s Scanner) error) (err error)
 }
 
 var (
@@ -32,6 +33,7 @@ type Default struct {
 	result   sql.Result
 	conn     Conn
 	raw      *Raw
+	live     bool
 }
 
 func (d *Default) Result() sql.Result {
@@ -39,7 +41,7 @@ func (d *Default) Result() sql.Result {
 	panic("implement me")
 }
 
-func (d *Default) Execute(logger Logger, trace, debug bool, affecting any, scan func(s *Scanner) error) (err error) {
+func (d *Default) Execute(logger Logger, trace, debug bool, affecting any, scan func(Scanner) error) (err error) {
 
 	beginAt := time.Now()
 
@@ -65,17 +67,19 @@ func (d *Default) Execute(logger Logger, trace, debug bool, affecting any, scan 
 		return
 	}
 
-	var s *Scanner
+	var s *scanner
 
 	defer func() {
-		if d.rows != nil {
-			err = AddError(err, d.rows.Close())
-		}
-		if !d.conn.IsTx() {
-			err = AddError(err, d.conn.Close())
+		if !d.live {
+			if d.rows != nil {
+				err = AddError(err, d.rows.Close())
+			}
+			if !d.conn.IsTx() {
+				err = AddError(err, d.conn.Close())
+			}
 		}
 		if s == nil {
-			s = &Scanner{}
+			s = &scanner{}
 		}
 		logger.Trace(d.conn.TraceId(), d.conn.IsTx(), err, &SQLTrace{
 			Trace:        trace,
@@ -83,7 +87,7 @@ func (d *Default) Execute(logger Logger, trace, debug bool, affecting any, scan 
 			BeginAt:      beginAt,
 			RawSQL:       d.sql,
 			PlainSQL:     "",
-			RowsAffected: s.RowsAffected,
+			RowsAffected: s.rowsAffected,
 		})
 	}()
 
@@ -101,19 +105,19 @@ func (d *Default) Execute(logger Logger, trace, debug bool, affecting any, scan 
 
 	if scan != nil {
 		if d.raw.Query {
-			s = &Scanner{
+			s = &scanner{
 				rows:         d.rows,
-				RowsAffected: 0,
-				LastInsertId: 0,
+				rowsAffected: 0,
+				lastInsertId: 0,
 			}
 			err = scan(s)
 		} else {
 			rowsAffected, _ := d.result.RowsAffected()
 			lastInsertId, _ := d.result.LastInsertId()
-			s = &Scanner{
+			s = &scanner{
 				rows:         nil,
-				RowsAffected: rowsAffected,
-				LastInsertId: lastInsertId,
+				rowsAffected: rowsAffected,
+				lastInsertId: lastInsertId,
 			}
 			err = scan(s)
 		}
@@ -125,21 +129,41 @@ func (d *Default) Execute(logger Logger, trace, debug bool, affecting any, scan 
 	return
 }
 
-func NewInsertBatch(conn Conn, raws []*Raw) *InsertBatch {
-	return &InsertBatch{conn: conn, raws: raws}
+func NewInsertBatch(ctx context.Context, conn Conn, raws []*Raw) *InsertBatch {
+	return &InsertBatch{ctx: ctx, conn: conn, raws: raws}
 }
 
 type InsertBatch struct {
+	ctx  context.Context
 	conn Conn
 	raws []*Raw
 }
 
-func (i *InsertBatch) Result() sql.Result {
-	//TODO implement me
-	panic("implement me")
-}
+func (i *InsertBatch) Execute(logger Logger, trace, debug bool, affecting any, scan func(Scanner) error) (err error) {
 
-func (i *InsertBatch) Execute(logger Logger, trace, debug bool, affecting any, scan func(s *Scanner) error) (err error) {
+	ibs := &insertBatchScanner{}
+
+	defer func() {
+		for _, v := range ibs.rows {
+			err = AddError(err, v.Close())
+		}
+	}()
+
+	for _, raw := range i.raws {
+		d := NewDefault(i.conn, raw)
+		d.live = true
+		err = d.Execute(logger, trace, debug, affecting, nil)
+		if err != nil {
+			return
+		}
+		ibs.rows = append(ibs.rows)
+		ibs.result = append(ibs.result)
+	}
+
+	err = scan(ibs)
+	if err != nil {
+		return
+	}
 
 	return
 }
@@ -148,12 +172,8 @@ type ParallelQuery struct {
 	conn Conn
 }
 
-func (p *ParallelQuery) Result() sql.Result {
-	//TODO implement me
-	panic("implement me")
-}
+func (p *ParallelQuery) Execute(logger Logger, trace, debug bool, affecting any, scan func(Scanner) error) (err error) {
 
-func (p *ParallelQuery) Execute(logger Logger, trace, debug bool, affecting any, scan func(s *Scanner) error) (err error) {
 	return
 }
 
@@ -167,11 +187,6 @@ type FetchQuery struct {
 	limit uint
 }
 
-func (f *FetchQuery) Result() sql.Result {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (f *FetchQuery) Execute(logger Logger, trace, debug bool, affecting any, scan func(s *Scanner) error) (err error) {
+func (f *FetchQuery) Execute(logger Logger, trace, debug bool, affecting any, scan func(Scanner) error) (err error) {
 	return
 }
