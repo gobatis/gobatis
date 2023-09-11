@@ -3,10 +3,9 @@ package batis
 import (
 	"fmt"
 	"os"
-	"regexp"
 	"testing"
 	"time"
-	
+
 	"github.com/AlekSi/pointer"
 	"github.com/gobatis/gobatis/driver/postgres"
 	"github.com/gobatis/gobatis/test/backup"
@@ -135,18 +134,18 @@ func TestDBQuery45(t *testing.T) {
 	//if err != nil {
 	//	return
 	//}
-	
+
 	//require.NoError(t, err)
 }
 
 func TestDBQuery2(t *testing.T) {
 	db, err := Open(postgres.Open("postgres://root:123456@192.168.1.10:5432/example"))
 	require.NoError(t, err)
-	
+
 	defer func() {
 		db.Close()
 	}()
-	
+
 	var m Member
 	err = db.Debug().Query(`select * from members where id = #{age}`,
 		Param("age", 1),
@@ -393,7 +392,7 @@ func testSelectInsert(t *testing.T, _testMapper *backup.TestMapper) {
 		Interval:                 100 * time.Second,
 		Boolean:                  true,
 	})
-	
+
 	require.NoError(t, err)
 	if id <= 0 {
 		require.Error(t, fmt.Errorf("returning id should greater 0"))
@@ -404,7 +403,7 @@ func testSelectInsertPointer(t *testing.T, _testMapper *backup.TestMapper) {
 	dec := decimal.NewFromFloat(3.14)
 	now := time.Now()
 	interval := 100 * time.Second
-	
+
 	id, err := _testMapper.SelectInsertPointer(&backup.EntityPointer{
 		Int8:                     pointer.ToInt8(1),
 		BigInt:                   pointer.ToInt64(2),
@@ -427,7 +426,7 @@ func testSelectInsertPointer(t *testing.T, _testMapper *backup.TestMapper) {
 		Interval:                 &interval,
 		Boolean:                  pointer.ToBool(true),
 	})
-	
+
 	require.NoError(t, err)
 	if id <= 0 {
 		require.Error(t, fmt.Errorf("returning id should greater 0"))
@@ -576,7 +575,7 @@ func testSelectStruct(t *testing.T, _testMapper *backup.TestMapper) {
 	//d, err := json.MarshalIndent(item, "", "\t")
 	require.NoError(t, err)
 	//fmt.Println(string(d))
-	
+
 	item2, err := _testMapper.SelectStructPointer(47)
 	_ = item2
 	require.NoError(t, err)
@@ -592,7 +591,7 @@ func testSelectStructs(t *testing.T, _testMapper *backup.TestMapper) {
 	//d, err := json.MarshalIndent(item, "", "\t")
 	require.NoError(t, err)
 	//fmt.Println(string(d))
-	
+
 	item2, err := _testMapper.SelectStructsPointer(47)
 	_ = item2
 	require.NoError(t, err)
@@ -602,11 +601,11 @@ func testSelectStructs(t *testing.T, _testMapper *backup.TestMapper) {
 }
 
 func TestLessThan(t *testing.T) {
-	xmlStr := `This is a <test> string with a single < and another <tag> and one more <.`
-	
-	// 使用正则表达式查找 < 后面是非单词字符或字符串末尾的情况
-	re := regexp.MustCompile(`<(?=\W|$)`)
-	xmlStr = re.ReplaceAllString(xmlStr, "$")
-	
-	fmt.Println(xmlStr)
+	//xmlStr := `This is a <test> string with a single < and another <tag> and one more <.`
+	//
+	//// 使用正则表达式查找 < 后面是非单词字符或字符串末尾的情况
+	//re := regexp.MustCompile(`<(?=\W|$)`)
+	//xmlStr = re.ReplaceAllString(xmlStr, "$")
+	//
+	//fmt.Println(xmlStr)
 }

@@ -317,6 +317,16 @@ func (i insertBatch) Raw(namer dialector.Namer, tag string) (raw *executor.Raw, 
 		r.Params = append(r.Params, r.Params...)
 	}
 
+	if i.returning != nil {
+		var r *executor.Raw
+		r, err = i.returning.Raw(namer, tag)
+		if err != nil {
+			return
+		}
+		sqls = append(sqls, r.SQL)
+		r.Params = append(r.Params, r.Params...)
+	}
+
 	raw.SQL = strings.Join(sqls, space)
 
 	return

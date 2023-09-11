@@ -189,7 +189,7 @@ func AddError(err, added error) error {
 	} else if added != nil {
 		return fmt.Errorf("%v; %w", err, added)
 	}
-	return nil
+	return err
 }
 
 func reflectRow(columns []string, row []interface{}, pv reflect.Value, first bool) (bool, error) {

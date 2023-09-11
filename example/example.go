@@ -6,7 +6,6 @@ import (
 
 	"github.com/gobatis/gobatis"
 	"github.com/gobatis/gobatis/driver/postgres"
-	"github.com/gozelle/spew"
 	"github.com/shopspring/decimal"
 )
 
@@ -45,45 +44,67 @@ func main() {
 	//	Ts:     time.Now(),
 	//	Wealth: decimal.NewFromFloat(3.14),
 	//}
-	////id := new(int64)
+	//
 	//err = db.Debug().Insert("users", user, batis.Returning("id")).Scan(&user.Id).Error
 	//if err != nil {
 	//	return
 	//}
 	//spew.Json(user)
 
-	var count int64
-	err = db.Debug().Query("select count(1) from users").Scan(&count).Error
+	users := []*User{
+		{
+			Name:   "tom",
+			Age:    18,
+			Tstz:   time.Now(),
+			Ts:     time.Now(),
+			Wealth: decimal.NewFromFloat(3.14),
+		},
+		{
+			Name:   "jack",
+			Age:    19,
+			Tstz:   time.Now(),
+			Ts:     time.Now(),
+			Wealth: decimal.NewFromFloat(3.15),
+		},
+	}
+	var ids []int64
+	err = db.Debug().InsertBatch("users", 1, users, batis.Returning("id")).Scan(&ids).Error
 	if err != nil {
 		return
 	}
 
-	tx := db.WithTraceId("123").Debug().Begin()
-	defer func() {
-		if err != nil {
-			tx.Commit()
-		}
-	}()
+	//var count int64
+	//err = db.Debug().Query("select count(1) from users").Scan(&count).Error
+	//if err != nil {
+	//	return
+	//}
 
-	var user *User
-	err = tx.Query(`select * from users where id = #{id}`, batis.Param("id", 110)).Scan(&user).Error
-	if err != nil {
-		return
-	}
-
-	err = tx.Commit().Error
-	if err != nil {
-		return
-	}
-
-	spew.Json(user)
-
-	err = db.Debug().Update("users", map[string]any{
-		"age": 99,
-	}, batis.Where("id = #{id}", batis.Param("id", 19))).Error
-	if err != nil {
-		return
-	}
+	//tx := db.WithTraceId("123").Debug().Begin()
+	//defer func() {
+	//	if err != nil {
+	//		tx.Commit()
+	//	}
+	//}()
+	//
+	//var user *User
+	//err = tx.Query(`select * from users where id = #{id}`, batis.Param("id", 110)).Scan(&user).Error
+	//if err != nil {
+	//	return
+	//}
+	//
+	//err = tx.Commit().Error
+	//if err != nil {
+	//	return
+	//}
+	//
+	//spew.Json(user)
+	//
+	//err = db.Debug().Update("users", map[string]any{
+	//	"age": 99,
+	//}, batis.Where("id = #{id}", batis.Param("id", 19))).Error
+	//if err != nil {
+	//	return
+	//}
 	//
 	//err = db.Delete("users", batis.Where("id = #{id}", batis.Param("id", 20))).Error
 	//if err != nil {
