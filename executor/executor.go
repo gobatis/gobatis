@@ -20,7 +20,7 @@ var (
 )
 
 func NewDefault(conn Conn, raw *Raw) *Default {
-	return &Default{conn: conn, raw: raw}
+	return &Default{conn: conn, raw: raw, clean: true}
 }
 
 type Default struct {
@@ -33,7 +33,7 @@ type Default struct {
 	result   sql.Result
 	conn     Conn
 	raw      *Raw
-	live     bool
+	clean    bool
 }
 
 func (d *Default) Result() sql.Result {
@@ -42,9 +42,9 @@ func (d *Default) Result() sql.Result {
 }
 
 func (d *Default) Execute(logger Logger, trace, debug bool, affecting any, scan func(Scanner) error) (err error) {
-
+	
 	beginAt := time.Now()
-
+	
 	var params []*param
 	var vars []reflect.Value
 	for _, v := range d.raw.Params {
@@ -54,23 +54,23 @@ func (d *Default) Execute(logger Logger, trace, debug bool, affecting any, scan 
 		})
 		vars = append(vars, reflect.ValueOf(v.Value))
 	}
-
+	
 	var node *xmlNode
 	node, err = parseSQL("test.file", fmt.Sprintf("<sql>%s</sql>", d.raw.SQL))
 	if err != nil {
 		return
 	}
-
+	
 	d.fragment = &fragment{node: node, in: params}
 	d.sql, d.exprs, d.vars, d.dynamic, err = d.fragment.parseStatement(vars...)
 	if err != nil {
 		return
 	}
-
+	
 	var s *scanner
-
+	
 	defer func() {
-		if !d.live {
+		if !d.clean {
 			if d.rows != nil {
 				err = AddError(err, d.rows.Close())
 			}
@@ -90,7 +90,7 @@ func (d *Default) Execute(logger Logger, trace, debug bool, affecting any, scan 
 			RowsAffected: s.rowsAffected,
 		})
 	}()
-
+	
 	if d.raw.Query {
 		d.rows, err = d.conn.QueryContext(d.raw.Ctx, d.sql, d.vars...)
 		if err != nil {
@@ -102,7 +102,7 @@ func (d *Default) Execute(logger Logger, trace, debug bool, affecting any, scan 
 			return
 		}
 	}
-
+	
 	if scan != nil {
 		if d.raw.Query {
 			s = &scanner{
@@ -125,7 +125,7 @@ func (d *Default) Execute(logger Logger, trace, debug bool, affecting any, scan 
 			return
 		}
 	}
-
+	
 	return
 }
 
@@ -140,18 +140,18 @@ type InsertBatch struct {
 }
 
 func (i *InsertBatch) Execute(logger Logger, trace, debug bool, affecting any, scan func(Scanner) error) (err error) {
-
+	
 	ibs := &insertBatchScanner{}
-
+	
 	defer func() {
 		for _, v := range ibs.rows {
 			err = AddError(err, v.Close())
 		}
 	}()
-
+	
 	for _, raw := range i.raws {
 		d := NewDefault(i.conn, raw)
-		d.live = true
+		d.clean = false
 		err = d.Execute(logger, trace, debug, affecting, nil)
 		if err != nil {
 			return
@@ -159,12 +159,12 @@ func (i *InsertBatch) Execute(logger Logger, trace, debug bool, affecting any, s
 		ibs.rows = append(ibs.rows)
 		ibs.result = append(ibs.result)
 	}
-
+	
 	err = scan(ibs)
 	if err != nil {
 		return
 	}
-
+	
 	return
 }
 
@@ -173,7 +173,7 @@ type ParallelQuery struct {
 }
 
 func (p *ParallelQuery) Execute(logger Logger, trace, debug bool, affecting any, scan func(Scanner) error) (err error) {
-
+	
 	return
 }
 

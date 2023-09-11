@@ -2,7 +2,7 @@ package batis
 
 import (
 	"fmt"
-
+	
 	"github.com/gobatis/gobatis/dialector"
 	"github.com/gobatis/gobatis/executor"
 )
@@ -18,11 +18,11 @@ type Query struct {
 }
 
 func (q Query) executors(namer dialector.Namer, tag string) ([]executor.Executor, error) {
-
+	
 	if q.Scan == nil {
 		return nil, fmt.Errorf("expect 1 scan dest; got nil")
 	}
-
+	
 	var params []executor.Param
 	for k, v := range q.Params {
 		params = append(params, executor.Param{
@@ -53,15 +53,15 @@ type Paging struct {
 }
 
 func (p Paging) executors(namer dialector.Namer, tag string) ([]executor.Executor, error) {
-
+	
 	if p.Limit <= 0 {
 		return nil, fmt.Errorf("invalid limit")
 	}
-
+	
 	if l := len(p.Scan); l != 2 {
 		return nil, fmt.Errorf("expect 2 scan dest; got: %d", l)
 	}
-
+	
 	var params []executor.Param
 	for k, v := range p.Params {
 		params = append(params, executor.Param{
@@ -69,7 +69,7 @@ func (p Paging) executors(namer dialector.Namer, tag string) ([]executor.Executo
 			Value: v,
 		})
 	}
-
+	
 	//q := &executor{}
 	//q.raw = fmt.Sprintf("select %s from %s limit %d offset %d", p.Select, p.From, p.Limit, p.Limit*p.Page)
 	//q.params = params
@@ -87,5 +87,5 @@ type FetchQuery struct {
 	SQL    string
 	Params map[string]any
 	Limit  uint
-	Scan   func(scanner *executor.scanner) error
+	Scan   func(scanner executor.Scanner) error
 }

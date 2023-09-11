@@ -3,6 +3,7 @@ package executor
 import (
 	"database/sql"
 	"fmt"
+	"github.com/gozelle/spew"
 	"reflect"
 )
 
@@ -43,7 +44,7 @@ func (s *scanner) Scan(ptr any) (err error) {
 		return &InvalidUnmarshalError{pv.Type()}
 	}
 	pv = indirect(pv, false)
-
+	
 	columns, err := s.rows.Columns()
 	if err != nil {
 		return
@@ -89,8 +90,10 @@ type insertBatchScanner struct {
 }
 
 func (i insertBatchScanner) Scan(ptr any) error {
-	//TODO implement me
-	panic("implement me")
+	
+	spew.Json(reflect.ValueOf(ptr).Type().String())
+	
+	return nil
 }
 
 func (i insertBatchScanner) RowsAffected() int64 {
