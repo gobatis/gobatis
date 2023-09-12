@@ -87,5 +87,5 @@ type FetchQuery struct {
 	SQL    string
 	Params map[string]any
 	Limit  uint
-	Scan   func(scanner executor.Scanner) error
+	Scan   func(scanner Scanner) error
 }

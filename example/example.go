@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/gozelle/spew"
 	"time"
@@ -16,7 +17,7 @@ type User struct {
 	Age    int64
 	Tstz   time.Time
 	Ts     time.Time
-	Wealth decimal.Decimal
+	Wealth *decimal.Decimal
 }
 
 func main() {
@@ -52,29 +53,57 @@ func main() {
 	//}
 	//spew.Json(user)
 	
-	users := []*User{
-		{
-			Name:   "tom",
-			Age:    18,
-			Tstz:   time.Now(),
-			Ts:     time.Now(),
-			Wealth: decimal.NewFromFloat(3.14),
+	total := 0
+	err = db.Debug().FetchQuery(batis.FetchQuery{
+		SQL:    "select * from users",
+		Params: nil,
+		Limit:  3,
+		Scan: func(s batis.Scanner) error {
+			
+			var users []User
+			
+			e := s.Scan(&users)
+			if e != nil {
+				return e
+			}
+			total += len(users)
+			for _, v := range users {
+				d, _ := json.Marshal(v)
+				fmt.Println(string(d))
+			}
+			
+			return nil
 		},
-		{
-			Name:   "jack",
-			Age:    19,
-			Tstz:   time.Now(),
-			Ts:     time.Now(),
-			Wealth: decimal.NewFromFloat(3.15),
-		},
-	}
-	var ids []int64
-	err = db.Debug().InsertBatch("users", 1, users, batis.Returning("id")).Scan(&ids).Error
+	})
 	if err != nil {
 		return
 	}
 	
-	spew.Json(ids)
+	spew.Json(total)
+	
+	//users := []*User{
+	//	{
+	//		Name:   "tom",
+	//		Age:    18,
+	//		Tstz:   time.Now(),
+	//		Ts:     time.Now(),
+	//		Wealth: decimal.NewFromFloat(3.14),
+	//	},
+	//	{
+	//		Name:   "jack",
+	//		Age:    19,
+	//		Tstz:   time.Now(),
+	//		Ts:     time.Now(),
+	//		Wealth: decimal.NewFromFloat(3.15),
+	//	},
+	//}
+	//var ids []int64
+	//err = db.Debug().InsertBatch("users", 1, users, batis.Returning("id")).Scan(&ids).Error
+	//if err != nil {
+	//	return
+	//}
+	//
+	//spew.Json(ids)
 	
 	//var count int64
 	//err = db.Debug().Query("select count(1) from users").Scan(&count).Error

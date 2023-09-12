@@ -74,10 +74,10 @@ func (s *scanner) Scan(ptr any) (err error) {
 			break
 		}
 	}
-	if s.rowsAffected == 0 {
-		err = sql.ErrNoRows
-		return
-	}
+	//if s.rowsAffected == 0 {
+	//	err = sql.ErrNoRows
+	//	return
+	//}
 	return
 }
 

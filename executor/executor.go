@@ -149,7 +149,7 @@ func (i *InsertBatch) Execute(logger Logger, trace, debug bool, affecting any, s
 			if err != nil {
 				now := time.Now()
 				err = AddError(err, tx.Rollback())
-				logger.Trace(conn.TraceId(), trace, err, &SQLTrace{
+				logger.Trace(conn.TraceId(), true, err, &SQLTrace{
 					Trace:        trace,
 					Debug:        debug,
 					BeginAt:      now,
@@ -184,7 +184,7 @@ func (i *InsertBatch) Execute(logger Logger, trace, debug bool, affecting any, s
 		return
 	}
 	
-	logger.Trace(conn.TraceId(), trace, err, &SQLTrace{
+	logger.Trace(conn.TraceId(), true, err, &SQLTrace{
 		Trace:        trace,
 		Debug:        debug,
 		BeginAt:      now,
@@ -217,7 +217,6 @@ func (i *InsertBatch) execute(conn Conn, raw *Raw, logger Logger, trace, debug b
 }
 
 type ParallelQuery struct {
-	conn Conn
 }
 
 func (p *ParallelQuery) Execute(logger Logger, trace, debug bool, affecting any, scan func(Scanner) error) (err error) {
@@ -225,16 +224,105 @@ func (p *ParallelQuery) Execute(logger Logger, trace, debug bool, affecting any,
 	return
 }
 
-func NewFetchQuery(conn Conn, raw *Raw, limit uint) *FetchQuery {
-	return &FetchQuery{conn: conn, raw: raw, limit: limit}
+func NewFetchQuery(ctx context.Context, conn Conn, raw *Raw, limit uint) *FetchQuery {
+	return &FetchQuery{ctx: ctx, conn: conn, raw: raw, limit: limit}
 }
 
 type FetchQuery struct {
+	ctx   context.Context
 	conn  Conn
 	raw   *Raw
 	limit uint
 }
 
 func (f *FetchQuery) Execute(logger Logger, trace, debug bool, affecting any, scan func(Scanner) error) (err error) {
+	
+	conn := f.conn
+	
+	var tx *sql.Tx
+	defer func() {
+		if tx != nil {
+			if err != nil {
+				now := time.Now()
+				err = AddError(err, tx.Rollback())
+				logger.Trace(conn.TraceId(), true, err, &SQLTrace{
+					Trace:        trace,
+					Debug:        debug,
+					BeginAt:      now,
+					RawSQL:       "rollback",
+					PlainSQL:     "rollback",
+					RowsAffected: 0,
+				})
+			}
+		}
+	}()
+	
+	if !conn.IsTx() {
+		tx, err = conn.BeginTx(f.ctx, nil)
+		if err != nil {
+			return
+		}
+		conn = NewTx(tx, conn.TraceId())
+	}
+	
+	cursor := fmt.Sprintf("curosr_%s", conn.TraceId())
+	
+	d := NewDefault(conn, &Raw{
+		Ctx:    f.ctx,
+		Query:  false,
+		SQL:    fmt.Sprintf("declare %s cursor for %s", cursor, f.raw.SQL),
+		Params: f.raw.Params,
+	})
+	err = d.Execute(logger, trace, debug, affecting, nil)
+	if err != nil {
+		return
+	}
+	
+	defer func() {
+		d = NewDefault(conn, &Raw{
+			Ctx:    f.ctx,
+			Query:  false,
+			SQL:    fmt.Sprintf("close %s", cursor),
+			Params: nil,
+		})
+		err = AddError(err, d.Execute(logger, trace, debug, affecting, nil))
+		
+		now := time.Now()
+		err = AddError(err, tx.Commit())
+		
+		logger.Trace(conn.TraceId(), true, err, &SQLTrace{
+			Trace:        trace,
+			Debug:        debug,
+			BeginAt:      now,
+			RawSQL:       "commit",
+			PlainSQL:     "commit",
+			RowsAffected: 0,
+		})
+	}()
+	
+	for {
+		d = NewDefault(conn, &Raw{
+			Ctx:    f.ctx,
+			Query:  true,
+			SQL:    fmt.Sprintf("fetch forward %d from %s", f.limit, cursor),
+			Params: nil,
+		})
+		var rowsAffected int64
+		err = d.Execute(logger, trace, debug, affecting, func(s Scanner) error {
+			e := scan(s)
+			if e != nil {
+				return e
+			}
+			rowsAffected = s.RowsAffected()
+			return nil
+		})
+		if err != nil {
+			return
+		}
+		if rowsAffected == 0 {
+			break
+		}
+	}
+	
 	return
 }

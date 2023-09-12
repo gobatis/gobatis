@@ -285,6 +285,11 @@ func (e *InvalidUnmarshalError) Error() string {
 
 func setValue(pv reflect.Value, v any) error {
 	
+	if t := reflect.New(pv.Type()); t.Type().Implements(scannerType) {
+		s := t.Interface().(sql.Scanner)
+		return s.Scan(v)
+	}
+	
 	vv := reflect.ValueOf(v)
 	
 	switch vv.Kind() {
@@ -381,6 +386,7 @@ func setStruct(pv reflect.Value, r rowMap) (err error) {
 		} else if v != nil {
 			err = setValue(indirect(pv.Field(i), false), v)
 			if err != nil {
+				err = fmt.Errorf("parse column: %s value error: %w", n, err)
 				return
 			}
 		}
