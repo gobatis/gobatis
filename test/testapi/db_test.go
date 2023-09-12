@@ -1,12 +1,13 @@
-package testdb
+package testapi
 
 import (
 	"database/sql"
 	"fmt"
-	"github.com/gobatis/gobatis/dialector"
-	_ "github.com/proullon/ramsql/driver"
 	"regexp"
 	"strings"
+
+	"github.com/gobatis/gobatis/dialector"
+	_ "github.com/proullon/ramsql/driver"
 )
 
 var _ dialector.Dialector = (*Dialector)(nil)

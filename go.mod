@@ -7,11 +7,13 @@ require (
 	github.com/antlr/antlr4 v0.0.0-20210311221813-5e5b6d35b418
 	github.com/antlr4-go/antlr/v4 v4.13.0
 	github.com/go-sql-driver/mysql v1.7.1
+	github.com/google/uuid v1.3.0
 	github.com/gozelle/color v1.14.1
 	github.com/gozelle/prometheus v0.0.0-20230823061932-52c37cf686f8
 	github.com/gozelle/spew v1.1.17
 	github.com/jackc/pgtype v1.7.0
 	github.com/jackc/pgx/v4 v4.11.0
+	github.com/lib/pq v1.10.9
 	github.com/proullon/ramsql v0.1.2
 	github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475
 	github.com/shopspring/decimal v1.2.0

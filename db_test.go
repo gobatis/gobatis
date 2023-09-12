@@ -7,9 +7,7 @@ import (
 	"time"
 
 	"github.com/AlekSi/pointer"
-	"github.com/gobatis/gobatis/driver/postgres"
 	"github.com/gobatis/gobatis/test/backup"
-	"github.com/gozelle/spew"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/require"
 )
@@ -139,19 +137,19 @@ func TestDBQuery45(t *testing.T) {
 }
 
 func TestDBQuery2(t *testing.T) {
-	db, err := Open(postgres.Open("postgres://root:123456@192.168.1.10:5432/example"))
-	require.NoError(t, err)
-
-	defer func() {
-		db.Close()
-	}()
-
-	var m Member
-	err = db.Debug().Query(`select * from members where id = #{age}`,
-		Param("age", 1),
-	).Scan(&m).Error
-	require.NoError(t, err)
-	spew.Json(m)
+	//db, err := Open(postgres.Open("postgres://root:123456@192.168.1.10:5432/example"))
+	//require.NoError(t, err)
+	//
+	//defer func() {
+	//	db.Close()
+	//}()
+	//
+	//var m Member
+	//err = db.Debug().Query(`select * from members where id = #{age}`,
+	//	Param("age", 1),
+	//).Scan(&m).Error
+	//require.NoError(t, err)
+	//spew.Json(m)
 	//
 	//var count int64
 	//err = db.Debug().Loose().Query(`select count(1) from members where age > 0`).Scan(&count)
