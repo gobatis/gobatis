@@ -287,7 +287,12 @@ func setValue(pv reflect.Value, v any) error {
 	
 	if t := reflect.New(pv.Type()); t.Type().Implements(scannerType) {
 		s := t.Interface().(sql.Scanner)
-		return s.Scan(v)
+		err := s.Scan(v)
+		if err != nil {
+			return err
+		}
+		pv.Set(t.Elem())
+		return nil
 	}
 	
 	vv := reflect.ValueOf(v)
