@@ -8,7 +8,7 @@ import (
 	"regexp"
 	"strings"
 	"testing"
-
+	
 	"github.com/gobatis/gobatis/dialector"
 	"github.com/stretchr/testify/require"
 	"github.com/ttacon/chalk"
@@ -71,27 +71,27 @@ func isStructSlice(r reflect.Type) bool {
 
 func SplitStructSlice(data any, limit int) ([]any, error) {
 	val := reflect.ValueOf(data)
-
+	
 	if !isStructSlice(val.Type()) {
 		return nil, fmt.Errorf("expected a struct slice, got %s", val.Type())
 	}
-
+	
 	sliceLen := val.Len()
 	if sliceLen == 0 {
 		return nil, fmt.Errorf("got empty slice")
 	}
-
+	
 	var result []any
 	for i := 0; i < sliceLen; i += limit {
 		end := i + limit
 		if end > sliceLen {
 			end = sliceLen
 		}
-
+		
 		subSlice := val.Slice(i, end)
 		result = append(result, subSlice.Interface())
 	}
-
+	
 	return result, nil
 }
 
@@ -151,12 +151,12 @@ func replaceIsolatedLessThanWithEntity(s string) string {
 			lastLeftBracket = -1
 		}
 	}
-
+	
 	// 检查是否在字符串的结尾有一个标记的 '<'
 	if lastLeftBracket != -1 {
 		pos[lastLeftBracket] = struct{}{}
 	}
-
+	
 	var r []rune
 	for i := range runes {
 		if _, ok := pos[i]; ok {
@@ -165,7 +165,7 @@ func replaceIsolatedLessThanWithEntity(s string) string {
 			r = append(r, runes[i])
 		}
 	}
-
+	
 	return string(r)
 }
 
@@ -193,7 +193,7 @@ func AddError(err, added error) error {
 }
 
 func reflectRow(columns []string, row []interface{}, pv reflect.Value, first bool) (bool, error) {
-
+	
 	switch pv.Kind() {
 	case reflect.Slice, reflect.Array:
 		return false, setArray(pv, newRowMap(columns, row))
@@ -204,7 +204,6 @@ func reflectRow(columns []string, row []interface{}, pv reflect.Value, first boo
 }
 
 func prepareFieldName(f reflect.StructField) string {
-
 	field := f.Tag.Get("db")
 	if field == "" {
 		field = toSnakeCase(f.Name)
@@ -277,7 +276,7 @@ func (e *InvalidUnmarshalError) Error() string {
 	if e.Type == nil {
 		return "gobatis: Unmarshal(nil)"
 	}
-
+	
 	if e.Type.Kind() != reflect.Pointer {
 		return "gobatis: Unmarshal(non-pointer " + e.Type.String() + ")"
 	}
@@ -285,9 +284,9 @@ func (e *InvalidUnmarshalError) Error() string {
 }
 
 func setValue(pv reflect.Value, v any) error {
-
+	
 	vv := reflect.ValueOf(v)
-
+	
 	switch vv.Kind() {
 	case reflect.Bool:
 		return setBool(pv, vv)
@@ -307,12 +306,12 @@ func setValue(pv reflect.Value, v any) error {
 	case reflect.String:
 		return setString(pv, vv)
 	}
-
+	
 	return nil
 }
 
 func setArray(pv reflect.Value, r rowMap) (err error) {
-
+	
 	t := pv.Type().Elem()
 	ptr := false
 	if t.Kind() == reflect.Ptr {
@@ -336,20 +335,34 @@ func setArray(pv reflect.Value, r rowMap) (err error) {
 			return
 		}
 	default:
-		err = fmt.Errorf("expect struct, got: %s", t.Elem())
+		// TODO 反射数组单值
+		if ptr {
+			pv.Set(reflect.Append(pv, reflect.New(pv.Type().Elem().Elem())))
+		} else {
+			pv.Set(reflect.Append(pv, reflect.New(pv.Type().Elem()).Elem()))
+		}
+		var a any
+		for _, vv := range r {
+			a = vv
+		}
+		err = setValue(indirect(pv.Index(pv.Len()-1), false), a)
+		if err != nil {
+			return
+		}
+		//err = fmt.Errorf("expect struct, got: %s", t.String())
 		return
 	}
-
+	
 	return
 }
 
 func setStruct(pv reflect.Value, r rowMap) (err error) {
-
+	
 	//var tags map[string]struct{}
 	//if first {
 	//	tags = map[string]struct{}{}
 	//}
-
+	
 	t := pv.Type()
 	for i := 0; i < t.NumField(); i++ {
 		n := prepareFieldName(t.Field(i))
@@ -372,7 +385,7 @@ func setStruct(pv reflect.Value, r rowMap) (err error) {
 			}
 		}
 	}
-
+	
 	return
 }
 
@@ -481,7 +494,7 @@ func indirect(v reflect.Value, decodingNull bool) reflect.Value {
 	// preserve the original RW flags contained in reflect.Value.
 	v0 := v
 	haveAddr := false
-
+	
 	// If v is a named type and is addressable,
 	// start with its address, so that if the type has pointer methods,
 	// we find them.
@@ -500,15 +513,15 @@ func indirect(v reflect.Value, decodingNull bool) reflect.Value {
 				continue
 			}
 		}
-
+		
 		if v.Kind() != reflect.Pointer {
 			break
 		}
-
+		
 		if decodingNull && v.CanSet() {
 			break
 		}
-
+		
 		// Prevent infinite loop if v is an interface pointing to its own address:
 		//     var v interface{}
 		//     v = &v
@@ -519,7 +532,7 @@ func indirect(v reflect.Value, decodingNull bool) reflect.Value {
 		if v.IsNil() {
 			v.Set(reflect.New(v.Type().Elem()))
 		}
-
+		
 		if haveAddr {
 			v = v0 // restore original value after round-trip Value.Addr().Elem()
 			haveAddr = false
@@ -538,29 +551,29 @@ type Column struct {
 }
 
 func ReflectRows(v any, namer dialector.Namer, tag string) (rows []Row, err error) {
-
+	
 	rv := reflect.ValueOf(v)
 	if rv.Kind() == reflect.Ptr {
 		rv = rv.Elem()
 	}
-
+	
 	rt := rv.Type()
 	multiple := false
-
+	
 	if rv.Kind() == reflect.Slice || rv.Kind() == reflect.Array {
 		multiple = true
 		rt = rv.Type().Elem()
 	}
-
+	
 	if rt.Kind() == reflect.Ptr {
 		rt = rt.Elem()
 	}
-
+	
 	if rt.Kind() != reflect.Struct {
 		err = fmt.Errorf("only accept struct, got: %s", rt.Kind())
 		return
 	}
-
+	
 	if multiple {
 		for i := 0; i < rv.Len(); i++ {
 			rows = append(rows, reflectStruct(rt, rv.Index(i), namer, tag))
@@ -568,7 +581,7 @@ func ReflectRows(v any, namer dialector.Namer, tag string) (rows []Row, err erro
 	} else {
 		rows = append(rows, reflectStruct(rt, rv, namer, tag))
 	}
-
+	
 	return
 }
 
@@ -585,11 +598,11 @@ func ExtractTag(s string) string {
 }
 
 func reflectStruct(rt reflect.Type, rv reflect.Value, namer dialector.Namer, tag string) Row {
-
+	
 	if rv.Kind() == reflect.Ptr {
 		rv = rv.Elem()
 	}
-
+	
 	var r Row
 	for i := 0; i < rt.NumField(); i++ {
 		f := rt.Field(i)
@@ -607,7 +620,7 @@ func reflectStruct(rt reflect.Type, rv reflect.Value, namer dialector.Namer, tag
 			})
 		}
 	}
-
+	
 	return r
 }
 
@@ -664,47 +677,47 @@ func RowsParams(rows []Row) (params []Param) {
 				Value: vv.value,
 			})
 		}
-
+		
 	}
 	return
 }
 
 func TestIndirect(t *testing.T) {
-
+	
 	var a *int
 	rv := reflect.ValueOf(&a)
-
+	
 	t.Log(rv.Kind())
-
+	
 	rv = indirect(rv, false)
-
+	
 	t.Log(rv.Kind())
-
+	
 	rv.Set(reflect.ValueOf(3))
-
+	
 	t.Log(*a)
 }
 
 func TestSetValueBasic(t *testing.T) {
-
+	
 	var a *int
 	rv := reflect.ValueOf(&a)
 	err := setValue(rv, 1)
 	require.NoError(t, err)
 	t.Log(*a)
-
+	
 	var b int8
 	rv = reflect.ValueOf(&b)
 	err = setValue(rv, 9)
 	require.NoError(t, err)
 	t.Log(b)
-
+	
 	var c float32
 	rv = reflect.ValueOf(&c)
 	err = setValue(rv, 3)
 	require.NoError(t, err)
 	t.Log(c)
-
+	
 	var d string
 	rv = reflect.ValueOf(&d)
 	err = setValue(rv, "hello world")

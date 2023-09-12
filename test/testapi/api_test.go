@@ -2,7 +2,7 @@ package testapi
 
 import (
 	"testing"
-
+	
 	batis "github.com/gobatis/gobatis"
 	"github.com/gobatis/gobatis/test/testdb"
 	"github.com/stretchr/testify/require"
@@ -16,7 +16,7 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-
+	
 	err = db.Exec(`
 		create table if not exists users
 		(
@@ -28,7 +28,7 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-
+	
 	//defer func() {
 	//	fmt.Println(3)
 	//	err = db.Close()
@@ -58,6 +58,6 @@ func TestExec(t *testing.T) {
 }
 
 func TestQuery(t *testing.T) {
-
+	
 	db.Query(``)
 }

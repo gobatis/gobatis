@@ -2,8 +2,9 @@ package main
 
 import (
 	"fmt"
+	"github.com/gozelle/spew"
 	"time"
-
+	
 	"github.com/gobatis/gobatis"
 	"github.com/gobatis/gobatis/driver/postgres"
 	"github.com/shopspring/decimal"
@@ -25,17 +26,17 @@ func main() {
 			panic(fmt.Errorf("\nexmaple error: %s", err))
 		}
 	}()
-	//db, err := batis.Open(postgres.Open("postgresql://root:123456@192.168.1.189:5432/example?connect_timeout=10&sslmode=disable"))
-	db, err := batis.Open(postgres.Open("postgresql://root:123456@127.0.0.1:5432/example?connect_timeout=10&sslmode=disable"))
+	db, err := batis.Open(postgres.Open("postgresql://root:123456@192.168.1.189:5432/example?connect_timeout=10&sslmode=disable"))
+	//db, err := batis.Open(postgres.Open("postgresql://root:123456@127.0.0.1:5432/example?connect_timeout=10&sslmode=disable"))
 	if err != nil {
 		return
 	}
-
+	
 	err = db.Ping()
 	if err != nil {
 		return
 	}
-
+	
 	//user := &User{
 	//	Id:     nil,
 	//	Name:   "tom",
@@ -50,7 +51,7 @@ func main() {
 	//	return
 	//}
 	//spew.Json(user)
-
+	
 	users := []*User{
 		{
 			Name:   "tom",
@@ -72,13 +73,15 @@ func main() {
 	if err != nil {
 		return
 	}
-
+	
+	spew.Json(ids)
+	
 	//var count int64
 	//err = db.Debug().Query("select count(1) from users").Scan(&count).Error
 	//if err != nil {
 	//	return
 	//}
-
+	
 	//tx := db.WithTraceId("123").Debug().Begin()
 	//defer func() {
 	//	if err != nil {
@@ -148,7 +151,7 @@ func main() {
 	//	     order by id desc`,
 	//	batis.Param("group_id", 1),
 	//)
-
+	
 	//db.Update("users", map[string]any{}, batis.Where(""))
 	//
 	//var users []*entity.User

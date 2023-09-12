@@ -4,8 +4,6 @@ import (
 	"database/sql"
 	"fmt"
 	"reflect"
-
-	"github.com/gozelle/spew"
 )
 
 type Scanner interface {
@@ -45,7 +43,7 @@ func (s *scanner) Scan(ptr any) (err error) {
 		return &InvalidUnmarshalError{pv.Type()}
 	}
 	pv = indirect(pv, false)
-
+	
 	columns, err := s.rows.Columns()
 	if err != nil {
 		return
@@ -91,22 +89,18 @@ type insertBatchScanner struct {
 }
 
 func (i insertBatchScanner) Scan(ptr any) error {
-
+	
 	rv := reflect.ValueOf(ptr)
 	if rv.Elem().Type().Kind() != reflect.Slice {
 		return fmt.Errorf("expect slice, got %s", rv.Elem().Type())
 	}
-
-	//fmt.Println("types:", t.Interface())
-
+	
 	s := &scanner{rows: i.rows}
-	t := reflect.New(reflect.SliceOf(rv.Type().Elem().Elem()))
-	err := s.Scan(t.Interface())
+	err := s.Scan(ptr)
 	if err != nil {
 		return err
 	}
-	spew.Json(t.Interface())
-
+	
 	return nil
 }
 
