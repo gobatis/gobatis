@@ -162,11 +162,20 @@ func (i *InsertBatch) Execute(logger Logger, trace, debug bool, affecting any, s
 	}()
 	
 	if !conn.IsTx() {
+		now := time.Now()
 		tx, err = conn.BeginTx(i.ctx, nil)
 		if err != nil {
 			return
 		}
 		conn = NewTx(tx, conn.TraceId())
+		logger.Trace(conn.TraceId(), true, err, &SQLTrace{
+			Trace:        trace,
+			Debug:        debug,
+			BeginAt:      now,
+			RawSQL:       "begin",
+			PlainSQL:     "begin",
+			RowsAffected: 0,
+		})
 	}
 	
 	for _, raw := range i.raws {
@@ -204,7 +213,9 @@ func (i *InsertBatch) execute(conn Conn, raw *Raw, logger Logger, trace, debug b
 		return
 	}
 	defer func() {
-		err = AddError(err, d.rows.Close())
+		if d.rows != nil {
+			err = AddError(err, d.rows.Close())
+		}
 	}()
 	ibs := &insertBatchScanner{}
 	ibs.rows = d.rows

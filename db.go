@@ -419,7 +419,7 @@ func (d *DB) FetchQuery(query FetchQuery) error {
 func (d *DB) Begin() *DB {
 	c := d.clone()
 	if c.tx != nil {
-		c.addError(fmt.Errorf("tx conflict"))
+		c.addError(fmt.Errorf("there is already a transaction"))
 		return c
 	}
 	

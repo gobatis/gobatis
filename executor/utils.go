@@ -452,10 +452,10 @@ func setNumber(pv reflect.Value, vv reflect.Value) (err error) {
 			v = float64(vv.Uint())
 		}
 		pv.SetFloat(v)
-		err = literalEqual(pv, vv)
-		if err != nil {
-			return
-		}
+		//err = literalEqual(pv, vv)
+		//if err != nil {
+		//	return
+		//}
 		return
 	default:
 		return fmt.Errorf("unsupport reflect type %s to %s", vv.Type(), pv.Type())
