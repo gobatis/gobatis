@@ -30,20 +30,18 @@ func (s *scanner) LastInsertId() int64 {
 }
 
 func (s *scanner) Scan(ptr any) (err error) {
-	if ptr == nil {
-		err = fmt.Errorf("ptr is nil")
-		return
-	}
 	if s.rows == nil {
-		err = fmt.Errorf("rows is nil")
+		err = fmt.Errorf("scan rows error: rows is nil")
 		return
 	}
-	pv := reflect.ValueOf(ptr)
-	if pv.Kind() != reflect.Pointer || pv.IsNil() {
-		return &InvalidUnmarshalError{pv.Type()}
+	var pv reflect.Value
+	if ptr != nil {
+		pv = reflect.ValueOf(ptr)
+		if pv.Kind() != reflect.Pointer || pv.IsNil() {
+			return &InvalidUnmarshalError{pv.Type()}
+		}
+		pv = indirect(pv, false)
 	}
-	pv = indirect(pv, false)
-	
 	columns, err := s.rows.Columns()
 	if err != nil {
 		return
@@ -53,25 +51,27 @@ func (s *scanner) Scan(ptr any) (err error) {
 	s.rowsAffected = 0
 	for s.rows.Next() {
 		s.rowsAffected++
-		row := make([]interface{}, l)
-		pointers := make([]interface{}, l)
-		for i, _ := range columns {
-			pointers[i] = &row[i]
-		}
-		err = s.rows.Scan(pointers...)
-		if err != nil {
-			return
-		}
-		if !first {
-			first = true
-		}
-		var end bool
-		end, err = reflectRow(columns, row, pv, first)
-		if err != nil {
-			return
-		}
-		if end {
-			break
+		if ptr != nil {
+			row := make([]interface{}, l)
+			pointers := make([]interface{}, l)
+			for i, _ := range columns {
+				pointers[i] = &row[i]
+			}
+			err = s.rows.Scan(pointers...)
+			if err != nil {
+				return
+			}
+			if !first {
+				first = true
+			}
+			var end bool
+			end, err = reflectRow(columns, row, pv, first)
+			if err != nil {
+				return
+			}
+			if end {
+				break
+			}
 		}
 	}
 	//if s.rowsAffected == 0 {

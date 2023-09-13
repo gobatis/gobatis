@@ -10,6 +10,7 @@ import (
 
 type Executor interface {
 	Execute(logger Logger, trace, debug bool, affecting any, scan func(s Scanner) error) (err error)
+	Query() bool
 }
 
 var (
@@ -36,9 +37,8 @@ type Default struct {
 	clean    bool
 }
 
-func (d *Default) Result() sql.Result {
-	//TODO implement me
-	panic("implement me")
+func (d *Default) Query() bool {
+	return d.raw.Query
 }
 
 func (d *Default) Execute(logger Logger, trace, debug bool, affecting any, scan func(Scanner) error) (err error) {
@@ -139,6 +139,15 @@ type InsertBatch struct {
 	raws []*Raw
 }
 
+func (i *InsertBatch) Query() bool {
+	for _, v := range i.raws {
+		if v.Query {
+			return v.Query
+		}
+	}
+	return false
+}
+
 func (i *InsertBatch) Execute(logger Logger, trace, debug bool, affecting any, scan func(Scanner) error) (err error) {
 	
 	conn := i.conn
@@ -230,6 +239,10 @@ func (i *InsertBatch) execute(conn Conn, raw *Raw, logger Logger, trace, debug b
 type ParallelQuery struct {
 }
 
+func (p *ParallelQuery) Query() bool {
+	return true
+}
+
 func (p *ParallelQuery) Execute(logger Logger, trace, debug bool, affecting any, scan func(Scanner) error) (err error) {
 	
 	return
@@ -244,6 +257,10 @@ type FetchQuery struct {
 	conn  Conn
 	raw   *Raw
 	limit uint
+}
+
+func (f *FetchQuery) Query() bool {
+	return f.raw.Query
 }
 
 func (f *FetchQuery) Execute(logger Logger, trace, debug bool, affecting any, scan func(Scanner) error) (err error) {

@@ -50,8 +50,7 @@ func testInsert(t *testing.T) {
 		AddedDateTime:   time.Now(),
 	}, batis.Returning("id")).Scan(&id).RowsAffected()
 	require.NoError(t, err)
-	_ = affected
-	//require.Equal(t, int64(1), affected)
+	require.Equal(t, int64(1), affected)
 	
 	var product *Product
 	err = db.Query(`select * from gobatis.products where id = #{id}`, batis.Param("id", id)).Scan(&product).Error

@@ -173,12 +173,15 @@ func (d *DB) execute(dest any) {
 		return
 	}
 	d.addError(d.executor.Execute(d.Logger, d.trace, d.debug, d.affect, func(s executor.Scanner) error {
+		if d.executor.Query() {
+			e := s.Scan(dest)
+			if e != nil {
+				return e
+			}
+		}
 		d.rowsAffected = s.RowsAffected()
 		d.lastInsertId = s.LastInsertId()
-		if dest == nil {
-			return nil
-		}
-		return s.Scan(dest)
+		return nil
 	}))
 }
 
