@@ -7,17 +7,17 @@ import (
 	"github.com/gobatis/gobatis/executor"
 )
 
-type ParallelQueryer interface {
-	executors(namer dialector.Namer, tag string) ([]executor.Executor, error)
-}
+//type ParallelQueryer interface {
+//	executors(namer dialector.Namer, tag string) ([]executor.Executor, error)
+//}
 
-type Query struct {
+type ParallelQuery struct {
 	SQL    string
 	Params map[string]any
 	Scan   any
 }
 
-func (q Query) executors(namer dialector.Namer, tag string) ([]executor.Executor, error) {
+func (q ParallelQuery) executors(namer dialector.Namer, tag string) ([]executor.Executor, error) {
 	
 	if q.Scan == nil {
 		return nil, fmt.Errorf("expect 1 scan dest; got nil")
@@ -38,9 +38,7 @@ func (q Query) executors(namer dialector.Namer, tag string) ([]executor.Executor
 	return nil, nil
 }
 
-var _ ParallelQueryer = (*Paging)(nil)
-
-type Paging struct {
+type PagingQuery struct {
 	Select string
 	Count  string
 	From   string
@@ -52,7 +50,7 @@ type Paging struct {
 	elems  map[int][]Element
 }
 
-func (p Paging) executors(namer dialector.Namer, tag string) ([]executor.Executor, error) {
+func (p PagingQuery) executors(namer dialector.Namer, tag string) ([]executor.Executor, error) {
 	
 	if p.Limit <= 0 {
 		return nil, fmt.Errorf("invalid limit")

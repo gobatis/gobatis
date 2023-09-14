@@ -337,7 +337,7 @@ func (d *DB) InsertBatch(table string, batch int, data any, elems ...Element) *D
 	return c
 }
 
-func (d *DB) ParallelQuery(queryer ...ParallelQueryer) *DB {
+func (d *DB) ParallelQuery(queryer ...ParallelQuery) *DB {
 	c := d.clone()
 	if len(queryer) == 0 {
 		c.Error = fmt.Errorf("no querer")
@@ -386,6 +386,11 @@ func (d *DB) LastInsertId() (int64, error) {
 
 func (d *DB) RowsAffected() (int64, error) {
 	return d.rowsAffected, d.Error
+}
+
+func (d *DB) PagingQuery(query PagingQuery) error {
+	
+	return nil
 }
 
 func (d *DB) FetchQuery(query FetchQuery) error {

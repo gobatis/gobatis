@@ -1,22 +1,44 @@
 # Gobatis
 
-面向工程的 ORM，采用 MyBatis 的标签语法。
+![logo](logo.png)
 
-## 特性
+Most database operation scenarios involve simple CRUD (Create, Read, Update, Delete) operations. For these cases,
+we need straightforward methods. When conducting complex queries, excessive parameter bindings become a headache; at
+these times, a convenient template syntax is required. In some specific scenarios, such as paginated queries, we need
+some quick methods.
 
-* 便捷的增、删、查、改操作；
-* 便捷的变量绑定；
-* 支持语句 Debug
-* 支持执行 hook.
-* 支持事务、Prepare操作；
-* 支持快捷方法：分页查询、批量插入；
-* 更好的并发支持；
+Taking into account the above requirements, Gobatis was designed. It adheres to the traditional usage habits of Go ORMs,
+and also draws from MyBatis's Dynamic SQL syntax. Additionally, it offers numerous other features, making system
+development simpler and more efficient.
 
-## 模块
+## Feature
 
-* SQL 执行；
-* 事务；
-* 日志，位置打印；
-* Hook；
-* 并发；
+* Simple, An engineering-oriented ORM
+* Intuitive and convenient API design
+* Targeted at users who prefer using native SQL
+* Transaction tracing.
+* Mybatis parameter syntax and Dynamic SQL syntax
+* Hooks (Before/After, Insert/Update/Delete/Query/Exec)
+* More rigorous query result matching mechanism
+* Context, Prepared Statement Mode, Debug Mode, DryRun Mode, Loose Mode
+* Logger
+* Every feature comes with tests
+* Developer Friendly
+
+
+## Documentation
+For a comprehensive guide and API documentation, visit [https://gobatis.com](https://gobatis.com).
+
+## Support
+If you wish to discuss further requirements and detailed usage, feel free to join us for discussions on Knowledge Planet.
+
+![](kp.jpeg)
+
+## Contribution
+We welcome all contributions to the Gobatis project! 
+
+## License
+This project is licensed under the MIT License. 
+
+
 
