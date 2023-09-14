@@ -41,7 +41,7 @@ func (d *Default) Query() bool {
 	return d.raw.Query
 }
 
-func (d *Default) Execute(logger Logger, trace, debug bool, affecting any, scan func(Scanner) error) (err error) {
+func (d *Default) Execute(logger Logger, trace, debug bool, affect any, scan func(Scanner) error) (err error) {
 	
 	beginAt := time.Now()
 	
@@ -103,24 +103,34 @@ func (d *Default) Execute(logger Logger, trace, debug bool, affecting any, scan 
 		}
 	}
 	
-	if scan != nil {
-		if d.raw.Query {
-			s = &scanner{
-				rows:         d.rows,
-				rowsAffected: 0,
-				lastInsertId: 0,
-			}
-			err = scan(s)
-		} else {
-			rowsAffected, _ := d.result.RowsAffected()
-			lastInsertId, _ := d.result.LastInsertId()
-			s = &scanner{
-				rows:         nil,
-				rowsAffected: rowsAffected,
-				lastInsertId: lastInsertId,
-			}
-			err = scan(s)
+	if d.raw.Query {
+		s = &scanner{
+			rows:         d.rows,
+			rowsAffected: 0,
+			lastInsertId: 0,
 		}
+		err = scan(s)
+	} else {
+		rowsAffected, _ := d.result.RowsAffected()
+		lastInsertId, _ := d.result.LastInsertId()
+		s = &scanner{
+			rows:         nil,
+			rowsAffected: rowsAffected,
+			lastInsertId: lastInsertId,
+		}
+		err = scan(s)
+	}
+	if err != nil {
+		return
+	}
+	
+	if affect != nil {
+		var ac *affectConstraint
+		ac, err = newAffectConstraint(affect)
+		if err != nil {
+			return
+		}
+		err = ac.Check(int(s.rowsAffected))
 		if err != nil {
 			return
 		}
@@ -148,7 +158,7 @@ func (i *InsertBatch) Query() bool {
 	return false
 }
 
-func (i *InsertBatch) Execute(logger Logger, trace, debug bool, affecting any, scan func(Scanner) error) (err error) {
+func (i *InsertBatch) Execute(logger Logger, trace, debug bool, affect any, scan func(Scanner) error) (err error) {
 	
 	conn := i.conn
 	
@@ -188,13 +198,25 @@ func (i *InsertBatch) Execute(logger Logger, trace, debug bool, affecting any, s
 	}
 	
 	for _, raw := range i.raws {
-		err = i.execute(conn, raw, logger, trace, debug, affecting, func(s Scanner) error {
+		err = i.execute(conn, raw, logger, trace, debug, nil, func(s Scanner) error {
 			return scan(s)
 		})
 		if err != nil {
 			return
 		}
 	}
+	
+	//if affect != nil {
+	//	var ac *affectConstraint
+	//	ac, err = newAffectConstraint(affect)
+	//	if err != nil {
+	//		return
+	//	}
+	//	err = ac.Check(int(s.rowsAffected))
+	//	if err != nil {
+	//		return
+	//	}
+	//}
 	
 	now := time.Now()
 	err = tx.Commit()
@@ -214,10 +236,10 @@ func (i *InsertBatch) Execute(logger Logger, trace, debug bool, affecting any, s
 	return
 }
 
-func (i *InsertBatch) execute(conn Conn, raw *Raw, logger Logger, trace, debug bool, affecting any, scan func(Scanner) error) (err error) {
+func (i *InsertBatch) execute(conn Conn, raw *Raw, logger Logger, trace, debug bool, affect any, scan func(Scanner) error) (err error) {
 	d := NewDefault(conn, raw)
 	d.clean = false
-	err = d.Execute(logger, trace, debug, affecting, nil)
+	err = d.Execute(logger, trace, debug, nil, nil)
 	if err != nil {
 		return
 	}
@@ -263,7 +285,7 @@ func (f *FetchQuery) Query() bool {
 	return f.raw.Query
 }
 
-func (f *FetchQuery) Execute(logger Logger, trace, debug bool, affecting any, scan func(Scanner) error) (err error) {
+func (f *FetchQuery) Execute(logger Logger, trace, debug bool, affect any, scan func(Scanner) error) (err error) {
 	
 	conn := f.conn
 	
@@ -301,7 +323,7 @@ func (f *FetchQuery) Execute(logger Logger, trace, debug bool, affecting any, sc
 		SQL:    fmt.Sprintf("declare %s cursor for %s", cursor, f.raw.SQL),
 		Params: f.raw.Params,
 	})
-	err = d.Execute(logger, trace, debug, affecting, nil)
+	err = d.Execute(logger, trace, debug, affect, nil)
 	if err != nil {
 		return
 	}
@@ -313,7 +335,7 @@ func (f *FetchQuery) Execute(logger Logger, trace, debug bool, affecting any, sc
 			SQL:    fmt.Sprintf("close %s", cursor),
 			Params: nil,
 		})
-		err = AddError(err, d.Execute(logger, trace, debug, affecting, nil))
+		err = AddError(err, d.Execute(logger, trace, debug, affect, nil))
 		
 		now := time.Now()
 		err = AddError(err, tx.Commit())
@@ -336,7 +358,7 @@ func (f *FetchQuery) Execute(logger Logger, trace, debug bool, affecting any, sc
 			Params: nil,
 		})
 		var rowsAffected int64
-		err = d.Execute(logger, trace, debug, affecting, func(s Scanner) error {
+		err = d.Execute(logger, trace, debug, affect, func(s Scanner) error {
 			e := scan(s)
 			if e != nil {
 				return e

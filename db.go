@@ -172,6 +172,7 @@ func (d *DB) execute(dest any) {
 		d.addError(fmt.Errorf("repeat execution"))
 		return
 	}
+	
 	d.addError(d.executor.Execute(d.Logger, d.trace, d.debug, d.affect, func(s executor.Scanner) error {
 		if d.executor.Query() {
 			e := s.Scan(dest)
