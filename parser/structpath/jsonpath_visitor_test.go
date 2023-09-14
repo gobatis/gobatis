@@ -83,7 +83,7 @@ func TestVisitor(t *testing.T) {
 
 	errs := &CustomErrorListener{}
 
-	lexer := NewJsonPathLexer(antlr.NewInputStream("$.User[*]2"))
+	lexer := NewJsonPathLexer(antlr.NewInputStream("$.User[*]"))
 	lexer.RemoveErrorListeners()
 	lexer.AddErrorListener(errs)
 
