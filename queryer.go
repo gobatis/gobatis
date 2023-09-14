@@ -2,7 +2,7 @@ package batis
 
 import (
 	"fmt"
-	
+
 	"github.com/gobatis/gobatis/dialector"
 	"github.com/gobatis/gobatis/executor"
 )
@@ -18,11 +18,11 @@ type ParallelQuery struct {
 }
 
 func (q ParallelQuery) executors(namer dialector.Namer, tag string) ([]executor.Executor, error) {
-	
+
 	if q.Scan == nil {
 		return nil, fmt.Errorf("expect 1 scan dest; got nil")
 	}
-	
+
 	var params []executor.Param
 	for k, v := range q.Params {
 		params = append(params, executor.Param{
@@ -51,15 +51,15 @@ type PagingQuery struct {
 }
 
 func (p PagingQuery) executors(namer dialector.Namer, tag string) ([]executor.Executor, error) {
-	
+
 	if p.Limit <= 0 {
 		return nil, fmt.Errorf("invalid limit")
 	}
-	
+
 	if l := len(p.Scan); l != 2 {
 		return nil, fmt.Errorf("expect 2 scan dest; got: %d", l)
 	}
-	
+
 	var params []executor.Param
 	for k, v := range p.Params {
 		params = append(params, executor.Param{
@@ -67,7 +67,7 @@ func (p PagingQuery) executors(namer dialector.Namer, tag string) ([]executor.Ex
 			Value: v,
 		})
 	}
-	
+
 	//q := &executor{}
 	//q.raw = fmt.Sprintf("select %s from %s limit %d offset %d", p.Select, p.From, p.Limit, p.Limit*p.Page)
 	//q.params = params
@@ -86,4 +86,14 @@ type FetchQuery struct {
 	Params map[string]any
 	Limit  uint
 	Scan   func(scanner Scanner) error
+}
+
+type AssociateQuery struct {
+	SQL    string
+	Params map[string]any
+	Link   any
+}
+
+func AssociateLink(dest any, condition, inject string) any {
+	return nil
 }

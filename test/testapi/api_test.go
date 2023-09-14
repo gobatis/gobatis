@@ -21,70 +21,17 @@ var db *batis.DB
 var containerID string
 var cli *client.Client
 
-func TestInsert(t *testing.T) {
-	//defer func() {
-	//	if db != nil {
-	//		require.NoError(t, db.Close())
-	//	}
-	//	//require.NoError(t, cli.ContainerStop(context.Background(), containerID, container.StopOptions{}))
-	//	//require.NoError(t, cli.ContainerRemove(context.Background(), containerID, types.ContainerRemoveOptions{}))
-	//}()
-	//
-	//initEnv(t)
-	//initDB(t)
-	//testInsert(t)
-	//testInsertBatch(t)
-	////testExec(t)
-	//testNestedTx(t)
-}
-
-func testInsert(t *testing.T) {
-	var id int64
-	affected, err := db.Debug().Insert("gobatis.products", &Product{
-		ProductName:     "Smartwatch",
-		Description:     "Advanced health and fitness tracking smartwatch",
-		Price:           decimal.NewFromFloat(299.99),
-		Weight:          0.05,
-		IsAvailable:     true,
-		ManufactureDate: time.Date(2023, time.April, 10, 0, 0, 0, 0, time.UTC),
-		AddedDateTime:   time.Now(),
-	}, batis.Returning("id")).Scan(&id).RowsAffected()
-	require.NoError(t, err)
-	require.Equal(t, int64(1), affected)
-
-	var product *Product
-	err = db.Query(`select * from gobatis.products where id = #{id}`, batis.Param("id", id)).Scan(&product).Error
-	require.NoError(t, err)
-	spew.Json(product)
-}
-
-func testInsertBatch(t *testing.T) {
-	err := db.Debug().InsertBatch("gobatis.products", 2, exampleData).Error
-	require.NoError(t, err)
-}
-
-func testExec(t *testing.T) {
-	rows, err := db.Exec(`INSERT INTO gobatis. (id, name) VALUES (2, 'tom');`).RowsAffected()
-	require.NoError(t, err)
-	t.Log(rows)
-}
-
-func testNestedTx(t *testing.T) {
-	tx1 := db.Begin()
-	require.NoError(t, tx1.Error)
-
-	tx2 := tx1.Begin()
-	require.Error(t, tx2.Error)
-}
-
 func initEnv(t *testing.T) {
 	ctx := context.Background()
+	host := os.Getenv(client.EnvOverrideHost)
+	if host == "" {
+		host = "tcp://127.0.0.1:2375"
+	}
+	t.Log(host)
 	var err error
 	cli, err = client.NewClientWithOpts(
-		client.FromEnv,
 		client.WithAPIVersionNegotiation(),
-		client.WithHost("tcp://127.0.0.1:2375"),
-		//client.WithVersion("1.43"),
+		client.WithHost(host),
 	)
 	require.NoError(t, err)
 
@@ -101,16 +48,17 @@ func initEnv(t *testing.T) {
 		for _, name := range v.Names {
 			if name == "/"+containerName {
 				containerID = v.ID
+				t.Logf("container: %s exists", name)
 				return
 			}
 		}
 	}
 
-	_, err = cli.ImagePull(ctx, "registry.cn-hongkong.aliyuncs.com/adminium/postgres:13.10", types.ImagePullOptions{})
+	_, err = cli.ImagePull(ctx, "registry.cn-hangzhou.aliyuncs.com/tashost/timescaledb:13.10", types.ImagePullOptions{})
 	require.NoError(t, err)
 
 	resp, err := cli.ContainerCreate(ctx, &container.Config{
-		Image: "registry.cn-hongkong.aliyuncs.com/adminium/postgres:13.10",
+		Image: "registry.cn-hangzhou.aliyuncs.com/tashost/timescaledb:13.10",
 		Env: []string{
 			"POSTGRES_PASSWORD=test",
 			"POSTGRES_USER=test",
@@ -126,7 +74,7 @@ func initEnv(t *testing.T) {
 		PortBindings: nat.PortMap{
 			"5432/tcp": []nat.PortBinding{
 				{
-					HostIP:   "127.0.0.1",
+					HostIP:   "0.0.0.0",
 					HostPort: "8432",
 				},
 			},
@@ -140,7 +88,7 @@ func initEnv(t *testing.T) {
 
 func initDB(t *testing.T) {
 	var err error
-	db, err = batis.Open(postgres.Open("postgresql://test:test@127.0.0.1:8432/gobatis-test-db?connect_timeout=10&sslmode=disable"))
+	db, err = batis.Open(postgres.Open("postgresql://test:test@192.168.1.7:8432/gobatis-test-db?connect_timeout=10&sslmode=disable"))
 	if err != nil {
 		return
 	}
@@ -148,8 +96,8 @@ func initDB(t *testing.T) {
 	require.NoError(t, err)
 
 	err = db.Exec(`
-		CREATE SCHEMA IF NOT EXISTS gobatis;
-		CREATE TABLE IF NOT EXISTS gobatis.products (
+		create schema if not exists gobatis;
+		create table if not exists gobatis.products (
 		    id serial PRIMARY KEY,
 		    product_name VARCHAR(255) NOT NULL,
 		    description TEXT,
@@ -159,7 +107,8 @@ func initDB(t *testing.T) {
 		    manufacture_date DATE,
 		    added_datetime TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 		);
-		TRUNCATE gobatis.products; 
+		create unique index if not exists products_product_name_uindex on gobatis.products (product_name);
+		truncate gobatis.products; 
 	`).Error
 	require.NoError(t, err)
 }
@@ -221,4 +170,154 @@ var exampleData = []Product{
 		ManufactureDate: time.Date(2023, time.January, 28, 0, 0, 0, 0, time.UTC),
 		AddedDateTime:   time.Now(),
 	},
+}
+
+func TestAPIFeatures(t *testing.T) {
+	defer func() {
+		if db != nil {
+			require.NoError(t, db.Close())
+		}
+		//require.NoError(t, cli.ContainerStop(context.Background(), containerID, container.StopOptions{}))
+		//require.NoError(t, cli.ContainerRemove(context.Background(), containerID, types.ContainerRemoveOptions{}))
+	}()
+
+	initEnv(t)
+	initDB(t)
+	testInsert(t)
+	testInsertBatch(t)
+	//testExec(t)
+	testNestedTx(t)
+}
+
+// Test common insertion scenarios, including ordinary insertion,
+// returning auto-incremented ID, handling conflict insertion,
+// and handling conflict insertion while returning row fields
+// 1. insert into ... returning ...
+// 2. insert into ... on conflict ...
+// 3. insert into ... on conflict ... returning ...
+func testInsert(t *testing.T) {
+	// perform ordinary insertion operation and
+	// return the auto-increment primary key
+	var id int64
+	affected, err := db.Debug().Insert("gobatis.products", &Product{
+		ProductName:     "Smartwatch",
+		Description:     "Advanced health and fitness tracking smartwatch",
+		Price:           decimal.NewFromFloat(299.99),
+		Weight:          0.05,
+		IsAvailable:     true,
+		ManufactureDate: time.Date(2023, time.April, 10, 0, 0, 0, 0, time.UTC),
+		AddedDateTime:   time.Now(),
+	}, batis.Returning("id")).Scan(&id).RowsAffected()
+	require.NoError(t, err)
+	require.Equal(t, int64(1), affected)
+
+	// test insertion conflict
+	affected, err = db.Debug().Affect(1).Insert("gobatis.products",
+		&Product{
+			ProductName:     "Smartwatch",
+			ManufactureDate: time.Date(2023, time.April, 12, 0, 0, 0, 0, time.UTC),
+		},
+		batis.OnConflict("product_name", `do update set manufacture_date = excluded.manufacture_date`),
+	).RowsAffected()
+	require.NoError(t, err)
+	require.Equal(t, int64(1), affected)
+
+	// test insertion conflict update and
+	// return the specified field
+	var productName string
+	err = db.Debug().Affect(1).Insert("gobatis.products",
+		&Product{
+			ProductName: "Smartwatch",
+			Price:       decimal.NewFromFloat(300.00),
+		},
+		batis.OnConflict("product_name", `do update set price = excluded.price`),
+		batis.Returning("product_name")).Scan(&productName).Error
+	require.NoError(t, err)
+	require.Equal(t, "Smartwatch", productName)
+
+	// test query operation and
+	// compare the data after changes
+	var product *Product
+	err = db.Query(`select * from gobatis.products where id = #{id}`, batis.Param("id", id)).Scan(&product).Error
+	require.NoError(t, err)
+	spew.Json(product)
+	require.True(t, product.Id != nil && *product.Id > 0)
+	require.Equal(t, "Smartwatch", product.ProductName)
+	require.Equal(t, "Advanced health and fitness tracking smartwatch", product.Description)
+	require.Equal(t, "300", product.Price.String())
+	require.Equal(t, float32(0.05), product.Weight)
+	require.Equal(t, true, product.IsAvailable)
+	//require.Equal(t, "2023-04-12", product.ManufactureDate.Format("2006-01-02"))
+	//require.Equal(t, true, product.AddedDateTime.Unix() > 0)
+}
+
+func testInsertBatch(t *testing.T) {
+	err := db.Debug().InsertBatch("gobatis.products", 2, exampleData).Error
+	require.NoError(t, err)
+}
+
+func testExec(t *testing.T) {
+	rows, err := db.Exec(`INSERT INTO gobatis. (id, name) VALUES (2, 'tom');`).RowsAffected()
+	require.NoError(t, err)
+	t.Log(rows)
+}
+
+func testNestedTx(t *testing.T) {
+	tx1 := db.Begin()
+	require.NoError(t, tx1.Error)
+
+	tx2 := tx1.Begin()
+	require.Error(t, tx2.Error)
+}
+
+func testAffect(t *testing.T) {
+
+}
+
+func testParameter(t *testing.T) {
+
+}
+
+func testScan(t *testing.T) {
+
+}
+
+func testDelete(t *testing.T) {
+
+}
+
+func testPagingQuery(t *testing.T) {
+
+}
+
+func testParallelQuery(t *testing.T) {
+
+}
+
+func testFetchQuery(t *testing.T) {
+
+}
+
+func testContext(t *testing.T) {
+
+}
+
+func testAssociateQuery(t *testing.T) {
+
+}
+
+func testLooseScan(t *testing.T) {
+
+}
+
+func testCustomizeDataType(t *testing.T) {
+
+}
+
+func testPlugin(t *testing.T) {
+
+}
+
+func testDynamicSQL(t *testing.T) {
+
 }

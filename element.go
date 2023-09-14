@@ -52,7 +52,7 @@ type onConflict struct {
 
 func (o onConflict) Raw(namer dialector.Namer, tag string) (raw *executor.Raw, err error) {
 	raw = &executor.Raw{
-		SQL:    fmt.Sprintf("on confilct(%s) %s", executor.TrimColumns(o.fields), o.sql),
+		SQL:    fmt.Sprintf("on conflict(%s) %s", executor.TrimColumns(o.fields), o.sql),
 		Params: o.params,
 	}
 	return
