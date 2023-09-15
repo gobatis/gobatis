@@ -66,7 +66,6 @@ func (d *Default) Execute(logger Logger, trace, debug bool, affect any, scan fun
 	if err != nil {
 		return
 	}
-	
 	var s *scanner
 	
 	defer func() {
@@ -206,7 +205,7 @@ func (i *InsertBatch) Execute(logger Logger, trace, debug bool, affect any, scan
 	
 	ibs := &insertBatchScanner{}
 	for _, raw := range i.raws {
-		err = i.execute(conn, raw, logger, trace, debug, nil, ibs, func(s Scanner) error {
+		err = i.execute(conn, raw, logger, trace, debug, ibs, func(s Scanner) error {
 			return scan(s)
 		})
 		if err != nil {
@@ -244,7 +243,7 @@ func (i *InsertBatch) Execute(logger Logger, trace, debug bool, affect any, scan
 	return
 }
 
-func (i *InsertBatch) execute(conn Conn, raw *Raw, logger Logger, trace, debug bool, affect any, ibs *insertBatchScanner, scan func(Scanner) error) (err error) {
+func (i *InsertBatch) execute(conn Conn, raw *Raw, logger Logger, trace, debug bool, ibs *insertBatchScanner, scan func(Scanner) error) (err error) {
 	d := NewDefault(conn, raw)
 	d.clean = false
 	err = d.Execute(logger, trace, debug, nil, nil)
@@ -256,15 +255,18 @@ func (i *InsertBatch) execute(conn Conn, raw *Raw, logger Logger, trace, debug b
 			err = AddError(err, d.rows.Close())
 		}
 	}()
-	lastInsertId, _ := d.result.LastInsertId()
-	rowsAffected, _ := d.result.RowsAffected()
-	ibs.lastInsertId = lastInsertId
-	ibs.rowsAffected += rowsAffected
+	if d.result != nil {
+		lastInsertId, _ := d.result.LastInsertId()
+		rowsAffected, _ := d.result.RowsAffected()
+		ibs.lastInsertId = lastInsertId
+		ibs.rowsAffected += rowsAffected
+	}
 	ibs.rows = d.rows
 	err = scan(ibs)
 	if err != nil {
 		return
 	}
+	
 	return
 }
 

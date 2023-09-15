@@ -88,18 +88,16 @@ type insertBatchScanner struct {
 }
 
 func (i insertBatchScanner) Scan(ptr any) error {
-	
 	rv := reflect.ValueOf(ptr)
 	if rv.Elem().Type().Kind() != reflect.Slice {
 		return fmt.Errorf("expect slice, got %s", rv.Elem().Type())
 	}
-	
 	s := &scanner{rows: i.rows}
 	err := s.Scan(ptr)
 	if err != nil {
 		return err
 	}
-	i.rowsAffected = s.rowsAffected
+	i.rowsAffected += s.rowsAffected
 	i.lastInsertId = s.lastInsertId
 	return nil
 }

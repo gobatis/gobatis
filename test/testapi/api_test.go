@@ -263,6 +263,8 @@ func testInsert(t *testing.T) {
 	//require.Equal(t, true, product.AddedDateTime.Unix() > 0)
 }
 
+// Testing batch insertion of data, including checking the number of affected rows, 
+// verifying the inserted data, returning the last insert ID, and scanning all auto-incremented IDs.
 func testInsertBatch(t *testing.T) {
 	affected, err := db.Debug().Affect(5).InsertBatch("gobatis.products", 2, exampleData).RowsAffected()
 	require.NoError(t, err)
@@ -272,13 +274,29 @@ func testInsertBatch(t *testing.T) {
 	err = db.Debug().Query(`select * from gobatis.products where stock_quantity >= 10`).Scan(&products).Error
 	require.NoError(t, err)
 	
-	productsMap := map[string]*Product{}
-	for _, v := range products {
-		productsMap[v.ProductName] = v
-	}
+	compareProducts(t, exampleData, products)
 	
-	for _, v := range exampleData {
-		vv, ok := productsMap[v.ProductName]
+	affected, err = db.Debug().Affect(5).
+		Delete("gobatis.products", batis.Where("stock_quantity >= #{ v }", batis.Param("v", 10))).RowsAffected()
+	require.NoError(t, err)
+	
+	// TODO add .Affect(5)
+	products = []*Product{}
+	affected, err = db.Debug().InsertBatch("gobatis.products", 2, exampleData,
+		batis.Returning("*")).Scan(&products).RowsAffected()
+	require.NoError(t, err)
+	//require.Equal(t, int64(5), affected)
+	
+	compareProducts(t, exampleData, products)
+}
+
+func compareProducts(t *testing.T, r, c []*Product) {
+	cMap := map[string]*Product{}
+	for _, v := range c {
+		cMap[v.ProductName] = v
+	}
+	for _, v := range r {
+		vv, ok := cMap[v.ProductName]
 		require.True(t, ok)
 		v.Id = vv.Id
 		compareProduct(t, v, vv)
