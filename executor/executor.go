@@ -266,7 +266,6 @@ func (i *InsertBatch) execute(conn Conn, raw *Raw, logger Logger, trace, debug b
 	if err != nil {
 		return
 	}
-	
 	return
 }
 

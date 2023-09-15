@@ -87,7 +87,7 @@ type insertBatchScanner struct {
 	lastInsertId int64
 }
 
-func (i insertBatchScanner) Scan(ptr any) error {
+func (i *insertBatchScanner) Scan(ptr any) error {
 	rv := reflect.ValueOf(ptr)
 	if rv.Elem().Type().Kind() != reflect.Slice {
 		return fmt.Errorf("expect slice, got %s", rv.Elem().Type())
@@ -102,10 +102,10 @@ func (i insertBatchScanner) Scan(ptr any) error {
 	return nil
 }
 
-func (i insertBatchScanner) RowsAffected() int64 {
+func (i *insertBatchScanner) RowsAffected() int64 {
 	return i.rowsAffected
 }
 
-func (i insertBatchScanner) LastInsertId() int64 {
+func (i *insertBatchScanner) LastInsertId() int64 {
 	return i.lastInsertId
 }

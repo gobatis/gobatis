@@ -259,8 +259,8 @@ func testInsert(t *testing.T) {
 	require.Equal(t, float32(0.05), product.Weight)
 	require.Equal(t, int64(5), product.StockQuantity)
 	require.Equal(t, true, product.IsAvailable)
-	//require.Equal(t, "2023-04-12", product.ManufactureDate.Format("2006-01-02"))
-	//require.Equal(t, true, product.AddedDateTime.Unix() > 0)
+	require.Equal(t, "2023-04-12", product.ManufactureDate.Format("2006-01-02"))
+	require.Equal(t, true, product.AddedDateTime.Unix() > 0)
 }
 
 // Testing batch insertion of data, including checking the number of affected rows, 
@@ -280,12 +280,11 @@ func testInsertBatch(t *testing.T) {
 		Delete("gobatis.products", batis.Where("stock_quantity >= #{ v }", batis.Param("v", 10))).RowsAffected()
 	require.NoError(t, err)
 	
-	// TODO add .Affect(5)
 	products = []*Product{}
-	affected, err = db.Debug().InsertBatch("gobatis.products", 2, exampleData,
+	affected, err = db.Debug().Affect(5).InsertBatch("gobatis.products", 2, exampleData,
 		batis.Returning("*")).Scan(&products).RowsAffected()
 	require.NoError(t, err)
-	//require.Equal(t, int64(5), affected)
+	require.Equal(t, int64(5), affected)
 	
 	compareProducts(t, exampleData, products)
 }
