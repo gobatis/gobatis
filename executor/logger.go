@@ -6,7 +6,7 @@ import (
 	"runtime"
 	"strings"
 	"time"
-
+	
 	"github.com/gozelle/color"
 )
 
@@ -15,7 +15,7 @@ type Logger interface {
 	Infof(format string, a ...any)
 	Errorf(format string, a ...any)
 	Warnf(format string, a ...any)
-	Trace(id string, tx bool, err error, st *SQLTrace)
+	Trace(pos, id string, tx bool, err error, st *SQLTrace)
 }
 
 func DefaultLogger() Logger {
@@ -31,7 +31,7 @@ func (l logger) brand() string {
 	return ""
 }
 
-func (l logger) Trace(traceId string, tx bool, err error, tr *SQLTrace) {
+func (l logger) Trace(pos, traceId string, tx bool, err error, tr *SQLTrace) {
 	if !tr.Trace && !tr.Debug && err == nil {
 		return
 	}
@@ -49,11 +49,14 @@ func (l logger) Trace(traceId string, tx bool, err error, tr *SQLTrace) {
 	if tx {
 		t = fmt.Sprintf("[%s]", color.MagentaString("tx"))
 	}
-	info.WriteString(fmt.Sprintf("%s%s %s", traceId, t, color.RedString(runFuncPos(4))))
+	if pos == "" {
+		pos = CallFuncPos(5)
+	}
+	info.WriteString(fmt.Sprintf("%s%s %s", traceId, t, color.RedString(pos)))
 	if err != nil {
 		info.WriteString(color.RedString(fmt.Sprintf(" ERROR: %s", err.Error())))
 	}
-
+	
 	if tr != nil {
 		cost := time.Since(tr.BeginAt)
 		info.WriteString(fmt.Sprintf("\n%s %s %s",
@@ -93,17 +96,16 @@ type SQLTrace struct {
 type TraceSQL struct {
 }
 
-// runFuncPos returns the file name and line number of the caller of the function calling it.
+// CallFuncPos returns the file name and line number of the caller of the function calling it.
 // skip: 0 for the current function, 1 for the caller of the current function
-func runFuncPos(skip int) string {
+func CallFuncPos(skip int) string {
 	i := skip
 	for {
 		_, file, line, ok := runtime.Caller(i)
-		if !ok || i > 10 {
+		if !ok || i > 20 {
 			break
 		}
-		if (!strings.Contains(file, "gobatis/executor/") && !strings.Contains(file, "gobatis/db.go")) ||
-			strings.HasSuffix(file, "_test.go") {
+		if !strings.Contains(file, "/gobatis/gobatis") || strings.HasSuffix(file, "_test.go") {
 			return fmt.Sprintf("%s:%d", file, line)
 		}
 		i++

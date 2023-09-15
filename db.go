@@ -173,7 +173,7 @@ func (d *DB) execute(dest any) {
 		return
 	}
 	
-	d.addError(d.executor.Execute(d.Logger, d.trace, d.debug, d.affect, func(s executor.Scanner) error {
+	d.addError(d.executor.Execute(d.Logger, "", d.trace, d.debug, d.affect, func(s executor.Scanner) error {
 		if d.executor.Query() {
 			e := s.Scan(dest)
 			if e != nil {
@@ -341,34 +341,36 @@ func (d *DB) InsertBatch(table string, batch int, data any, elems ...Element) *D
 func (d *DB) ParallelQuery(queryer ...ParallelQuery) *DB {
 	c := d.clone()
 	if len(queryer) == 0 {
-		c.Error = fmt.Errorf("no querer")
+		c.addError(fmt.Errorf("no querer"))
 		return c
 	}
 	if d.executor != nil {
-		c.Error = fmt.Errorf("db executor confilct")
+		c.addError(fmt.Errorf("db executor confilct"))
 		return c
 	}
 	
 	var executors []executor.Executor
 	for _, v := range queryer {
-		items, err := v.executors(d.Dialector.Namer(), "db")
+		item, err := v.executor(d.Dialector.Namer(), "db")
 		if err != nil {
 			c.addError(err)
 			return c
 		}
-		executors = append(executors, items...)
+		item.Conn = c.conn()
+		item.Raw.Ctx = c.context()
+		executors = append(executors, item)
 	}
 	
-	wg := sync.WaitGroup{}
 	lock := sync.Mutex{}
-	
+	wg := sync.WaitGroup{}
+	pos := executor.CallFuncPos(0)
 	for _, v := range executors {
 		wg.Add(1)
 		go func(v executor.Executor) {
 			defer func() {
 				wg.Done()
 			}()
-			err := v.Execute(c.Logger, d.trace, d.debug, nil, nil)
+			err := v.Execute(c.Logger, pos, d.trace, d.debug, nil, nil)
 			if err != nil {
 				lock.Lock()
 				c.addError(err)
@@ -381,17 +383,22 @@ func (d *DB) ParallelQuery(queryer ...ParallelQuery) *DB {
 	return c
 }
 
+func (d *DB) PagingQuery(query PagingQuery) *DB {
+	c := d.clone()
+	queries, err := query.executors(d.Dialector.Namer(), "db")
+	if err != nil {
+		c.addError(err)
+		return c
+	}
+	return c.ParallelQuery(queries...)
+}
+
 func (d *DB) LastInsertId() (int64, error) {
 	return d.lastInsertId, d.Error
 }
 
 func (d *DB) RowsAffected() (int64, error) {
 	return d.rowsAffected, d.Error
-}
-
-func (d *DB) PagingQuery(query PagingQuery) error {
-	
-	return nil
 }
 
 func (d *DB) AssociateQuery(query AssociateQuery) error {
@@ -423,8 +430,8 @@ func (d *DB) FetchQuery(query FetchQuery) error {
 	if c.traceId == "" {
 		c.traceId = fmt.Sprintf("TID%d", time.Now().UnixNano())
 	}
-	c.setExecutor(executor.NewFetchQuery(c.context(), c.conn(), raw, query.Limit))
-	return c.executor.Execute(c.Logger, c.trace, c.debug, nil, func(s executor.Scanner) error {
+	c.setExecutor(executor.NewFetchQuery(c.context(), c.conn(), raw, query.Batch))
+	return c.executor.Execute(c.Logger, "", c.trace, c.debug, nil, func(s executor.Scanner) error {
 		return query.Scan(s)
 	})
 }
@@ -437,7 +444,7 @@ func (d *DB) Begin() *DB {
 	}
 	
 	defer func() {
-		d.Logger.Trace(c.traceId, true, d.Error, &executor.SQLTrace{
+		d.Logger.Trace("", c.traceId, true, d.Error, &executor.SQLTrace{
 			Trace:        d.trace,
 			Debug:        d.debug,
 			BeginAt:      time.Now(),
@@ -470,7 +477,7 @@ func (d *DB) Commit() *DB {
 	
 	defer func() {
 		d.addError(d.tx.Close())
-		d.Logger.Trace(d.traceId, true, d.Error, &executor.SQLTrace{
+		d.Logger.Trace("", d.traceId, true, d.Error, &executor.SQLTrace{
 			Trace:        d.trace,
 			Debug:        d.debug,
 			BeginAt:      time.Now(),
@@ -491,7 +498,7 @@ func (d *DB) Rollback() *DB {
 	}
 	defer func() {
 		d.addError(d.tx.Close())
-		d.Logger.Trace(d.traceId, true, d.Error, &executor.SQLTrace{
+		d.Logger.Trace("", d.traceId, true, d.Error, &executor.SQLTrace{
 			Trace:        d.trace,
 			Debug:        d.debug,
 			BeginAt:      time.Now(),

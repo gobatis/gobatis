@@ -57,7 +57,7 @@ func main() {
 	err = db.Debug().FetchQuery(batis.FetchQuery{
 		SQL:    "select * from users",
 		Params: nil,
-		Limit:  3,
+		Batch:  3,
 		Scan: func(s batis.Scanner) error {
 			
 			var users []User

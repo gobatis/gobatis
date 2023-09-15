@@ -9,7 +9,7 @@ import (
 )
 
 type Executor interface {
-	Execute(logger Logger, trace, debug bool, affecting any, scan func(s Scanner) error) (err error)
+	Execute(logger Logger, pos string, trace, debug bool, affect any, scan func(s Scanner) error) (err error)
 	Query() bool
 }
 
@@ -41,7 +41,7 @@ func (d *Default) Query() bool {
 	return d.raw.Query
 }
 
-func (d *Default) Execute(logger Logger, trace, debug bool, affect any, scan func(Scanner) error) (err error) {
+func (d *Default) Execute(logger Logger, pos string, trace, debug bool, affect any, scan func(Scanner) error) (err error) {
 	
 	beginAt := time.Now()
 	
@@ -80,7 +80,7 @@ func (d *Default) Execute(logger Logger, trace, debug bool, affect any, scan fun
 		if s == nil {
 			s = &scanner{}
 		}
-		logger.Trace(d.conn.TraceId(), d.conn.IsTx(), err, &SQLTrace{
+		logger.Trace(pos, d.conn.TraceId(), d.conn.IsTx(), err, &SQLTrace{
 			Trace:        trace,
 			Debug:        debug,
 			BeginAt:      beginAt,
@@ -164,7 +164,7 @@ func (i *InsertBatch) Query() bool {
 	return false
 }
 
-func (i *InsertBatch) Execute(logger Logger, trace, debug bool, affect any, scan func(Scanner) error) (err error) {
+func (i *InsertBatch) Execute(logger Logger, pos string, trace, debug bool, affect any, scan func(Scanner) error) (err error) {
 	
 	conn := i.conn
 	
@@ -174,7 +174,7 @@ func (i *InsertBatch) Execute(logger Logger, trace, debug bool, affect any, scan
 			if err != nil {
 				now := time.Now()
 				err = AddError(err, tx.Rollback())
-				logger.Trace(conn.TraceId(), true, err, &SQLTrace{
+				logger.Trace(pos, conn.TraceId(), true, err, &SQLTrace{
 					Trace:        trace,
 					Debug:        debug,
 					BeginAt:      now,
@@ -193,7 +193,7 @@ func (i *InsertBatch) Execute(logger Logger, trace, debug bool, affect any, scan
 			return
 		}
 		conn = NewTx(tx, conn.TraceId())
-		logger.Trace(conn.TraceId(), true, err, &SQLTrace{
+		logger.Trace(pos, conn.TraceId(), true, err, &SQLTrace{
 			Trace:        trace,
 			Debug:        debug,
 			BeginAt:      now,
@@ -205,7 +205,7 @@ func (i *InsertBatch) Execute(logger Logger, trace, debug bool, affect any, scan
 	
 	ibs := &insertBatchScanner{}
 	for _, raw := range i.raws {
-		err = i.execute(conn, raw, logger, trace, debug, ibs, func(s Scanner) error {
+		err = i.execute(conn, raw, logger, pos, trace, debug, ibs, func(s Scanner) error {
 			return scan(s)
 		})
 		if err != nil {
@@ -231,7 +231,7 @@ func (i *InsertBatch) Execute(logger Logger, trace, debug bool, affect any, scan
 		return
 	}
 	
-	logger.Trace(conn.TraceId(), true, err, &SQLTrace{
+	logger.Trace(pos, conn.TraceId(), true, err, &SQLTrace{
 		Trace:        trace,
 		Debug:        debug,
 		BeginAt:      now,
@@ -243,10 +243,10 @@ func (i *InsertBatch) Execute(logger Logger, trace, debug bool, affect any, scan
 	return
 }
 
-func (i *InsertBatch) execute(conn Conn, raw *Raw, logger Logger, trace, debug bool, ibs *insertBatchScanner, scan func(Scanner) error) (err error) {
+func (i *InsertBatch) execute(conn Conn, raw *Raw, logger Logger, pos string, trace, debug bool, ibs *insertBatchScanner, scan func(Scanner) error) (err error) {
 	d := NewDefault(conn, raw)
 	d.clean = false
-	err = d.Execute(logger, trace, debug, nil, nil)
+	err = d.Execute(logger, pos, trace, debug, nil, nil)
 	if err != nil {
 		return
 	}
@@ -270,15 +270,20 @@ func (i *InsertBatch) execute(conn Conn, raw *Raw, logger Logger, trace, debug b
 }
 
 type ParallelQuery struct {
+	Conn Conn
+	Raw  *Raw
+	Dest any
 }
 
 func (p *ParallelQuery) Query() bool {
-	return true
+	return p.Raw.Query
 }
 
-func (p *ParallelQuery) Execute(logger Logger, trace, debug bool, affecting any, scan func(Scanner) error) (err error) {
-	
-	return
+func (p *ParallelQuery) Execute(logger Logger, pos string, trace, debug bool, affect any, _ func(Scanner) error) error {
+	d := NewDefault(p.Conn, p.Raw)
+	return d.Execute(logger, pos, trace, debug, affect, func(s Scanner) error {
+		return s.Scan(p.Dest)
+	})
 }
 
 func NewFetchQuery(ctx context.Context, conn Conn, raw *Raw, limit uint) *FetchQuery {
@@ -296,7 +301,7 @@ func (f *FetchQuery) Query() bool {
 	return f.raw.Query
 }
 
-func (f *FetchQuery) Execute(logger Logger, trace, debug bool, affect any, scan func(Scanner) error) (err error) {
+func (f *FetchQuery) Execute(logger Logger, pos string, trace, debug bool, affect any, scan func(Scanner) error) (err error) {
 	
 	conn := f.conn
 	
@@ -306,7 +311,7 @@ func (f *FetchQuery) Execute(logger Logger, trace, debug bool, affect any, scan 
 			if err != nil {
 				now := time.Now()
 				err = AddError(err, tx.Rollback())
-				logger.Trace(conn.TraceId(), true, err, &SQLTrace{
+				logger.Trace(pos, conn.TraceId(), true, err, &SQLTrace{
 					Trace:        trace,
 					Debug:        debug,
 					BeginAt:      now,
@@ -334,7 +339,7 @@ func (f *FetchQuery) Execute(logger Logger, trace, debug bool, affect any, scan 
 		SQL:    fmt.Sprintf("declare %s cursor for %s", cursor, f.raw.SQL),
 		Params: f.raw.Params,
 	})
-	err = d.Execute(logger, trace, debug, affect, nil)
+	err = d.Execute(logger, pos, trace, debug, affect, nil)
 	if err != nil {
 		return
 	}
@@ -346,12 +351,12 @@ func (f *FetchQuery) Execute(logger Logger, trace, debug bool, affect any, scan 
 			SQL:    fmt.Sprintf("close %s", cursor),
 			Params: nil,
 		})
-		err = AddError(err, d.Execute(logger, trace, debug, affect, nil))
+		err = AddError(err, d.Execute(logger, pos, trace, debug, affect, nil))
 		
 		now := time.Now()
 		err = AddError(err, tx.Commit())
 		
-		logger.Trace(conn.TraceId(), true, err, &SQLTrace{
+		logger.Trace(pos, conn.TraceId(), true, err, &SQLTrace{
 			Trace:        trace,
 			Debug:        debug,
 			BeginAt:      now,
@@ -369,7 +374,7 @@ func (f *FetchQuery) Execute(logger Logger, trace, debug bool, affect any, scan 
 			Params: nil,
 		})
 		var rowsAffected int64
-		err = d.Execute(logger, trace, debug, affect, func(s Scanner) error {
+		err = d.Execute(logger, pos, trace, debug, affect, func(s Scanner) error {
 			e := scan(s)
 			if e != nil {
 				return e
