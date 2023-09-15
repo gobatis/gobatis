@@ -4,10 +4,12 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"fmt"
+	"github.com/gobatis/gobatis/cast"
 	"reflect"
 	"regexp"
 	"strings"
 	"testing"
+	"time"
 	
 	"github.com/gobatis/gobatis/dialector"
 	"github.com/stretchr/testify/require"
@@ -315,6 +317,16 @@ func setValue(pv reflect.Value, v any) error {
 		return setNumber(pv, vv)
 	case reflect.String:
 		return setString(pv, vv)
+	}
+	
+	switch pv.Interface().(type) {
+	case time.Time:
+		r, err := cast.ToTimeE(v)
+		if err != nil {
+			return err
+		}
+		
+		pv.Set(reflect.ValueOf(r))
 	}
 	
 	return nil

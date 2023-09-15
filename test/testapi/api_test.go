@@ -2,10 +2,13 @@ package testapi
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
+	"github.com/gozelle/fastjson"
 	"os"
 	"testing"
 	"time"
-
+	
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
@@ -34,16 +37,16 @@ func initEnv(t *testing.T) {
 		client.WithHost(host),
 	)
 	require.NoError(t, err)
-
+	
 	pwd, err := os.Getwd()
 	require.NoError(t, err)
-
+	
 	const containerName = "gobatis-test-postgres-13-10"
 	containers, err := cli.ContainerList(ctx, types.ContainerListOptions{
 		All: true,
 	})
 	require.NoError(t, err)
-
+	
 	for _, v := range containers {
 		for _, name := range v.Names {
 			if name == "/"+containerName {
@@ -53,10 +56,10 @@ func initEnv(t *testing.T) {
 			}
 		}
 	}
-
+	
 	_, err = cli.ImagePull(ctx, "registry.cn-hangzhou.aliyuncs.com/tashost/timescaledb:13.10", types.ImagePullOptions{})
 	require.NoError(t, err)
-
+	
 	resp, err := cli.ContainerCreate(ctx, &container.Config{
 		Image: "registry.cn-hangzhou.aliyuncs.com/tashost/timescaledb:13.10",
 		Env: []string{
@@ -88,13 +91,13 @@ func initEnv(t *testing.T) {
 
 func initDB(t *testing.T) {
 	var err error
-	db, err = batis.Open(postgres.Open("postgresql://test:test@192.168.1.7:8432/gobatis-test-db?connect_timeout=10&sslmode=disable"))
+	db, err = batis.Open(postgres.Open("postgresql://test:test@127.0.0.1:8432/gobatis-test-db?connect_timeout=10&sslmode=disable"))
 	if err != nil {
 		return
 	}
 	err = db.Ping()
 	require.NoError(t, err)
-
+	
 	err = db.Exec(`
 		create schema if not exists gobatis;
 		create table if not exists gobatis.products (
@@ -103,9 +106,10 @@ func initDB(t *testing.T) {
 		    description TEXT,
 		    price DECIMAL NOT NULL, 
 		    weight FLOAT,
+            stock_quantity BIGINT,
 		    is_available BOOLEAN,
 		    manufacture_date DATE,
-		    added_datetime TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+		    added_datetime TIMESTAMPTZ
 		);
 		create unique index if not exists products_product_name_uindex on gobatis.products (product_name);
 		truncate gobatis.products; 
@@ -119,17 +123,19 @@ type Product struct {
 	Description     string          `db:"description"`
 	Price           decimal.Decimal `db:"price"`
 	Weight          float32         `db:"weight"`
+	StockQuantity   int64           `db:"stock_quantity"`
 	IsAvailable     bool            `db:"is_available"`
 	ManufactureDate time.Time       `db:"manufacture_date"`
 	AddedDateTime   time.Time       `db:"added_datetime"`
 }
 
-var exampleData = []Product{
+var exampleData = []*Product{
 	{
 		ProductName:     "Laptop",
 		Description:     "A high-end laptop",
 		Price:           decimal.NewFromFloat(1200.50),
 		Weight:          1.5,
+		StockQuantity:   10,
 		IsAvailable:     true,
 		ManufactureDate: time.Date(2023, time.January, 20, 0, 0, 0, 0, time.UTC),
 		AddedDateTime:   time.Now(),
@@ -139,6 +145,7 @@ var exampleData = []Product{
 		Description:     "Latest model smartphone",
 		Price:           decimal.NewFromFloat(800.00),
 		Weight:          0.2,
+		StockQuantity:   20,
 		IsAvailable:     true,
 		ManufactureDate: time.Date(2023, time.February, 10, 0, 0, 0, 0, time.UTC),
 		AddedDateTime:   time.Now(),
@@ -148,6 +155,7 @@ var exampleData = []Product{
 		Description:     "Comfortable office chair",
 		Price:           decimal.NewFromFloat(150.00),
 		Weight:          8.0,
+		StockQuantity:   15,
 		IsAvailable:     false,
 		ManufactureDate: time.Date(2022, time.December, 15, 0, 0, 0, 0, time.UTC),
 		AddedDateTime:   time.Now(),
@@ -157,6 +165,7 @@ var exampleData = []Product{
 		Description:     "Noise-cancelling over the ear headphones",
 		Price:           decimal.NewFromFloat(250.00),
 		Weight:          0.3,
+		StockQuantity:   100,
 		IsAvailable:     true,
 		ManufactureDate: time.Date(2023, time.March, 5, 0, 0, 0, 0, time.UTC),
 		AddedDateTime:   time.Now(),
@@ -166,6 +175,7 @@ var exampleData = []Product{
 		Description:     "65 inch 4K LED TV",
 		Price:           decimal.NewFromFloat(1000.00),
 		Weight:          25.0,
+		StockQuantity:   120,
 		IsAvailable:     true,
 		ManufactureDate: time.Date(2023, time.January, 28, 0, 0, 0, 0, time.UTC),
 		AddedDateTime:   time.Now(),
@@ -180,7 +190,7 @@ func TestAPIFeatures(t *testing.T) {
 		//require.NoError(t, cli.ContainerStop(context.Background(), containerID, container.StopOptions{}))
 		//require.NoError(t, cli.ContainerRemove(context.Background(), containerID, types.ContainerRemoveOptions{}))
 	}()
-
+	
 	initEnv(t)
 	initDB(t)
 	testInsert(t)
@@ -204,13 +214,14 @@ func testInsert(t *testing.T) {
 		Description:     "Advanced health and fitness tracking smartwatch",
 		Price:           decimal.NewFromFloat(299.99),
 		Weight:          0.05,
+		StockQuantity:   5,
 		IsAvailable:     true,
 		ManufactureDate: time.Date(2023, time.April, 10, 0, 0, 0, 0, time.UTC),
 		AddedDateTime:   time.Now(),
 	}, batis.Returning("id")).Scan(&id).RowsAffected()
 	require.NoError(t, err)
 	require.Equal(t, int64(1), affected)
-
+	
 	// test insertion conflict
 	affected, err = db.Debug().Affect(1).Insert("gobatis.products",
 		&Product{
@@ -221,7 +232,7 @@ func testInsert(t *testing.T) {
 	).RowsAffected()
 	require.NoError(t, err)
 	require.Equal(t, int64(1), affected)
-
+	
 	// test insertion conflict update and
 	// return the specified field
 	var productName string
@@ -234,7 +245,7 @@ func testInsert(t *testing.T) {
 		batis.Returning("product_name")).Scan(&productName).Error
 	require.NoError(t, err)
 	require.Equal(t, "Smartwatch", productName)
-
+	
 	// test query operation and
 	// compare the data after changes
 	var product *Product
@@ -246,14 +257,43 @@ func testInsert(t *testing.T) {
 	require.Equal(t, "Advanced health and fitness tracking smartwatch", product.Description)
 	require.Equal(t, "300", product.Price.String())
 	require.Equal(t, float32(0.05), product.Weight)
+	require.Equal(t, int64(5), product.StockQuantity)
 	require.Equal(t, true, product.IsAvailable)
 	//require.Equal(t, "2023-04-12", product.ManufactureDate.Format("2006-01-02"))
 	//require.Equal(t, true, product.AddedDateTime.Unix() > 0)
 }
 
 func testInsertBatch(t *testing.T) {
-	err := db.Debug().InsertBatch("gobatis.products", 2, exampleData).Error
+	affected, err := db.Debug().Affect(5).InsertBatch("gobatis.products", 2, exampleData).RowsAffected()
 	require.NoError(t, err)
+	require.Equal(t, int64(5), affected)
+	
+	var products []*Product
+	err = db.Debug().Query(`select * from gobatis.products where stock_quantity >= 10`).Scan(&products).Error
+	require.NoError(t, err)
+	
+	productsMap := map[string]*Product{}
+	for _, v := range products {
+		productsMap[v.ProductName] = v
+	}
+	
+	for _, v := range exampleData {
+		vv, ok := productsMap[v.ProductName]
+		require.True(t, ok)
+		v.Id = vv.Id
+		compareProduct(t, v, vv)
+	}
+}
+
+func compareProduct(t *testing.T, v1, v2 *Product) bool {
+	d1, err := json.Marshal(v1)
+	require.NoError(t, err)
+	d2, err := json.Marshal(v2)
+	require.NoError(t, err)
+	if err = fastjson.EqualsBytes(d1, d2); err != nil {
+		t.Fatal(fmt.Errorf("compare products v1 != v2, err: %s", err))
+	}
+	return false
 }
 
 func testExec(t *testing.T) {
@@ -265,59 +305,59 @@ func testExec(t *testing.T) {
 func testNestedTx(t *testing.T) {
 	tx1 := db.Begin()
 	require.NoError(t, tx1.Error)
-
+	
 	tx2 := tx1.Begin()
 	require.Error(t, tx2.Error)
 }
 
 func testAffect(t *testing.T) {
-
+	
 }
 
 func testParameter(t *testing.T) {
-
+	
 }
 
 func testScan(t *testing.T) {
-
+	
 }
 
 func testDelete(t *testing.T) {
-
+	
 }
 
 func testPagingQuery(t *testing.T) {
-
+	
 }
 
 func testParallelQuery(t *testing.T) {
-
+	
 }
 
 func testFetchQuery(t *testing.T) {
-
+	
 }
 
 func testContext(t *testing.T) {
-
+	
 }
 
 func testAssociateQuery(t *testing.T) {
-
+	
 }
 
 func testLooseScan(t *testing.T) {
-
+	
 }
 
 func testCustomizeDataType(t *testing.T) {
-
+	
 }
 
 func testPlugin(t *testing.T) {
-
+	
 }
 
 func testDynamicSQL(t *testing.T) {
-
+	
 }

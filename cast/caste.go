@@ -26,7 +26,7 @@ func castOverFlowError(from, to string) error {
 }
 
 // ToTimeE casts an interface to a time.Time type.
-func ToTimeE(i interface{}) (tim time.Time, err error) {
+func ToTimeE(i interface{}) (time.Time, error) {
 	i = Indirect(i)
 	
 	switch v := i.(type) {

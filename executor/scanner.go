@@ -83,7 +83,6 @@ func (s *scanner) Scan(ptr any) (err error) {
 
 type insertBatchScanner struct {
 	rows         *sql.Rows
-	result       sql.Result
 	rowsAffected int64
 	lastInsertId int64
 }
@@ -100,7 +99,8 @@ func (i insertBatchScanner) Scan(ptr any) error {
 	if err != nil {
 		return err
 	}
-	
+	i.rowsAffected = s.rowsAffected
+	i.lastInsertId = s.lastInsertId
 	return nil
 }
 

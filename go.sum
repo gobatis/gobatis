@@ -127,6 +127,8 @@ github.com/gorilla/mux v1.7.3/go.mod h1:1lud6UwP+6orDFRuTfBEV8e9/aOM/c4fVVCaMa2z
 github.com/gorilla/websocket v0.0.0-20170926233335-4201258b820c/go.mod h1:E7qHFY5m1UJ88s3WnNqhKjPHQ0heANvMoAMk2YaljkQ=
 github.com/gozelle/color v1.14.1 h1:LaL/QqtYQ2U0I8qYPh2YZ7yBMR0t8S6QKMtspt0tFlM=
 github.com/gozelle/color v1.14.1/go.mod h1:DHZWJhgd/EivRAAzewN+szF5jC4AEDN3tnHdktjVeq8=
+github.com/gozelle/fastjson v1.6.5 h1:WPTxms/7q0dMTrpShZcSFrlKVsBbKvYoiAjq/SZAZmg=
+github.com/gozelle/fastjson v1.6.5/go.mod h1:l5cq4UgbGCxPYv6KuzKWAjFiG0taminzA1oQB+VWg24=
 github.com/gozelle/prometheus v0.0.0-20230823061932-52c37cf686f8 h1:++XGWgjaId7ycqfL8QZsroYXge/htAQQKrj4MueTCP0=
 github.com/gozelle/prometheus v0.0.0-20230823061932-52c37cf686f8/go.mod h1:r2+5tvKKhck0Qw2es+dvdNEWAp/gkX9qoyA6djJSCIo=
 github.com/gozelle/spew v1.1.17 h1:vuPw/AnJQaVsNTZIjgyMTXDbIUEEn309QBFQPgG44oQ=
