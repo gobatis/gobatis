@@ -95,7 +95,7 @@ func (d *DB) clone() *DB {
 		traceId:  d.traceId,
 		affect:   d.affect,
 		executed: d.executed,
-		executor: nil,
+		executor: d.executor,
 	}
 }
 
@@ -172,7 +172,6 @@ func (d *DB) execute(dest any) {
 		d.addError(fmt.Errorf("repeat execution"))
 		return
 	}
-	
 	d.addError(d.executor.Execute(d.Logger, "", d.trace, d.debug, d.affect, func(s executor.Scanner) error {
 		if d.executor.Query() {
 			e := s.Scan(dest)
@@ -201,6 +200,7 @@ func (d *DB) conn() executor.Conn {
 func (d *DB) raw(element Element) (raw *executor.Raw, err error) {
 	raw, err = element.Raw(d.Dialector.Namer(), "db")
 	if err != nil {
+		err = fmt.Errorf("%w, %s", PrepareSQLRawErr, err)
 		return
 	}
 	raw.Ctx = d.context()
@@ -295,18 +295,18 @@ func (d *DB) InsertBatch(table string, batch int, data any, elems ...Element) *D
 	c := d.clone()
 	
 	if batch <= 0 {
-		c.addError(fmt.Errorf("expect batch > 0, got %d", batch))
+		c.addError(fmt.Errorf("%w, got %d", InvalidInsertBatchBatchErr, batch))
 		return c
 	}
 	
 	if data == nil {
-		c.addError(fmt.Errorf("data is nil"))
+		c.addError(InvalidInsertBatchDataErr)
 		return c
 	}
 	
 	chunks, err := executor.SplitStructSlice(data, batch)
 	if err != nil {
-		c.addError(err)
+		c.addError(fmt.Errorf("%w, %s", InvalidInsertBatchDataTypeErr, err))
 		return c
 	}
 	
@@ -341,7 +341,7 @@ func (d *DB) InsertBatch(table string, batch int, data any, elems ...Element) *D
 func (d *DB) ParallelQuery(queryer ...ParallelQuery) *DB {
 	c := d.clone()
 	if len(queryer) == 0 {
-		c.addError(fmt.Errorf("no querer"))
+		c.addError(NoParallelQueryerErr)
 		return c
 	}
 	if d.executor != nil {

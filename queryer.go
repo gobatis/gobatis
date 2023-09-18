@@ -19,7 +19,7 @@ type ParallelQuery struct {
 
 func (q ParallelQuery) executor(namer dialector.Namer, tag string) (*executor.ParallelQuery, error) {
 	if q.Scan == nil {
-		return nil, fmt.Errorf("expect 1 scan dest; got nil")
+		return nil, NoScanDestErr
 	}
 	var params []executor.Param
 	for k, v := range q.Params {
@@ -60,11 +60,11 @@ type PagingQuery struct {
 func (p PagingQuery) executors(namer dialector.Namer, tag string) ([]ParallelQuery, error) {
 	
 	if p.Limit <= 0 {
-		return nil, fmt.Errorf("invalid limit")
+		return nil, InvalidLimitErr
 	}
 	
 	if l := len(p.Scan); l != 2 {
-		return nil, fmt.Errorf("expect 2 scan dest; got: %d", l)
+		return nil, fmt.Errorf("%w; got: %d", InvalidPagingScanDestErr, l)
 	}
 	
 	var params []executor.Param

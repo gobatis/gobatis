@@ -3,7 +3,9 @@ package testapi
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"net"
 	"os"
 	"testing"
 	"time"
@@ -15,6 +17,7 @@ import (
 	batis "github.com/gobatis/gobatis"
 	"github.com/gobatis/gobatis/driver/postgres"
 	"github.com/gozelle/fastjson"
+	"github.com/gozelle/spew"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/require"
 )
@@ -231,6 +234,10 @@ func TestAPIFeatures(t *testing.T) {
 	testParallelQuery(t)
 	testPagingQuery(t)
 	testFetchQuery(t)
+	//testContext(t)
+	testLooseScan(t)
+	testDynamicSQL(t)
+	testDelete(t)
 	//testExec(t)
 	//testNestedTx(t)
 }
@@ -493,15 +500,30 @@ func testFetchQuery(t *testing.T) {
 }
 
 func testContext(t *testing.T) {
-
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	defer func() {
+		cancel()
+	}()
+	err := db.WithContext(ctx).Query(`select pg_sleep(3);`).Scan(nil).Error
+	require.Error(t, err)
+	t.Log(err, errors.Is(err, net.ErrWriteToConnected))
 }
 
 func testAssociateQuery(t *testing.T) {
 
 }
 
-func testLooseScan(t *testing.T) {
+type ProductPlus struct {
+	Product
+	Offline bool
+}
 
+func testLooseScan(t *testing.T) {
+	var pb *Product
+	err := db.Debug().Query(`select * from products order by id asc limit 1`).Scan(&pb).Error
+	require.NoError(t, err)
+
+	spew.Json(pb)
 }
 
 func testCustomizeDataType(t *testing.T) {
@@ -513,9 +535,24 @@ func testPlugin(t *testing.T) {
 }
 
 func testDynamicSQL(t *testing.T) {
+	var products []*Product
+	q := `
+		select * from products 
+		<where>
+		    <if test="price > 0"> price > #{price} </if>
+		    <if test="isAvailable">and is_available is true</if>
+		</where>		                            		                            
+	`
+	err := db.Debug().Query(q, batis.Param("price", 1), batis.Param("isAvailable", true)).Scan(&products).Error
+	require.NoError(t, err)
+
+	spew.Json(products)
 
 }
 
 func testDelete(t *testing.T) {
-
+	affected, err := db.Debug().Affect(1).Delete("products",
+		batis.Where("product_name = #{name}", batis.Param("name", Smartphone))).RowsAffected()
+	require.NoError(t, err)
+	require.Equal(t, int64(1), affected)
 }
