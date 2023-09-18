@@ -4,17 +4,17 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/gozelle/fastjson"
 	"os"
 	"testing"
 	"time"
-	
+
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 	batis "github.com/gobatis/gobatis"
 	"github.com/gobatis/gobatis/driver/postgres"
+	"github.com/gozelle/fastjson"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/require"
 )
@@ -22,30 +22,31 @@ import (
 var db *batis.DB
 var containerID string
 var cli *client.Client
+var host string
 
 func initEnv(t *testing.T) {
 	ctx := context.Background()
-	host := os.Getenv(client.EnvOverrideHost)
+	host = os.Getenv(client.EnvOverrideHost)
 	if host == "" {
-		host = "tcp://127.0.0.1:2375"
+		host = "127.0.0.1"
 	}
 	t.Log(host)
 	var err error
 	cli, err = client.NewClientWithOpts(
 		client.WithAPIVersionNegotiation(),
-		client.WithHost(host),
+		client.WithHost(fmt.Sprintf("tcp://%s:2375", host)),
 	)
 	require.NoError(t, err)
-	
+
 	pwd, err := os.Getwd()
 	require.NoError(t, err)
-	
+
 	const containerName = "gobatis-test-postgres-13-10"
 	containers, err := cli.ContainerList(ctx, types.ContainerListOptions{
 		All: true,
 	})
 	require.NoError(t, err)
-	
+
 	for _, v := range containers {
 		for _, name := range v.Names {
 			if name == "/"+containerName {
@@ -55,10 +56,10 @@ func initEnv(t *testing.T) {
 			}
 		}
 	}
-	
+
 	_, err = cli.ImagePull(ctx, "registry.cn-hangzhou.aliyuncs.com/tashost/timescaledb:13.10", types.ImagePullOptions{})
 	require.NoError(t, err)
-	
+
 	resp, err := cli.ContainerCreate(ctx, &container.Config{
 		Image: "registry.cn-hangzhou.aliyuncs.com/tashost/timescaledb:13.10",
 		Env: []string{
@@ -90,13 +91,13 @@ func initEnv(t *testing.T) {
 
 func initDB(t *testing.T) {
 	var err error
-	db, err = batis.Open(postgres.Open("postgresql://test:test@127.0.0.1:8432/gobatis-test-db?connect_timeout=10&sslmode=disable"))
+	db, err = batis.Open(postgres.Open(fmt.Sprintf("postgresql://test:test@%s:8432/gobatis-test-db?connect_timeout=10&sslmode=disable", host)))
 	if err != nil {
 		return
 	}
 	err = db.Ping()
 	require.NoError(t, err)
-	
+
 	err = db.Exec(`
 		create schema if not exists gobatis;
 		create table if not exists products (
@@ -221,7 +222,7 @@ func TestAPIFeatures(t *testing.T) {
 		//require.NoError(t, cli.ContainerStop(context.Background(), containerID, container.StopOptions{}))
 		//require.NoError(t, cli.ContainerRemove(context.Background(), containerID, types.ContainerRemoveOptions{}))
 	}()
-	
+
 	initEnv(t)
 	initDB(t)
 	testInsert(t)
@@ -247,7 +248,7 @@ func testInsert(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, int64(1), affected)
 	require.True(t, memProducts[Smartwatch].Id != nil && *memProducts[Smartwatch].Id > 0)
-	
+
 	// test insertion conflict
 	memProducts[Smartwatch].ManufactureDate = time.Date(2023, time.April, 12, 0, 0, 0, 0, time.UTC)
 	affected, err = db.Debug().Affect(1).Insert("products",
@@ -259,7 +260,7 @@ func testInsert(t *testing.T) {
 	).RowsAffected()
 	require.NoError(t, err)
 	require.Equal(t, int64(1), affected)
-	
+
 	// test insertion conflict update and
 	// return the specified field
 	var productName string
@@ -273,7 +274,7 @@ func testInsert(t *testing.T) {
 		batis.Returning("product_name")).Scan(&productName).Error
 	require.NoError(t, err)
 	require.Equal(t, "Smartwatch", productName)
-	
+
 	// test query operation and
 	// compare the data after changes
 	var product *Product
@@ -290,29 +291,29 @@ func testInsert(t *testing.T) {
 	require.Equal(t, true, product.AddedDateTime.Unix() > 0)
 }
 
-// Testing batch insertion of data, including checking the number of affected rows, 
+// Testing batch insertion of data, including checking the number of affected rows,
 // verifying the inserted data, returning the last insert ID, and scanning all auto-incremented IDs.
 func testInsertBatch(t *testing.T) {
 	affected, err := db.Debug().Affect(5).InsertBatch("products", 2, extractMemProducts(Smartwatch)).RowsAffected()
 	require.NoError(t, err)
 	require.Equal(t, int64(5), affected)
-	
+
 	var products []*Product
 	err = db.Debug().Query(`select * from products where stock_quantity >= 10`).Scan(&products).Error
 	require.NoError(t, err)
-	
+
 	compareProducts(t, extractMemProducts(Smartwatch), products)
-	
+
 	affected, err = db.Debug().Affect(5).
 		Delete("products", batis.Where("stock_quantity >= #{ v }", batis.Param("v", 10))).RowsAffected()
 	require.NoError(t, err)
-	
+
 	products = []*Product{}
 	affected, err = db.Debug().Affect(5).InsertBatch("products", 2, extractMemProducts(Smartwatch),
 		batis.Returning("*")).Scan(&products).RowsAffected()
 	require.NoError(t, err)
 	require.Equal(t, int64(5), affected)
-	
+
 	compareProducts(t, extractMemProducts(Smartwatch), products)
 }
 
@@ -349,16 +350,16 @@ func testExec(t *testing.T) {
 //func testNestedTx(t *testing.T) {
 //	tx1 := db.Begin()
 //	require.NoError(t, tx1.Error)
-//	
+//
 //	tx2 := tx1.Begin()
 //	require.Error(t, tx2.Error)
 //}
 
 func testUpdate(t *testing.T) {
-	
+
 	memProducts[Smartphone].Price = decimal.NewFromFloat(900)
 	memProducts[Smartphone].StockQuantity = 30
-	
+
 	affected, err := db.Debug().Affect(1).Update("products",
 		map[string]any{
 			"price":          memProducts[Smartphone].Price,
@@ -368,24 +369,24 @@ func testUpdate(t *testing.T) {
 	).RowsAffected()
 	require.NoError(t, err)
 	require.Equal(t, int64(1), affected)
-	
+
 	var product *Product
 	err = db.Query(`select * from products where product_name = #{name}`,
 		batis.Param("name", Smartphone)).Scan(&product).Error
 	require.NoError(t, err)
-	
+
 	memProducts[Smartphone].Id = product.Id
 	memProducts[Smartphone].AddedDateTime = product.AddedDateTime
-	
+
 	compareProduct(t, memProducts[Smartphone], product)
 }
 
 func testParameter(t *testing.T) {
-	
+
 }
 
 func testScan(t *testing.T) {
-	
+
 }
 
 func testParallelQuery(t *testing.T) {
@@ -410,7 +411,7 @@ func testParallelQuery(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, int64(3), count)
 	require.Equal(t, 3, len(products))
-	
+
 	for _, v := range products {
 		vv := memProducts[v.ProductName]
 		vv.Id = v.Id
@@ -420,14 +421,14 @@ func testParallelQuery(t *testing.T) {
 }
 
 func testPagingQuery(t *testing.T) {
-	
+
 	m := map[int]string{
 		0: Chair,
 		1: BluetoothHeadphones,
 		2: Smartwatch,
 		3: Smartphone,
 	}
-	
+
 	for i := 0; i <= 4; i++ {
 		var products []*Product
 		var count int64
@@ -446,7 +447,7 @@ func testPagingQuery(t *testing.T) {
 		}).Error
 		require.NoError(t, err)
 		require.Equal(t, int64(4), count)
-		
+
 		if i < 4 {
 			require.Equal(t, 1, len(products))
 			for _, v := range products {
@@ -463,7 +464,7 @@ func testPagingQuery(t *testing.T) {
 }
 
 func testFetchQuery(t *testing.T) {
-	
+
 	var products []*Product
 	err := db.Debug().FetchQuery(batis.FetchQuery{
 		SQL: "select * from products where price < #{price} order by price asc",
@@ -492,29 +493,29 @@ func testFetchQuery(t *testing.T) {
 }
 
 func testContext(t *testing.T) {
-	
+
 }
 
 func testAssociateQuery(t *testing.T) {
-	
+
 }
 
 func testLooseScan(t *testing.T) {
-	
+
 }
 
 func testCustomizeDataType(t *testing.T) {
-	
+
 }
 
 func testPlugin(t *testing.T) {
-	
+
 }
 
 func testDynamicSQL(t *testing.T) {
-	
+
 }
 
 func testDelete(t *testing.T) {
-	
+
 }
