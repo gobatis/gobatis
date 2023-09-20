@@ -15,6 +15,10 @@ type DB struct {
 	traceId string
 }
 
+func (d *DB) Close() error {
+	return d.Conn.Close()
+}
+
 func (d *DB) TraceId() string {
 	return d.traceId
 }

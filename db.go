@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"sync"
 	"time"
-	
+
 	"github.com/gobatis/gobatis/dialector"
 	"github.com/gobatis/gobatis/executor"
 	"go.uber.org/atomic"
@@ -78,6 +78,7 @@ type DB struct {
 	executed     atomic.Bool
 	rowsAffected int64
 	lastInsertId int64
+	once         sync.Once
 }
 
 func (d *DB) addError(err error) {
@@ -293,23 +294,23 @@ func (d *DB) setExecutor(e executor.Executor) {
 
 func (d *DB) InsertBatch(table string, batch int, data any, elems ...Element) *DB {
 	c := d.clone()
-	
+
 	if batch <= 0 {
 		c.addError(fmt.Errorf("%w, got %d", InvalidInsertBatchBatchErr, batch))
 		return c
 	}
-	
+
 	if data == nil {
 		c.addError(InvalidInsertBatchDataErr)
 		return c
 	}
-	
+
 	chunks, err := executor.SplitStructSlice(data, batch)
 	if err != nil {
 		c.addError(fmt.Errorf("%w, %s", InvalidInsertBatchDataTypeErr, err))
 		return c
 	}
-	
+
 	var raws []*executor.Raw
 	var q bool
 	for _, v := range chunks {
@@ -330,7 +331,7 @@ func (d *DB) InsertBatch(table string, batch int, data any, elems ...Element) *D
 		}
 		raws = append(raws, raw)
 	}
-	
+
 	c.setExecutor(executor.NewInsertBatch(c.context(), c.conn(), raws))
 	if !q {
 		c.execute(nil)
@@ -348,7 +349,7 @@ func (d *DB) ParallelQuery(queryer ...ParallelQuery) *DB {
 		c.addError(fmt.Errorf("db executor confilct"))
 		return c
 	}
-	
+
 	var executors []executor.Executor
 	for _, v := range queryer {
 		item, err := v.executor(d.Dialector.Namer(), "db")
@@ -360,7 +361,7 @@ func (d *DB) ParallelQuery(queryer ...ParallelQuery) *DB {
 		item.Raw.Ctx = c.context()
 		executors = append(executors, item)
 	}
-	
+
 	lock := sync.Mutex{}
 	wg := sync.WaitGroup{}
 	pos := executor.CallFuncPos(0)
@@ -379,7 +380,7 @@ func (d *DB) ParallelQuery(queryer ...ParallelQuery) *DB {
 		}(v)
 	}
 	wg.Wait()
-	
+
 	return c
 }
 
@@ -406,21 +407,21 @@ func (d *DB) AssociateQuery(query AssociateQuery) error {
 }
 
 func (d *DB) FetchQuery(query FetchQuery) error {
-	
+
 	c := d.clone()
-	
+
 	raw := &executor.Raw{
 		Ctx:    d.context(),
 		Query:  true,
 		SQL:    query.SQL,
 		Params: nil,
 	}
-	
+
 	if query.Scan == nil {
 		d.addError(fmt.Errorf("FetchQeruy.Scan is nil"))
 		return c.Error
 	}
-	
+
 	for k, v := range query.Params {
 		raw.Params = append(raw.Params, executor.Param{
 			Name:  k,
@@ -442,7 +443,7 @@ func (d *DB) Begin() *DB {
 		c.addError(fmt.Errorf("there is already a transaction"))
 		return c
 	}
-	
+
 	defer func() {
 		d.Logger.Trace("", c.traceId, true, d.Error, &executor.SQLTrace{
 			Trace:        d.trace,
@@ -453,19 +454,19 @@ func (d *DB) Begin() *DB {
 			RowsAffected: 0,
 		})
 	}()
-	
+
 	tx, err := c.db.Begin()
 	if err != nil {
 		c.addError(err)
 		return c
 	}
-	
+
 	if c.traceId == "" {
 		c.traceId = fmt.Sprintf("%p", d)
 	}
-	
+
 	c.tx = executor.NewTx(tx, c.traceId)
-	
+
 	return c
 }
 
@@ -474,7 +475,7 @@ func (d *DB) Commit() *DB {
 		d.addError(executor.ErrInvalidTransaction)
 		return d
 	}
-	
+
 	defer func() {
 		d.addError(d.tx.Close())
 		d.Logger.Trace("", d.traceId, true, d.Error, &executor.SQLTrace{
@@ -486,7 +487,7 @@ func (d *DB) Commit() *DB {
 			RowsAffected: 0,
 		})
 	}()
-	
+
 	d.addError(d.tx.Commit())
 	return d
 }
