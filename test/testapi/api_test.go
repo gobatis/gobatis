@@ -60,11 +60,13 @@ func initEnv(t *testing.T) {
 		}
 	}
 
-	_, err = cli.ImagePull(ctx, "registry.cn-hangzhou.aliyuncs.com/tashost/timescaledb:13.10", types.ImagePullOptions{})
+	//_, err = cli.ImagePull(ctx, "registry.cn-hangzhou.aliyuncs.com/tashost/timescaledb:13.10", types.ImagePullOptions{})
+	_, err = cli.ImagePull(ctx, "adminium/postgres:13.10", types.ImagePullOptions{})
 	require.NoError(t, err)
 
 	resp, err := cli.ContainerCreate(ctx, &container.Config{
-		Image: "registry.cn-hangzhou.aliyuncs.com/tashost/timescaledb:13.10",
+		//Image: "registry.cn-hangzhou.aliyuncs.com/tashost/timescaledb:13.10",
+		Image: "adminium/postgres:13.10",
 		Env: []string{
 			"POSTGRES_PASSWORD=test",
 			"POSTGRES_USER=test",
@@ -238,6 +240,7 @@ func TestAPIFeatures(t *testing.T) {
 	testLooseScan(t)
 	testDynamicSQL(t)
 	testDelete(t)
+	testRecoverValueWhenNoRows(t)
 	//testExec(t)
 	//testNestedTx(t)
 }
@@ -555,4 +558,11 @@ func testDelete(t *testing.T) {
 		batis.Where("product_name = #{name}", batis.Param("name", Smartphone))).RowsAffected()
 	require.NoError(t, err)
 	require.Equal(t, int64(1), affected)
+}
+
+func testRecoverValueWhenNoRows(t *testing.T) {
+	var product *Product
+	err := db.Affect(0).Query(`select * from products where id = 0`).Scan(&product).Error
+	require.NoError(t, err)
+	require.True(t, product == nil)
 }

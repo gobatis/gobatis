@@ -35,11 +35,23 @@ func (s *scanner) Scan(ptr any) (err error) {
 		return
 	}
 	var pv reflect.Value
+	var or reflect.Value
+	var ov interface{}
+	defer func() {
+		if ptr != nil && s.rowsAffected == 0 {
+			if or.Kind() == reflect.Pointer {
+				or.Set(reflect.ValueOf(ov))
+			}
+		}
+	}()
+
 	if ptr != nil {
 		pv = reflect.ValueOf(ptr)
 		if pv.Kind() != reflect.Pointer || pv.IsNil() {
 			return &InvalidUnmarshalError{pv.Type()}
 		}
+		or = pv.Elem()
+		ov = or.Interface()
 		pv = indirect(pv, false)
 	}
 	columns, err := s.rows.Columns()
@@ -74,10 +86,7 @@ func (s *scanner) Scan(ptr any) (err error) {
 			}
 		}
 	}
-	//if s.rowsAffected == 0 {
-	//	err = sql.ErrNoRows
-	//	return
-	//}
+
 	return
 }
 
