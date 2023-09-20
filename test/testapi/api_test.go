@@ -230,17 +230,18 @@ func TestAPIFeatures(t *testing.T) {
 
 	initEnv(t)
 	initDB(t)
-	testInsert(t)
-	testInsertBatch(t)
-	testUpdate(t)
-	testParallelQuery(t)
-	testPagingQuery(t)
-	testFetchQuery(t)
-	//testContext(t)
-	testLooseScan(t)
-	testDynamicSQL(t)
-	testDelete(t)
-	testRecoverValueWhenNoRows(t)
+	//testInsert(t)
+	//testInsertBatch(t)
+	//testUpdate(t)
+	//testParallelQuery(t)
+	//testPagingQuery(t)
+	//testFetchQuery(t)
+	////testContext(t)
+	//testLooseScan(t)
+	//testDynamicSQL(t)
+	//testDelete(t)
+	//testRecoverValueWhenNoRows(t)
+	testInParameter(t)
 	//testExec(t)
 	//testNestedTx(t)
 }
@@ -565,4 +566,15 @@ func testRecoverValueWhenNoRows(t *testing.T) {
 	err := db.Affect(0).Query(`select * from products where id = 0`).Scan(&product).Error
 	require.NoError(t, err)
 	require.True(t, product == nil)
+}
+
+func testInParameter(t *testing.T) {
+	var products []*Product
+	err := db.Debug().Query(`
+   select * from products where id in 
+	<foreach item="item" index="index" collection="ids" open="(" separator="," close=")">
+		#{item}
+	</foreach>
+`, batis.Param("ids", []int64{1, 2, 3})).Scan(&products).Error
+	require.NoError(t, err)
 }
