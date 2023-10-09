@@ -28,33 +28,52 @@
 lexer grammar XSQLLexer;
 
 // Default "mode": Everything OUTSIDE of a tag
-COMMENT     :   '<!--' .*? '-->' -> skip;
+COMMENT     :   '<!--' .*? '-->' ;
+//CDATA       :   '<![CDATA[' .*? ']]>' ;
+/** Scarf all DTD stuff, Entity Declarations like <!ENTITY ...>,
+ *  and Notation Declarations <!NOTATION ...>
+ */
+//DTD         :   '<!' .*? '>'            -> skip ;
 EntityRef   :   '&' Name ';' ;
+//CharRef     :   '&#' DIGIT+ ';'
+//            |   '&#x' HEXDIGIT+ ';'
+//            ;
 SEA_WS      :   (' '|'\t'|'\r'? '\n')+ ;
-OPEN        :   '<'                      -> pushMode(INSIDE) ;
-EXPR_OPEN   :   ('#{' | '${')                -> pushMode(EXPR);
-
-TEXT        :    ~[#$<&]+;
 
 
+OPEN        :   '<'                     -> pushMode(INSIDE) ;
+//XMLDeclOpen :   '<?xml' S               -> pushMode(INSIDE) ;
+//SPECIAL_OPEN:   '<?' Name               -> more, pushMode(PROC_INSTR) ;
 
-mode EXPR;
-EXPR_CLOSE : '}'   -> popMode;
-EXPR_VAL : NameStartChar (NameChar | '[' | ']' | '.')*;
-S1    :   [ \t\r\n]               -> skip ;
+VAR_OPEN : ('#{' | '${')   -> pushMode(PLACEHOLDER);
+
+//TEXT        :   ~[<&]+;        // match any 16 bit char other than < and &
+TEXT        :   ~[#$<&]+;        // match any 16 bit char other than < and &
+
+mode PLACEHOLDER;
+
+VAR_CLOSE : '}'   -> popMode;
+VAR_NAME : NameChar+;
+SPACE    :   [ \t\r\n]               -> skip ;
+
+
 
 // ----------------- Everything INSIDE of a tag ---------------------
 mode INSIDE;
 
 Name        :   NameStartChar NameChar* ;
 CLOSE       :   '>'                     -> popMode ;
+SPECIAL_CLOSE:  '?>'                    -> popMode ; // close <?xml...?>
 SLASH_CLOSE :   '/>'                    -> popMode ;
 SLASH       :   '/' ;
 EQUALS      :   '=' ;
 STRING      :   '"' ~[<"]* '"'
             |   '\'' ~[<']* '\''
             ;
-S2           :   [ \t\r\n]               -> skip ;
+S           :   [ \t\r\n]               -> skip ;
+
+//fragment
+//HEXDIGIT    :   [a-fA-F0-9] ;
 
 fragment
 DIGIT       :   [0-9] ;
@@ -76,3 +95,9 @@ NameStartChar
             |   '\uF900'..'\uFDCF'
             |   '\uFDF0'..'\uFFFD'
             ;
+
+// ----------------- Handle <? ... ?> ---------------------
+//mode PROC_INSTR;
+//
+//PI          :   '?>'                    -> popMode ; // close <?...?>
+//IGNORE      :   .                       -> more ;

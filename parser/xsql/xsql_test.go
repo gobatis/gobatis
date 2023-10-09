@@ -43,12 +43,15 @@ func TestReplaceIsolatedLessThan(t *testing.T) {
 
 func TestParser(t *testing.T) {
 	xs, err := Parse(`
-		select * from products where
-		weight > ${ weight }
-		<if test="price > 0">
-			and price < #{ price }
-		</if>
+		select * from products where $a weight = ${weight}
 	`)
+	//xs, err := Parse(`
+	//	select * from products where
+	//	${a} weight == ${weight}
+	//	<if test="price > 0">
+	//		and price != #{ price[0].Age }
+	//	</if>
+	//`)
 	require.NoError(t, err)
 	t.Log(xs.Placeholder())
 	t.Log(xs.SQL())

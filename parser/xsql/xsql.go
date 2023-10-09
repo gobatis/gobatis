@@ -2,7 +2,6 @@ package xsql
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/antlr4-go/antlr/v4"
 	"github.com/gobatis/gobatis/parser/commons"
@@ -73,7 +72,7 @@ func Parse(source string) (*XSQL, error) {
 
 	errs := &commons.CustomErrorListener{}
 
-	source = replaceIsolatedLessThanWithEntity(source)
+	//source = replaceIsolatedLessThanWithEntity(source)
 	lexer := NewXSQLLexer(antlr.NewInputStream(source))
 	lexer.RemoveErrorListeners()
 	lexer.AddErrorListener(errs)
@@ -106,7 +105,7 @@ type Visitor struct {
 }
 
 func (v Visitor) Visit(tree antlr.ParseTree) interface{} {
-
+	fmt.Println(tree.GetText())
 	for _, c := range tree.GetChildren() {
 		if v.errs.Error() != nil {
 			return nil
@@ -116,21 +115,40 @@ func (v Visitor) Visit(tree antlr.ParseTree) interface{} {
 			v.visitCharData(t)
 		case *ElementContext:
 			v.visitElement(t)
+		case *PlaceholderContext:
+			v.visitPlaceholder(t)
 		case *ReferenceContext:
+			v.visitReference(t)
 		}
 	}
-
-	spew.Json("result")
 
 	return "a"
 }
 
 func (v Visitor) visitContent(ctx *ContentContext) {
 	spew.Json(ctx.GetText())
+	for _, c := range ctx.GetChildren() {
+		switch t := c.(type) {
+
+		case *PlaceholderContext:
+			v.visitPlaceholder(t)
+		default:
+			//spew.Json(c)
+		}
+	}
+
 }
 
 func (v Visitor) visitElement(ctx *ElementContext) {
-	spew.Json(ctx.GetText())
+	fmt.Println("visitElement", ctx.GetText())
+	for _, c := range ctx.GetChildren() {
+		switch t := c.(type) {
+		case *ContentContext:
+			v.visitContent(t)
+		default:
+			//spew.Json(c)
+		}
+	}
 }
 
 func (v Visitor) visitAttribute(ctx *AttributeContext) {
@@ -139,12 +157,24 @@ func (v Visitor) visitAttribute(ctx *AttributeContext) {
 
 func (v Visitor) visitCharData(ctx *ChardataContext) {
 
-	if ctx.TEXT() != nil {
-		spew.Json(ctx.TEXT().GetText())
-		fmt.Println(strings.TrimSpace(ctx.TEXT().GetText()))
-	}
+	spew.Json(ctx.GetText())
+	//if ctx.TEXT() != nil {
+	//
+	//} else if ctx.SEA_WS() != nil {
+	//	//spew.Json(ctx.SEA_WS().GetText())
+	//} else {
+	//	spew.Json(ctx.GetText())
+	//}
+}
 
-	if ctx.SEA_WS() != nil {
-		spew.Json(ctx.SEA_WS().GetText())
-	}
+func (v Visitor) visitPlaceholder(ctx *PlaceholderContext) {
+	spew.Json(ctx.GetText())
+}
+
+func (v Visitor) visitReference(ctx *ReferenceContext) {
+	fmt.Println("reference:", ctx.GetText())
+}
+
+func isNameStartChar(c int) bool {
+	return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')
 }

@@ -29,21 +29,26 @@ parser grammar XSQLParser;
 
 options { tokenVocab=XSQLLexer; }
 
-content     :   chardata? ((placeholder | element |  reference) chardata?)* ;
+//document    :   prolog? misc* element misc*;
+
+//prolog      :   XMLDeclOpen attribute* SPECIAL_CLOSE ;
+
+//content     :   chardata? ((element | reference | CDATA | PI | COMMENT) chardata?)* ;
+content     :   chardata? ((placeholder | element | reference | COMMENT) chardata?)* ;
 
 element     :   OPEN Name attribute* CLOSE content OPEN SLASH Name CLOSE
             |   OPEN Name attribute* SLASH_CLOSE
             ;
-placeholder : EXPR_OPEN EXPR_VAL EXPR_CLOSE;
 
-reference: EntityRef;
+placeholder : VAR_OPEN VAR_NAME VAR_CLOSE;
+
+reference   :   EntityRef ;
 
 attribute   :   Name '=' STRING ; // Our STRING is AttValue in spec
 
 /** ``All text that is not markup constitutes the character data of
  *  the document.''
  */
-chardata    :  SEA_WS
-//            | { p.GetInputStream().LA(1) == '$' && p.GetInputStream().LA(2) != '{' }? DOLLAR_NOT_LBRACE
-            |  TEXT;
+chardata    : ( SEA_WS | TEXT  ) ;
 
+//misc        :   COMMENT | PI | SEA_WS ;
