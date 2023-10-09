@@ -24,55 +24,22 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-/** XML lexer derived from ANTLR v4 ref guide book example */
-lexer grammar XSQLLexer;
+/** XML parser derived from ANTLR v4 ref guide book example */
+parser grammar XSQLParser;
 
-// Default "mode": Everything OUTSIDE of a tag
-COMMENT     :   '<!--' .*? '-->' -> skip;
-EntityRef   :   '&' Name ';' ;
-SEA_WS      :   (' '|'\t'|'\r'? '\n')+ ;
-OPEN        :   '<'                      -> pushMode(INSIDE) ;
-EXPR_OPEN   :   ('#{' | '${')                -> pushMode(EXPR);
+options { tokenVocab=XSQLLexer; }
 
-TEXT        :    ~[#$<&]+;
+content     :   chardata? ((element | reference) chardata?)* ;
 
-
-
-mode EXPR;
-EXPR_CLOSE : '}'   -> popMode;
-EXPR_VAL : NameStartChar (NameChar | '[' | ']' | '.')*;
-S1    :   [ \t\r\n]               -> skip ;
-
-// ----------------- Everything INSIDE of a tag ---------------------
-mode INSIDE;
-
-Name        :   NameStartChar NameChar* ;
-CLOSE       :   '>'                     -> popMode ;
-SLASH_CLOSE :   '/>'                    -> popMode ;
-SLASH       :   '/' ;
-EQUALS      :   '=' ;
-STRING      :   '"' ~[<"]* '"'
-            |   '\'' ~[<']* '\''
-            ;
-S2           :   [ \t\r\n]               -> skip ;
-
-fragment
-DIGIT       :   [0-9] ;
-
-fragment
-NameChar    :   NameStartChar
-            |   '-' | '_' | '.' | DIGIT
-            |   '\u00B7'
-            |   '\u0300'..'\u036F'
-            |   '\u203F'..'\u2040'
+element     :   '<' Name attribute* '>' content '<' '/' Name '>'
+            |   '<' Name attribute* '/>'
             ;
 
-fragment
-NameStartChar
-            :   [:a-zA-Z]
-            |   '\u2070'..'\u218F'
-            |   '\u2C00'..'\u2FEF'
-            |   '\u3001'..'\uD7FF'
-            |   '\uF900'..'\uFDCF'
-            |   '\uFDF0'..'\uFFFD'
-            ;
+reference   :   EntityRef ;
+
+attribute   :   Name '=' STRING ; // Our STRING is AttValue in spec
+
+/** ``All text that is not markup constitutes the character data of
+ *  the document.''
+ */
+chardata    :   '<' | TEXT | SEA_WS ;

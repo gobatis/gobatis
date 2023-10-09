@@ -1,6 +1,6 @@
-// Code generated from XSQLParser.g4 by ANTLR 4.13.1. DO NOT EDIT.
+// Code generated from XSQL.g4 by ANTLR 4.13.1. DO NOT EDIT.
 
-package xsql // XSQLParser
+package xsql // XSQL
 import (
 	"fmt"
 	"strconv"
@@ -18,7 +18,7 @@ type XSQLParser struct {
 	*antlr.BaseParser
 }
 
-var XSQLParserParserStaticData struct {
+var XSQLParserStaticData struct {
 	once                   sync.Once
 	serializedATN          []int32
 	LiteralNames           []string
@@ -29,51 +29,59 @@ var XSQLParserParserStaticData struct {
 	decisionToDFA          []*antlr.DFA
 }
 
-func xsqlparserParserInit() {
-	staticData := &XSQLParserParserStaticData
+func xsqlParserInit() {
+	staticData := &XSQLParserStaticData
 	staticData.LiteralNames = []string{
-		"", "", "", "", "'<'", "", "", "", "", "'}'", "", "", "", "'>'", "'/>'",
-		"'/'", "'='",
+		"", "", "", "", "", "", "'$'", "'#'", "'{'", "'}'", "'<'", "'>'", "'/'",
+		"'='",
 	}
 	staticData.SymbolicNames = []string{
-		"", "COMMENT", "EntityRef", "SEA_WS", "OPEN", "EXPR_OPEN", "TEXT", "DOLLAR_NOT_LBRACE",
-		"HASH_NOT_LBRACE", "EXPR_CLOSE", "EXPR_VAL", "S1", "Name", "CLOSE",
-		"SLASH_CLOSE", "SLASH", "EQUALS", "STRING", "S2",
+		"", "BLOCK_COMMENT", "LINE_COMMENT", "EntityRef", "WS", "NAME", "DOLLAR",
+		"HASH", "OPEN_CURLY_BRAXE", "CLOSE_CURLY_BRAXE", "OPEN", "CLOSE", "SLASH",
+		"EQUALS", "STRING", "TEXT",
 	}
 	staticData.RuleNames = []string{
-		"content", "element", "placeholder", "reference", "attribute", "chardata",
+		"content", "tagStart", "tagEnd", "closeTag", "attribute", "expr", "reference",
+		"chardata",
 	}
 	staticData.PredictionContextCache = antlr.NewPredictionContextCache()
 	staticData.serializedATN = []int32{
-		4, 1, 18, 71, 2, 0, 7, 0, 2, 1, 7, 1, 2, 2, 7, 2, 2, 3, 7, 3, 2, 4, 7,
-		4, 2, 5, 7, 5, 1, 0, 3, 0, 14, 8, 0, 1, 0, 1, 0, 1, 0, 3, 0, 19, 8, 0,
-		1, 0, 3, 0, 22, 8, 0, 5, 0, 24, 8, 0, 10, 0, 12, 0, 27, 9, 0, 1, 1, 1,
-		1, 1, 1, 5, 1, 32, 8, 1, 10, 1, 12, 1, 35, 9, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-		1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 5, 1, 47, 8, 1, 10, 1, 12, 1, 50, 9,
-		1, 1, 1, 3, 1, 53, 8, 1, 1, 2, 1, 2, 1, 2, 1, 2, 1, 3, 1, 3, 1, 4, 1, 4,
-		1, 4, 1, 4, 1, 5, 1, 5, 1, 5, 1, 5, 3, 5, 69, 8, 5, 1, 5, 0, 0, 6, 0, 2,
-		4, 6, 8, 10, 0, 0, 74, 0, 13, 1, 0, 0, 0, 2, 52, 1, 0, 0, 0, 4, 54, 1,
-		0, 0, 0, 6, 58, 1, 0, 0, 0, 8, 60, 1, 0, 0, 0, 10, 68, 1, 0, 0, 0, 12,
-		14, 3, 10, 5, 0, 13, 12, 1, 0, 0, 0, 13, 14, 1, 0, 0, 0, 14, 25, 1, 0,
-		0, 0, 15, 19, 3, 4, 2, 0, 16, 19, 3, 2, 1, 0, 17, 19, 3, 6, 3, 0, 18, 15,
-		1, 0, 0, 0, 18, 16, 1, 0, 0, 0, 18, 17, 1, 0, 0, 0, 19, 21, 1, 0, 0, 0,
-		20, 22, 3, 10, 5, 0, 21, 20, 1, 0, 0, 0, 21, 22, 1, 0, 0, 0, 22, 24, 1,
-		0, 0, 0, 23, 18, 1, 0, 0, 0, 24, 27, 1, 0, 0, 0, 25, 23, 1, 0, 0, 0, 25,
-		26, 1, 0, 0, 0, 26, 1, 1, 0, 0, 0, 27, 25, 1, 0, 0, 0, 28, 29, 5, 4, 0,
-		0, 29, 33, 5, 12, 0, 0, 30, 32, 3, 8, 4, 0, 31, 30, 1, 0, 0, 0, 32, 35,
-		1, 0, 0, 0, 33, 31, 1, 0, 0, 0, 33, 34, 1, 0, 0, 0, 34, 36, 1, 0, 0, 0,
-		35, 33, 1, 0, 0, 0, 36, 37, 5, 13, 0, 0, 37, 38, 3, 0, 0, 0, 38, 39, 5,
-		4, 0, 0, 39, 40, 5, 15, 0, 0, 40, 41, 5, 12, 0, 0, 41, 42, 5, 13, 0, 0,
-		42, 53, 1, 0, 0, 0, 43, 44, 5, 4, 0, 0, 44, 48, 5, 12, 0, 0, 45, 47, 3,
-		8, 4, 0, 46, 45, 1, 0, 0, 0, 47, 50, 1, 0, 0, 0, 48, 46, 1, 0, 0, 0, 48,
-		49, 1, 0, 0, 0, 49, 51, 1, 0, 0, 0, 50, 48, 1, 0, 0, 0, 51, 53, 5, 14,
-		0, 0, 52, 28, 1, 0, 0, 0, 52, 43, 1, 0, 0, 0, 53, 3, 1, 0, 0, 0, 54, 55,
-		5, 5, 0, 0, 55, 56, 5, 10, 0, 0, 56, 57, 5, 9, 0, 0, 57, 5, 1, 0, 0, 0,
-		58, 59, 5, 2, 0, 0, 59, 7, 1, 0, 0, 0, 60, 61, 5, 12, 0, 0, 61, 62, 5,
-		16, 0, 0, 62, 63, 5, 17, 0, 0, 63, 9, 1, 0, 0, 0, 64, 69, 5, 3, 0, 0, 65,
-		66, 4, 5, 0, 0, 66, 69, 5, 7, 0, 0, 67, 69, 5, 6, 0, 0, 68, 64, 1, 0, 0,
-		0, 68, 65, 1, 0, 0, 0, 68, 67, 1, 0, 0, 0, 69, 11, 1, 0, 0, 0, 8, 13, 18,
-		21, 25, 33, 48, 52, 68,
+		4, 1, 15, 88, 2, 0, 7, 0, 2, 1, 7, 1, 2, 2, 7, 2, 2, 3, 7, 3, 2, 4, 7,
+		4, 2, 5, 7, 5, 2, 6, 7, 6, 2, 7, 7, 7, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1,
+		0, 5, 0, 23, 8, 0, 10, 0, 12, 0, 26, 9, 0, 1, 1, 1, 1, 1, 1, 5, 1, 31,
+		8, 1, 10, 1, 12, 1, 34, 9, 1, 1, 1, 5, 1, 37, 8, 1, 10, 1, 12, 1, 40, 9,
+		1, 1, 1, 1, 1, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 3, 1, 3, 1, 3, 5, 3, 52,
+		8, 3, 10, 3, 12, 3, 55, 9, 3, 1, 3, 5, 3, 58, 8, 3, 10, 3, 12, 3, 61, 9,
+		3, 1, 3, 1, 3, 1, 3, 1, 4, 1, 4, 1, 4, 1, 4, 5, 4, 70, 8, 4, 10, 4, 12,
+		4, 73, 9, 4, 1, 5, 1, 5, 1, 5, 1, 5, 3, 5, 79, 8, 5, 1, 5, 1, 5, 1, 5,
+		1, 6, 1, 6, 1, 7, 1, 7, 1, 7, 0, 0, 8, 0, 2, 4, 6, 8, 10, 12, 14, 0, 1,
+		1, 0, 4, 15, 91, 0, 24, 1, 0, 0, 0, 2, 27, 1, 0, 0, 0, 4, 43, 1, 0, 0,
+		0, 6, 48, 1, 0, 0, 0, 8, 65, 1, 0, 0, 0, 10, 78, 1, 0, 0, 0, 12, 83, 1,
+		0, 0, 0, 14, 85, 1, 0, 0, 0, 16, 23, 3, 2, 1, 0, 17, 23, 3, 4, 2, 0, 18,
+		23, 3, 6, 3, 0, 19, 23, 3, 10, 5, 0, 20, 23, 3, 12, 6, 0, 21, 23, 3, 14,
+		7, 0, 22, 16, 1, 0, 0, 0, 22, 17, 1, 0, 0, 0, 22, 18, 1, 0, 0, 0, 22, 19,
+		1, 0, 0, 0, 22, 20, 1, 0, 0, 0, 22, 21, 1, 0, 0, 0, 23, 26, 1, 0, 0, 0,
+		24, 22, 1, 0, 0, 0, 24, 25, 1, 0, 0, 0, 25, 1, 1, 0, 0, 0, 26, 24, 1, 0,
+		0, 0, 27, 28, 5, 10, 0, 0, 28, 32, 5, 5, 0, 0, 29, 31, 5, 4, 0, 0, 30,
+		29, 1, 0, 0, 0, 31, 34, 1, 0, 0, 0, 32, 30, 1, 0, 0, 0, 32, 33, 1, 0, 0,
+		0, 33, 38, 1, 0, 0, 0, 34, 32, 1, 0, 0, 0, 35, 37, 3, 8, 4, 0, 36, 35,
+		1, 0, 0, 0, 37, 40, 1, 0, 0, 0, 38, 36, 1, 0, 0, 0, 38, 39, 1, 0, 0, 0,
+		39, 41, 1, 0, 0, 0, 40, 38, 1, 0, 0, 0, 41, 42, 5, 11, 0, 0, 42, 3, 1,
+		0, 0, 0, 43, 44, 5, 10, 0, 0, 44, 45, 5, 12, 0, 0, 45, 46, 5, 5, 0, 0,
+		46, 47, 5, 11, 0, 0, 47, 5, 1, 0, 0, 0, 48, 49, 5, 10, 0, 0, 49, 53, 5,
+		5, 0, 0, 50, 52, 5, 4, 0, 0, 51, 50, 1, 0, 0, 0, 52, 55, 1, 0, 0, 0, 53,
+		51, 1, 0, 0, 0, 53, 54, 1, 0, 0, 0, 54, 59, 1, 0, 0, 0, 55, 53, 1, 0, 0,
+		0, 56, 58, 3, 8, 4, 0, 57, 56, 1, 0, 0, 0, 58, 61, 1, 0, 0, 0, 59, 57,
+		1, 0, 0, 0, 59, 60, 1, 0, 0, 0, 60, 62, 1, 0, 0, 0, 61, 59, 1, 0, 0, 0,
+		62, 63, 5, 12, 0, 0, 63, 64, 5, 11, 0, 0, 64, 7, 1, 0, 0, 0, 65, 66, 5,
+		5, 0, 0, 66, 67, 5, 13, 0, 0, 67, 71, 5, 14, 0, 0, 68, 70, 5, 4, 0, 0,
+		69, 68, 1, 0, 0, 0, 70, 73, 1, 0, 0, 0, 71, 69, 1, 0, 0, 0, 71, 72, 1,
+		0, 0, 0, 72, 9, 1, 0, 0, 0, 73, 71, 1, 0, 0, 0, 74, 75, 5, 6, 0, 0, 75,
+		79, 5, 8, 0, 0, 76, 77, 5, 7, 0, 0, 77, 79, 5, 8, 0, 0, 78, 74, 1, 0, 0,
+		0, 78, 76, 1, 0, 0, 0, 79, 80, 1, 0, 0, 0, 80, 81, 3, 14, 7, 0, 81, 82,
+		5, 9, 0, 0, 82, 11, 1, 0, 0, 0, 83, 84, 5, 3, 0, 0, 84, 13, 1, 0, 0, 0,
+		85, 86, 7, 0, 0, 0, 86, 15, 1, 0, 0, 0, 8, 22, 24, 32, 38, 53, 59, 71,
+		78,
 	}
 	deserializer := antlr.NewATNDeserializer(nil)
 	staticData.atn = deserializer.Deserialize(staticData.serializedATN)
@@ -90,8 +98,8 @@ func xsqlparserParserInit() {
 // NewXSQLParser(). You can call this function if you wish to initialize the static state ahead
 // of time.
 func XSQLParserInit() {
-	staticData := &XSQLParserParserStaticData
-	staticData.once.Do(xsqlparserParserInit)
+	staticData := &XSQLParserStaticData
+	staticData.once.Do(xsqlParserInit)
 }
 
 // NewXSQLParser produces a new parser instance for the optional input antlr.TokenStream.
@@ -99,12 +107,12 @@ func NewXSQLParser(input antlr.TokenStream) *XSQLParser {
 	XSQLParserInit()
 	this := new(XSQLParser)
 	this.BaseParser = antlr.NewBaseParser(input)
-	staticData := &XSQLParserParserStaticData
+	staticData := &XSQLParserStaticData
 	this.Interpreter = antlr.NewParserATNSimulator(this, staticData.atn, staticData.decisionToDFA, staticData.PredictionContextCache)
 	this.RuleNames = staticData.RuleNames
 	this.LiteralNames = staticData.LiteralNames
 	this.SymbolicNames = staticData.SymbolicNames
-	this.GrammarFileName = "XSQLParser.g4"
+	this.GrammarFileName = "XSQL.g4"
 
 	return this
 }
@@ -112,34 +120,33 @@ func NewXSQLParser(input antlr.TokenStream) *XSQLParser {
 // XSQLParser tokens.
 const (
 	XSQLParserEOF               = antlr.TokenEOF
-	XSQLParserCOMMENT           = 1
-	XSQLParserEntityRef         = 2
-	XSQLParserSEA_WS            = 3
-	XSQLParserOPEN              = 4
-	XSQLParserEXPR_OPEN         = 5
-	XSQLParserTEXT              = 6
-	XSQLParserDOLLAR_NOT_LBRACE = 7
-	XSQLParserHASH_NOT_LBRACE   = 8
-	XSQLParserEXPR_CLOSE        = 9
-	XSQLParserEXPR_VAL          = 10
-	XSQLParserS1                = 11
-	XSQLParserName              = 12
-	XSQLParserCLOSE             = 13
-	XSQLParserSLASH_CLOSE       = 14
-	XSQLParserSLASH             = 15
-	XSQLParserEQUALS            = 16
-	XSQLParserSTRING            = 17
-	XSQLParserS2                = 18
+	XSQLParserBLOCK_COMMENT     = 1
+	XSQLParserLINE_COMMENT      = 2
+	XSQLParserEntityRef         = 3
+	XSQLParserWS                = 4
+	XSQLParserNAME              = 5
+	XSQLParserDOLLAR            = 6
+	XSQLParserHASH              = 7
+	XSQLParserOPEN_CURLY_BRAXE  = 8
+	XSQLParserCLOSE_CURLY_BRAXE = 9
+	XSQLParserOPEN              = 10
+	XSQLParserCLOSE             = 11
+	XSQLParserSLASH             = 12
+	XSQLParserEQUALS            = 13
+	XSQLParserSTRING            = 14
+	XSQLParserTEXT              = 15
 )
 
 // XSQLParser rules.
 const (
-	XSQLParserRULE_content     = 0
-	XSQLParserRULE_element     = 1
-	XSQLParserRULE_placeholder = 2
-	XSQLParserRULE_reference   = 3
-	XSQLParserRULE_attribute   = 4
-	XSQLParserRULE_chardata    = 5
+	XSQLParserRULE_content   = 0
+	XSQLParserRULE_tagStart  = 1
+	XSQLParserRULE_tagEnd    = 2
+	XSQLParserRULE_closeTag  = 3
+	XSQLParserRULE_attribute = 4
+	XSQLParserRULE_expr      = 5
+	XSQLParserRULE_reference = 6
+	XSQLParserRULE_chardata  = 7
 )
 
 // IContentContext is an interface to support dynamic dispatch.
@@ -150,14 +157,18 @@ type IContentContext interface {
 	GetParser() antlr.Parser
 
 	// Getter signatures
-	AllChardata() []IChardataContext
-	Chardata(i int) IChardataContext
-	AllPlaceholder() []IPlaceholderContext
-	Placeholder(i int) IPlaceholderContext
-	AllElement() []IElementContext
-	Element(i int) IElementContext
+	AllTagStart() []ITagStartContext
+	TagStart(i int) ITagStartContext
+	AllTagEnd() []ITagEndContext
+	TagEnd(i int) ITagEndContext
+	AllCloseTag() []ICloseTagContext
+	CloseTag(i int) ICloseTagContext
+	AllExpr() []IExprContext
+	Expr(i int) IExprContext
 	AllReference() []IReferenceContext
 	Reference(i int) IReferenceContext
+	AllChardata() []IChardataContext
+	Chardata(i int) IChardataContext
 
 	// IsContentContext differentiates from other interfaces.
 	IsContentContext()
@@ -195,20 +206,20 @@ func NewContentContext(parser antlr.Parser, parent antlr.ParserRuleContext, invo
 
 func (s *ContentContext) GetParser() antlr.Parser { return s.parser }
 
-func (s *ContentContext) AllChardata() []IChardataContext {
+func (s *ContentContext) AllTagStart() []ITagStartContext {
 	children := s.GetChildren()
 	len := 0
 	for _, ctx := range children {
-		if _, ok := ctx.(IChardataContext); ok {
+		if _, ok := ctx.(ITagStartContext); ok {
 			len++
 		}
 	}
 
-	tst := make([]IChardataContext, len)
+	tst := make([]ITagStartContext, len)
 	i := 0
 	for _, ctx := range children {
-		if t, ok := ctx.(IChardataContext); ok {
-			tst[i] = t.(IChardataContext)
+		if t, ok := ctx.(ITagStartContext); ok {
+			tst[i] = t.(ITagStartContext)
 			i++
 		}
 	}
@@ -216,11 +227,11 @@ func (s *ContentContext) AllChardata() []IChardataContext {
 	return tst
 }
 
-func (s *ContentContext) Chardata(i int) IChardataContext {
+func (s *ContentContext) TagStart(i int) ITagStartContext {
 	var t antlr.RuleContext
 	j := 0
 	for _, ctx := range s.GetChildren() {
-		if _, ok := ctx.(IChardataContext); ok {
+		if _, ok := ctx.(ITagStartContext); ok {
 			if j == i {
 				t = ctx.(antlr.RuleContext)
 				break
@@ -233,23 +244,23 @@ func (s *ContentContext) Chardata(i int) IChardataContext {
 		return nil
 	}
 
-	return t.(IChardataContext)
+	return t.(ITagStartContext)
 }
 
-func (s *ContentContext) AllPlaceholder() []IPlaceholderContext {
+func (s *ContentContext) AllTagEnd() []ITagEndContext {
 	children := s.GetChildren()
 	len := 0
 	for _, ctx := range children {
-		if _, ok := ctx.(IPlaceholderContext); ok {
+		if _, ok := ctx.(ITagEndContext); ok {
 			len++
 		}
 	}
 
-	tst := make([]IPlaceholderContext, len)
+	tst := make([]ITagEndContext, len)
 	i := 0
 	for _, ctx := range children {
-		if t, ok := ctx.(IPlaceholderContext); ok {
-			tst[i] = t.(IPlaceholderContext)
+		if t, ok := ctx.(ITagEndContext); ok {
+			tst[i] = t.(ITagEndContext)
 			i++
 		}
 	}
@@ -257,11 +268,11 @@ func (s *ContentContext) AllPlaceholder() []IPlaceholderContext {
 	return tst
 }
 
-func (s *ContentContext) Placeholder(i int) IPlaceholderContext {
+func (s *ContentContext) TagEnd(i int) ITagEndContext {
 	var t antlr.RuleContext
 	j := 0
 	for _, ctx := range s.GetChildren() {
-		if _, ok := ctx.(IPlaceholderContext); ok {
+		if _, ok := ctx.(ITagEndContext); ok {
 			if j == i {
 				t = ctx.(antlr.RuleContext)
 				break
@@ -274,23 +285,23 @@ func (s *ContentContext) Placeholder(i int) IPlaceholderContext {
 		return nil
 	}
 
-	return t.(IPlaceholderContext)
+	return t.(ITagEndContext)
 }
 
-func (s *ContentContext) AllElement() []IElementContext {
+func (s *ContentContext) AllCloseTag() []ICloseTagContext {
 	children := s.GetChildren()
 	len := 0
 	for _, ctx := range children {
-		if _, ok := ctx.(IElementContext); ok {
+		if _, ok := ctx.(ICloseTagContext); ok {
 			len++
 		}
 	}
 
-	tst := make([]IElementContext, len)
+	tst := make([]ICloseTagContext, len)
 	i := 0
 	for _, ctx := range children {
-		if t, ok := ctx.(IElementContext); ok {
-			tst[i] = t.(IElementContext)
+		if t, ok := ctx.(ICloseTagContext); ok {
+			tst[i] = t.(ICloseTagContext)
 			i++
 		}
 	}
@@ -298,11 +309,11 @@ func (s *ContentContext) AllElement() []IElementContext {
 	return tst
 }
 
-func (s *ContentContext) Element(i int) IElementContext {
+func (s *ContentContext) CloseTag(i int) ICloseTagContext {
 	var t antlr.RuleContext
 	j := 0
 	for _, ctx := range s.GetChildren() {
-		if _, ok := ctx.(IElementContext); ok {
+		if _, ok := ctx.(ICloseTagContext); ok {
 			if j == i {
 				t = ctx.(antlr.RuleContext)
 				break
@@ -315,7 +326,48 @@ func (s *ContentContext) Element(i int) IElementContext {
 		return nil
 	}
 
-	return t.(IElementContext)
+	return t.(ICloseTagContext)
+}
+
+func (s *ContentContext) AllExpr() []IExprContext {
+	children := s.GetChildren()
+	len := 0
+	for _, ctx := range children {
+		if _, ok := ctx.(IExprContext); ok {
+			len++
+		}
+	}
+
+	tst := make([]IExprContext, len)
+	i := 0
+	for _, ctx := range children {
+		if t, ok := ctx.(IExprContext); ok {
+			tst[i] = t.(IExprContext)
+			i++
+		}
+	}
+
+	return tst
+}
+
+func (s *ContentContext) Expr(i int) IExprContext {
+	var t antlr.RuleContext
+	j := 0
+	for _, ctx := range s.GetChildren() {
+		if _, ok := ctx.(IExprContext); ok {
+			if j == i {
+				t = ctx.(antlr.RuleContext)
+				break
+			}
+			j++
+		}
+	}
+
+	if t == nil {
+		return nil
+	}
+
+	return t.(IExprContext)
 }
 
 func (s *ContentContext) AllReference() []IReferenceContext {
@@ -359,6 +411,47 @@ func (s *ContentContext) Reference(i int) IReferenceContext {
 	return t.(IReferenceContext)
 }
 
+func (s *ContentContext) AllChardata() []IChardataContext {
+	children := s.GetChildren()
+	len := 0
+	for _, ctx := range children {
+		if _, ok := ctx.(IChardataContext); ok {
+			len++
+		}
+	}
+
+	tst := make([]IChardataContext, len)
+	i := 0
+	for _, ctx := range children {
+		if t, ok := ctx.(IChardataContext); ok {
+			tst[i] = t.(IChardataContext)
+			i++
+		}
+	}
+
+	return tst
+}
+
+func (s *ContentContext) Chardata(i int) IChardataContext {
+	var t antlr.RuleContext
+	j := 0
+	for _, ctx := range s.GetChildren() {
+		if _, ok := ctx.(IChardataContext); ok {
+			if j == i {
+				t = ctx.(antlr.RuleContext)
+				break
+			}
+			j++
+		}
+	}
+
+	if t == nil {
+		return nil
+	}
+
+	return t.(IChardataContext)
+}
+
 func (s *ContentContext) GetRuleContext() antlr.RuleContext {
 	return s
 }
@@ -370,83 +463,70 @@ func (s *ContentContext) ToStringTree(ruleNames []string, recog antlr.Recognizer
 func (p *XSQLParser) Content() (localctx IContentContext) {
 	localctx = NewContentContext(p, p.GetParserRuleContext(), p.GetState())
 	p.EnterRule(localctx, 0, XSQLParserRULE_content)
-	var _alt int
+	var _la int
 
 	p.EnterOuterAlt(localctx, 1)
-	p.SetState(13)
-	p.GetErrorHandler().Sync(p)
-
-	if p.GetInterpreter().AdaptivePredict(p.BaseParser, p.GetTokenStream(), 0, p.GetParserRuleContext()) == 1 {
-		{
-			p.SetState(12)
-			p.Chardata()
-		}
-
-	} else if p.HasError() { // JIM
-		goto errorExit
-	}
-	p.SetState(25)
+	p.SetState(24)
 	p.GetErrorHandler().Sync(p)
 	if p.HasError() {
 		goto errorExit
 	}
-	_alt = p.GetInterpreter().AdaptivePredict(p.BaseParser, p.GetTokenStream(), 3, p.GetParserRuleContext())
-	if p.HasError() {
-		goto errorExit
-	}
-	for _alt != 2 && _alt != antlr.ATNInvalidAltNumber {
-		if _alt == 1 {
-			p.SetState(18)
-			p.GetErrorHandler().Sync(p)
-			if p.HasError() {
-				goto errorExit
-			}
+	_la = p.GetTokenStream().LA(1)
 
-			switch p.GetInterpreter().AdaptivePredict(p.BaseParser, p.GetTokenStream(), 1, p.GetParserRuleContext()) {
-			case 1:
-				{
-					p.SetState(15)
-					p.Placeholder()
-				}
-
-			case 2:
-				{
-					p.SetState(16)
-					p.Element()
-				}
-
-			case 3:
-				{
-					p.SetState(17)
-					p.Reference()
-				}
-
-			case antlr.ATNInvalidAltNumber:
-				goto errorExit
-			}
-			p.SetState(21)
-			p.GetErrorHandler().Sync(p)
-
-			if p.GetInterpreter().AdaptivePredict(p.BaseParser, p.GetTokenStream(), 2, p.GetParserRuleContext()) == 1 {
-				{
-					p.SetState(20)
-					p.Chardata()
-				}
-
-			} else if p.HasError() { // JIM
-				goto errorExit
-			}
-
-		}
-		p.SetState(27)
+	for (int64(_la) & ^0x3f) == 0 && ((int64(1)<<_la)&65528) != 0 {
+		p.SetState(22)
 		p.GetErrorHandler().Sync(p)
 		if p.HasError() {
 			goto errorExit
 		}
-		_alt = p.GetInterpreter().AdaptivePredict(p.BaseParser, p.GetTokenStream(), 3, p.GetParserRuleContext())
+
+		switch p.GetInterpreter().AdaptivePredict(p.BaseParser, p.GetTokenStream(), 0, p.GetParserRuleContext()) {
+		case 1:
+			{
+				p.SetState(16)
+				p.TagStart()
+			}
+
+		case 2:
+			{
+				p.SetState(17)
+				p.TagEnd()
+			}
+
+		case 3:
+			{
+				p.SetState(18)
+				p.CloseTag()
+			}
+
+		case 4:
+			{
+				p.SetState(19)
+				p.Expr()
+			}
+
+		case 5:
+			{
+				p.SetState(20)
+				p.Reference()
+			}
+
+		case 6:
+			{
+				p.SetState(21)
+				p.Chardata()
+			}
+
+		case antlr.ATNInvalidAltNumber:
+			goto errorExit
+		}
+
+		p.SetState(26)
+		p.GetErrorHandler().Sync(p)
 		if p.HasError() {
 			goto errorExit
 		}
+		_la = p.GetTokenStream().LA(1)
 	}
 
 errorExit:
@@ -462,107 +542,79 @@ errorExit:
 	goto errorExit // Trick to prevent compiler error if the label is not used
 }
 
-// IElementContext is an interface to support dynamic dispatch.
-type IElementContext interface {
+// ITagStartContext is an interface to support dynamic dispatch.
+type ITagStartContext interface {
 	antlr.ParserRuleContext
 
 	// GetParser returns the parser.
 	GetParser() antlr.Parser
 
 	// Getter signatures
-	AllOPEN() []antlr.TerminalNode
-	OPEN(i int) antlr.TerminalNode
-	AllName() []antlr.TerminalNode
-	Name(i int) antlr.TerminalNode
-	AllCLOSE() []antlr.TerminalNode
-	CLOSE(i int) antlr.TerminalNode
-	Content() IContentContext
-	SLASH() antlr.TerminalNode
+	OPEN() antlr.TerminalNode
+	NAME() antlr.TerminalNode
+	CLOSE() antlr.TerminalNode
+	AllWS() []antlr.TerminalNode
+	WS(i int) antlr.TerminalNode
 	AllAttribute() []IAttributeContext
 	Attribute(i int) IAttributeContext
-	SLASH_CLOSE() antlr.TerminalNode
 
-	// IsElementContext differentiates from other interfaces.
-	IsElementContext()
+	// IsTagStartContext differentiates from other interfaces.
+	IsTagStartContext()
 }
 
-type ElementContext struct {
+type TagStartContext struct {
 	antlr.BaseParserRuleContext
 	parser antlr.Parser
 }
 
-func NewEmptyElementContext() *ElementContext {
-	var p = new(ElementContext)
+func NewEmptyTagStartContext() *TagStartContext {
+	var p = new(TagStartContext)
 	antlr.InitBaseParserRuleContext(&p.BaseParserRuleContext, nil, -1)
-	p.RuleIndex = XSQLParserRULE_element
+	p.RuleIndex = XSQLParserRULE_tagStart
 	return p
 }
 
-func InitEmptyElementContext(p *ElementContext) {
+func InitEmptyTagStartContext(p *TagStartContext) {
 	antlr.InitBaseParserRuleContext(&p.BaseParserRuleContext, nil, -1)
-	p.RuleIndex = XSQLParserRULE_element
+	p.RuleIndex = XSQLParserRULE_tagStart
 }
 
-func (*ElementContext) IsElementContext() {}
+func (*TagStartContext) IsTagStartContext() {}
 
-func NewElementContext(parser antlr.Parser, parent antlr.ParserRuleContext, invokingState int) *ElementContext {
-	var p = new(ElementContext)
+func NewTagStartContext(parser antlr.Parser, parent antlr.ParserRuleContext, invokingState int) *TagStartContext {
+	var p = new(TagStartContext)
 
 	antlr.InitBaseParserRuleContext(&p.BaseParserRuleContext, parent, invokingState)
 
 	p.parser = parser
-	p.RuleIndex = XSQLParserRULE_element
+	p.RuleIndex = XSQLParserRULE_tagStart
 
 	return p
 }
 
-func (s *ElementContext) GetParser() antlr.Parser { return s.parser }
+func (s *TagStartContext) GetParser() antlr.Parser { return s.parser }
 
-func (s *ElementContext) AllOPEN() []antlr.TerminalNode {
-	return s.GetTokens(XSQLParserOPEN)
+func (s *TagStartContext) OPEN() antlr.TerminalNode {
+	return s.GetToken(XSQLParserOPEN, 0)
 }
 
-func (s *ElementContext) OPEN(i int) antlr.TerminalNode {
-	return s.GetToken(XSQLParserOPEN, i)
+func (s *TagStartContext) NAME() antlr.TerminalNode {
+	return s.GetToken(XSQLParserNAME, 0)
 }
 
-func (s *ElementContext) AllName() []antlr.TerminalNode {
-	return s.GetTokens(XSQLParserName)
+func (s *TagStartContext) CLOSE() antlr.TerminalNode {
+	return s.GetToken(XSQLParserCLOSE, 0)
 }
 
-func (s *ElementContext) Name(i int) antlr.TerminalNode {
-	return s.GetToken(XSQLParserName, i)
+func (s *TagStartContext) AllWS() []antlr.TerminalNode {
+	return s.GetTokens(XSQLParserWS)
 }
 
-func (s *ElementContext) AllCLOSE() []antlr.TerminalNode {
-	return s.GetTokens(XSQLParserCLOSE)
+func (s *TagStartContext) WS(i int) antlr.TerminalNode {
+	return s.GetToken(XSQLParserWS, i)
 }
 
-func (s *ElementContext) CLOSE(i int) antlr.TerminalNode {
-	return s.GetToken(XSQLParserCLOSE, i)
-}
-
-func (s *ElementContext) Content() IContentContext {
-	var t antlr.RuleContext
-	for _, ctx := range s.GetChildren() {
-		if _, ok := ctx.(IContentContext); ok {
-			t = ctx.(antlr.RuleContext)
-			break
-		}
-	}
-
-	if t == nil {
-		return nil
-	}
-
-	return t.(IContentContext)
-}
-
-func (s *ElementContext) SLASH() antlr.TerminalNode {
-	return s.GetToken(XSQLParserSLASH, 0)
-}
-
-func (s *ElementContext) AllAttribute() []IAttributeContext {
+func (s *TagStartContext) AllAttribute() []IAttributeContext {
 	children := s.GetChildren()
 	len := 0
 	for _, ctx := range children {
@@ -583,7 +635,7 @@ func (s *ElementContext) AllAttribute() []IAttributeContext {
 	return tst
 }
 
-func (s *ElementContext) Attribute(i int) IAttributeContext {
+func (s *TagStartContext) Attribute(i int) IAttributeContext {
 	var t antlr.RuleContext
 	j := 0
 	for _, ctx := range s.GetChildren() {
@@ -603,176 +655,87 @@ func (s *ElementContext) Attribute(i int) IAttributeContext {
 	return t.(IAttributeContext)
 }
 
-func (s *ElementContext) SLASH_CLOSE() antlr.TerminalNode {
-	return s.GetToken(XSQLParserSLASH_CLOSE, 0)
-}
-
-func (s *ElementContext) GetRuleContext() antlr.RuleContext {
+func (s *TagStartContext) GetRuleContext() antlr.RuleContext {
 	return s
 }
 
-func (s *ElementContext) ToStringTree(ruleNames []string, recog antlr.Recognizer) string {
+func (s *TagStartContext) ToStringTree(ruleNames []string, recog antlr.Recognizer) string {
 	return antlr.TreesStringTree(s, ruleNames, recog)
 }
 
-func (p *XSQLParser) Element() (localctx IElementContext) {
-	localctx = NewElementContext(p, p.GetParserRuleContext(), p.GetState())
-	p.EnterRule(localctx, 2, XSQLParserRULE_element)
-	var _alt int
+func (p *XSQLParser) TagStart() (localctx ITagStartContext) {
+	localctx = NewTagStartContext(p, p.GetParserRuleContext(), p.GetState())
+	p.EnterRule(localctx, 2, XSQLParserRULE_tagStart)
+	var _la int
 
-	p.SetState(52)
+	p.EnterOuterAlt(localctx, 1)
+	{
+		p.SetState(27)
+		p.Match(XSQLParserOPEN)
+		if p.HasError() {
+			// Recognition error - abort rule
+			goto errorExit
+		}
+	}
+	{
+		p.SetState(28)
+		p.Match(XSQLParserNAME)
+		if p.HasError() {
+			// Recognition error - abort rule
+			goto errorExit
+		}
+	}
+	p.SetState(32)
 	p.GetErrorHandler().Sync(p)
 	if p.HasError() {
 		goto errorExit
 	}
+	_la = p.GetTokenStream().LA(1)
 
-	switch p.GetInterpreter().AdaptivePredict(p.BaseParser, p.GetTokenStream(), 6, p.GetParserRuleContext()) {
-	case 1:
-		p.EnterOuterAlt(localctx, 1)
-		{
-			p.SetState(28)
-			p.Match(XSQLParserOPEN)
-			if p.HasError() {
-				// Recognition error - abort rule
-				goto errorExit
-			}
-		}
+	for _la == XSQLParserWS {
 		{
 			p.SetState(29)
-			p.Match(XSQLParserName)
+			p.Match(XSQLParserWS)
 			if p.HasError() {
 				// Recognition error - abort rule
 				goto errorExit
 			}
 		}
-		p.SetState(33)
+
+		p.SetState(34)
 		p.GetErrorHandler().Sync(p)
 		if p.HasError() {
 			goto errorExit
 		}
-		_alt = p.GetInterpreter().AdaptivePredict(p.BaseParser, p.GetTokenStream(), 4, p.GetParserRuleContext())
-		if p.HasError() {
-			goto errorExit
-		}
-		for _alt != 2 && _alt != antlr.ATNInvalidAltNumber {
-			if _alt == 1 {
-				{
-					p.SetState(30)
-					p.Attribute()
-				}
-
-			}
-			p.SetState(35)
-			p.GetErrorHandler().Sync(p)
-			if p.HasError() {
-				goto errorExit
-			}
-			_alt = p.GetInterpreter().AdaptivePredict(p.BaseParser, p.GetTokenStream(), 4, p.GetParserRuleContext())
-			if p.HasError() {
-				goto errorExit
-			}
-		}
-		{
-			p.SetState(36)
-			p.Match(XSQLParserCLOSE)
-			if p.HasError() {
-				// Recognition error - abort rule
-				goto errorExit
-			}
-		}
-		{
-			p.SetState(37)
-			p.Content()
-		}
-		{
-			p.SetState(38)
-			p.Match(XSQLParserOPEN)
-			if p.HasError() {
-				// Recognition error - abort rule
-				goto errorExit
-			}
-		}
-		{
-			p.SetState(39)
-			p.Match(XSQLParserSLASH)
-			if p.HasError() {
-				// Recognition error - abort rule
-				goto errorExit
-			}
-		}
-		{
-			p.SetState(40)
-			p.Match(XSQLParserName)
-			if p.HasError() {
-				// Recognition error - abort rule
-				goto errorExit
-			}
-		}
-		{
-			p.SetState(41)
-			p.Match(XSQLParserCLOSE)
-			if p.HasError() {
-				// Recognition error - abort rule
-				goto errorExit
-			}
-		}
-
-	case 2:
-		p.EnterOuterAlt(localctx, 2)
-		{
-			p.SetState(43)
-			p.Match(XSQLParserOPEN)
-			if p.HasError() {
-				// Recognition error - abort rule
-				goto errorExit
-			}
-		}
-		{
-			p.SetState(44)
-			p.Match(XSQLParserName)
-			if p.HasError() {
-				// Recognition error - abort rule
-				goto errorExit
-			}
-		}
-		p.SetState(48)
-		p.GetErrorHandler().Sync(p)
-		if p.HasError() {
-			goto errorExit
-		}
-		_alt = p.GetInterpreter().AdaptivePredict(p.BaseParser, p.GetTokenStream(), 5, p.GetParserRuleContext())
-		if p.HasError() {
-			goto errorExit
-		}
-		for _alt != 2 && _alt != antlr.ATNInvalidAltNumber {
-			if _alt == 1 {
-				{
-					p.SetState(45)
-					p.Attribute()
-				}
-
-			}
-			p.SetState(50)
-			p.GetErrorHandler().Sync(p)
-			if p.HasError() {
-				goto errorExit
-			}
-			_alt = p.GetInterpreter().AdaptivePredict(p.BaseParser, p.GetTokenStream(), 5, p.GetParserRuleContext())
-			if p.HasError() {
-				goto errorExit
-			}
-		}
-		{
-			p.SetState(51)
-			p.Match(XSQLParserSLASH_CLOSE)
-			if p.HasError() {
-				// Recognition error - abort rule
-				goto errorExit
-			}
-		}
-
-	case antlr.ATNInvalidAltNumber:
+		_la = p.GetTokenStream().LA(1)
+	}
+	p.SetState(38)
+	p.GetErrorHandler().Sync(p)
+	if p.HasError() {
 		goto errorExit
+	}
+	_la = p.GetTokenStream().LA(1)
+
+	for _la == XSQLParserNAME {
+		{
+			p.SetState(35)
+			p.Attribute()
+		}
+
+		p.SetState(40)
+		p.GetErrorHandler().Sync(p)
+		if p.HasError() {
+			goto errorExit
+		}
+		_la = p.GetTokenStream().LA(1)
+	}
+	{
+		p.SetState(41)
+		p.Match(XSQLParserCLOSE)
+		if p.HasError() {
+			// Recognition error - abort rule
+			goto errorExit
+		}
 	}
 
 errorExit:
@@ -788,97 +751,645 @@ errorExit:
 	goto errorExit // Trick to prevent compiler error if the label is not used
 }
 
-// IPlaceholderContext is an interface to support dynamic dispatch.
-type IPlaceholderContext interface {
+// ITagEndContext is an interface to support dynamic dispatch.
+type ITagEndContext interface {
 	antlr.ParserRuleContext
 
 	// GetParser returns the parser.
 	GetParser() antlr.Parser
 
 	// Getter signatures
-	EXPR_OPEN() antlr.TerminalNode
-	EXPR_VAL() antlr.TerminalNode
-	EXPR_CLOSE() antlr.TerminalNode
+	OPEN() antlr.TerminalNode
+	SLASH() antlr.TerminalNode
+	NAME() antlr.TerminalNode
+	CLOSE() antlr.TerminalNode
 
-	// IsPlaceholderContext differentiates from other interfaces.
-	IsPlaceholderContext()
+	// IsTagEndContext differentiates from other interfaces.
+	IsTagEndContext()
 }
 
-type PlaceholderContext struct {
+type TagEndContext struct {
 	antlr.BaseParserRuleContext
 	parser antlr.Parser
 }
 
-func NewEmptyPlaceholderContext() *PlaceholderContext {
-	var p = new(PlaceholderContext)
+func NewEmptyTagEndContext() *TagEndContext {
+	var p = new(TagEndContext)
 	antlr.InitBaseParserRuleContext(&p.BaseParserRuleContext, nil, -1)
-	p.RuleIndex = XSQLParserRULE_placeholder
+	p.RuleIndex = XSQLParserRULE_tagEnd
 	return p
 }
 
-func InitEmptyPlaceholderContext(p *PlaceholderContext) {
+func InitEmptyTagEndContext(p *TagEndContext) {
 	antlr.InitBaseParserRuleContext(&p.BaseParserRuleContext, nil, -1)
-	p.RuleIndex = XSQLParserRULE_placeholder
+	p.RuleIndex = XSQLParserRULE_tagEnd
 }
 
-func (*PlaceholderContext) IsPlaceholderContext() {}
+func (*TagEndContext) IsTagEndContext() {}
 
-func NewPlaceholderContext(parser antlr.Parser, parent antlr.ParserRuleContext, invokingState int) *PlaceholderContext {
-	var p = new(PlaceholderContext)
+func NewTagEndContext(parser antlr.Parser, parent antlr.ParserRuleContext, invokingState int) *TagEndContext {
+	var p = new(TagEndContext)
 
 	antlr.InitBaseParserRuleContext(&p.BaseParserRuleContext, parent, invokingState)
 
 	p.parser = parser
-	p.RuleIndex = XSQLParserRULE_placeholder
+	p.RuleIndex = XSQLParserRULE_tagEnd
 
 	return p
 }
 
-func (s *PlaceholderContext) GetParser() antlr.Parser { return s.parser }
+func (s *TagEndContext) GetParser() antlr.Parser { return s.parser }
 
-func (s *PlaceholderContext) EXPR_OPEN() antlr.TerminalNode {
-	return s.GetToken(XSQLParserEXPR_OPEN, 0)
+func (s *TagEndContext) OPEN() antlr.TerminalNode {
+	return s.GetToken(XSQLParserOPEN, 0)
 }
 
-func (s *PlaceholderContext) EXPR_VAL() antlr.TerminalNode {
-	return s.GetToken(XSQLParserEXPR_VAL, 0)
+func (s *TagEndContext) SLASH() antlr.TerminalNode {
+	return s.GetToken(XSQLParserSLASH, 0)
 }
 
-func (s *PlaceholderContext) EXPR_CLOSE() antlr.TerminalNode {
-	return s.GetToken(XSQLParserEXPR_CLOSE, 0)
+func (s *TagEndContext) NAME() antlr.TerminalNode {
+	return s.GetToken(XSQLParserNAME, 0)
 }
 
-func (s *PlaceholderContext) GetRuleContext() antlr.RuleContext {
+func (s *TagEndContext) CLOSE() antlr.TerminalNode {
+	return s.GetToken(XSQLParserCLOSE, 0)
+}
+
+func (s *TagEndContext) GetRuleContext() antlr.RuleContext {
 	return s
 }
 
-func (s *PlaceholderContext) ToStringTree(ruleNames []string, recog antlr.Recognizer) string {
+func (s *TagEndContext) ToStringTree(ruleNames []string, recog antlr.Recognizer) string {
 	return antlr.TreesStringTree(s, ruleNames, recog)
 }
 
-func (p *XSQLParser) Placeholder() (localctx IPlaceholderContext) {
-	localctx = NewPlaceholderContext(p, p.GetParserRuleContext(), p.GetState())
-	p.EnterRule(localctx, 4, XSQLParserRULE_placeholder)
+func (p *XSQLParser) TagEnd() (localctx ITagEndContext) {
+	localctx = NewTagEndContext(p, p.GetParserRuleContext(), p.GetState())
+	p.EnterRule(localctx, 4, XSQLParserRULE_tagEnd)
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(54)
-		p.Match(XSQLParserEXPR_OPEN)
+		p.SetState(43)
+		p.Match(XSQLParserOPEN)
 		if p.HasError() {
 			// Recognition error - abort rule
 			goto errorExit
 		}
 	}
 	{
+		p.SetState(44)
+		p.Match(XSQLParserSLASH)
+		if p.HasError() {
+			// Recognition error - abort rule
+			goto errorExit
+		}
+	}
+	{
+		p.SetState(45)
+		p.Match(XSQLParserNAME)
+		if p.HasError() {
+			// Recognition error - abort rule
+			goto errorExit
+		}
+	}
+	{
+		p.SetState(46)
+		p.Match(XSQLParserCLOSE)
+		if p.HasError() {
+			// Recognition error - abort rule
+			goto errorExit
+		}
+	}
+
+errorExit:
+	if p.HasError() {
+		v := p.GetError()
+		localctx.SetException(v)
+		p.GetErrorHandler().ReportError(p, v)
+		p.GetErrorHandler().Recover(p, v)
+		p.SetError(nil)
+	}
+	p.ExitRule()
+	return localctx
+	goto errorExit // Trick to prevent compiler error if the label is not used
+}
+
+// ICloseTagContext is an interface to support dynamic dispatch.
+type ICloseTagContext interface {
+	antlr.ParserRuleContext
+
+	// GetParser returns the parser.
+	GetParser() antlr.Parser
+
+	// Getter signatures
+	OPEN() antlr.TerminalNode
+	NAME() antlr.TerminalNode
+	SLASH() antlr.TerminalNode
+	CLOSE() antlr.TerminalNode
+	AllWS() []antlr.TerminalNode
+	WS(i int) antlr.TerminalNode
+	AllAttribute() []IAttributeContext
+	Attribute(i int) IAttributeContext
+
+	// IsCloseTagContext differentiates from other interfaces.
+	IsCloseTagContext()
+}
+
+type CloseTagContext struct {
+	antlr.BaseParserRuleContext
+	parser antlr.Parser
+}
+
+func NewEmptyCloseTagContext() *CloseTagContext {
+	var p = new(CloseTagContext)
+	antlr.InitBaseParserRuleContext(&p.BaseParserRuleContext, nil, -1)
+	p.RuleIndex = XSQLParserRULE_closeTag
+	return p
+}
+
+func InitEmptyCloseTagContext(p *CloseTagContext) {
+	antlr.InitBaseParserRuleContext(&p.BaseParserRuleContext, nil, -1)
+	p.RuleIndex = XSQLParserRULE_closeTag
+}
+
+func (*CloseTagContext) IsCloseTagContext() {}
+
+func NewCloseTagContext(parser antlr.Parser, parent antlr.ParserRuleContext, invokingState int) *CloseTagContext {
+	var p = new(CloseTagContext)
+
+	antlr.InitBaseParserRuleContext(&p.BaseParserRuleContext, parent, invokingState)
+
+	p.parser = parser
+	p.RuleIndex = XSQLParserRULE_closeTag
+
+	return p
+}
+
+func (s *CloseTagContext) GetParser() antlr.Parser { return s.parser }
+
+func (s *CloseTagContext) OPEN() antlr.TerminalNode {
+	return s.GetToken(XSQLParserOPEN, 0)
+}
+
+func (s *CloseTagContext) NAME() antlr.TerminalNode {
+	return s.GetToken(XSQLParserNAME, 0)
+}
+
+func (s *CloseTagContext) SLASH() antlr.TerminalNode {
+	return s.GetToken(XSQLParserSLASH, 0)
+}
+
+func (s *CloseTagContext) CLOSE() antlr.TerminalNode {
+	return s.GetToken(XSQLParserCLOSE, 0)
+}
+
+func (s *CloseTagContext) AllWS() []antlr.TerminalNode {
+	return s.GetTokens(XSQLParserWS)
+}
+
+func (s *CloseTagContext) WS(i int) antlr.TerminalNode {
+	return s.GetToken(XSQLParserWS, i)
+}
+
+func (s *CloseTagContext) AllAttribute() []IAttributeContext {
+	children := s.GetChildren()
+	len := 0
+	for _, ctx := range children {
+		if _, ok := ctx.(IAttributeContext); ok {
+			len++
+		}
+	}
+
+	tst := make([]IAttributeContext, len)
+	i := 0
+	for _, ctx := range children {
+		if t, ok := ctx.(IAttributeContext); ok {
+			tst[i] = t.(IAttributeContext)
+			i++
+		}
+	}
+
+	return tst
+}
+
+func (s *CloseTagContext) Attribute(i int) IAttributeContext {
+	var t antlr.RuleContext
+	j := 0
+	for _, ctx := range s.GetChildren() {
+		if _, ok := ctx.(IAttributeContext); ok {
+			if j == i {
+				t = ctx.(antlr.RuleContext)
+				break
+			}
+			j++
+		}
+	}
+
+	if t == nil {
+		return nil
+	}
+
+	return t.(IAttributeContext)
+}
+
+func (s *CloseTagContext) GetRuleContext() antlr.RuleContext {
+	return s
+}
+
+func (s *CloseTagContext) ToStringTree(ruleNames []string, recog antlr.Recognizer) string {
+	return antlr.TreesStringTree(s, ruleNames, recog)
+}
+
+func (p *XSQLParser) CloseTag() (localctx ICloseTagContext) {
+	localctx = NewCloseTagContext(p, p.GetParserRuleContext(), p.GetState())
+	p.EnterRule(localctx, 6, XSQLParserRULE_closeTag)
+	var _la int
+
+	p.EnterOuterAlt(localctx, 1)
+	{
+		p.SetState(48)
+		p.Match(XSQLParserOPEN)
+		if p.HasError() {
+			// Recognition error - abort rule
+			goto errorExit
+		}
+	}
+	{
+		p.SetState(49)
+		p.Match(XSQLParserNAME)
+		if p.HasError() {
+			// Recognition error - abort rule
+			goto errorExit
+		}
+	}
+	p.SetState(53)
+	p.GetErrorHandler().Sync(p)
+	if p.HasError() {
+		goto errorExit
+	}
+	_la = p.GetTokenStream().LA(1)
+
+	for _la == XSQLParserWS {
+		{
+			p.SetState(50)
+			p.Match(XSQLParserWS)
+			if p.HasError() {
+				// Recognition error - abort rule
+				goto errorExit
+			}
+		}
+
 		p.SetState(55)
-		p.Match(XSQLParserEXPR_VAL)
+		p.GetErrorHandler().Sync(p)
+		if p.HasError() {
+			goto errorExit
+		}
+		_la = p.GetTokenStream().LA(1)
+	}
+	p.SetState(59)
+	p.GetErrorHandler().Sync(p)
+	if p.HasError() {
+		goto errorExit
+	}
+	_la = p.GetTokenStream().LA(1)
+
+	for _la == XSQLParserNAME {
+		{
+			p.SetState(56)
+			p.Attribute()
+		}
+
+		p.SetState(61)
+		p.GetErrorHandler().Sync(p)
+		if p.HasError() {
+			goto errorExit
+		}
+		_la = p.GetTokenStream().LA(1)
+	}
+	{
+		p.SetState(62)
+		p.Match(XSQLParserSLASH)
 		if p.HasError() {
 			// Recognition error - abort rule
 			goto errorExit
 		}
 	}
 	{
-		p.SetState(56)
-		p.Match(XSQLParserEXPR_CLOSE)
+		p.SetState(63)
+		p.Match(XSQLParserCLOSE)
+		if p.HasError() {
+			// Recognition error - abort rule
+			goto errorExit
+		}
+	}
+
+errorExit:
+	if p.HasError() {
+		v := p.GetError()
+		localctx.SetException(v)
+		p.GetErrorHandler().ReportError(p, v)
+		p.GetErrorHandler().Recover(p, v)
+		p.SetError(nil)
+	}
+	p.ExitRule()
+	return localctx
+	goto errorExit // Trick to prevent compiler error if the label is not used
+}
+
+// IAttributeContext is an interface to support dynamic dispatch.
+type IAttributeContext interface {
+	antlr.ParserRuleContext
+
+	// GetParser returns the parser.
+	GetParser() antlr.Parser
+
+	// Getter signatures
+	NAME() antlr.TerminalNode
+	EQUALS() antlr.TerminalNode
+	STRING() antlr.TerminalNode
+	AllWS() []antlr.TerminalNode
+	WS(i int) antlr.TerminalNode
+
+	// IsAttributeContext differentiates from other interfaces.
+	IsAttributeContext()
+}
+
+type AttributeContext struct {
+	antlr.BaseParserRuleContext
+	parser antlr.Parser
+}
+
+func NewEmptyAttributeContext() *AttributeContext {
+	var p = new(AttributeContext)
+	antlr.InitBaseParserRuleContext(&p.BaseParserRuleContext, nil, -1)
+	p.RuleIndex = XSQLParserRULE_attribute
+	return p
+}
+
+func InitEmptyAttributeContext(p *AttributeContext) {
+	antlr.InitBaseParserRuleContext(&p.BaseParserRuleContext, nil, -1)
+	p.RuleIndex = XSQLParserRULE_attribute
+}
+
+func (*AttributeContext) IsAttributeContext() {}
+
+func NewAttributeContext(parser antlr.Parser, parent antlr.ParserRuleContext, invokingState int) *AttributeContext {
+	var p = new(AttributeContext)
+
+	antlr.InitBaseParserRuleContext(&p.BaseParserRuleContext, parent, invokingState)
+
+	p.parser = parser
+	p.RuleIndex = XSQLParserRULE_attribute
+
+	return p
+}
+
+func (s *AttributeContext) GetParser() antlr.Parser { return s.parser }
+
+func (s *AttributeContext) NAME() antlr.TerminalNode {
+	return s.GetToken(XSQLParserNAME, 0)
+}
+
+func (s *AttributeContext) EQUALS() antlr.TerminalNode {
+	return s.GetToken(XSQLParserEQUALS, 0)
+}
+
+func (s *AttributeContext) STRING() antlr.TerminalNode {
+	return s.GetToken(XSQLParserSTRING, 0)
+}
+
+func (s *AttributeContext) AllWS() []antlr.TerminalNode {
+	return s.GetTokens(XSQLParserWS)
+}
+
+func (s *AttributeContext) WS(i int) antlr.TerminalNode {
+	return s.GetToken(XSQLParserWS, i)
+}
+
+func (s *AttributeContext) GetRuleContext() antlr.RuleContext {
+	return s
+}
+
+func (s *AttributeContext) ToStringTree(ruleNames []string, recog antlr.Recognizer) string {
+	return antlr.TreesStringTree(s, ruleNames, recog)
+}
+
+func (p *XSQLParser) Attribute() (localctx IAttributeContext) {
+	localctx = NewAttributeContext(p, p.GetParserRuleContext(), p.GetState())
+	p.EnterRule(localctx, 8, XSQLParserRULE_attribute)
+	var _la int
+
+	p.EnterOuterAlt(localctx, 1)
+	{
+		p.SetState(65)
+		p.Match(XSQLParserNAME)
+		if p.HasError() {
+			// Recognition error - abort rule
+			goto errorExit
+		}
+	}
+	{
+		p.SetState(66)
+		p.Match(XSQLParserEQUALS)
+		if p.HasError() {
+			// Recognition error - abort rule
+			goto errorExit
+		}
+	}
+	{
+		p.SetState(67)
+		p.Match(XSQLParserSTRING)
+		if p.HasError() {
+			// Recognition error - abort rule
+			goto errorExit
+		}
+	}
+	p.SetState(71)
+	p.GetErrorHandler().Sync(p)
+	if p.HasError() {
+		goto errorExit
+	}
+	_la = p.GetTokenStream().LA(1)
+
+	for _la == XSQLParserWS {
+		{
+			p.SetState(68)
+			p.Match(XSQLParserWS)
+			if p.HasError() {
+				// Recognition error - abort rule
+				goto errorExit
+			}
+		}
+
+		p.SetState(73)
+		p.GetErrorHandler().Sync(p)
+		if p.HasError() {
+			goto errorExit
+		}
+		_la = p.GetTokenStream().LA(1)
+	}
+
+errorExit:
+	if p.HasError() {
+		v := p.GetError()
+		localctx.SetException(v)
+		p.GetErrorHandler().ReportError(p, v)
+		p.GetErrorHandler().Recover(p, v)
+		p.SetError(nil)
+	}
+	p.ExitRule()
+	return localctx
+	goto errorExit // Trick to prevent compiler error if the label is not used
+}
+
+// IExprContext is an interface to support dynamic dispatch.
+type IExprContext interface {
+	antlr.ParserRuleContext
+
+	// GetParser returns the parser.
+	GetParser() antlr.Parser
+
+	// Getter signatures
+	Chardata() IChardataContext
+	CLOSE_CURLY_BRAXE() antlr.TerminalNode
+	DOLLAR() antlr.TerminalNode
+	OPEN_CURLY_BRAXE() antlr.TerminalNode
+	HASH() antlr.TerminalNode
+
+	// IsExprContext differentiates from other interfaces.
+	IsExprContext()
+}
+
+type ExprContext struct {
+	antlr.BaseParserRuleContext
+	parser antlr.Parser
+}
+
+func NewEmptyExprContext() *ExprContext {
+	var p = new(ExprContext)
+	antlr.InitBaseParserRuleContext(&p.BaseParserRuleContext, nil, -1)
+	p.RuleIndex = XSQLParserRULE_expr
+	return p
+}
+
+func InitEmptyExprContext(p *ExprContext) {
+	antlr.InitBaseParserRuleContext(&p.BaseParserRuleContext, nil, -1)
+	p.RuleIndex = XSQLParserRULE_expr
+}
+
+func (*ExprContext) IsExprContext() {}
+
+func NewExprContext(parser antlr.Parser, parent antlr.ParserRuleContext, invokingState int) *ExprContext {
+	var p = new(ExprContext)
+
+	antlr.InitBaseParserRuleContext(&p.BaseParserRuleContext, parent, invokingState)
+
+	p.parser = parser
+	p.RuleIndex = XSQLParserRULE_expr
+
+	return p
+}
+
+func (s *ExprContext) GetParser() antlr.Parser { return s.parser }
+
+func (s *ExprContext) Chardata() IChardataContext {
+	var t antlr.RuleContext
+	for _, ctx := range s.GetChildren() {
+		if _, ok := ctx.(IChardataContext); ok {
+			t = ctx.(antlr.RuleContext)
+			break
+		}
+	}
+
+	if t == nil {
+		return nil
+	}
+
+	return t.(IChardataContext)
+}
+
+func (s *ExprContext) CLOSE_CURLY_BRAXE() antlr.TerminalNode {
+	return s.GetToken(XSQLParserCLOSE_CURLY_BRAXE, 0)
+}
+
+func (s *ExprContext) DOLLAR() antlr.TerminalNode {
+	return s.GetToken(XSQLParserDOLLAR, 0)
+}
+
+func (s *ExprContext) OPEN_CURLY_BRAXE() antlr.TerminalNode {
+	return s.GetToken(XSQLParserOPEN_CURLY_BRAXE, 0)
+}
+
+func (s *ExprContext) HASH() antlr.TerminalNode {
+	return s.GetToken(XSQLParserHASH, 0)
+}
+
+func (s *ExprContext) GetRuleContext() antlr.RuleContext {
+	return s
+}
+
+func (s *ExprContext) ToStringTree(ruleNames []string, recog antlr.Recognizer) string {
+	return antlr.TreesStringTree(s, ruleNames, recog)
+}
+
+func (p *XSQLParser) Expr() (localctx IExprContext) {
+	localctx = NewExprContext(p, p.GetParserRuleContext(), p.GetState())
+	p.EnterRule(localctx, 10, XSQLParserRULE_expr)
+	p.EnterOuterAlt(localctx, 1)
+	p.SetState(78)
+	p.GetErrorHandler().Sync(p)
+	if p.HasError() {
+		goto errorExit
+	}
+
+	switch p.GetTokenStream().LA(1) {
+	case XSQLParserDOLLAR:
+		{
+			p.SetState(74)
+			p.Match(XSQLParserDOLLAR)
+			if p.HasError() {
+				// Recognition error - abort rule
+				goto errorExit
+			}
+		}
+		{
+			p.SetState(75)
+			p.Match(XSQLParserOPEN_CURLY_BRAXE)
+			if p.HasError() {
+				// Recognition error - abort rule
+				goto errorExit
+			}
+		}
+
+	case XSQLParserHASH:
+		{
+			p.SetState(76)
+			p.Match(XSQLParserHASH)
+			if p.HasError() {
+				// Recognition error - abort rule
+				goto errorExit
+			}
+		}
+		{
+			p.SetState(77)
+			p.Match(XSQLParserOPEN_CURLY_BRAXE)
+			if p.HasError() {
+				// Recognition error - abort rule
+				goto errorExit
+			}
+		}
+
+	default:
+		p.SetError(antlr.NewNoViableAltException(p, nil, nil, nil, nil, nil))
+		goto errorExit
+	}
+	{
+		p.SetState(80)
+		p.Chardata()
+	}
+	{
+		p.SetState(81)
+		p.Match(XSQLParserCLOSE_CURLY_BRAXE)
 		if p.HasError() {
 			// Recognition error - abort rule
 			goto errorExit
@@ -958,121 +1469,11 @@ func (s *ReferenceContext) ToStringTree(ruleNames []string, recog antlr.Recogniz
 
 func (p *XSQLParser) Reference() (localctx IReferenceContext) {
 	localctx = NewReferenceContext(p, p.GetParserRuleContext(), p.GetState())
-	p.EnterRule(localctx, 6, XSQLParserRULE_reference)
+	p.EnterRule(localctx, 12, XSQLParserRULE_reference)
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(58)
+		p.SetState(83)
 		p.Match(XSQLParserEntityRef)
-		if p.HasError() {
-			// Recognition error - abort rule
-			goto errorExit
-		}
-	}
-
-errorExit:
-	if p.HasError() {
-		v := p.GetError()
-		localctx.SetException(v)
-		p.GetErrorHandler().ReportError(p, v)
-		p.GetErrorHandler().Recover(p, v)
-		p.SetError(nil)
-	}
-	p.ExitRule()
-	return localctx
-	goto errorExit // Trick to prevent compiler error if the label is not used
-}
-
-// IAttributeContext is an interface to support dynamic dispatch.
-type IAttributeContext interface {
-	antlr.ParserRuleContext
-
-	// GetParser returns the parser.
-	GetParser() antlr.Parser
-
-	// Getter signatures
-	Name() antlr.TerminalNode
-	EQUALS() antlr.TerminalNode
-	STRING() antlr.TerminalNode
-
-	// IsAttributeContext differentiates from other interfaces.
-	IsAttributeContext()
-}
-
-type AttributeContext struct {
-	antlr.BaseParserRuleContext
-	parser antlr.Parser
-}
-
-func NewEmptyAttributeContext() *AttributeContext {
-	var p = new(AttributeContext)
-	antlr.InitBaseParserRuleContext(&p.BaseParserRuleContext, nil, -1)
-	p.RuleIndex = XSQLParserRULE_attribute
-	return p
-}
-
-func InitEmptyAttributeContext(p *AttributeContext) {
-	antlr.InitBaseParserRuleContext(&p.BaseParserRuleContext, nil, -1)
-	p.RuleIndex = XSQLParserRULE_attribute
-}
-
-func (*AttributeContext) IsAttributeContext() {}
-
-func NewAttributeContext(parser antlr.Parser, parent antlr.ParserRuleContext, invokingState int) *AttributeContext {
-	var p = new(AttributeContext)
-
-	antlr.InitBaseParserRuleContext(&p.BaseParserRuleContext, parent, invokingState)
-
-	p.parser = parser
-	p.RuleIndex = XSQLParserRULE_attribute
-
-	return p
-}
-
-func (s *AttributeContext) GetParser() antlr.Parser { return s.parser }
-
-func (s *AttributeContext) Name() antlr.TerminalNode {
-	return s.GetToken(XSQLParserName, 0)
-}
-
-func (s *AttributeContext) EQUALS() antlr.TerminalNode {
-	return s.GetToken(XSQLParserEQUALS, 0)
-}
-
-func (s *AttributeContext) STRING() antlr.TerminalNode {
-	return s.GetToken(XSQLParserSTRING, 0)
-}
-
-func (s *AttributeContext) GetRuleContext() antlr.RuleContext {
-	return s
-}
-
-func (s *AttributeContext) ToStringTree(ruleNames []string, recog antlr.Recognizer) string {
-	return antlr.TreesStringTree(s, ruleNames, recog)
-}
-
-func (p *XSQLParser) Attribute() (localctx IAttributeContext) {
-	localctx = NewAttributeContext(p, p.GetParserRuleContext(), p.GetState())
-	p.EnterRule(localctx, 8, XSQLParserRULE_attribute)
-	p.EnterOuterAlt(localctx, 1)
-	{
-		p.SetState(60)
-		p.Match(XSQLParserName)
-		if p.HasError() {
-			// Recognition error - abort rule
-			goto errorExit
-		}
-	}
-	{
-		p.SetState(61)
-		p.Match(XSQLParserEQUALS)
-		if p.HasError() {
-			// Recognition error - abort rule
-			goto errorExit
-		}
-	}
-	{
-		p.SetState(62)
-		p.Match(XSQLParserSTRING)
 		if p.HasError() {
 			// Recognition error - abort rule
 			goto errorExit
@@ -1100,8 +1501,17 @@ type IChardataContext interface {
 	GetParser() antlr.Parser
 
 	// Getter signatures
-	SEA_WS() antlr.TerminalNode
-	DOLLAR_NOT_LBRACE() antlr.TerminalNode
+	CLOSE() antlr.TerminalNode
+	SLASH() antlr.TerminalNode
+	OPEN() antlr.TerminalNode
+	EQUALS() antlr.TerminalNode
+	DOLLAR() antlr.TerminalNode
+	HASH() antlr.TerminalNode
+	OPEN_CURLY_BRAXE() antlr.TerminalNode
+	CLOSE_CURLY_BRAXE() antlr.TerminalNode
+	WS() antlr.TerminalNode
+	NAME() antlr.TerminalNode
+	STRING() antlr.TerminalNode
 	TEXT() antlr.TerminalNode
 
 	// IsChardataContext differentiates from other interfaces.
@@ -1140,12 +1550,48 @@ func NewChardataContext(parser antlr.Parser, parent antlr.ParserRuleContext, inv
 
 func (s *ChardataContext) GetParser() antlr.Parser { return s.parser }
 
-func (s *ChardataContext) SEA_WS() antlr.TerminalNode {
-	return s.GetToken(XSQLParserSEA_WS, 0)
+func (s *ChardataContext) CLOSE() antlr.TerminalNode {
+	return s.GetToken(XSQLParserCLOSE, 0)
 }
 
-func (s *ChardataContext) DOLLAR_NOT_LBRACE() antlr.TerminalNode {
-	return s.GetToken(XSQLParserDOLLAR_NOT_LBRACE, 0)
+func (s *ChardataContext) SLASH() antlr.TerminalNode {
+	return s.GetToken(XSQLParserSLASH, 0)
+}
+
+func (s *ChardataContext) OPEN() antlr.TerminalNode {
+	return s.GetToken(XSQLParserOPEN, 0)
+}
+
+func (s *ChardataContext) EQUALS() antlr.TerminalNode {
+	return s.GetToken(XSQLParserEQUALS, 0)
+}
+
+func (s *ChardataContext) DOLLAR() antlr.TerminalNode {
+	return s.GetToken(XSQLParserDOLLAR, 0)
+}
+
+func (s *ChardataContext) HASH() antlr.TerminalNode {
+	return s.GetToken(XSQLParserHASH, 0)
+}
+
+func (s *ChardataContext) OPEN_CURLY_BRAXE() antlr.TerminalNode {
+	return s.GetToken(XSQLParserOPEN_CURLY_BRAXE, 0)
+}
+
+func (s *ChardataContext) CLOSE_CURLY_BRAXE() antlr.TerminalNode {
+	return s.GetToken(XSQLParserCLOSE_CURLY_BRAXE, 0)
+}
+
+func (s *ChardataContext) WS() antlr.TerminalNode {
+	return s.GetToken(XSQLParserWS, 0)
+}
+
+func (s *ChardataContext) NAME() antlr.TerminalNode {
+	return s.GetToken(XSQLParserNAME, 0)
+}
+
+func (s *ChardataContext) STRING() antlr.TerminalNode {
+	return s.GetToken(XSQLParserSTRING, 0)
 }
 
 func (s *ChardataContext) TEXT() antlr.TerminalNode {
@@ -1162,55 +1608,20 @@ func (s *ChardataContext) ToStringTree(ruleNames []string, recog antlr.Recognize
 
 func (p *XSQLParser) Chardata() (localctx IChardataContext) {
 	localctx = NewChardataContext(p, p.GetParserRuleContext(), p.GetState())
-	p.EnterRule(localctx, 10, XSQLParserRULE_chardata)
-	p.SetState(68)
-	p.GetErrorHandler().Sync(p)
-	if p.HasError() {
-		goto errorExit
-	}
+	p.EnterRule(localctx, 14, XSQLParserRULE_chardata)
+	var _la int
 
-	switch p.GetInterpreter().AdaptivePredict(p.BaseParser, p.GetTokenStream(), 7, p.GetParserRuleContext()) {
-	case 1:
-		p.EnterOuterAlt(localctx, 1)
-		{
-			p.SetState(64)
-			p.Match(XSQLParserSEA_WS)
-			if p.HasError() {
-				// Recognition error - abort rule
-				goto errorExit
-			}
+	p.EnterOuterAlt(localctx, 1)
+	{
+		p.SetState(85)
+		_la = p.GetTokenStream().LA(1)
+
+		if !((int64(_la) & ^0x3f) == 0 && ((int64(1)<<_la)&65520) != 0) {
+			p.GetErrorHandler().RecoverInline(p)
+		} else {
+			p.GetErrorHandler().ReportMatch(p)
+			p.Consume()
 		}
-
-	case 2:
-		p.EnterOuterAlt(localctx, 2)
-		p.SetState(65)
-
-		if !(p.GetInputStream().LA(1) == '$' && p.GetInputStream().LA(2) == '{') {
-			p.SetError(antlr.NewFailedPredicateException(p, " p.GetInputStream().LA(1) == '$' && p.GetInputStream().LA(2) == '{' ", ""))
-			goto errorExit
-		}
-		{
-			p.SetState(66)
-			p.Match(XSQLParserDOLLAR_NOT_LBRACE)
-			if p.HasError() {
-				// Recognition error - abort rule
-				goto errorExit
-			}
-		}
-
-	case 3:
-		p.EnterOuterAlt(localctx, 3)
-		{
-			p.SetState(67)
-			p.Match(XSQLParserTEXT)
-			if p.HasError() {
-				// Recognition error - abort rule
-				goto errorExit
-			}
-		}
-
-	case antlr.ATNInvalidAltNumber:
-		goto errorExit
 	}
 
 errorExit:
@@ -1224,28 +1635,4 @@ errorExit:
 	p.ExitRule()
 	return localctx
 	goto errorExit // Trick to prevent compiler error if the label is not used
-}
-
-func (p *XSQLParser) Sempred(localctx antlr.RuleContext, ruleIndex, predIndex int) bool {
-	switch ruleIndex {
-	case 5:
-		var t *ChardataContext = nil
-		if localctx != nil {
-			t = localctx.(*ChardataContext)
-		}
-		return p.Chardata_Sempred(t, predIndex)
-
-	default:
-		panic("No predicate with index: " + fmt.Sprint(ruleIndex))
-	}
-}
-
-func (p *XSQLParser) Chardata_Sempred(localctx antlr.RuleContext, predIndex int) bool {
-	switch predIndex {
-	case 0:
-		return p.GetInputStream().LA(1) == '$' && p.GetInputStream().LA(2) == '{'
-
-	default:
-		panic("No predicate with index: " + fmt.Sprint(predIndex))
-	}
 }

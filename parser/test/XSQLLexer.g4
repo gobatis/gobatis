@@ -24,26 +24,54 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-/** XML parser derived from ANTLR v4 ref guide book example */
-parser grammar XSQLParser;
+/** XML lexer derived from ANTLR v4 ref guide book example */
+lexer grammar XSQLLexer;
 
-options { tokenVocab=XSQLLexer; }
+// Default "mode": Everything OUTSIDE of a tag
+COMMENT     :   '<!--' .*? '-->' -> skip ;
+EntityRef   :   '&' Name ';' ;
 
-content     :   chardata? ((placeholder | element |  reference) chardata?)* ;
+SEA_WS      :   (' '|'\t'|'\r'? '\n')+ ;
 
-element     :   OPEN Name attribute* CLOSE content OPEN SLASH Name CLOSE
-            |   OPEN Name attribute* SLASH_CLOSE
+OPEN        :   '<'                     -> pushMode(INSIDE) ;
+
+TEXT        :   ~[<&]+? ;        // match any 16 bit char other than < and &
+
+// ----------------- Everything INSIDE of a tag ---------------------
+mode INSIDE;
+
+CLOSE       :   '>'                     -> popMode ;
+SPECIAL_CLOSE:  '?>'                    -> popMode ; // close <?xml...?>
+SLASH_CLOSE :   '/>'                    -> popMode ;
+SLASH       :   '/' ;
+EQUALS      :   '=' ;
+STRING      :   '"' ~[<"]* '"'
+            |   '\'' ~[<']* '\''
             ;
-placeholder : EXPR_OPEN EXPR_VAL EXPR_CLOSE;
+Name        :   NameStartChar NameChar* ;
+S           :   [ \t\r\n]               -> channel(HIDDEN) ;
 
-reference: EntityRef;
+fragment
+HEXDIGIT    :   [a-fA-F0-9] ;
 
-attribute   :   Name '=' STRING ; // Our STRING is AttValue in spec
+fragment
+DIGIT       :   [0-9] ;
 
-/** ``All text that is not markup constitutes the character data of
- *  the document.''
- */
-chardata    :  SEA_WS
-//            | { p.GetInputStream().LA(1) == '$' && p.GetInputStream().LA(2) != '{' }? DOLLAR_NOT_LBRACE
-            |  TEXT;
+fragment
+NameChar    :   NameStartChar
+            |   '-' | '_' | '.' | DIGIT
+            |   '\u00B7'
+            |   '\u0300'..'\u036F'
+            |   '\u203F'..'\u2040'
+            ;
+
+fragment
+NameStartChar
+            :   [:a-zA-Z]
+            |   '\u2070'..'\u218F'
+            |   '\u2C00'..'\u2FEF'
+            |   '\u3001'..'\uD7FF'
+            |   '\uF900'..'\uFDCF'
+            |   '\uFDF0'..'\uFFFD'
+            ;
 

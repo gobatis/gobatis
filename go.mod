@@ -11,6 +11,7 @@ require (
 	github.com/go-sql-driver/mysql v1.7.1
 	github.com/google/uuid v1.3.0
 	github.com/gozelle/color v1.14.1
+	github.com/gozelle/fastjson v1.6.5
 	github.com/gozelle/prometheus v0.0.0-20230823061932-52c37cf686f8
 	github.com/gozelle/spew v1.1.17
 	github.com/jackc/pgtype v1.7.0
@@ -33,7 +34,6 @@ require (
 	github.com/gofrs/uuid v4.0.0+incompatible // indirect
 	github.com/gogo/protobuf v1.2.1 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
-	github.com/gozelle/fastjson v1.6.5 // indirect
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
 	github.com/jackc/pgconn v1.8.1 // indirect
 	github.com/jackc/pgio v1.0.0 // indirect
