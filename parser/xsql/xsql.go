@@ -82,17 +82,19 @@ func Parse(source string) (*XSQL, error) {
 
 	p := NewXSQLParser(stream)
 	p.BuildParseTrees = true
-	//p.RemoveErrorListeners()
-	//p.AddErrorListener(errs)
-	spew.Json(p.GetInterpreter().GetPredictionMode())
-	//p.GetInterpreter().SetPredictionMode(antlr.PredictionModeSLL) // 设置为SLL模式
-	//p.GetInterpreter().SetPredictionMode(antlr.PredictionModeSLL) // 设置为SLL模式
+	p.RemoveErrorListeners()
+	p.AddErrorListener(errs)
+	p.SetErrorHandler(antlr.NewDefaultErrorStrategy())
 
+	p.GetInterpreter().SetPredictionMode(antlr.PredictionModeSLL) // 设置为SLL模式
+	//p.GetInterpreter().SetPredictionMode(antlr.PredictionModeLL) // 设置为SLL模式
+	//p.GetInterpreter().SetPredictionMode(antlr.PredictionModeLLExactAmbigDetection) // 设置为SLL模式
+	spew.Json(p.GetInterpreter().GetPredictionMode())
 	tree := p.Content()
 
-	if errs.Error() != nil {
-		return nil, errs.Error()
-	}
+	//if errs.Error() != nil {
+	//	return nil, errs.Error()
+	//}
 
 	v := &Visitor{
 		errs: errs,
@@ -100,7 +102,8 @@ func Parse(source string) (*XSQL, error) {
 	}
 	_ = v.VisitContent(tree.(*ContentContext))
 
-	return v.xsql, errs.Error()
+	//return v.xsql, errs.Error()
+	return v.xsql, nil
 }
 
 type Visitor struct {
@@ -111,16 +114,12 @@ type Visitor struct {
 func (v Visitor) VisitContent(ctx *ContentContext) interface{} {
 	fmt.Println("content:", ctx.GetText())
 	for _, c := range ctx.GetChildren() {
-		if v.errs.Error() != nil {
-			return nil
-		}
+		//if v.errs.Error() != nil {
+		//	return nil
+		//}
 		switch t := c.(type) {
-		case *TagStartContext:
-			v.visitTagStart(t)
-		case *TagEndContext:
-			v.visitTagEnd(t)
-		case *CloseTagContext:
-			v.visitCloseTag(t)
+		case *ElementContext:
+			v.visitElement(t)
 		case *ContentContext:
 			v.VisitContent(t)
 		case *ExprContext:
@@ -137,22 +136,18 @@ func (v Visitor) VisitContent(ctx *ContentContext) interface{} {
 	return "a"
 }
 
-func (v Visitor) visitTagStart(ctx *TagStartContext) {
-	fmt.Println("tag start::", ctx.GetText(), "attributes", len(ctx.AllAttribute()))
-}
+func (v Visitor) visitElement(ctx *ElementContext) {
+	fmt.Println("element::", ctx.NAME(0), "attributes", len(ctx.AllAttribute()))
 
-func (v Visitor) visitTagEnd(ctx *TagEndContext) {
-	fmt.Println("tag end::", ctx.NAME())
-}
-
-func (v Visitor) visitCloseTag(ctx *CloseTagContext) {
-	fmt.Println("close tag::", ctx.NAME())
+	if ctx.Content() != nil {
+		v.VisitContent(ctx.Content().(*ContentContext))
+	}
 }
 
 func (v Visitor) visitExpr(ctx *ExprContext) {
-	if v.errs.Error() != nil {
-		return
-	}
+	//if v.errs.Error() != nil {
+	//	return
+	//}
 	if ctx.HASH() != nil {
 		fmt.Println("##:", ctx.GetText())
 		v.xsql.raw.WriteString(fmt.Sprintf("##{%s}", ctx.Chardata().GetText()))
@@ -162,16 +157,16 @@ func (v Visitor) visitExpr(ctx *ExprContext) {
 }
 
 func (v Visitor) visitAttribute(ctx *AttributeContext) {
-	if v.errs.Error() != nil {
-		return
-	}
+	//if v.errs.Error() != nil {
+	//	return
+	//}
 	spew.Json(ctx.GetText())
 }
 
 func (v Visitor) visitCharData(ctx *ChardataContext) {
-	if v.errs.Error() != nil {
-		return
-	}
+	//if v.errs.Error() != nil {
+	//	return
+	//}
 
 	if ctx.WS() != nil {
 		v.xsql.raw.WriteString(ctx.WS().GetText())

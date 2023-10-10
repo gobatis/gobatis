@@ -46,8 +46,9 @@ func TestParser(t *testing.T) {
 	//xs, err := Parse(`><`)
 	//xs, err := Parse(`<a test="ok" /> / > < !=`)
 	//xs, err := Parse(`ok <a/> b > c`)
-	xs, err := Parse(`< / > /> </ a </a> b sdfsf <!>`)
-	//xs, err := Parse(`<a></a>`)
+	//xs, err := Parse(`</>/></a</a><b/><c></c>d<!>`)
+	//xs, err := Parse(`<a></a>*`)
+	//xs, err := Parse(`*~<<a test="ok">b</a>>kk`)
 	//xs, err := Parse(`<a`)
 	//xs, err := Parse(`
 	//	select * from products where
@@ -56,21 +57,21 @@ func TestParser(t *testing.T) {
 	//		and price != #{ price[0].Age }
 	//	</if>
 	//`)
-	//xs, err := Parse(`
-	//select $a weight < / > =,
-	//'a', "b"
-	//${weight}
-	//// hi
-	//<if test="price <= 0">
-	//
-	//   and price &lt; #{ price[0].Age }
-	//   <where>
-	//           where2
-	//   </where>
-	//</if>
-	//
-	//kkk
-	//	`)
+	xs, err := Parse(`
+	select $a weight < / > =,
+	'a', "b"
+	${weight}
+	// hi
+	<if test="price <= 0">
+	
+	 and price &lt; #{ price[0].Age }
+	 <where>
+	         where2
+	 </where>
+	</if>
+	
+	kkk
+		`)
 	require.NoError(t, err)
 	t.Log(xs.Raw())
 	t.Log(xs.SQL())

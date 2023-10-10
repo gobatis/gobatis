@@ -6,6 +6,15 @@ import (
 	"github.com/antlr4-go/antlr/v4"
 )
 
+func AddError(err, added error) error {
+	if err == nil {
+		return added
+	} else if added != nil {
+		return fmt.Errorf("%v; %w", err, added)
+	}
+	return err
+}
+
 var _ antlr.ErrorListener = (*CustomErrorListener)(nil)
 
 type CustomErrorListener struct {
@@ -28,19 +37,10 @@ func (d *CustomErrorListener) SyntaxError(recognizer antlr.Recognizer, offending
 	d.AddError(fmt.Errorf("syntax error at line %d:%d - %s", line, column, msg))
 }
 
-func (d *CustomErrorListener) Error() error {
+func (d *CustomErrorListener) GetError() error {
 	return d.err
 }
 
 func (d *CustomErrorListener) AddError(err error) {
 	d.err = AddError(d.err, err)
-}
-
-func AddError(err, added error) error {
-	if err == nil {
-		return added
-	} else if added != nil {
-		return fmt.Errorf("%v; %w", err, added)
-	}
-	return err
 }

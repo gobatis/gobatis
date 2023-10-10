@@ -38,19 +38,21 @@ NameChar     :   [:a-zA-Z]
              |   '\uFDF0'..'\uFFFD'
              ;
 
-content      :  (tagStart | tagEnd | closeTag | expr | reference | chardata)*;
+content      :  chardata? (element | expr | reference | chardata)* chardata?;
 
 
-tagStart:    '<' NAME WS* attribute* '>';
-tagEnd:      '<''/' NAME '>';
-closeTag:    '<' NAME WS* attribute* '/''>';
+element      :   '<' NAME WS* attribute* '>' content '<' '/' NAME '>'
+             |   '<' NAME WS* attribute* '/' '>'
+             ;
+
 attribute    : NAME '=' STRING WS* ;
 
 expr         : ((DOLLAR OPEN_CURLY_BRAXE) | (HASH OPEN_CURLY_BRAXE)) chardata CLOSE_CURLY_BRAXE;
 
 reference    : EntityRef;
 
-chardata     : '>'
+chardata     : WS
+             | '>'
              | '/'
              | '<'
              | '='
@@ -58,7 +60,6 @@ chardata     : '>'
              | '#'
              | '{'
              | '}'
-             | WS
              | NAME
              | STRING
              | TEXT
