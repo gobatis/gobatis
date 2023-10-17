@@ -15,32 +15,38 @@ func AddError(err, added error) error {
 	return err
 }
 
-var _ antlr.ErrorListener = (*CustomErrorListener)(nil)
+var _ antlr.ErrorListener = (*ErrorListener)(nil)
 
-type CustomErrorListener struct {
+type ErrorListener struct {
 	err error
 }
 
-func (d *CustomErrorListener) ReportAmbiguity(recognizer antlr.Parser, dfa *antlr.DFA, startIndex, stopIndex int, exact bool, ambigAlts *antlr.BitSet, configs *antlr.ATNConfigSet) {
+func (d *ErrorListener) ReportAmbiguity(recognizer antlr.Parser, dfa *antlr.DFA, startIndex, stopIndex int, exact bool, ambigAlts *antlr.BitSet, configs *antlr.ATNConfigSet) {
 	d.AddError(fmt.Errorf("ambiguity detected between tokens %d and %d. Ambiguous alternatives: %v", startIndex, stopIndex, ambigAlts))
 }
 
-func (d *CustomErrorListener) ReportAttemptingFullContext(recognizer antlr.Parser, dfa *antlr.DFA, startIndex, stopIndex int, conflictingAlts *antlr.BitSet, configs *antlr.ATNConfigSet) {
+func (d *ErrorListener) ReportAttemptingFullContext(recognizer antlr.Parser, dfa *antlr.DFA, startIndex, stopIndex int, conflictingAlts *antlr.BitSet, configs *antlr.ATNConfigSet) {
 	d.AddError(fmt.Errorf("attempting full context mode between tokens %d and %d", startIndex, stopIndex))
 }
 
-func (d *CustomErrorListener) ReportContextSensitivity(recognizer antlr.Parser, dfa *antlr.DFA, startIndex, stopIndex, prediction int, configs *antlr.ATNConfigSet) {
+func (d *ErrorListener) ReportContextSensitivity(recognizer antlr.Parser, dfa *antlr.DFA, startIndex, stopIndex, prediction int, configs *antlr.ATNConfigSet) {
 	d.AddError(fmt.Errorf("context sensitivity detected between tokens %d and %d", startIndex, stopIndex))
 }
 
-func (d *CustomErrorListener) SyntaxError(recognizer antlr.Recognizer, offendingSymbol interface{}, line, column int, msg string, e antlr.RecognitionException) {
+func (d *ErrorListener) SyntaxError(recognizer antlr.Recognizer, offendingSymbol interface{}, line, column int, msg string, e antlr.RecognitionException) {
 	d.AddError(fmt.Errorf("syntax error at line %d:%d - %s", line, column, msg))
 }
 
-func (d *CustomErrorListener) GetError() error {
+func (d *ErrorListener) GetError() error {
 	return d.err
 }
 
-func (d *CustomErrorListener) AddError(err error) {
+func (d *ErrorListener) AddError(err error) {
 	d.err = AddError(d.err, err)
+}
+
+var _ antlr.ErrorStrategy = (*ErrorStrategy)(nil)
+
+type ErrorStrategy struct {
+	*antlr.DefaultErrorStrategy
 }

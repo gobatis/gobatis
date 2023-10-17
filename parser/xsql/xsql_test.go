@@ -50,29 +50,42 @@ func TestParser(t *testing.T) {
 	//xs, err := Parse(`<a></a>*`)
 	//xs, err := Parse(`*~<<a test="ok">b</a>>kk`)
 	//xs, err := Parse(`<a`)
-	//xs, err := Parse(`
-	//	select * from products where
-	//	${a} weight == ${weight}
-	//	<if test="price > 0">
-	//		and price != #{ price[0].Age }
-	//	</if>
-	//`)
 	xs, err := Parse(`
 	select $a weight < / > =,
-	'a', "b"
-	${weight}
-	// hi
-	<if test="price <= 0">
+		'a', "b"
+		${ weight[1].Value }
+		// hi
+		<if test="price <= 0">
+			and price &lt; #{ price[0].Age }
 	
-	 and price &lt; #{ price[0].Age }
-	 <where>
-	         where2
-	 </where>
-	</if>
+		<where>where2</where>
+		<foreach>
+			foreach3
+		</foreach>
 	
-	kkk
-		`)
+		</if>
+	
+		kkk
+	`, nil)
+	//xs, err := Parse(`
+	//	<a test="123"><b>c</b></a>
+	//`)
 	require.NoError(t, err)
 	t.Log(xs.Raw())
 	t.Log(xs.SQL())
+}
+
+func TestCalc(t *testing.T) {
+	xs, err := Parse(`
+		select * from products 
+        <if test="!status">
+		</if>
+		<if test="age > 18">
+		</if>
+	`, map[string]any{
+		"status": 18,
+		"age":    18,
+	})
+	require.NoError(t, err)
+	t.Log(xs.Raw())
 }

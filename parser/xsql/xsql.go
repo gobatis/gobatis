@@ -14,64 +14,41 @@ type XSQL struct {
 	dynamic bool
 	vars    []any
 	sql     string
+	ws      bool
 }
 
-func (X XSQL) Raw() string {
-	return X.raw.String()
+func (x *XSQL) Raw() string {
+	return x.raw.String()
 }
 
-func (X XSQL) SQL() string {
-	return X.sql
+func (x *XSQL) SQL() string {
+	return x.sql
 }
 
-func (X XSQL) Dynamic() bool {
-	return X.dynamic
+func (x *XSQL) Dynamic() bool {
+	return x.dynamic
 }
 
-func (X XSQL) Vars() []any {
-	return X.vars
+func (x *XSQL) Vars() []any {
+	return x.vars
 }
 
-//const lt = "&lt;"
+func (x *XSQL) WriteWS() {
+	if x.ws {
+		return
+	}
+	x.ws = true
+	x.raw.WriteString(" ")
+}
 
-//func replaceIsolatedLessThanWithEntity(s string) string {
-//
-//	runes := []rune(s)
-//	lastLeftBracket := -1
-//	pos := map[int]struct{}{}
-//	for i, r := range runes {
-//		switch r {
-//		case '<':
-//			// if a '<' is previously marked, replace it."
-//			if lastLeftBracket != -1 {
-//				pos[lastLeftBracket] = struct{}{}
-//			}
-//			lastLeftBracket = i
-//		case '>':
-//			// clear the previously marked '<'.
-//			lastLeftBracket = -1
-//		}
-//	}
-//	// check if there is a marked '<' at the end of the string.
-//	if lastLeftBracket != -1 {
-//		pos[lastLeftBracket] = struct{}{}
-//	}
-//
-//	var r []rune
-//	for i := range runes {
-//		if _, ok := pos[i]; ok {
-//			r = append(r, []rune(lt)...)
-//		} else {
-//			r = append(r, runes[i])
-//		}
-//	}
-//
-//	return string(r)
-//}
+func (x *XSQL) WriteString(v string) {
+	x.ws = false
+	x.raw.WriteString(v)
+}
 
-func Parse(source string) (*XSQL, error) {
+func Parse(source string, vars map[string]any) (*XSQL, error) {
 
-	errs := &commons.CustomErrorListener{}
+	errs := &commons.ErrorListener{}
 
 	//source = replaceIsolatedLessThanWithEntity(source)
 	lexer := NewXSQLLexer(antlr.NewInputStream(source))
@@ -85,16 +62,11 @@ func Parse(source string) (*XSQL, error) {
 	p.RemoveErrorListeners()
 	p.AddErrorListener(errs)
 	p.SetErrorHandler(antlr.NewDefaultErrorStrategy())
-
-	p.GetInterpreter().SetPredictionMode(antlr.PredictionModeSLL) // 设置为SLL模式
-	//p.GetInterpreter().SetPredictionMode(antlr.PredictionModeLL) // 设置为SLL模式
-	//p.GetInterpreter().SetPredictionMode(antlr.PredictionModeLLExactAmbigDetection) // 设置为SLL模式
-	spew.Json(p.GetInterpreter().GetPredictionMode())
+	p.GetInterpreter().SetPredictionMode(antlr.PredictionModeSLL)
 	tree := p.Content()
-
-	//if errs.Error() != nil {
-	//	return nil, errs.Error()
-	//}
+	if errs.GetError() != nil {
+		return nil, errs.GetError()
+	}
 
 	v := &Visitor{
 		errs: errs,
@@ -102,24 +74,25 @@ func Parse(source string) (*XSQL, error) {
 	}
 	_ = v.VisitContent(tree.(*ContentContext))
 
-	//return v.xsql, errs.Error()
-	return v.xsql, nil
+	return v.xsql, errs.GetError()
 }
 
 type Visitor struct {
-	errs *commons.CustomErrorListener
+	errs *commons.ErrorListener
 	xsql *XSQL
 }
 
 func (v Visitor) VisitContent(ctx *ContentContext) interface{} {
 	fmt.Println("content:", ctx.GetText())
 	for _, c := range ctx.GetChildren() {
-		//if v.errs.Error() != nil {
-		//	return nil
-		//}
+		if v.errs.GetError() != nil {
+			return nil
+		}
 		switch t := c.(type) {
-		case *ElementContext:
-			v.visitElement(t)
+		case *StartContext:
+			v.visitStart(t)
+		case *EndContext:
+			v.visitEnd(t)
 		case *ContentContext:
 			v.VisitContent(t)
 		case *ExprContext:
@@ -136,50 +109,61 @@ func (v Visitor) VisitContent(ctx *ContentContext) interface{} {
 	return "a"
 }
 
-func (v Visitor) visitElement(ctx *ElementContext) {
-	fmt.Println("element::", ctx.NAME(0), "attributes", len(ctx.AllAttribute()))
+func (v Visitor) visitStart(ctx *StartContext) {
+	v.xsql.WriteString(ctx.GetText())
+}
 
-	if ctx.Content() != nil {
-		v.VisitContent(ctx.Content().(*ContentContext))
-	}
+func (v Visitor) visitEnd(ctx *EndContext) {
+	v.xsql.WriteString(ctx.GetText())
 }
 
 func (v Visitor) visitExpr(ctx *ExprContext) {
-	//if v.errs.Error() != nil {
-	//	return
-	//}
+	if v.errs.GetError() != nil {
+		return
+	}
 	if ctx.HASH() != nil {
-		fmt.Println("##:", ctx.GetText())
-		v.xsql.raw.WriteString(fmt.Sprintf("##{%s}", ctx.Chardata().GetText()))
+		v.xsql.raw.WriteString(fmt.Sprintf("##{%s}", ctx.GetVal().GetText()))
 	} else {
-		v.xsql.raw.WriteString(fmt.Sprintf("$${%s}", ctx.Chardata().GetText()))
+		v.xsql.raw.WriteString(fmt.Sprintf("$${%s}", ctx.GetVal().GetText()))
 	}
 }
 
 func (v Visitor) visitAttribute(ctx *AttributeContext) {
-	//if v.errs.Error() != nil {
-	//	return
-	//}
+	if v.errs.GetError() != nil {
+		return
+	}
 	spew.Json(ctx.GetText())
 }
 
 func (v Visitor) visitCharData(ctx *ChardataContext) {
-	//if v.errs.Error() != nil {
-	//	return
-	//}
-
+	if v.errs.GetError() != nil {
+		return
+	}
 	if ctx.WS() != nil {
-		v.xsql.raw.WriteString(ctx.WS().GetText())
+		v.xsql.WriteWS()
 	} else {
-		fmt.Println("chardata:", ctx.GetText())
-		v.xsql.raw.WriteString(ctx.GetText())
+		v.xsql.WriteString(ctx.GetText())
 	}
 }
 
 func (v Visitor) visitReference(ctx *ReferenceContext) {
-	fmt.Println("reference:", ctx.GetText())
-}
-
-func isNameStartChar(c int) bool {
-	return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')
+	if ctx.EntityRef() != nil {
+		c := ""
+		switch ctx.EntityRef().GetText() {
+		case "&lt;":
+			c = "<"
+		case "&gt":
+			c = ">"
+		case "&amp;":
+			c = "&"
+		case "&apos;":
+			c = "'"
+		case "&quot;":
+			c = "\""
+		default:
+			v.errs.AddError(fmt.Errorf("unkonwn reference: %s", ctx.EntityRef().GetText()))
+			return
+		}
+		v.xsql.WriteString(c)
+	}
 }

@@ -9,6 +9,7 @@ import (
 
 	"github.com/gobatis/gobatis/dialector"
 	"github.com/gobatis/gobatis/executor"
+	"github.com/gobatis/gobatis/parser/commons"
 	"go.uber.org/atomic"
 )
 
@@ -82,7 +83,7 @@ type DB struct {
 }
 
 func (d *DB) addError(err error) {
-	d.Error = executor.AddError(d.Error, err)
+	d.Error = commons.AddError(d.Error, err)
 }
 
 func (d *DB) clone() *DB {
@@ -154,6 +155,10 @@ func (d *DB) Stats() sql.DBStats {
 	return d.db.Stats()
 }
 
+func (d *DB) Params(params Params) *DB {
+	panic("todo")
+}
+
 func (d *DB) context() context.Context {
 	if d.ctx == nil {
 		return context.Background()
@@ -223,6 +228,11 @@ func (d *DB) Query(sql string, params ...executor.Param) *DB {
 // 扫描结果集
 func (d *DB) Scan(dest any) *DB {
 	d.execute(dest)
+	return d
+}
+
+func (d *DB) LooseScan(dest any, paths ...string) *DB {
+
 	return d
 }
 

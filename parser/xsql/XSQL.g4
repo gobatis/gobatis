@@ -1,7 +1,7 @@
 grammar XSQL;
 
 BLOCK_COMMENT     :   '<!--' .*? '-->'-> skip;
-LINE_COMMENT      :   '//' ~[\r\n]* -> skip;
+LINE_COMMENT      :   '//' ~[\r\n\t]* -> skip;
 EntityRef         :   '&' NAME ';' ;
 WS                :   (' '|'\t'|'\r'? '\n')+ ;
 
@@ -38,18 +38,19 @@ NameChar     :   [:a-zA-Z]
              |   '\uFDF0'..'\uFFFD'
              ;
 
-content      :  chardata? (element | expr | reference | chardata)* chardata?;
+content      :  (start | end | expr | reference | chardata)* EOF;
 
 
-element      :   '<' NAME WS* attribute* '>' content '<' '/' NAME '>'
-             |   '<' NAME WS* attribute* '/' '>'
+start        :  '<' NAME WS* attribute* '>'
+             |  '<' NAME WS* attribute* '/' '>'
              ;
+end   :  '<' '/' NAME '>';
 
-attribute    : NAME '=' STRING WS* ;
+attribute    :  NAME '=' STRING WS* ;
 
-expr         : ((DOLLAR OPEN_CURLY_BRAXE) | (HASH OPEN_CURLY_BRAXE)) chardata CLOSE_CURLY_BRAXE;
+expr         :  (('$' '{') | ('#' '{')) WS* val=NAME* TEXT*  WS* '}';
 
-reference    : EntityRef;
+reference    :  EntityRef;
 
 chardata     : WS
              | '>'

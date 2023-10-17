@@ -35,7 +35,7 @@ func parseSQL(file, content string) (node *xmlNode, err error) {
 	}
 
 	// replace single < to &lt;
-	content = replaceIsolatedLessThanWithEntity(content)
+	//content = replaceIsolatedLessThanWithEntity(content)
 
 	walkXMLNodes(l, content)
 	if !l.coverage.covered() {
