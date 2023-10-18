@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/gobatis/gobatis/dialector"
-	"github.com/gobatis/gobatis/executor"
+	"github.com/gobatis/gobatis/logger"
 )
 
 type Option interface {
@@ -20,7 +20,7 @@ type Config struct {
 	Plugins         map[string]Plugin
 	NowFunc         func() time.Time
 	Dialector       dialector.Dialector
-	Logger          executor.Logger
+	Logger          logger.Logger
 	Hooks           func(db *DB)
 	db              *sql.DB
 }

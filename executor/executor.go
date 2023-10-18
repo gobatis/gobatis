@@ -6,12 +6,13 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/gobatis/gobatis/logger"
 	"github.com/gobatis/gobatis/parser/commons"
 	"github.com/gobatis/gobatis/parser/xsql"
 )
 
 type Executor interface {
-	Execute(logger Logger, pos string, trace, debug bool, affect any, scan func(s Scanner) error) (err error)
+	Execute(logger logger.Logger, pos string, trace, debug bool, affect any, scan func(s Scanner) error) (err error)
 	Query() bool
 }
 
@@ -43,7 +44,7 @@ func (d *Default) Query() bool {
 	return d.raw.Query
 }
 
-func (d *Default) Execute(logger Logger, pos string, trace, debug bool, affect any, scan func(Scanner) error) (err error) {
+func (d *Default) Execute(log logger.Logger, pos string, trace, debug bool, affect any, scan func(Scanner) error) (err error) {
 
 	beginAt := time.Now()
 
@@ -71,11 +72,11 @@ func (d *Default) Execute(logger Logger, pos string, trace, debug bool, affect a
 		if s == nil {
 			s = &scanner{}
 		}
-		plainSQL, e := xsql.Explain(d.raw.SQL, vars)
+		plainSQL, e := xsql.Explain(log.Explain, d.raw.SQL, vars)
 		if e != nil {
 			plainSQL = fmt.Sprintf("explain sql error: %s", e)
 		}
-		logger.Trace(pos, d.conn.TraceId(), d.conn.IsTx(), err, &SQLTrace{
+		log.Trace(pos, d.conn.TraceId(), d.conn.IsTx(), err, &logger.SQLTrace{
 			Trace:        trace,
 			Debug:        debug,
 			BeginAt:      beginAt,
@@ -159,7 +160,7 @@ func (i *InsertBatch) Query() bool {
 	return false
 }
 
-func (i *InsertBatch) Execute(logger Logger, pos string, trace, debug bool, affect any, scan func(Scanner) error) (err error) {
+func (i *InsertBatch) Execute(log logger.Logger, pos string, trace, debug bool, affect any, scan func(Scanner) error) (err error) {
 
 	conn := i.conn
 	var tx *sql.Tx
@@ -173,7 +174,7 @@ func (i *InsertBatch) Execute(logger Logger, pos string, trace, debug bool, affe
 			if err != nil {
 				now := time.Now()
 				err = commons.AddError(err, tx.Rollback())
-				logger.Trace(pos, conn.TraceId(), true, err, &SQLTrace{
+				log.Trace(pos, conn.TraceId(), true, err, &logger.SQLTrace{
 					Trace:        trace,
 					Debug:        debug,
 					BeginAt:      now,
@@ -192,7 +193,7 @@ func (i *InsertBatch) Execute(logger Logger, pos string, trace, debug bool, affe
 			return
 		}
 		conn = NewTx(tx, conn.TraceId())
-		logger.Trace(pos, conn.TraceId(), true, err, &SQLTrace{
+		log.Trace(pos, conn.TraceId(), true, err, &logger.SQLTrace{
 			Trace:        trace,
 			Debug:        debug,
 			BeginAt:      now,
@@ -204,7 +205,7 @@ func (i *InsertBatch) Execute(logger Logger, pos string, trace, debug bool, affe
 
 	ibs := &insertBatchScanner{}
 	for _, raw := range i.raws {
-		err = i.execute(conn, raw, logger, pos, trace, debug, ibs, func(s Scanner) error {
+		err = i.execute(conn, raw, log, pos, trace, debug, ibs, func(s Scanner) error {
 			return scan(s)
 		})
 		if err != nil {
@@ -230,7 +231,7 @@ func (i *InsertBatch) Execute(logger Logger, pos string, trace, debug bool, affe
 		return
 	}
 
-	logger.Trace(pos, conn.TraceId(), true, err, &SQLTrace{
+	log.Trace(pos, conn.TraceId(), true, err, &logger.SQLTrace{
 		Trace:        trace,
 		Debug:        debug,
 		BeginAt:      now,
@@ -242,7 +243,7 @@ func (i *InsertBatch) Execute(logger Logger, pos string, trace, debug bool, affe
 	return
 }
 
-func (i *InsertBatch) execute(conn Conn, raw *Raw, logger Logger, pos string, trace, debug bool, ibs *insertBatchScanner, scan func(Scanner) error) (err error) {
+func (i *InsertBatch) execute(conn Conn, raw *Raw, logger logger.Logger, pos string, trace, debug bool, ibs *insertBatchScanner, scan func(Scanner) error) (err error) {
 	d := NewDefault(conn, raw)
 	d.clean = false
 	err = d.Execute(logger, pos, trace, debug, nil, nil)
@@ -278,7 +279,7 @@ func (p *ParallelQuery) Query() bool {
 	return p.Raw.Query
 }
 
-func (p *ParallelQuery) Execute(logger Logger, pos string, trace, debug bool, affect any, _ func(Scanner) error) error {
+func (p *ParallelQuery) Execute(logger logger.Logger, pos string, trace, debug bool, affect any, _ func(Scanner) error) error {
 	d := NewDefault(p.Conn, p.Raw)
 	return d.Execute(logger, pos, trace, debug, affect, func(s Scanner) error {
 		return s.Scan(p.Dest)
@@ -300,7 +301,7 @@ func (f *FetchQuery) Query() bool {
 	return f.raw.Query
 }
 
-func (f *FetchQuery) Execute(logger Logger, pos string, trace, debug bool, affect any, scan func(Scanner) error) (err error) {
+func (f *FetchQuery) Execute(log logger.Logger, pos string, trace, debug bool, affect any, scan func(Scanner) error) (err error) {
 
 	conn := f.conn
 
@@ -310,7 +311,7 @@ func (f *FetchQuery) Execute(logger Logger, pos string, trace, debug bool, affec
 			if err != nil {
 				now := time.Now()
 				err = commons.AddError(err, tx.Rollback())
-				logger.Trace(pos, conn.TraceId(), true, err, &SQLTrace{
+				log.Trace(pos, conn.TraceId(), true, err, &logger.SQLTrace{
 					Trace:        trace,
 					Debug:        debug,
 					BeginAt:      now,
@@ -338,7 +339,7 @@ func (f *FetchQuery) Execute(logger Logger, pos string, trace, debug bool, affec
 		SQL:    fmt.Sprintf("declare %s cursor for %s", cursor, f.raw.SQL),
 		Params: f.raw.Params,
 	})
-	err = d.Execute(logger, pos, trace, debug, affect, nil)
+	err = d.Execute(log, pos, trace, debug, affect, nil)
 	if err != nil {
 		return
 	}
@@ -350,12 +351,12 @@ func (f *FetchQuery) Execute(logger Logger, pos string, trace, debug bool, affec
 			SQL:    fmt.Sprintf("close %s", cursor),
 			Params: nil,
 		})
-		err = commons.AddError(err, d.Execute(logger, pos, trace, debug, affect, nil))
+		err = commons.AddError(err, d.Execute(log, pos, trace, debug, affect, nil))
 
 		now := time.Now()
 		err = commons.AddError(err, tx.Commit())
 
-		logger.Trace(pos, conn.TraceId(), true, err, &SQLTrace{
+		log.Trace(pos, conn.TraceId(), true, err, &logger.SQLTrace{
 			Trace:        trace,
 			Debug:        debug,
 			BeginAt:      now,
@@ -373,7 +374,7 @@ func (f *FetchQuery) Execute(logger Logger, pos string, trace, debug bool, affec
 			Params: nil,
 		})
 		var rowsAffected int64
-		err = d.Execute(logger, pos, trace, debug, affect, func(s Scanner) error {
+		err = d.Execute(log, pos, trace, debug, affect, func(s Scanner) error {
 			e := scan(s)
 			if e != nil {
 				return e

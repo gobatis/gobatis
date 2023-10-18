@@ -56,3 +56,7 @@ func (n Namer) ColumnName(name string) string {
 	snakeStr := re.ReplaceAllString(name, "${1}_${2}")
 	return strings.ToLower(snakeStr)
 }
+
+func (n Namer) Escaper() string {
+	return "'"
+}

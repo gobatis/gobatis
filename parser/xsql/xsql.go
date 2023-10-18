@@ -54,18 +54,20 @@ func (x *XSQL) AddVar(v any) {
 }
 
 func Parse(source string, vars map[string]any) (*XSQL, error) {
-	return parse(source, false, vars)
+	return parse(source, nil, vars)
 }
 
-func Explain(source string, vars map[string]any) (string, error) {
-	r, err := parse(source, true, vars)
+type Formatter func(rv reflect.Value, escaper string) (s string, err error)
+
+func Explain(formatter Formatter, source string, vars map[string]any) (string, error) {
+	r, err := parse(source, formatter, vars)
 	if err != nil {
 		return "", err
 	}
 	return r.SQL(), nil
 }
 
-func parse(source string, explain bool, vars map[string]any) (*XSQL, error) {
+func parse(source string, formatter Formatter, vars map[string]any) (*XSQL, error) {
 
 	errs := &commons.ErrorListener{}
 
@@ -91,7 +93,7 @@ func parse(source string, explain bool, vars map[string]any) (*XSQL, error) {
 		ErrorListener: errs,
 		vars:          vars,
 		xsql:          &XSQL{},
-		explain:       explain,
+		formatter:     formatter,
 	}
 	_ = v.VisitContent(tree.(*ContentContext))
 
@@ -100,9 +102,9 @@ func parse(source string, explain bool, vars map[string]any) (*XSQL, error) {
 
 type Visitor struct {
 	*commons.ErrorListener
-	xsql    *XSQL
-	vars    map[string]any
-	explain bool
+	xsql      *XSQL
+	vars      map[string]any
+	formatter Formatter
 }
 
 func (v Visitor) VisitContent(ctx *ContentContext) interface{} {
@@ -149,7 +151,7 @@ func (v Visitor) visitExpr(ctx *ExprContext) {
 		v.AddError(fmt.Errorf("parse expression: %s error: %w", ctx.GetVal().GetText(), err))
 		return
 	}
-	if ctx.HASH() != nil && !v.explain {
+	if ctx.HASH() != nil && v.formatter == nil {
 		v.bindExpr(rv)
 	} else {
 		v.explainExpr(rv)
@@ -183,15 +185,12 @@ func (v Visitor) explainExpr(rv reflect.Value) {
 }
 
 func (v Visitor) explainVar(rv reflect.Value) (r string) {
-	switch rv.Kind() {
-	case reflect.String:
-		return fmt.Sprintf("'%s'", rv.Interface())
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
-		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		return fmt.Sprintf("%d", rv.Interface())
-	default:
-		return fmt.Sprintf("%v", rv.Interface())
+	r, err := v.formatter(rv, "'")
+	if err != nil {
+		v.AddError(err)
+		return
 	}
+	return
 }
 
 func (v Visitor) visitAttribute(ctx *AttributeContext) {

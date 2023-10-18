@@ -11,4 +11,5 @@ type Namer interface {
 	ReservedName(name string) string
 	ColumnName(name string) string
 	TableName(name string) string
+	Escaper() string
 }

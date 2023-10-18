@@ -9,6 +9,7 @@ import (
 
 	"github.com/gobatis/gobatis/dialector"
 	"github.com/gobatis/gobatis/executor"
+	"github.com/gobatis/gobatis/logger"
 	"github.com/gobatis/gobatis/parser/commons"
 	"go.uber.org/atomic"
 )
@@ -55,7 +56,7 @@ func Open(d dialector.Dialector, options ...Option) (db *DB, err error) {
 			return time.Now()
 		},
 		Dialector: d,
-		Logger:    executor.DefaultLogger(),
+		Logger:    logger.DefaultLogger(),
 		db:        nil,
 	}
 	config.db, err = d.DB()
@@ -374,7 +375,7 @@ func (d *DB) ParallelQuery(queryer ...ParallelQuery) *DB {
 
 	lock := sync.Mutex{}
 	wg := sync.WaitGroup{}
-	pos := executor.CallFuncPos(0)
+	pos := logger.CallFuncPos(0)
 	for _, v := range executors {
 		wg.Add(1)
 		go func(v executor.Executor) {
@@ -455,7 +456,7 @@ func (d *DB) Begin() *DB {
 	}
 
 	defer func() {
-		d.Logger.Trace("", c.traceId, true, d.Error, &executor.SQLTrace{
+		d.Logger.Trace("", c.traceId, true, d.Error, &logger.SQLTrace{
 			Trace:        d.trace,
 			Debug:        d.debug,
 			BeginAt:      time.Now(),
@@ -488,7 +489,7 @@ func (d *DB) Commit() *DB {
 
 	defer func() {
 		d.addError(d.tx.Close())
-		d.Logger.Trace("", d.traceId, true, d.Error, &executor.SQLTrace{
+		d.Logger.Trace("", d.traceId, true, d.Error, &logger.SQLTrace{
 			Trace:        d.trace,
 			Debug:        d.debug,
 			BeginAt:      time.Now(),
@@ -509,7 +510,7 @@ func (d *DB) Rollback() *DB {
 	}
 	defer func() {
 		d.addError(d.tx.Close())
-		d.Logger.Trace("", d.traceId, true, d.Error, &executor.SQLTrace{
+		d.Logger.Trace("", d.traceId, true, d.Error, &logger.SQLTrace{
 			Trace:        d.trace,
 			Debug:        d.debug,
 			BeginAt:      time.Now(),

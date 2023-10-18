@@ -1,11 +1,15 @@
-package executor
+package logger
 
 import (
+	"database/sql/driver"
 	"fmt"
 	syslog "log"
+	"reflect"
 	"runtime"
+	"strconv"
 	"strings"
 	"time"
+	"unicode"
 
 	"github.com/gozelle/color"
 )
@@ -16,6 +20,7 @@ type Logger interface {
 	Errorf(format string, a ...any)
 	Warnf(format string, a ...any)
 	Trace(pos, id string, tx bool, err error, st *SQLTrace)
+	Explain(rv reflect.Value, escaper string) (s string, err error)
 }
 
 func DefaultLogger() Logger {
@@ -82,6 +87,80 @@ func (l logger) Errorf(format string, a ...any) {
 
 func (l logger) Warnf(format string, a ...any) {
 	syslog.Printf(format, a...)
+}
+
+const (
+	null = "null"
+	tsf  = "2006-01-02 15:04:05.999"
+	tsz  = "0000-00-00 00:00:00"
+)
+
+func elemOf(rv reflect.Value) reflect.Value {
+	for {
+		if rv.Kind() != reflect.Pointer {
+			return rv
+		}
+		rv = rv.Elem()
+	}
+}
+
+func isPrintable(s string) bool {
+	for _, r := range s {
+		if !unicode.IsPrint(r) {
+			return false
+		}
+	}
+	return true
+}
+
+func (l logger) Explain(rv reflect.Value, escaper string) (s string, err error) {
+
+	escape := func(v string) string {
+		return fmt.Sprintf("%s%s%s", escaper, v, escaper)
+	}
+	if rv.Kind() == reflect.Invalid || rv.Kind() == reflect.Pointer && rv.IsNil() {
+		s = null
+		return
+	}
+	rv = elemOf(rv)
+	switch rv.Kind() {
+	case reflect.String:
+		s = escape(strings.ReplaceAll(fmt.Sprintf("%s", rv.Interface()), escaper, "\\"+escaper))
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		s = fmt.Sprintf("%d", rv.Interface())
+	case reflect.Float32, reflect.Float64:
+		s = fmt.Sprintf("%.6f", rv.Interface())
+	case reflect.Bool:
+		s = strconv.FormatBool(rv.Interface().(bool))
+	default:
+		switch t := rv.Interface().(type) {
+		case time.Time:
+			if rv.IsZero() {
+				s = escape(tsz)
+			} else {
+				s = escape(t.Format(tsf))
+			}
+		case []byte:
+			if vv := string(t); isPrintable(vv) {
+				s = escape(strings.ReplaceAll(s, escaper, "\\"+escaper))
+			} else {
+				s = escape("<binary>")
+			}
+		case fmt.Stringer:
+			s = escape(t.String())
+		case driver.Valuer:
+			var vv driver.Value
+			vv, err = t.Value()
+			if err != nil {
+				return
+			}
+			s, err = l.Explain(reflect.ValueOf(vv), escaper)
+		default:
+			err = fmt.Errorf("unsupported explain type: %s", rv.Type())
+		}
+	}
+	return
 }
 
 type SQLTrace struct {
