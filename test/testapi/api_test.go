@@ -230,7 +230,7 @@ func TestAPIFeatures(t *testing.T) {
 
 	initEnv(t)
 	initDB(t)
-	//testInsert(t)
+	testInsert(t)
 	//testInsertBatch(t)
 	//testUpdate(t)
 	//testParallelQuery(t)
@@ -241,7 +241,7 @@ func TestAPIFeatures(t *testing.T) {
 	//testDynamicSQL(t)
 	//testDelete(t)
 	//testRecoverValueWhenNoRows(t)
-	testInParameter(t)
+	//testInParameter(t)
 	//testExec(t)
 	//testNestedTx(t)
 }

@@ -4,8 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"reflect"
 	"time"
+
+	"github.com/gobatis/gobatis/parser/commons"
+	"github.com/gobatis/gobatis/parser/xsql"
 )
 
 type Executor interface {
@@ -25,16 +27,16 @@ func NewDefault(conn Conn, raw *Raw) *Default {
 }
 
 type Default struct {
-	fragment *fragment
-	exprs    []string
-	vars     []any
-	dynamic  bool
-	sql      string
-	rows     *sql.Rows
-	result   sql.Result
-	conn     Conn
-	raw      *Raw
-	clean    bool
+	//fragment *fragment
+	//exprs    []string
+	//vars     []any
+	//dynamic  bool
+	//sql      string
+	rows   *sql.Rows
+	result sql.Result
+	conn   Conn
+	raw    *Raw
+	clean  bool
 }
 
 func (d *Default) Query() bool {
@@ -45,58 +47,51 @@ func (d *Default) Execute(logger Logger, pos string, trace, debug bool, affect a
 
 	beginAt := time.Now()
 
-	var params []*param
-	var vars []reflect.Value
+	vars := map[string]any{}
 	for _, v := range d.raw.Params {
-		params = append(params, &param{
-			name: v.Name,
-			rt:   reflect.TypeOf(v.Value).Name(),
-		})
-		vars = append(vars, reflect.ValueOf(v.Value))
+		vars[v.Name] = v.Value
 	}
 
-	var node *xmlNode
-	node, err = parseSQL("test.file", fmt.Sprintf("<sql>%s</sql>", d.raw.SQL))
+	r, err := xsql.Parse(d.raw.SQL, vars)
 	if err != nil {
 		return
 	}
 
-	d.fragment = &fragment{node: node, in: params}
-	d.sql, d.exprs, d.vars, d.dynamic, err = d.fragment.parseStatement(vars...)
-	if err != nil {
-		return
-	}
 	var s *scanner
 
 	defer func() {
 		if d.clean {
 			if d.rows != nil {
-				err = AddError(err, d.rows.Close())
+				err = commons.AddError(err, d.rows.Close())
 			}
 			if !d.conn.IsTx() {
-				err = AddError(err, d.conn.Close())
+				err = commons.AddError(err, d.conn.Close())
 			}
 		}
 		if s == nil {
 			s = &scanner{}
 		}
+		plainSQL, e := xsql.Explain(d.raw.SQL, vars)
+		if e != nil {
+			plainSQL = fmt.Sprintf("explain sql error: %s", e)
+		}
 		logger.Trace(pos, d.conn.TraceId(), d.conn.IsTx(), err, &SQLTrace{
 			Trace:        trace,
 			Debug:        debug,
 			BeginAt:      beginAt,
-			RawSQL:       d.sql,
-			PlainSQL:     "",
+			RawSQL:       r.SQL(),
+			PlainSQL:     plainSQL,
 			RowsAffected: s.rowsAffected,
 		})
 	}()
 
 	if d.raw.Query {
-		d.rows, err = d.conn.QueryContext(d.raw.Ctx, d.sql, d.vars...)
+		d.rows, err = d.conn.QueryContext(d.raw.Ctx, r.SQL(), r.Vars()...)
 		if err != nil {
 			return
 		}
 	} else {
-		d.result, err = d.conn.ExecContext(d.raw.Ctx, d.sql, d.vars...)
+		d.result, err = d.conn.ExecContext(d.raw.Ctx, r.SQL(), r.Vars()...)
 		if err != nil {
 			return
 		}
@@ -172,12 +167,12 @@ func (i *InsertBatch) Execute(logger Logger, pos string, trace, debug bool, affe
 		// Indicate that the outside is a regular DB object,
 		// not a transaction object.
 		if !i.conn.IsTx() {
-			err = AddError(err, i.conn.Close())
+			err = commons.AddError(err, i.conn.Close())
 		}
 		if tx != nil {
 			if err != nil {
 				now := time.Now()
-				err = AddError(err, tx.Rollback())
+				err = commons.AddError(err, tx.Rollback())
 				logger.Trace(pos, conn.TraceId(), true, err, &SQLTrace{
 					Trace:        trace,
 					Debug:        debug,
@@ -256,7 +251,7 @@ func (i *InsertBatch) execute(conn Conn, raw *Raw, logger Logger, pos string, tr
 	}
 	defer func() {
 		if d.rows != nil {
-			err = AddError(err, d.rows.Close())
+			err = commons.AddError(err, d.rows.Close())
 		}
 	}()
 	if d.result != nil {
@@ -314,7 +309,7 @@ func (f *FetchQuery) Execute(logger Logger, pos string, trace, debug bool, affec
 		if tx != nil {
 			if err != nil {
 				now := time.Now()
-				err = AddError(err, tx.Rollback())
+				err = commons.AddError(err, tx.Rollback())
 				logger.Trace(pos, conn.TraceId(), true, err, &SQLTrace{
 					Trace:        trace,
 					Debug:        debug,
@@ -355,10 +350,10 @@ func (f *FetchQuery) Execute(logger Logger, pos string, trace, debug bool, affec
 			SQL:    fmt.Sprintf("close %s", cursor),
 			Params: nil,
 		})
-		err = AddError(err, d.Execute(logger, pos, trace, debug, affect, nil))
+		err = commons.AddError(err, d.Execute(logger, pos, trace, debug, affect, nil))
 
 		now := time.Now()
-		err = AddError(err, tx.Commit())
+		err = commons.AddError(err, tx.Commit())
 
 		logger.Trace(pos, conn.TraceId(), true, err, &SQLTrace{
 			Trace:        trace,

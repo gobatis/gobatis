@@ -12,20 +12,15 @@ import (
 )
 
 type XSQL struct {
-	raw     strings.Builder
+	sql     strings.Builder
 	dynamic bool
 	vars    []any
-	sql     string
 	ws      bool
 	count   int
 }
 
-func (x *XSQL) Raw() string {
-	return x.raw.String()
-}
-
 func (x *XSQL) SQL() string {
-	return x.sql
+	return x.sql.String()
 }
 
 func (x *XSQL) Dynamic() bool {
@@ -45,12 +40,12 @@ func (x *XSQL) WriteWS() {
 		return
 	}
 	x.ws = true
-	x.raw.WriteString(" ")
+	x.sql.WriteString(" ")
 }
 
 func (x *XSQL) WriteString(v string) {
 	x.ws = false
-	x.raw.WriteString(v)
+	x.sql.WriteString(v)
 }
 
 func (x *XSQL) AddVar(v any) {
@@ -67,7 +62,7 @@ func Explain(source string, vars map[string]any) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return r.Raw(), nil
+	return r.SQL(), nil
 }
 
 func parse(source string, explain bool, vars map[string]any) (*XSQL, error) {
@@ -111,7 +106,7 @@ type Visitor struct {
 }
 
 func (v Visitor) VisitContent(ctx *ContentContext) interface{} {
-	fmt.Println("content:", ctx.GetText())
+	//fmt.Println("content:", ctx.GetText())
 	for _, c := range ctx.GetChildren() {
 		if v.Error() != nil {
 			return nil
@@ -170,7 +165,7 @@ func (v Visitor) bindExpr(rv reflect.Value) {
 		}
 		v.xsql.WriteString(fmt.Sprintf("(%s)", strings.Join(s, ",")))
 	} else {
-		v.xsql.vars = append(v.xsql.vars, rv.Interface())
+		v.xsql.AddVar(rv.Interface())
 		v.xsql.WriteString(fmt.Sprintf("$%d", v.xsql.Count()))
 	}
 }

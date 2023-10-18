@@ -12,14 +12,18 @@ func TestExpr(t *testing.T) {
 		V int64
 	}
 
-	v, err := Parse(`d[1]`, map[string]any{
+	v, err := Parse(`d`, map[string]any{
 		"a": A{
 			V: 10,
 		},
-		"b": "ok",
-		"c": 1,
+		"b": true,
+		"c": false,
 		"d": []string{"d1", "d2"},
 	})
 	require.NoError(t, err)
-	t.Log(v)
+	t.Log(v.Interface())
+}
+
+func TestA(t *testing.T) {
+	//fmt.Println()
 }

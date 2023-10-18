@@ -37,7 +37,7 @@ func (d *ErrorListener) SyntaxError(recognizer antlr.Recognizer, offendingSymbol
 	d.AddError(fmt.Errorf("syntax error at line %d:%d - %s", line, column, msg))
 }
 
-func (d *ErrorListener) GetError() error {
+func (d *ErrorListener) Error() error {
 	return d.err
 }
 

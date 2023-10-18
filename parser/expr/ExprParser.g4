@@ -22,7 +22,8 @@ expression:
         | GREATER
         | GREATER_OR_EQUALS
 	)  expression
-	| expression logical expression;
+	| expression logical expression
+	| expression tertiary = QUESTION expression COLON expression;
 
 primary:
     operand
@@ -30,6 +31,7 @@ primary:
 		member
 		| index
 		| slice
+		| call
 	);
 
 logical: LOGICAL_AND | LOGICAL_OR;
@@ -63,6 +65,13 @@ string: RAW_STRING_LIT | INTERPRETED_STRING_LIT;
 float: FLOAT_LIT;
 
 index: L_BRACKET expression R_BRACKET;
+
+expressionList: expression (COMMA expression)*;
+
+call:
+	 L_PAREN (
+        expressionList ELLIPSIS?
+	)? R_PAREN;
 
 slice:
 	L_BRACKET (

@@ -6,7 +6,7 @@ import (
 	"runtime"
 	"strings"
 	"time"
-	
+
 	"github.com/gozelle/color"
 )
 
@@ -56,13 +56,13 @@ func (l logger) Trace(pos, traceId string, tx bool, err error, tr *SQLTrace) {
 	if err != nil {
 		info.WriteString(color.RedString(fmt.Sprintf(" ERROR: %s", err.Error())))
 	}
-	
+
 	if tr != nil {
 		cost := time.Since(tr.BeginAt)
 		info.WriteString(fmt.Sprintf("\n%s %s %s",
 			color.YellowString(fmt.Sprintf("[%s]", cost)),
 			color.BlueString(fmt.Sprintf("[rows:%d]", tr.RowsAffected)),
-			tr.RawSQL,
+			tr.PlainSQL,
 		))
 	}
 	f(info.String())

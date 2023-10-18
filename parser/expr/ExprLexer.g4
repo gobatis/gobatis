@@ -22,7 +22,7 @@ QUESTION               : '?';
 DOT                    : '.';
 //PLUS_PLUS              : '++';
 //MINUS_MINUS            : '--';
-//ELLIPSIS               : '...';
+ELLIPSIS               : '...';
 
 // Relation operators
 EQUALS                 : '==';
