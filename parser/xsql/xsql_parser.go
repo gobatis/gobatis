@@ -45,52 +45,51 @@ func xsqlParserInit() {
 	}
 	staticData.PredictionContextCache = antlr.NewPredictionContextCache()
 	staticData.serializedATN = []int32{
-		4, 1, 15, 110, 2, 0, 7, 0, 2, 1, 7, 1, 2, 2, 7, 2, 2, 3, 7, 3, 2, 4, 7,
+		4, 1, 15, 108, 2, 0, 7, 0, 2, 1, 7, 1, 2, 2, 7, 2, 2, 3, 7, 3, 2, 4, 7,
 		4, 2, 5, 7, 5, 2, 6, 7, 6, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 5, 0, 20, 8, 0,
-		10, 0, 12, 0, 23, 9, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 5, 1, 30, 8, 1, 10,
-		1, 12, 1, 33, 9, 1, 1, 1, 5, 1, 36, 8, 1, 10, 1, 12, 1, 39, 9, 1, 1, 1,
-		1, 1, 1, 1, 1, 1, 5, 1, 45, 8, 1, 10, 1, 12, 1, 48, 9, 1, 1, 1, 5, 1, 51,
-		8, 1, 10, 1, 12, 1, 54, 9, 1, 1, 1, 1, 1, 3, 1, 58, 8, 1, 1, 2, 1, 2, 1,
-		2, 1, 2, 1, 2, 1, 3, 1, 3, 1, 3, 1, 3, 5, 3, 69, 8, 3, 10, 3, 12, 3, 72,
-		9, 3, 1, 4, 1, 4, 1, 4, 1, 4, 3, 4, 78, 8, 4, 1, 4, 5, 4, 81, 8, 4, 10,
-		4, 12, 4, 84, 9, 4, 1, 4, 5, 4, 87, 8, 4, 10, 4, 12, 4, 90, 9, 4, 1, 4,
-		5, 4, 93, 8, 4, 10, 4, 12, 4, 96, 9, 4, 1, 4, 5, 4, 99, 8, 4, 10, 4, 12,
-		4, 102, 9, 4, 1, 4, 1, 4, 1, 5, 1, 5, 1, 6, 1, 6, 1, 6, 0, 0, 7, 0, 2,
-		4, 6, 8, 10, 12, 0, 1, 1, 0, 4, 15, 118, 0, 21, 1, 0, 0, 0, 2, 57, 1, 0,
-		0, 0, 4, 59, 1, 0, 0, 0, 6, 64, 1, 0, 0, 0, 8, 77, 1, 0, 0, 0, 10, 105,
-		1, 0, 0, 0, 12, 107, 1, 0, 0, 0, 14, 20, 3, 2, 1, 0, 15, 20, 3, 4, 2, 0,
-		16, 20, 3, 8, 4, 0, 17, 20, 3, 10, 5, 0, 18, 20, 3, 12, 6, 0, 19, 14, 1,
-		0, 0, 0, 19, 15, 1, 0, 0, 0, 19, 16, 1, 0, 0, 0, 19, 17, 1, 0, 0, 0, 19,
-		18, 1, 0, 0, 0, 20, 23, 1, 0, 0, 0, 21, 19, 1, 0, 0, 0, 21, 22, 1, 0, 0,
-		0, 22, 24, 1, 0, 0, 0, 23, 21, 1, 0, 0, 0, 24, 25, 5, 0, 0, 1, 25, 1, 1,
-		0, 0, 0, 26, 27, 5, 10, 0, 0, 27, 31, 5, 5, 0, 0, 28, 30, 5, 4, 0, 0, 29,
-		28, 1, 0, 0, 0, 30, 33, 1, 0, 0, 0, 31, 29, 1, 0, 0, 0, 31, 32, 1, 0, 0,
-		0, 32, 37, 1, 0, 0, 0, 33, 31, 1, 0, 0, 0, 34, 36, 3, 6, 3, 0, 35, 34,
-		1, 0, 0, 0, 36, 39, 1, 0, 0, 0, 37, 35, 1, 0, 0, 0, 37, 38, 1, 0, 0, 0,
-		38, 40, 1, 0, 0, 0, 39, 37, 1, 0, 0, 0, 40, 58, 5, 11, 0, 0, 41, 42, 5,
-		10, 0, 0, 42, 46, 5, 5, 0, 0, 43, 45, 5, 4, 0, 0, 44, 43, 1, 0, 0, 0, 45,
-		48, 1, 0, 0, 0, 46, 44, 1, 0, 0, 0, 46, 47, 1, 0, 0, 0, 47, 52, 1, 0, 0,
-		0, 48, 46, 1, 0, 0, 0, 49, 51, 3, 6, 3, 0, 50, 49, 1, 0, 0, 0, 51, 54,
-		1, 0, 0, 0, 52, 50, 1, 0, 0, 0, 52, 53, 1, 0, 0, 0, 53, 55, 1, 0, 0, 0,
-		54, 52, 1, 0, 0, 0, 55, 56, 5, 12, 0, 0, 56, 58, 5, 11, 0, 0, 57, 26, 1,
-		0, 0, 0, 57, 41, 1, 0, 0, 0, 58, 3, 1, 0, 0, 0, 59, 60, 5, 10, 0, 0, 60,
-		61, 5, 12, 0, 0, 61, 62, 5, 5, 0, 0, 62, 63, 5, 11, 0, 0, 63, 5, 1, 0,
-		0, 0, 64, 65, 5, 5, 0, 0, 65, 66, 5, 13, 0, 0, 66, 70, 5, 14, 0, 0, 67,
-		69, 5, 4, 0, 0, 68, 67, 1, 0, 0, 0, 69, 72, 1, 0, 0, 0, 70, 68, 1, 0, 0,
-		0, 70, 71, 1, 0, 0, 0, 71, 7, 1, 0, 0, 0, 72, 70, 1, 0, 0, 0, 73, 74, 5,
-		6, 0, 0, 74, 78, 5, 8, 0, 0, 75, 76, 5, 7, 0, 0, 76, 78, 5, 8, 0, 0, 77,
-		73, 1, 0, 0, 0, 77, 75, 1, 0, 0, 0, 78, 82, 1, 0, 0, 0, 79, 81, 5, 4, 0,
-		0, 80, 79, 1, 0, 0, 0, 81, 84, 1, 0, 0, 0, 82, 80, 1, 0, 0, 0, 82, 83,
-		1, 0, 0, 0, 83, 88, 1, 0, 0, 0, 84, 82, 1, 0, 0, 0, 85, 87, 5, 5, 0, 0,
-		86, 85, 1, 0, 0, 0, 87, 90, 1, 0, 0, 0, 88, 86, 1, 0, 0, 0, 88, 89, 1,
-		0, 0, 0, 89, 94, 1, 0, 0, 0, 90, 88, 1, 0, 0, 0, 91, 93, 5, 15, 0, 0, 92,
-		91, 1, 0, 0, 0, 93, 96, 1, 0, 0, 0, 94, 92, 1, 0, 0, 0, 94, 95, 1, 0, 0,
-		0, 95, 100, 1, 0, 0, 0, 96, 94, 1, 0, 0, 0, 97, 99, 5, 4, 0, 0, 98, 97,
-		1, 0, 0, 0, 99, 102, 1, 0, 0, 0, 100, 98, 1, 0, 0, 0, 100, 101, 1, 0, 0,
-		0, 101, 103, 1, 0, 0, 0, 102, 100, 1, 0, 0, 0, 103, 104, 5, 9, 0, 0, 104,
-		9, 1, 0, 0, 0, 105, 106, 5, 3, 0, 0, 106, 11, 1, 0, 0, 0, 107, 108, 7,
-		0, 0, 0, 108, 13, 1, 0, 0, 0, 13, 19, 21, 31, 37, 46, 52, 57, 70, 77, 82,
-		88, 94, 100,
+		10, 0, 12, 0, 23, 9, 0, 1, 1, 1, 1, 1, 1, 5, 1, 28, 8, 1, 10, 1, 12, 1,
+		31, 9, 1, 1, 1, 5, 1, 34, 8, 1, 10, 1, 12, 1, 37, 9, 1, 1, 1, 1, 1, 1,
+		1, 1, 1, 5, 1, 43, 8, 1, 10, 1, 12, 1, 46, 9, 1, 1, 1, 5, 1, 49, 8, 1,
+		10, 1, 12, 1, 52, 9, 1, 1, 1, 1, 1, 3, 1, 56, 8, 1, 1, 2, 1, 2, 1, 2, 1,
+		2, 1, 2, 1, 3, 1, 3, 1, 3, 1, 3, 5, 3, 67, 8, 3, 10, 3, 12, 3, 70, 9, 3,
+		1, 4, 1, 4, 1, 4, 1, 4, 3, 4, 76, 8, 4, 1, 4, 5, 4, 79, 8, 4, 10, 4, 12,
+		4, 82, 9, 4, 1, 4, 5, 4, 85, 8, 4, 10, 4, 12, 4, 88, 9, 4, 1, 4, 5, 4,
+		91, 8, 4, 10, 4, 12, 4, 94, 9, 4, 1, 4, 5, 4, 97, 8, 4, 10, 4, 12, 4, 100,
+		9, 4, 1, 4, 1, 4, 1, 5, 1, 5, 1, 6, 1, 6, 1, 6, 0, 0, 7, 0, 2, 4, 6, 8,
+		10, 12, 0, 1, 1, 0, 4, 15, 116, 0, 21, 1, 0, 0, 0, 2, 55, 1, 0, 0, 0, 4,
+		57, 1, 0, 0, 0, 6, 62, 1, 0, 0, 0, 8, 75, 1, 0, 0, 0, 10, 103, 1, 0, 0,
+		0, 12, 105, 1, 0, 0, 0, 14, 20, 3, 2, 1, 0, 15, 20, 3, 4, 2, 0, 16, 20,
+		3, 8, 4, 0, 17, 20, 3, 10, 5, 0, 18, 20, 3, 12, 6, 0, 19, 14, 1, 0, 0,
+		0, 19, 15, 1, 0, 0, 0, 19, 16, 1, 0, 0, 0, 19, 17, 1, 0, 0, 0, 19, 18,
+		1, 0, 0, 0, 20, 23, 1, 0, 0, 0, 21, 19, 1, 0, 0, 0, 21, 22, 1, 0, 0, 0,
+		22, 1, 1, 0, 0, 0, 23, 21, 1, 0, 0, 0, 24, 25, 5, 10, 0, 0, 25, 29, 5,
+		5, 0, 0, 26, 28, 5, 4, 0, 0, 27, 26, 1, 0, 0, 0, 28, 31, 1, 0, 0, 0, 29,
+		27, 1, 0, 0, 0, 29, 30, 1, 0, 0, 0, 30, 35, 1, 0, 0, 0, 31, 29, 1, 0, 0,
+		0, 32, 34, 3, 6, 3, 0, 33, 32, 1, 0, 0, 0, 34, 37, 1, 0, 0, 0, 35, 33,
+		1, 0, 0, 0, 35, 36, 1, 0, 0, 0, 36, 38, 1, 0, 0, 0, 37, 35, 1, 0, 0, 0,
+		38, 56, 5, 11, 0, 0, 39, 40, 5, 10, 0, 0, 40, 44, 5, 5, 0, 0, 41, 43, 5,
+		4, 0, 0, 42, 41, 1, 0, 0, 0, 43, 46, 1, 0, 0, 0, 44, 42, 1, 0, 0, 0, 44,
+		45, 1, 0, 0, 0, 45, 50, 1, 0, 0, 0, 46, 44, 1, 0, 0, 0, 47, 49, 3, 6, 3,
+		0, 48, 47, 1, 0, 0, 0, 49, 52, 1, 0, 0, 0, 50, 48, 1, 0, 0, 0, 50, 51,
+		1, 0, 0, 0, 51, 53, 1, 0, 0, 0, 52, 50, 1, 0, 0, 0, 53, 54, 5, 12, 0, 0,
+		54, 56, 5, 11, 0, 0, 55, 24, 1, 0, 0, 0, 55, 39, 1, 0, 0, 0, 56, 3, 1,
+		0, 0, 0, 57, 58, 5, 10, 0, 0, 58, 59, 5, 12, 0, 0, 59, 60, 5, 5, 0, 0,
+		60, 61, 5, 11, 0, 0, 61, 5, 1, 0, 0, 0, 62, 63, 5, 5, 0, 0, 63, 64, 5,
+		13, 0, 0, 64, 68, 5, 14, 0, 0, 65, 67, 5, 4, 0, 0, 66, 65, 1, 0, 0, 0,
+		67, 70, 1, 0, 0, 0, 68, 66, 1, 0, 0, 0, 68, 69, 1, 0, 0, 0, 69, 7, 1, 0,
+		0, 0, 70, 68, 1, 0, 0, 0, 71, 72, 5, 6, 0, 0, 72, 76, 5, 8, 0, 0, 73, 74,
+		5, 7, 0, 0, 74, 76, 5, 8, 0, 0, 75, 71, 1, 0, 0, 0, 75, 73, 1, 0, 0, 0,
+		76, 80, 1, 0, 0, 0, 77, 79, 5, 4, 0, 0, 78, 77, 1, 0, 0, 0, 79, 82, 1,
+		0, 0, 0, 80, 78, 1, 0, 0, 0, 80, 81, 1, 0, 0, 0, 81, 86, 1, 0, 0, 0, 82,
+		80, 1, 0, 0, 0, 83, 85, 5, 5, 0, 0, 84, 83, 1, 0, 0, 0, 85, 88, 1, 0, 0,
+		0, 86, 84, 1, 0, 0, 0, 86, 87, 1, 0, 0, 0, 87, 92, 1, 0, 0, 0, 88, 86,
+		1, 0, 0, 0, 89, 91, 5, 15, 0, 0, 90, 89, 1, 0, 0, 0, 91, 94, 1, 0, 0, 0,
+		92, 90, 1, 0, 0, 0, 92, 93, 1, 0, 0, 0, 93, 98, 1, 0, 0, 0, 94, 92, 1,
+		0, 0, 0, 95, 97, 5, 4, 0, 0, 96, 95, 1, 0, 0, 0, 97, 100, 1, 0, 0, 0, 98,
+		96, 1, 0, 0, 0, 98, 99, 1, 0, 0, 0, 99, 101, 1, 0, 0, 0, 100, 98, 1, 0,
+		0, 0, 101, 102, 5, 9, 0, 0, 102, 9, 1, 0, 0, 0, 103, 104, 5, 3, 0, 0, 104,
+		11, 1, 0, 0, 0, 105, 106, 7, 0, 0, 0, 106, 13, 1, 0, 0, 0, 13, 19, 21,
+		29, 35, 44, 50, 55, 68, 75, 80, 86, 92, 98,
 	}
 	deserializer := antlr.NewATNDeserializer(nil)
 	staticData.atn = deserializer.Deserialize(staticData.serializedATN)
@@ -165,7 +164,6 @@ type IContentContext interface {
 	GetParser() antlr.Parser
 
 	// Getter signatures
-	EOF() antlr.TerminalNode
 	AllStart_() []IStartContext
 	Start_(i int) IStartContext
 	AllEnd() []IEndContext
@@ -212,10 +210,6 @@ func NewContentContext(parser antlr.Parser, parent antlr.ParserRuleContext, invo
 }
 
 func (s *ContentContext) GetParser() antlr.Parser { return s.parser }
-
-func (s *ContentContext) EOF() antlr.TerminalNode {
-	return s.GetToken(XSQLParserEOF, 0)
-}
 
 func (s *ContentContext) AllStart_() []IStartContext {
 	children := s.GetChildren()
@@ -492,14 +486,6 @@ func (p *XSQLParser) Content() (localctx IContentContext) {
 		}
 		_la = p.GetTokenStream().LA(1)
 	}
-	{
-		p.SetState(24)
-		p.Match(XSQLParserEOF)
-		if p.HasError() {
-			// Recognition error - abort rule
-			goto errorExit
-		}
-	}
 
 errorExit:
 	if p.HasError() {
@@ -645,7 +631,7 @@ func (p *XSQLParser) Start_() (localctx IStartContext) {
 	p.EnterRule(localctx, 2, XSQLParserRULE_start)
 	var _la int
 
-	p.SetState(57)
+	p.SetState(55)
 	p.GetErrorHandler().Sync(p)
 	if p.HasError() {
 		goto errorExit
@@ -655,7 +641,7 @@ func (p *XSQLParser) Start_() (localctx IStartContext) {
 	case 1:
 		p.EnterOuterAlt(localctx, 1)
 		{
-			p.SetState(26)
+			p.SetState(24)
 			p.Match(XSQLParserOPEN)
 			if p.HasError() {
 				// Recognition error - abort rule
@@ -663,14 +649,14 @@ func (p *XSQLParser) Start_() (localctx IStartContext) {
 			}
 		}
 		{
-			p.SetState(27)
+			p.SetState(25)
 			p.Match(XSQLParserNAME)
 			if p.HasError() {
 				// Recognition error - abort rule
 				goto errorExit
 			}
 		}
-		p.SetState(31)
+		p.SetState(29)
 		p.GetErrorHandler().Sync(p)
 		if p.HasError() {
 			goto errorExit
@@ -679,7 +665,7 @@ func (p *XSQLParser) Start_() (localctx IStartContext) {
 
 		for _la == XSQLParserWS {
 			{
-				p.SetState(28)
+				p.SetState(26)
 				p.Match(XSQLParserWS)
 				if p.HasError() {
 					// Recognition error - abort rule
@@ -687,14 +673,14 @@ func (p *XSQLParser) Start_() (localctx IStartContext) {
 				}
 			}
 
-			p.SetState(33)
+			p.SetState(31)
 			p.GetErrorHandler().Sync(p)
 			if p.HasError() {
 				goto errorExit
 			}
 			_la = p.GetTokenStream().LA(1)
 		}
-		p.SetState(37)
+		p.SetState(35)
 		p.GetErrorHandler().Sync(p)
 		if p.HasError() {
 			goto errorExit
@@ -703,11 +689,11 @@ func (p *XSQLParser) Start_() (localctx IStartContext) {
 
 		for _la == XSQLParserNAME {
 			{
-				p.SetState(34)
+				p.SetState(32)
 				p.Attribute()
 			}
 
-			p.SetState(39)
+			p.SetState(37)
 			p.GetErrorHandler().Sync(p)
 			if p.HasError() {
 				goto errorExit
@@ -715,7 +701,7 @@ func (p *XSQLParser) Start_() (localctx IStartContext) {
 			_la = p.GetTokenStream().LA(1)
 		}
 		{
-			p.SetState(40)
+			p.SetState(38)
 			p.Match(XSQLParserCLOSE)
 			if p.HasError() {
 				// Recognition error - abort rule
@@ -726,7 +712,7 @@ func (p *XSQLParser) Start_() (localctx IStartContext) {
 	case 2:
 		p.EnterOuterAlt(localctx, 2)
 		{
-			p.SetState(41)
+			p.SetState(39)
 			p.Match(XSQLParserOPEN)
 			if p.HasError() {
 				// Recognition error - abort rule
@@ -734,14 +720,14 @@ func (p *XSQLParser) Start_() (localctx IStartContext) {
 			}
 		}
 		{
-			p.SetState(42)
+			p.SetState(40)
 			p.Match(XSQLParserNAME)
 			if p.HasError() {
 				// Recognition error - abort rule
 				goto errorExit
 			}
 		}
-		p.SetState(46)
+		p.SetState(44)
 		p.GetErrorHandler().Sync(p)
 		if p.HasError() {
 			goto errorExit
@@ -750,7 +736,7 @@ func (p *XSQLParser) Start_() (localctx IStartContext) {
 
 		for _la == XSQLParserWS {
 			{
-				p.SetState(43)
+				p.SetState(41)
 				p.Match(XSQLParserWS)
 				if p.HasError() {
 					// Recognition error - abort rule
@@ -758,14 +744,14 @@ func (p *XSQLParser) Start_() (localctx IStartContext) {
 				}
 			}
 
-			p.SetState(48)
+			p.SetState(46)
 			p.GetErrorHandler().Sync(p)
 			if p.HasError() {
 				goto errorExit
 			}
 			_la = p.GetTokenStream().LA(1)
 		}
-		p.SetState(52)
+		p.SetState(50)
 		p.GetErrorHandler().Sync(p)
 		if p.HasError() {
 			goto errorExit
@@ -774,11 +760,11 @@ func (p *XSQLParser) Start_() (localctx IStartContext) {
 
 		for _la == XSQLParserNAME {
 			{
-				p.SetState(49)
+				p.SetState(47)
 				p.Attribute()
 			}
 
-			p.SetState(54)
+			p.SetState(52)
 			p.GetErrorHandler().Sync(p)
 			if p.HasError() {
 				goto errorExit
@@ -786,7 +772,7 @@ func (p *XSQLParser) Start_() (localctx IStartContext) {
 			_la = p.GetTokenStream().LA(1)
 		}
 		{
-			p.SetState(55)
+			p.SetState(53)
 			p.Match(XSQLParserSLASH)
 			if p.HasError() {
 				// Recognition error - abort rule
@@ -794,7 +780,7 @@ func (p *XSQLParser) Start_() (localctx IStartContext) {
 			}
 		}
 		{
-			p.SetState(56)
+			p.SetState(54)
 			p.Match(XSQLParserCLOSE)
 			if p.HasError() {
 				// Recognition error - abort rule
@@ -897,7 +883,7 @@ func (p *XSQLParser) End() (localctx IEndContext) {
 	p.EnterRule(localctx, 4, XSQLParserRULE_end)
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(59)
+		p.SetState(57)
 		p.Match(XSQLParserOPEN)
 		if p.HasError() {
 			// Recognition error - abort rule
@@ -905,7 +891,7 @@ func (p *XSQLParser) End() (localctx IEndContext) {
 		}
 	}
 	{
-		p.SetState(60)
+		p.SetState(58)
 		p.Match(XSQLParserSLASH)
 		if p.HasError() {
 			// Recognition error - abort rule
@@ -913,7 +899,7 @@ func (p *XSQLParser) End() (localctx IEndContext) {
 		}
 	}
 	{
-		p.SetState(61)
+		p.SetState(59)
 		p.Match(XSQLParserNAME)
 		if p.HasError() {
 			// Recognition error - abort rule
@@ -921,7 +907,7 @@ func (p *XSQLParser) End() (localctx IEndContext) {
 		}
 	}
 	{
-		p.SetState(62)
+		p.SetState(60)
 		p.Match(XSQLParserCLOSE)
 		if p.HasError() {
 			// Recognition error - abort rule
@@ -1027,7 +1013,7 @@ func (p *XSQLParser) Attribute() (localctx IAttributeContext) {
 
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(64)
+		p.SetState(62)
 		p.Match(XSQLParserNAME)
 		if p.HasError() {
 			// Recognition error - abort rule
@@ -1035,7 +1021,7 @@ func (p *XSQLParser) Attribute() (localctx IAttributeContext) {
 		}
 	}
 	{
-		p.SetState(65)
+		p.SetState(63)
 		p.Match(XSQLParserEQUALS)
 		if p.HasError() {
 			// Recognition error - abort rule
@@ -1043,14 +1029,14 @@ func (p *XSQLParser) Attribute() (localctx IAttributeContext) {
 		}
 	}
 	{
-		p.SetState(66)
+		p.SetState(64)
 		p.Match(XSQLParserSTRING)
 		if p.HasError() {
 			// Recognition error - abort rule
 			goto errorExit
 		}
 	}
-	p.SetState(70)
+	p.SetState(68)
 	p.GetErrorHandler().Sync(p)
 	if p.HasError() {
 		goto errorExit
@@ -1059,7 +1045,7 @@ func (p *XSQLParser) Attribute() (localctx IAttributeContext) {
 
 	for _la == XSQLParserWS {
 		{
-			p.SetState(67)
+			p.SetState(65)
 			p.Match(XSQLParserWS)
 			if p.HasError() {
 				// Recognition error - abort rule
@@ -1067,7 +1053,7 @@ func (p *XSQLParser) Attribute() (localctx IAttributeContext) {
 			}
 		}
 
-		p.SetState(72)
+		p.SetState(70)
 		p.GetErrorHandler().Sync(p)
 		if p.HasError() {
 			goto errorExit
@@ -1210,7 +1196,7 @@ func (p *XSQLParser) Expr() (localctx IExprContext) {
 	var _alt int
 
 	p.EnterOuterAlt(localctx, 1)
-	p.SetState(77)
+	p.SetState(75)
 	p.GetErrorHandler().Sync(p)
 	if p.HasError() {
 		goto errorExit
@@ -1219,8 +1205,26 @@ func (p *XSQLParser) Expr() (localctx IExprContext) {
 	switch p.GetTokenStream().LA(1) {
 	case XSQLParserDOLLAR:
 		{
-			p.SetState(73)
+			p.SetState(71)
 			p.Match(XSQLParserDOLLAR)
+			if p.HasError() {
+				// Recognition error - abort rule
+				goto errorExit
+			}
+		}
+		{
+			p.SetState(72)
+			p.Match(XSQLParserOPEN_CURLY_BRAXE)
+			if p.HasError() {
+				// Recognition error - abort rule
+				goto errorExit
+			}
+		}
+
+	case XSQLParserHASH:
+		{
+			p.SetState(73)
+			p.Match(XSQLParserHASH)
 			if p.HasError() {
 				// Recognition error - abort rule
 				goto errorExit
@@ -1235,29 +1239,11 @@ func (p *XSQLParser) Expr() (localctx IExprContext) {
 			}
 		}
 
-	case XSQLParserHASH:
-		{
-			p.SetState(75)
-			p.Match(XSQLParserHASH)
-			if p.HasError() {
-				// Recognition error - abort rule
-				goto errorExit
-			}
-		}
-		{
-			p.SetState(76)
-			p.Match(XSQLParserOPEN_CURLY_BRAXE)
-			if p.HasError() {
-				// Recognition error - abort rule
-				goto errorExit
-			}
-		}
-
 	default:
 		p.SetError(antlr.NewNoViableAltException(p, nil, nil, nil, nil, nil))
 		goto errorExit
 	}
-	p.SetState(82)
+	p.SetState(80)
 	p.GetErrorHandler().Sync(p)
 	if p.HasError() {
 		goto errorExit
@@ -1269,7 +1255,7 @@ func (p *XSQLParser) Expr() (localctx IExprContext) {
 	for _alt != 2 && _alt != antlr.ATNInvalidAltNumber {
 		if _alt == 1 {
 			{
-				p.SetState(79)
+				p.SetState(77)
 				p.Match(XSQLParserWS)
 				if p.HasError() {
 					// Recognition error - abort rule
@@ -1278,7 +1264,7 @@ func (p *XSQLParser) Expr() (localctx IExprContext) {
 			}
 
 		}
-		p.SetState(84)
+		p.SetState(82)
 		p.GetErrorHandler().Sync(p)
 		if p.HasError() {
 			goto errorExit
@@ -1288,7 +1274,7 @@ func (p *XSQLParser) Expr() (localctx IExprContext) {
 			goto errorExit
 		}
 	}
-	p.SetState(88)
+	p.SetState(86)
 	p.GetErrorHandler().Sync(p)
 	if p.HasError() {
 		goto errorExit
@@ -1297,7 +1283,7 @@ func (p *XSQLParser) Expr() (localctx IExprContext) {
 
 	for _la == XSQLParserNAME {
 		{
-			p.SetState(85)
+			p.SetState(83)
 
 			var _m = p.Match(XSQLParserNAME)
 
@@ -1308,14 +1294,14 @@ func (p *XSQLParser) Expr() (localctx IExprContext) {
 			}
 		}
 
-		p.SetState(90)
+		p.SetState(88)
 		p.GetErrorHandler().Sync(p)
 		if p.HasError() {
 			goto errorExit
 		}
 		_la = p.GetTokenStream().LA(1)
 	}
-	p.SetState(94)
+	p.SetState(92)
 	p.GetErrorHandler().Sync(p)
 	if p.HasError() {
 		goto errorExit
@@ -1324,7 +1310,7 @@ func (p *XSQLParser) Expr() (localctx IExprContext) {
 
 	for _la == XSQLParserTEXT {
 		{
-			p.SetState(91)
+			p.SetState(89)
 			p.Match(XSQLParserTEXT)
 			if p.HasError() {
 				// Recognition error - abort rule
@@ -1332,14 +1318,14 @@ func (p *XSQLParser) Expr() (localctx IExprContext) {
 			}
 		}
 
-		p.SetState(96)
+		p.SetState(94)
 		p.GetErrorHandler().Sync(p)
 		if p.HasError() {
 			goto errorExit
 		}
 		_la = p.GetTokenStream().LA(1)
 	}
-	p.SetState(100)
+	p.SetState(98)
 	p.GetErrorHandler().Sync(p)
 	if p.HasError() {
 		goto errorExit
@@ -1348,7 +1334,7 @@ func (p *XSQLParser) Expr() (localctx IExprContext) {
 
 	for _la == XSQLParserWS {
 		{
-			p.SetState(97)
+			p.SetState(95)
 			p.Match(XSQLParserWS)
 			if p.HasError() {
 				// Recognition error - abort rule
@@ -1356,7 +1342,7 @@ func (p *XSQLParser) Expr() (localctx IExprContext) {
 			}
 		}
 
-		p.SetState(102)
+		p.SetState(100)
 		p.GetErrorHandler().Sync(p)
 		if p.HasError() {
 			goto errorExit
@@ -1364,7 +1350,7 @@ func (p *XSQLParser) Expr() (localctx IExprContext) {
 		_la = p.GetTokenStream().LA(1)
 	}
 	{
-		p.SetState(103)
+		p.SetState(101)
 		p.Match(XSQLParserCLOSE_CURLY_BRAXE)
 		if p.HasError() {
 			// Recognition error - abort rule
@@ -1448,7 +1434,7 @@ func (p *XSQLParser) Reference() (localctx IReferenceContext) {
 	p.EnterRule(localctx, 10, XSQLParserRULE_reference)
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(105)
+		p.SetState(103)
 		p.Match(XSQLParserEntityRef)
 		if p.HasError() {
 			// Recognition error - abort rule
@@ -1589,7 +1575,7 @@ func (p *XSQLParser) Chardata() (localctx IChardataContext) {
 
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(107)
+		p.SetState(105)
 		_la = p.GetTokenStream().LA(1)
 
 		if !((int64(_la) & ^0x3f) == 0 && ((int64(1)<<_la)&65520) != 0) {

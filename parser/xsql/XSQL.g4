@@ -38,7 +38,7 @@ NameChar     :   [:a-zA-Z]
              |   '\uFDF0'..'\uFFFD'
              ;
 
-content      :  (start | end | expr | reference | chardata)* EOF;
+content      :  (start | end | expr | reference | chardata)*;
 
 
 start        :  '<' NAME WS* attribute* '>'

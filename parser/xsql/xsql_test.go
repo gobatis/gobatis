@@ -89,3 +89,15 @@ func TestCalc(t *testing.T) {
 	require.NoError(t, err)
 	t.Log(xs.Raw())
 }
+
+func TestStmt(t *testing.T) {
+	xs, err := Explain(`
+	select * from products where category in #{category} where color = ${color};
+  `, map[string]any{
+		"category": []string{"a", "b"},
+		"color":    "red",
+	})
+	require.NoError(t, err)
+	t.Log(xs)
+	//spew.Json(xs.Vars())
+}

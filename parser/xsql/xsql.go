@@ -2,10 +2,12 @@ package xsql
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
 
 	"github.com/antlr4-go/antlr/v4"
 	"github.com/gobatis/gobatis/parser/commons"
+	"github.com/gobatis/gobatis/parser/expr"
 	"github.com/gozelle/spew"
 )
 
@@ -15,6 +17,7 @@ type XSQL struct {
 	vars    []any
 	sql     string
 	ws      bool
+	count   int
 }
 
 func (x *XSQL) Raw() string {
@@ -33,6 +36,10 @@ func (x *XSQL) Vars() []any {
 	return x.vars
 }
 
+func (x *XSQL) Count() int {
+	return x.count
+}
+
 func (x *XSQL) WriteWS() {
 	if x.ws {
 		return
@@ -46,7 +53,24 @@ func (x *XSQL) WriteString(v string) {
 	x.raw.WriteString(v)
 }
 
+func (x *XSQL) AddVar(v any) {
+	x.vars = append(x.vars, v)
+	x.count++
+}
+
 func Parse(source string, vars map[string]any) (*XSQL, error) {
+	return parse(source, false, vars)
+}
+
+func Explain(source string, vars map[string]any) (string, error) {
+	r, err := parse(source, true, vars)
+	if err != nil {
+		return "", err
+	}
+	return r.Raw(), nil
+}
+
+func parse(source string, explain bool, vars map[string]any) (*XSQL, error) {
 
 	errs := &commons.ErrorListener{}
 
@@ -64,28 +88,32 @@ func Parse(source string, vars map[string]any) (*XSQL, error) {
 	p.SetErrorHandler(antlr.NewDefaultErrorStrategy())
 	p.GetInterpreter().SetPredictionMode(antlr.PredictionModeSLL)
 	tree := p.Content()
-	if errs.GetError() != nil {
-		return nil, errs.GetError()
+	if errs.Error() != nil {
+		return nil, errs.Error()
 	}
 
 	v := &Visitor{
-		errs: errs,
-		xsql: &XSQL{},
+		ErrorListener: errs,
+		vars:          vars,
+		xsql:          &XSQL{},
+		explain:       explain,
 	}
 	_ = v.VisitContent(tree.(*ContentContext))
 
-	return v.xsql, errs.GetError()
+	return v.xsql, errs.Error()
 }
 
 type Visitor struct {
-	errs *commons.ErrorListener
-	xsql *XSQL
+	*commons.ErrorListener
+	xsql    *XSQL
+	vars    map[string]any
+	explain bool
 }
 
 func (v Visitor) VisitContent(ctx *ContentContext) interface{} {
 	fmt.Println("content:", ctx.GetText())
 	for _, c := range ctx.GetChildren() {
-		if v.errs.GetError() != nil {
+		if v.Error() != nil {
 			return nil
 		}
 		switch t := c.(type) {
@@ -102,7 +130,7 @@ func (v Visitor) VisitContent(ctx *ContentContext) interface{} {
 		case *ChardataContext:
 			v.visitCharData(t)
 		default:
-			v.errs.AddError(fmt.Errorf("unsupport rule: %v", c.GetPayload()))
+			v.AddError(fmt.Errorf("unsupport rule: %v", c.GetPayload()))
 		}
 	}
 
@@ -118,25 +146,68 @@ func (v Visitor) visitEnd(ctx *EndContext) {
 }
 
 func (v Visitor) visitExpr(ctx *ExprContext) {
-	if v.errs.GetError() != nil {
+	if v.Error() != nil {
 		return
 	}
-	if ctx.HASH() != nil {
-		v.xsql.raw.WriteString(fmt.Sprintf("##{%s}", ctx.GetVal().GetText()))
+	rv, err := expr.Parse(ctx.GetVal().GetText(), v.vars)
+	if err != nil {
+		v.AddError(fmt.Errorf("parse expression: %s error: %w", ctx.GetVal().GetText(), err))
+		return
+	}
+	if ctx.HASH() != nil && !v.explain {
+		v.bindExpr(rv)
 	} else {
-		v.xsql.raw.WriteString(fmt.Sprintf("$${%s}", ctx.GetVal().GetText()))
+		v.explainExpr(rv)
+	}
+}
+
+func (v Visitor) bindExpr(rv reflect.Value) {
+	if rv.Kind() == reflect.Slice {
+		var s []string
+		for i := 0; i < rv.Len(); i++ {
+			v.xsql.AddVar(rv.Index(i).Interface())
+			s = append(s, fmt.Sprintf("$%d", v.xsql.Count()))
+		}
+		v.xsql.WriteString(fmt.Sprintf("(%s)", strings.Join(s, ",")))
+	} else {
+		v.xsql.vars = append(v.xsql.vars, rv.Interface())
+		v.xsql.WriteString(fmt.Sprintf("$%d", v.xsql.Count()))
+	}
+}
+
+func (v Visitor) explainExpr(rv reflect.Value) {
+	if rv.Kind() == reflect.Slice {
+		var s []string
+		for i := 0; i < rv.Len(); i++ {
+			s = append(s, fmt.Sprintf("%s", v.explainVar(rv.Index(i))))
+		}
+		v.xsql.WriteString(fmt.Sprintf("(%s)", strings.Join(s, ",")))
+	} else {
+		v.xsql.WriteString(fmt.Sprintf("%s", v.explainVar(rv)))
+	}
+}
+
+func (v Visitor) explainVar(rv reflect.Value) (r string) {
+	switch rv.Kind() {
+	case reflect.String:
+		return fmt.Sprintf("'%s'", rv.Interface())
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		return fmt.Sprintf("%d", rv.Interface())
+	default:
+		return fmt.Sprintf("%v", rv.Interface())
 	}
 }
 
 func (v Visitor) visitAttribute(ctx *AttributeContext) {
-	if v.errs.GetError() != nil {
+	if v.Error() != nil {
 		return
 	}
 	spew.Json(ctx.GetText())
 }
 
 func (v Visitor) visitCharData(ctx *ChardataContext) {
-	if v.errs.GetError() != nil {
+	if v.Error() != nil {
 		return
 	}
 	if ctx.WS() != nil {
@@ -161,7 +232,7 @@ func (v Visitor) visitReference(ctx *ReferenceContext) {
 		case "&quot;":
 			c = "\""
 		default:
-			v.errs.AddError(fmt.Errorf("unkonwn reference: %s", ctx.EntityRef().GetText()))
+			v.AddError(fmt.Errorf("unkonwn reference: %s", ctx.EntityRef().GetText()))
 			return
 		}
 		v.xsql.WriteString(c)
