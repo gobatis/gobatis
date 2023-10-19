@@ -11,54 +11,48 @@ import (
 	"github.com/gozelle/spew"
 )
 
-type XSQL struct {
-	sql     strings.Builder
-	dynamic bool
-	vars    []any
-	ws      bool
-	count   int
+type tag struct {
+	*Fragment
+	ctx *StartContext
 }
 
-func (x *XSQL) SQL() string {
-	return x.sql.String()
+type Fragment struct {
+	statement strings.Builder
+	dynamic   bool
+	vars      []any
+	ws        bool
 }
 
-func (x *XSQL) Dynamic() bool {
+func (x *Fragment) Statement() string {
+	return x.statement.String()
+}
+
+func (x *Fragment) Dynamic() bool {
 	return x.dynamic
 }
 
-func (x *XSQL) Vars() []any {
+func (x *Fragment) Vars() []any {
 	return x.vars
 }
 
-func (x *XSQL) Count() int {
-	return x.count
-}
-
-func (x *XSQL) WriteWS() {
+func (x *Fragment) writeWS() {
 	if x.ws {
 		return
 	}
 	x.ws = true
-	x.sql.WriteString(" ")
+	x.statement.WriteString(" ")
 }
 
-func (x *XSQL) WriteString(v string) {
+func (x *Fragment) writeString(v string) {
 	x.ws = false
-	x.sql.WriteString(v)
+	x.statement.WriteString(v)
 }
 
-func (x *XSQL) AddVar(v any) {
-	x.vars = append(x.vars, v)
-	x.count++
+func (x *Fragment) addVar(v ...any) {
+	x.vars = append(x.vars, v...)
 }
 
-type Tag struct {
-	start *StartContext
-	xsql  *XSQL
-}
-
-func Parse(source string, vars map[string]any) (*XSQL, error) {
+func Parse(source string, vars map[string]any) (*Fragment, error) {
 	return parse(source, nil, vars)
 }
 
@@ -69,10 +63,10 @@ func Explain(formatter Formatter, source string, vars map[string]any) (string, e
 	if err != nil {
 		return "", err
 	}
-	return r.SQL(), nil
+	return r.Statement(), nil
 }
 
-func parse(source string, formatter Formatter, vars map[string]any) (*XSQL, error) {
+func parse(source string, formatter Formatter, vars map[string]any) (*Fragment, error) {
 
 	errs := &commons.ErrorListener{}
 
@@ -94,30 +88,48 @@ func parse(source string, formatter Formatter, vars map[string]any) (*XSQL, erro
 		return nil, errs.Error()
 	}
 
-	v := &Visitor{
+	v := &visitor{
 		ErrorListener: errs,
 		vars:          vars,
-		xsql:          &XSQL{},
 		formatter:     formatter,
+		stack:         commons.NewStack[*tag](),
 	}
-	_ = v.VisitContent(tree.(*ContentContext))
+	v.stack.Push(newTag(nil))
+	v.VisitContent(tree.(*ContentContext))
 
-	return v.xsql, errs.Error()
+	if v.stack.Len() != 1 {
+		return nil, fmt.Errorf("expact 1 tag in stack, got: %d", v.stack.Len())
+	}
+	return v.stack.Peek().Fragment, errs.Error()
 }
 
-type Visitor struct {
+type visitor struct {
 	*commons.ErrorListener
-	xsql      *XSQL
-	vars      map[string]any
+	count     int
 	formatter Formatter
-	stack     *commons.Stack[Tag]
+	stack     *commons.Stack[*tag]
+	choose    []*tag
+	vars      map[string]any
 }
 
-func (v Visitor) VisitContent(ctx *ContentContext) interface{} {
-	//fmt.Println("content:", ctx.GetText())
+func (v *visitor) writeWS() {
+	v.stack.Peek().writeWS()
+}
+
+func (v *visitor) writeString(vv string) {
+	v.stack.Peek().writeString(vv)
+}
+
+func (v *visitor) addVar(vv ...any) {
+	v.stack.Peek().addVar(vv...)
+	v.count += len(vv)
+}
+
+func (v *visitor) VisitContent(ctx *ContentContext) {
+
 	for _, c := range ctx.GetChildren() {
 		if v.Error() != nil {
-			return nil
+			return
 		}
 		switch t := c.(type) {
 		case *StartContext:
@@ -136,19 +148,144 @@ func (v Visitor) VisitContent(ctx *ContentContext) interface{} {
 			v.AddError(fmt.Errorf("unsupport rule: %v", c.GetPayload()))
 		}
 	}
-
-	return "a"
 }
 
-func (v Visitor) visitStart(ctx *StartContext) {
-	v.xsql.WriteString(ctx.GetText())
+func newTag(ctx *StartContext) *tag {
+	return &tag{
+		ctx:      ctx,
+		Fragment: &Fragment{},
+	}
 }
 
-func (v Visitor) visitEnd(ctx *EndContext) {
-	v.xsql.WriteString(ctx.GetText())
+func (v *visitor) visitStart(ctx *StartContext) {
+	if v.Error() != nil {
+		return
+	}
+	v.stack.Push(newTag(ctx))
 }
 
-func (v Visitor) visitExpr(ctx *ExprContext) {
+func (v *visitor) visitIf() {
+	t := v.stack.Peek()
+	if l := len(t.ctx.AllAttribute()); l != 1 {
+		v.AddError(fmt.Errorf("<if> expect 1 attribte got: %d", l))
+		return
+	}
+	if t.ctx.Attribute(0).NAME().GetText() != "test" {
+		v.AddError(fmt.Errorf("<if> only accept test attribte got: %s", t.ctx.Attribute(0).NAME().GetText()))
+		return
+	}
+
+	v.stack.Pop()
+	if v.test(t.ctx.Attribute(0).STRING().GetText()) {
+		fmt.Println("if t", t.Statement())
+		v.merge(t)
+	}
+}
+
+func (v *visitor) test(s string) bool {
+	r, err := expr.Parse(s[1:len(s)-1], v.vars)
+	if err != nil {
+		v.AddError(fmt.Errorf("parse test expression: %s error: %w", s, err))
+		return false
+	}
+
+	if r.Kind() != reflect.Bool {
+		v.AddError(fmt.Errorf("if test expression result: %s expect bool, got: %s", s, r.Kind()))
+		return false
+	}
+	return r.Bool()
+}
+
+func (v *visitor) visitChoose() {
+
+	var otherwise *tag
+	var whens []*tag
+	for i := 0; i < len(v.choose); i++ {
+		if v.choose[i].ctx.NAME().GetText() == "otherwise" {
+			if otherwise != nil {
+				v.AddError(fmt.Errorf("in the choose block, otherwise is allowed to appear only once"))
+				return
+			}
+			otherwise = v.choose[i]
+		} else {
+			whens = append(whens, v.choose[i])
+		}
+	}
+
+	v.stack.Pop()
+
+	for _, vv := range whens {
+		if v.visitWhen(vv) || v.Error() != nil {
+			return
+		}
+	}
+
+	if otherwise != nil {
+		v.merge(otherwise)
+	}
+}
+
+func (v *visitor) merge(t *tag) {
+	v.writeString(t.Statement())
+	v.addVar(t.vars...)
+}
+
+func (v *visitor) visitWhen(t *tag) bool {
+	if l := len(t.ctx.AllAttribute()); l != 1 {
+		v.AddError(fmt.Errorf("<when> expect 1 attribte got: %d", l))
+		return false
+	}
+	if t.ctx.Attribute(0).NAME().GetText() != "test" {
+		v.AddError(fmt.Errorf("<when> only accept test attribte got: %s", t.ctx.Attribute(0).NAME().GetText()))
+		return false
+	}
+	if v.test(t.ctx.Attribute(0).STRING().GetText()) {
+		v.merge(t)
+		return true
+	}
+	return false
+}
+
+func (v *visitor) visitEnd(ctx *EndContext) {
+	if v.Error() != nil {
+		return
+	}
+
+	t := v.stack.Peek()
+
+	//fmt.Println("end", ctx.NAME().GetText(), v.stack.Len())
+	if ctx.NAME().GetText() == t.ctx.NAME().GetText() {
+		switch ctx.NAME().GetText() {
+		case "if":
+			v.visitIf()
+			return
+		case "choose":
+			v.visitChoose()
+			return
+		case "when", "otherwise":
+			v.visitWhenOtherwise()
+			return
+		case "trim":
+
+		case "where":
+
+		case "set":
+
+		case "foreach":
+
+		}
+	}
+
+	v.writeString(t.ctx.GetText())
+	v.addVar(t.vars...)
+	v.stack.Pop()
+}
+
+func (v *visitor) visitWhenOtherwise() {
+	v.choose = append(v.choose, v.stack.Pop())
+}
+
+func (v *visitor) visitExpr(ctx *ExprContext) {
 	if v.Error() != nil {
 		return
 	}
@@ -164,33 +301,34 @@ func (v Visitor) visitExpr(ctx *ExprContext) {
 	}
 }
 
-func (v Visitor) bindExpr(rv reflect.Value) {
+func (v *visitor) bindExpr(rv reflect.Value) {
 	if rv.Kind() == reflect.Slice {
 		var s []string
 		for i := 0; i < rv.Len(); i++ {
-			v.xsql.AddVar(rv.Index(i).Interface())
-			s = append(s, fmt.Sprintf("$%d", v.xsql.Count()))
+			v.addVar(rv.Index(i).Interface())
+			// TODO handle count
+			s = append(s, fmt.Sprintf("$%d", v.count))
 		}
-		v.xsql.WriteString(fmt.Sprintf("(%s)", strings.Join(s, ",")))
+		v.writeString(fmt.Sprintf("(%s)", strings.Join(s, ",")))
 	} else {
-		v.xsql.AddVar(rv.Interface())
-		v.xsql.WriteString(fmt.Sprintf("$%d", v.xsql.Count()))
+		v.addVar(rv.Interface())
+		v.writeString(fmt.Sprintf("$%d", v.count))
 	}
 }
 
-func (v Visitor) explainExpr(rv reflect.Value) {
+func (v *visitor) explainExpr(rv reflect.Value) {
 	if rv.Kind() == reflect.Slice {
 		var s []string
 		for i := 0; i < rv.Len(); i++ {
 			s = append(s, fmt.Sprintf("%s", v.explainVar(rv.Index(i))))
 		}
-		v.xsql.WriteString(fmt.Sprintf("(%s)", strings.Join(s, ",")))
+		v.writeString(fmt.Sprintf("(%s)", strings.Join(s, ",")))
 	} else {
-		v.xsql.WriteString(fmt.Sprintf("%s", v.explainVar(rv)))
+		v.writeString(fmt.Sprintf("%s", v.explainVar(rv)))
 	}
 }
 
-func (v Visitor) explainVar(rv reflect.Value) (r string) {
+func (v *visitor) explainVar(rv reflect.Value) (r string) {
 	r, err := v.formatter(rv, "'")
 	if err != nil {
 		v.AddError(err)
@@ -199,25 +337,26 @@ func (v Visitor) explainVar(rv reflect.Value) (r string) {
 	return
 }
 
-func (v Visitor) visitAttribute(ctx *AttributeContext) {
+func (v *visitor) visitAttribute(ctx *AttributeContext) {
 	if v.Error() != nil {
 		return
 	}
 	spew.Json(ctx.GetText())
 }
 
-func (v Visitor) visitCharData(ctx *ChardataContext) {
+func (v *visitor) visitCharData(ctx *ChardataContext) {
 	if v.Error() != nil {
 		return
 	}
+
 	if ctx.WS() != nil {
-		v.xsql.WriteWS()
+		v.writeWS()
 	} else {
-		v.xsql.WriteString(ctx.GetText())
+		v.writeString(ctx.GetText())
 	}
 }
 
-func (v Visitor) visitReference(ctx *ReferenceContext) {
+func (v *visitor) visitReference(ctx *ReferenceContext) {
 	if ctx.EntityRef() != nil {
 		c := ""
 		switch ctx.EntityRef().GetText() {
@@ -235,6 +374,6 @@ func (v Visitor) visitReference(ctx *ReferenceContext) {
 			v.AddError(fmt.Errorf("unkonwn reference: %s", ctx.EntityRef().GetText()))
 			return
 		}
-		v.xsql.WriteString(c)
+		v.writeString(c)
 	}
 }

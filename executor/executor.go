@@ -80,19 +80,19 @@ func (d *Default) Execute(log logger.Logger, pos string, trace, debug bool, affe
 			Trace:        trace,
 			Debug:        debug,
 			BeginAt:      beginAt,
-			RawSQL:       r.SQL(),
+			RawSQL:       r.Statement(),
 			PlainSQL:     plainSQL,
 			RowsAffected: s.rowsAffected,
 		})
 	}()
 
 	if d.raw.Query {
-		d.rows, err = d.conn.QueryContext(d.raw.Ctx, r.SQL(), r.Vars()...)
+		d.rows, err = d.conn.QueryContext(d.raw.Ctx, r.Statement(), r.Vars()...)
 		if err != nil {
 			return
 		}
 	} else {
-		d.result, err = d.conn.ExecContext(d.raw.Ctx, r.SQL(), r.Vars()...)
+		d.result, err = d.conn.ExecContext(d.raw.Ctx, r.Statement(), r.Vars()...)
 		if err != nil {
 			return
 		}

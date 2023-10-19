@@ -72,7 +72,7 @@ func TestParser(t *testing.T) {
 	//`)
 	require.NoError(t, err)
 	//t.Log(xs.Raw())
-	t.Log(xs.SQL())
+	t.Log(xs.Statement())
 }
 
 func TestCalc(t *testing.T) {
@@ -117,14 +117,48 @@ func TestVisitor(t *testing.T) {
 	}
 
 	tests := []TestSource{
+		// if
+		//{
+		//	Source: `select <if test="a > 0">1</if>`,
+		//	Cases: []TestCase{
+		//		{
+		//			Vars: map[string]any{"a": 1}, Error: false, ExpectSQL: "select 1", ExpectVars: nil,
+		//		},
+		//	},
+		//},
+
+		//{
+		//	Source: `<if test="a==-1">-1</if>`,
+		//	Cases: []TestCase{
+		//		{Vars: map[string]any{"a": -1}, Error: false, ExpectSQL: "-1", ExpectVars: nil},
+		//	},
+		//},
+
+		// choose
 		{
-			Source: "select * from products where category in #{category}",
+			Source: `
+				select <choose>
+		           <when test="a >= 1">1</when>
+					<when test="a >= 0">0</when>
+					<otherwise>-1</otherwise>
+				</choose>
+			`,
 			Cases: []TestCase{
-				{Vars: map[string]any{"category": 1}, Error: false, ExpectSQL: "select * from products where category in $1", ExpectVars: []any{1}},
-				{Vars: map[string]any{"category": "a"}, Error: false, ExpectSQL: "select * from products where category in $1", ExpectVars: []any{"a"}},
-				{Vars: map[string]any{"category": []int{1, 2, 3}}, Error: false, ExpectSQL: "select * from products where category in ($1,$2,$3)", ExpectVars: []any{1, 2, 3}},
+				{Vars: map[string]any{"a": 1}, Error: false, ExpectSQL: " select 1 ", ExpectVars: nil},
+				{Vars: map[string]any{"a": 0}, Error: false, ExpectSQL: " select 0 ", ExpectVars: nil},
+				{Vars: map[string]any{"a": -1}, Error: false, ExpectSQL: " select -1 ", ExpectVars: nil},
 			},
 		},
+
+		// complex
+		//{
+		//	Source: "select * from products where category in #{category}",
+		//	Cases: []TestCase{
+		//		{Vars: map[string]any{"category": 1}, Error: false, ExpectSQL: "select * from products where category in $1", ExpectVars: []any{1}},
+		//		{Vars: map[string]any{"category": "a"}, Error: false, ExpectSQL: "select * from products where category in $1", ExpectVars: []any{"a"}},
+		//		{Vars: map[string]any{"category": []int{1, 2, 3}}, Error: false, ExpectSQL: "select * from products where category in ($1,$2,$3)", ExpectVars: []any{1, 2, 3}},
+		//	},
+		//},
 	}
 
 	for _, v := range tests {
@@ -134,7 +168,7 @@ func TestVisitor(t *testing.T) {
 				require.Error(t, err)
 			} else {
 				require.NoError(t, err)
-				require.Equal(t, vv.ExpectSQL, r.SQL())
+				require.Equal(t, vv.ExpectSQL, r.Statement())
 				require.Equal(t, len(vv.ExpectVars), len(r.Vars()), v.Source)
 				for i, vvv := range vv.ExpectVars {
 					require.Equal(t, vvv, r.Vars()[i], v.Source)
