@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gobatis/gobatis/cast"
+	//"github.com/gobatis/gobatis/cast"
 	"github.com/gobatis/gobatis/dialector"
 	"github.com/stretchr/testify/require"
 	"github.com/ttacon/chalk"
@@ -274,12 +274,13 @@ func setValue(pv reflect.Value, v any) error {
 
 	switch pv.Interface().(type) {
 	case time.Time:
-		r, err := cast.ToTimeE(v)
-		if err != nil {
-			return err
-		}
-
-		pv.Set(reflect.ValueOf(r))
+		panic("todo")
+		//r, err := cast.ToTimeE(v)
+		//if err != nil {
+		//	return err
+		//}
+		//
+		//pv.Set(reflect.ValueOf(r))
 	}
 
 	return nil

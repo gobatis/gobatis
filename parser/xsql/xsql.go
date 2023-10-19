@@ -53,6 +53,11 @@ func (x *XSQL) AddVar(v any) {
 	x.count++
 }
 
+type Tag struct {
+	start *StartContext
+	xsql  *XSQL
+}
+
 func Parse(source string, vars map[string]any) (*XSQL, error) {
 	return parse(source, nil, vars)
 }
@@ -105,6 +110,7 @@ type Visitor struct {
 	xsql      *XSQL
 	vars      map[string]any
 	formatter Formatter
+	stack     *commons.Stack[Tag]
 }
 
 func (v Visitor) VisitContent(ctx *ContentContext) interface{} {

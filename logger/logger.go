@@ -175,6 +175,14 @@ type SQLTrace struct {
 type TraceSQL struct {
 }
 
+type TraceLog struct {
+	Duration     time.Duration
+	Location     string
+	RawSQL       string
+	RowsAffected int64
+	Error        string
+}
+
 // CallFuncPos returns the file name and line number of the caller of the function calling it.
 // skip: 0 for the current function, 1 for the caller of the current function
 func CallFuncPos(skip int) string {

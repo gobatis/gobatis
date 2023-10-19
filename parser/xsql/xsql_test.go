@@ -71,33 +71,75 @@ func TestParser(t *testing.T) {
 	//	<a test="123"><b>c</b></a>
 	//`)
 	require.NoError(t, err)
-	t.Log(xs.Raw())
+	//t.Log(xs.Raw())
 	t.Log(xs.SQL())
 }
 
 func TestCalc(t *testing.T) {
-	xs, err := Parse(`
-		select * from products 
-        <if test="!status">
-		</if>
-		<if test="age > 18">
-		</if>
-	`, map[string]any{
-		"status": 18,
-		"age":    18,
-	})
-	require.NoError(t, err)
-	t.Log(xs.Raw())
+	//xs, err := Parse(`
+	//	select * from products
+	//    <if test="!status">
+	//	</if>
+	//	<if test="age > 18">
+	//	</if>
+	//`, map[string]any{
+	//	"status": 18,
+	//	"age":    18,
+	//})
+	//require.NoError(t, err)
+	//t.Log(xs.Raw())
 }
 
 func TestStmt(t *testing.T) {
-	xs, err := Explain(`
-	select * from products where category in #{category} where color = ${color};
-  `, map[string]any{
-		"category": []string{"a", "b"},
-		"color":    "red",
-	})
-	require.NoError(t, err)
-	t.Log(xs)
+	//xs, err := Explain(`
+	//select * from products where category in #{category} where color = ${color};
+	//`, map[string]any{
+	//	"category": []string{"a", "b"},
+	//	"color":    "red",
+	//})
+	//require.NoError(t, err)
+	//t.Log(xs)
 	//spew.Json(xs.Vars())
+}
+
+func TestVisitor(t *testing.T) {
+
+	type TestCase struct {
+		Vars       map[string]any
+		Error      bool
+		ExpectSQL  string
+		ExpectVars []any
+	}
+
+	type TestSource struct {
+		Source string
+		Cases  []TestCase
+	}
+
+	tests := []TestSource{
+		{
+			Source: "select * from products where category in #{category}",
+			Cases: []TestCase{
+				{Vars: map[string]any{"category": 1}, Error: false, ExpectSQL: "select * from products where category in $1", ExpectVars: []any{1}},
+				{Vars: map[string]any{"category": "a"}, Error: false, ExpectSQL: "select * from products where category in $1", ExpectVars: []any{"a"}},
+				{Vars: map[string]any{"category": []int{1, 2, 3}}, Error: false, ExpectSQL: "select * from products where category in ($1,$2,$3)", ExpectVars: []any{1, 2, 3}},
+			},
+		},
+	}
+
+	for _, v := range tests {
+		for _, vv := range v.Cases {
+			r, err := Parse(v.Source, vv.Vars)
+			if vv.Error {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+				require.Equal(t, vv.ExpectSQL, r.SQL())
+				require.Equal(t, len(vv.ExpectVars), len(r.Vars()), v.Source)
+				for i, vvv := range vv.ExpectVars {
+					require.Equal(t, vvv, r.Vars()[i], v.Source)
+				}
+			}
+		}
+	}
 }

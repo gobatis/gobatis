@@ -1,164 +1,50 @@
-package executor
+package expr
 
 import (
 	"reflect"
 	"strings"
-	"sync"
-
-	"github.com/gobatis/gobatis/cast"
-	"github.com/shopspring/decimal"
 )
 
 var _builtin *builtin
 
 func init() {
 	_builtin = &builtin{
-		mu: sync.RWMutex{},
 		_map: map[string]interface{}{
-			"len":     _len,
-			"int":     _int,
-			"int8":    _int8,
-			"int16":   _int16,
-			"int32":   _int32,
-			"int64":   _int64,
-			"uint":    _uint,
-			"uint8":   _uint8,
-			"uint16":  _uint16,
-			"uint32":  _uint32,
-			"uint64":  _uint64,
-			"decimal": _decimal,
-			"bool":    _bool,
-			"string":  _string,
+			"len": _len,
+			//"int":     _int,
+			//"int8":    _int8,
+			//"int16":   _int16,
+			//"int32":   _int32,
+			//"int64":   _int64,
+			//"uint":    _uint,
+			//"uint8":   _uint8,
+			//"uint16":  _uint16,
+			//"uint32":  _uint32,
+			//"uint64":  _uint64,
+			//"decimal": _decimal,
+			//"bool":    _bool,
+			//"string":  _string,
 			"strings": _strings{},
 		},
 	}
 }
 
 type builtin struct {
-	mu   sync.RWMutex
 	_map map[string]interface{}
 }
 
 func (p *builtin) get(name string) interface{} {
-	p.mu.RLock()
-	defer p.mu.RUnlock()
 	v, _ := p._map[name]
 	return v
 }
 
 func (p *builtin) is(name string) bool {
-	p.mu.RLock()
-	defer p.mu.RUnlock()
 	_, ok := p._map[name]
 	return ok
 }
 
 func _len(v interface{}) int {
 	return reflect.ValueOf(v).Len()
-}
-
-func _int(v interface{}) int {
-	r, err := cast.ToIntE(v)
-	if err != nil {
-		panic(err)
-	}
-	return r
-}
-
-func _int8(v interface{}) int8 {
-	r, err := cast.ToInt8E(v)
-	if err != nil {
-		panic(err)
-	}
-	return r
-}
-
-func _int16(v interface{}) int16 {
-	r, err := cast.ToInt16E(v)
-	if err != nil {
-		panic(err)
-	}
-	return r
-}
-
-func _int32(v interface{}) int32 {
-	r, err := cast.ToInt32E(v)
-	if err != nil {
-		panic(err)
-	}
-	return r
-}
-
-func _int64(v interface{}) int64 {
-	r, err := cast.ToInt64E(v)
-	if err != nil {
-		panic(err)
-	}
-	return r
-}
-
-func _uint(v interface{}) uint {
-	r, err := cast.ToUintE(v)
-	if err != nil {
-		panic(err)
-	}
-	return r
-}
-
-func _uint8(v interface{}) uint8 {
-	r, err := cast.ToUint8E(v)
-	if err != nil {
-		panic(err)
-	}
-	return r
-}
-
-func _uint16(v interface{}) uint16 {
-	r, err := cast.ToUint16E(v)
-	if err != nil {
-		panic(err)
-	}
-	return r
-}
-
-func _uint32(v interface{}) uint32 {
-	r, err := cast.ToUint32E(v)
-	if err != nil {
-		panic(err)
-	}
-	return r
-}
-
-func _uint64(v interface{}) uint64 {
-	r, err := cast.ToUint64E(v)
-	if err != nil {
-		panic(err)
-	}
-	return r
-}
-
-func _decimal(v interface{}) decimal.Decimal {
-	r, err := cast.ToDecimalE(v)
-	if err != nil {
-		panic(err)
-	}
-	return r
-}
-
-func _bool(v interface{}) bool {
-	r, err := cast.ToBoolE(v)
-	if err != nil {
-		panic(err)
-	}
-	return r
-}
-
-func _string(v interface{}) string {
-	r, err := cast.ToStringE(v)
-	if err != nil {
-		panic(err)
-	}
-	return r
 }
 
 type _strings struct{}

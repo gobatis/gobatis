@@ -75,6 +75,6 @@ call:
 
 slice:
 	L_BRACKET (
-		expression? COLON expression?
-		| expression? COLON expression COLON expression
+		sea=expression? COLON seb=expression?
+		| sea=expression? COLON seb=expression COLON sec=expression
 	) R_BRACKET;

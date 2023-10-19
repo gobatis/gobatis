@@ -2488,6 +2488,24 @@ type ISliceContext interface {
 	// GetParser returns the parser.
 	GetParser() antlr.Parser
 
+	// GetSea returns the sea rule contexts.
+	GetSea() IExpressionContext
+
+	// GetSeb returns the seb rule contexts.
+	GetSeb() IExpressionContext
+
+	// GetSec returns the sec rule contexts.
+	GetSec() IExpressionContext
+
+	// SetSea sets the sea rule contexts.
+	SetSea(IExpressionContext)
+
+	// SetSeb sets the seb rule contexts.
+	SetSeb(IExpressionContext)
+
+	// SetSec sets the sec rule contexts.
+	SetSec(IExpressionContext)
+
 	// Getter signatures
 	L_BRACKET() antlr.TerminalNode
 	R_BRACKET() antlr.TerminalNode
@@ -2503,6 +2521,9 @@ type ISliceContext interface {
 type SliceContext struct {
 	antlr.BaseParserRuleContext
 	parser antlr.Parser
+	sea    IExpressionContext
+	seb    IExpressionContext
+	sec    IExpressionContext
 }
 
 func NewEmptySliceContext() *SliceContext {
@@ -2531,6 +2552,18 @@ func NewSliceContext(parser antlr.Parser, parent antlr.ParserRuleContext, invoki
 }
 
 func (s *SliceContext) GetParser() antlr.Parser { return s.parser }
+
+func (s *SliceContext) GetSea() IExpressionContext { return s.sea }
+
+func (s *SliceContext) GetSeb() IExpressionContext { return s.seb }
+
+func (s *SliceContext) GetSec() IExpressionContext { return s.sec }
+
+func (s *SliceContext) SetSea(v IExpressionContext) { s.sea = v }
+
+func (s *SliceContext) SetSeb(v IExpressionContext) { s.seb = v }
+
+func (s *SliceContext) SetSec(v IExpressionContext) { s.sec = v }
 
 func (s *SliceContext) L_BRACKET() antlr.TerminalNode {
 	return s.GetToken(ExprParserL_BRACKET, 0)
@@ -2629,7 +2662,10 @@ func (p *ExprParser) Slice() (localctx ISliceContext) {
 		if (int64(_la) & ^0x3f) == 0 && ((int64(1)<<_la)&851558602375218) != 0 {
 			{
 				p.SetState(127)
-				p.expression(0)
+
+				var _x = p.expression(0)
+
+				localctx.(*SliceContext).sea = _x
 			}
 
 		}
@@ -2651,7 +2687,10 @@ func (p *ExprParser) Slice() (localctx ISliceContext) {
 		if (int64(_la) & ^0x3f) == 0 && ((int64(1)<<_la)&851558602375218) != 0 {
 			{
 				p.SetState(131)
-				p.expression(0)
+
+				var _x = p.expression(0)
+
+				localctx.(*SliceContext).seb = _x
 			}
 
 		}
@@ -2667,7 +2706,10 @@ func (p *ExprParser) Slice() (localctx ISliceContext) {
 		if (int64(_la) & ^0x3f) == 0 && ((int64(1)<<_la)&851558602375218) != 0 {
 			{
 				p.SetState(134)
-				p.expression(0)
+
+				var _x = p.expression(0)
+
+				localctx.(*SliceContext).sea = _x
 			}
 
 		}
@@ -2681,7 +2723,10 @@ func (p *ExprParser) Slice() (localctx ISliceContext) {
 		}
 		{
 			p.SetState(138)
-			p.expression(0)
+
+			var _x = p.expression(0)
+
+			localctx.(*SliceContext).seb = _x
 		}
 		{
 			p.SetState(139)
@@ -2693,7 +2738,10 @@ func (p *ExprParser) Slice() (localctx ISliceContext) {
 		}
 		{
 			p.SetState(140)
-			p.expression(0)
+
+			var _x = p.expression(0)
+
+			localctx.(*SliceContext).sec = _x
 		}
 
 	case antlr.ATNInvalidAltNumber:

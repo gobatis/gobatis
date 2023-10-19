@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"reflect"
 	"strconv"
+	"unicode"
 
 	"github.com/antlr4-go/antlr/v4"
-	"github.com/gobatis/gobatis/cast"
+	//"github.com/gobatis/gobatis/cast"
 	"github.com/gobatis/gobatis/parser/commons"
-	"github.com/shopspring/decimal"
 )
 
 type Expr struct {
@@ -93,7 +93,12 @@ func (v Visitor) visitExpression(ctx *ExpressionContext) reflect.Value {
 	} else if ctx.Logical() != nil {
 		a := v.visitExpression(ctx.Expression(0).(*ExpressionContext))
 		b := v.visitExpression(ctx.Expression(1).(*ExpressionContext))
-		return v.visitLogical(ctx.GetRel().GetText(), a, b)
+		return v.visitLogical(ctx.Logical().GetText(), a, b)
+	} else if ctx.GetTertiary() != nil {
+		a := v.visitExpression(ctx.Expression(0).(*ExpressionContext))
+		b := v.visitExpression(ctx.Expression(1).(*ExpressionContext))
+		c := v.visitExpression(ctx.Expression(2).(*ExpressionContext))
+		return v.visitTertiary(a, b, c)
 	} else {
 		v.AddError(fmt.Errorf("unsupported expression: %s", ctx.GetText()))
 		return reflect.Value{}
@@ -164,9 +169,15 @@ func (v Visitor) visitVar(ctx *VarContext) reflect.Value {
 	if v.Error() != nil {
 		return reflect.Value{}
 	}
+	// TODO check nil 关键字
 	vv, ok := v.vars[ctx.GetText()]
 	if !ok {
-		v.AddError(fmt.Errorf("var: %s is not defined", ctx.GetText()))
+
+		if _builtin.get(ctx.GetText()) != nil {
+			return reflect.ValueOf(_builtin.get(ctx.GetText()))
+		}
+
+		v.AddError(fmt.Errorf("variable: %s is not defined", ctx.GetText()))
 		return reflect.Value{}
 	}
 	return vv
@@ -177,12 +188,16 @@ func (v Visitor) visitMember(rv reflect.Value, ctx *MemberContext) reflect.Value
 		return reflect.Value{}
 	}
 	if rv.Kind() != reflect.Struct {
-		v.AddError(fmt.Errorf("var: %s expect struct, got: %s", ctx.GetText(), rv.Kind()))
+		v.AddError(fmt.Errorf("variable: %s expect struct, got: %s", ctx.GetText(), rv.Kind()))
 		return reflect.Value{}
 	}
 	fv := rv.FieldByName(ctx.IDENTIFIER().GetText())
 	if fv.Kind() == reflect.Invalid {
 		v.AddError(fmt.Errorf("visit member: %s not exist", ctx.IDENTIFIER().GetText()))
+		return reflect.Value{}
+	}
+	if startsWithLower(ctx.IDENTIFIER().GetText()) {
+		v.AddError(fmt.Errorf("visit memeber: %s is not exportable", ctx.IDENTIFIER().GetText()))
 		return reflect.Value{}
 	}
 	return fv
@@ -192,13 +207,19 @@ func (v Visitor) visitIndex(rv reflect.Value, ctx *IndexContext) reflect.Value {
 	if v.Error() != nil {
 		return reflect.Value{}
 	}
+
 	iv := v.visitExpression(ctx.Expression().(*ExpressionContext))
 
-	// TODO
-	i, err := cast.ToIntE(iv.Interface().(decimal.Decimal).IntPart())
-	if err != nil {
-		v.AddError(fmt.Errorf("covert index error: %s", err))
+	if !iv.CanInt() && !iv.CanUint() {
+		v.AddError(fmt.Errorf("invalid index type: %s", iv.Kind()))
 		return reflect.Value{}
+	}
+
+	var i int
+	if iv.CanInt() {
+		i = int(iv.Int())
+	} else {
+		i = int(iv.Uint())
 	}
 
 	rv = rv.Index(i)
@@ -214,12 +235,99 @@ func (v Visitor) visitSlice(rv reflect.Value, ctx *SliceContext) reflect.Value {
 	if v.Error() != nil {
 		return reflect.Value{}
 	}
-	return reflect.Value{}
+
+	if rv.Kind() != reflect.Slice {
+		v.AddError(fmt.Errorf("unsupported call slice on type: %s", rv.Kind()))
+		return reflect.Value{}
+	}
+
+	var sea, seb, sec reflect.Value
+	if ctx.GetSea() != nil {
+		sea = v.visitExpression(ctx.GetSea().(*ExpressionContext))
+		if v.Error() != nil {
+			return reflect.Value{}
+		}
+	}
+	if !sea.IsValid() {
+		sea = reflect.ValueOf(0)
+	}
+
+	if ctx.GetSeb() != nil {
+		seb = v.visitExpression(ctx.GetSeb().(*ExpressionContext))
+		if v.Error() != nil {
+			return reflect.Value{}
+		}
+	}
+
+	if ctx.GetSec() != nil {
+		sec = v.visitExpression(ctx.GetSec().(*ExpressionContext))
+		if v.Error() != nil {
+			return reflect.Value{}
+		}
+	} else if !seb.IsValid() {
+		seb = reflect.ValueOf(rv.Len())
+	}
+
+	if !sea.CanInt() && !sea.CanUint() {
+		v.AddError(fmt.Errorf("invliad slice index type: %s", sea.Kind()))
+		return reflect.Value{}
+	}
+
+	if !seb.CanInt() && seb.CanUint() {
+		v.AddError(fmt.Errorf("invliad slice index type: %s", seb.Kind()))
+		return reflect.Value{}
+	}
+
+	if sec.IsValid() && !sec.CanInt() && seb.CanUint() {
+		v.AddError(fmt.Errorf("invliad slice index type: %s", sec.Kind()))
+		return reflect.Value{}
+	}
+
+	var i, j, k int
+	if sea.CanInt() {
+		i = int(sea.Int())
+	} else {
+		i = int(sea.Uint())
+	}
+
+	if seb.CanInt() {
+		j = int(seb.Int())
+	} else {
+		j = int(seb.Uint())
+	}
+
+	if sec.IsValid() {
+		if sec.CanInt() {
+			k = int(sec.Int())
+		} else {
+			k = int(sec.Uint())
+		}
+	}
+
+	if sec.IsValid() {
+		return rv.Slice3(i, j, k)
+	}
+
+	return rv.Slice(i, j)
 }
 
 func (v Visitor) visitCall(rv reflect.Value, ctx *CallContext) reflect.Value {
 	if v.Error() != nil {
 		return reflect.Value{}
+	}
+
+	var params []reflect.Value
+	for i := 0; i < len(ctx.ExpressionList().AllExpression()); i++ {
+		vv := v.visitExpression(ctx.ExpressionList().Expression(i).(*ExpressionContext))
+		if v.Error() != nil {
+			return reflect.Value{}
+		}
+		params = append(params, vv)
+	}
+	// TODO check result error
+	r := rv.Call(params)
+	if len(r) > 0 {
+		return r[0]
 	}
 	return reflect.Value{}
 }
@@ -228,6 +336,23 @@ func (v Visitor) visitUnary(op string, rv reflect.Value) reflect.Value {
 	if v.Error() != nil {
 		return reflect.Value{}
 	}
+
+	switch op {
+	case "+":
+		if rv.CanInt() || rv.CanUint() || rv.CanFloat() {
+			return rv
+		}
+	case "-":
+		if rv.CanInt() || rv.CanFloat() {
+			if rv.CanInt() {
+				return reflect.ValueOf(-rv.Int())
+			} else {
+				return reflect.ValueOf(-rv.Float())
+			}
+		}
+	}
+
+	v.AddError(fmt.Errorf("unsupported unary operation: %s for type: %s", op, rv.Kind()))
 	return reflect.Value{}
 }
 
@@ -236,26 +361,33 @@ func (v Visitor) visitRel(op string, a, b reflect.Value) reflect.Value {
 		return reflect.Value{}
 	}
 
-	if !a.Comparable() {
-		v.AddError(fmt.Errorf("%s is not comparable", a.Kind()))
+	if (!a.IsValid() && (!b.IsValid() || b.Kind() == reflect.Pointer)) ||
+		(!b.IsValid() && (!a.IsValid() || a.Kind() == reflect.Pointer)) {
+		return v.compareNil(op, a, b)
+	}
+
+	if !a.Comparable() || !b.Comparable() {
+		v.AddError(fmt.Errorf("mismatched compare types: %s and %s", a.Kind(), b.Kind()))
 		return reflect.Value{}
 	}
 
-	if !b.Comparable() {
-		v.AddError(fmt.Errorf("%s is not comparable", b.Kind()))
-		return reflect.Value{}
-	}
-
-	if isNumber(a) {
-		if !isNumber(b) {
-			v.AddError(fmt.Errorf("expact number, got: %s", b.Kind()))
-			return reflect.Value{}
+	if v.isNumber(a) || v.isNumber(b) {
+		if v.isNumber(a) {
+			if !v.isNumber(b) {
+				v.AddError(fmt.Errorf("expact number, got: %s", b.Kind()))
+				return reflect.Value{}
+			}
+		} else {
+			if !v.isNumber(a) {
+				v.AddError(fmt.Errorf("expact number, got: %s", b.Kind()))
+				return reflect.Value{}
+			}
 		}
 		return v.compareNumber(op, a, b)
 	}
 
 	if a.Type().String() != b.Type().String() || a.Type().PkgPath() != b.Type().PkgPath() {
-		v.AddError(fmt.Errorf("mismatched types %s and %s", a.Type(), b.Type()))
+		v.AddError(fmt.Errorf("mismatched number compare types %s and %s", a.Type(), b.Type()))
 		return reflect.Value{}
 	}
 
@@ -267,20 +399,32 @@ func (v Visitor) visitRel(op string, a, b reflect.Value) reflect.Value {
 	return reflect.Value{}
 }
 
+func (v Visitor) compareNil(op string, a, b reflect.Value) reflect.Value {
+	switch op {
+	case "==":
+		return reflect.ValueOf((!a.IsValid() || a.IsNil()) && (!b.IsValid() || b.IsNil()))
+	case "!=":
+		return reflect.ValueOf(!(!a.IsValid() || a.IsNil()) && (!b.IsValid() || b.IsNil()))
+	default:
+		v.AddError(fmt.Errorf("unsupport nil compare operation: %s", op))
+		return reflect.Value{}
+	}
+}
+
 func (v Visitor) compareNumber(op string, a, b reflect.Value) reflect.Value {
 	switch op {
 	case "==":
-		return reflect.ValueOf(toFloat(a) == toFloat(b))
+		return reflect.ValueOf(v.toFloat(a) == v.toFloat(b))
 	case "!=":
-		return reflect.ValueOf(toFloat(a) != toFloat(b))
+		return reflect.ValueOf(v.toFloat(a) != v.toFloat(b))
 	case "<":
-		return reflect.ValueOf(toFloat(a) < toFloat(b))
+		return reflect.ValueOf(v.toFloat(a) < v.toFloat(b))
 	case "<=":
-		return reflect.ValueOf(toFloat(a) <= toFloat(b))
+		return reflect.ValueOf(v.toFloat(a) <= v.toFloat(b))
 	case ">":
-		return reflect.ValueOf(toFloat(a) > toFloat(b))
+		return reflect.ValueOf(v.toFloat(a) > v.toFloat(b))
 	case ">=":
-		return reflect.ValueOf(toFloat(a) >= toFloat(b))
+		return reflect.ValueOf(v.toFloat(a) >= v.toFloat(b))
 	default:
 		v.AddError(fmt.Errorf("unsupport number compare operation: %s", op))
 		return reflect.Value{}
@@ -303,23 +447,43 @@ func (v Visitor) visitLogical(op string, a, b reflect.Value) reflect.Value {
 	if v.Error() != nil {
 		return reflect.Value{}
 	}
+	if a.Kind() != reflect.Bool || b.Kind() != reflect.Bool {
+		v.AddError(fmt.Errorf("expect bool used as a condition"))
+		return reflect.Value{}
+	}
+	switch op {
+	case "&&":
+		return reflect.ValueOf(a.Bool() && b.Bool())
+	case "||":
+		return reflect.ValueOf(a.Bool() || b.Bool())
+	default:
+		v.AddError(fmt.Errorf("unsupport logical operation: %s", op))
+		return reflect.Value{}
+	}
+}
 
-	return reflect.Value{}
+func (v Visitor) visitTertiary(a, b, c reflect.Value) reflect.Value {
+	if v.Error() != nil {
+		return reflect.Value{}
+	}
+
+	if a.Kind() != reflect.Bool {
+		v.AddError(fmt.Errorf("expect bool used as a condition"))
+		return reflect.Value{}
+	}
+	if a.Bool() {
+		return b
+	}
+	return c
 }
 
 func (v Visitor) visitInteger(ctx *IntegerContext) reflect.Value {
 	if v.Error() != nil {
 		return reflect.Value{}
 	}
-
 	r, err := strconv.ParseInt(ctx.GetText(), 10, 64)
 	if err != nil {
 		v.AddError(fmt.Errorf("parsee inter: %s error: %w", ctx.GetText(), err))
-		return reflect.Value{}
-	}
-
-	if err != nil {
-		v.AddError(fmt.Errorf("convert: %s to decimal error: %w", ctx.GetText(), err))
 		return reflect.Value{}
 	}
 
@@ -347,25 +511,34 @@ func (v Visitor) visitFloat(ctx *FloatContext) reflect.Value {
 	return reflect.ValueOf(r)
 }
 
-func isNumber(v reflect.Value) bool {
-	switch v.Kind() {
+func (v Visitor) isNumber(rv reflect.Value) bool {
+	switch rv.Kind() {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
-		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Float32, reflect.Float64:
+		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64,
+		reflect.Float32, reflect.Float64:
 		return true
 	default:
 		return false
 	}
 }
 
-func toFloat(v reflect.Value) float64 {
-	switch v.Kind() {
+func (v Visitor) toFloat(rv reflect.Value) float64 {
+	switch rv.Kind() {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		return float64(v.Int())
+		return float64(rv.Int())
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		return float64(v.Uint())
+		return float64(rv.Uint())
 	case reflect.Float32, reflect.Float64:
-		return v.Float()
+		return rv.Float()
 	default:
+		v.AddError(fmt.Errorf("covert: %s to number faild", rv.Kind()))
 		return 0
 	}
+}
+
+func startsWithLower(s string) bool {
+	if len(s) == 0 {
+		return false
+	}
+	return unicode.IsLower(rune(s[0]))
 }
