@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/antlr4-go/antlr/v4"
+	"github.com/gobatis/gobatis/logger"
 	"github.com/stretchr/testify/require"
 )
 
@@ -50,7 +51,7 @@ func TestParser(t *testing.T) {
 	//xs, err := Parse(`<a></a>*`)
 	//xs, err := Parse(`*~<<a test="ok">b</a>>kk`)
 	//xs, err := Parse(`<a`)
-	xs, err := Parse(`
+	xs, err := Parse(logger.DefaultLogger().Explain, `
 	select $a weight < / > =,
 		'a', "b"
 		${ weight[1].Value }
@@ -119,26 +120,24 @@ func TestVisitor(t *testing.T) {
 	tests := []TestSource{
 		// if
 		//{
-		//	Source: `select <if test="a > 0">1</if>`,
+		//	Source: `select <if test="a > 0">${b}</if>`,
 		//	Cases: []TestCase{
-		//		{
-		//			Vars: map[string]any{"a": 1}, Error: false, ExpectSQL: "select 1", ExpectVars: nil,
-		//		},
+		//		{Vars: map[string]any{"a": 1, "b": "b"}, Error: false, ExpectSQL: "select 'b'", ExpectVars: nil},
+		//		{Vars: map[string]any{"a": 0}, Error: false, ExpectSQL: "select ", ExpectVars: nil},
 		//	},
 		//},
-
 		//{
 		//	Source: `<if test="a==-1">-1</if>`,
 		//	Cases: []TestCase{
 		//		{Vars: map[string]any{"a": -1}, Error: false, ExpectSQL: "-1", ExpectVars: nil},
 		//	},
 		//},
-
-		// choose
+		//
+		//// choose
 		{
 			Source: `
 				select <choose>
-		           <when test="a >= 1">1</when>
+		          <when test="a >= 1">1</when>
 					<when test="a >= 0">0</when>
 					<otherwise>-1</otherwise>
 				</choose>
@@ -149,6 +148,22 @@ func TestVisitor(t *testing.T) {
 				{Vars: map[string]any{"a": -1}, Error: false, ExpectSQL: " select -1 ", ExpectVars: nil},
 			},
 		},
+
+		// set
+		//{
+		//	Source: `
+		//	  UPDATE some_table
+		//	  <set>
+		//		<if test="name != nil">name = #{name},</if>
+		//		<if test="age != nil">age = #{age},</if>
+		//		<if test="address != nil">address = #{address},</if>
+		//	  </set>
+		//	  WHERE id = #{id}
+		//	`,
+		//	Cases: []TestCase{
+		//		{Vars: map[string]any{"name": "tom", "age": nil, "address": nil}, ExpectSQL: "", ExpectVars: []any{"tom"}},
+		//	},
+		//},
 
 		// complex
 		//{
@@ -163,7 +178,7 @@ func TestVisitor(t *testing.T) {
 
 	for _, v := range tests {
 		for _, vv := range v.Cases {
-			r, err := Parse(v.Source, vv.Vars)
+			r, err := Parse(logger.DefaultLogger().Explain, v.Source, vv.Vars)
 			if vv.Error {
 				require.Error(t, err)
 			} else {

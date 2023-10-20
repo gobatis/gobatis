@@ -1,7 +1,7 @@
 grammar XSQL;
 
 BLOCK_COMMENT     :   '<!--' .*? '-->'-> skip;
-LINE_COMMENT      :   '//' ~[\r\n\t]* -> skip;
+//LINE_COMMENT      :   '//' ~[\r\n\t]* -> skip;
 EntityRef         :   '&' NAME ';' ;
 WS                :   (' '|'\t'|'\r'? '\n')+ ;
 
@@ -38,13 +38,12 @@ NameChar     :   [:a-zA-Z]
              |   '\uFDF0'..'\uFFFD'
              ;
 
-content      :  (start | end | expr | reference | chardata)*;
+content      :  (elem | expr | reference | chardata)*;
 
 
-start        :  '<' NAME WS* attribute* '>'
-             |  '<' NAME WS* attribute* '/' '>'
-             ;
-end   :  '<' '/' NAME '>';
+elem        :  '<' NAME WS* attribute* '>' content  '<' '/' NAME '>'
+            |  '<' NAME WS* attribute* '/' '>'
+            ;
 
 attribute    :  NAME '=' STRING WS* ;
 
