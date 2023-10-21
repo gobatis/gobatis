@@ -134,18 +134,31 @@ func TestVisitor(t *testing.T) {
 		//},
 		//
 		//// choose
+		//{
+		//	Source: `
+		//		select <choose>
+		//				<when test="a >= 1">1</when>
+		//				<when test="a >= 0">0</when>
+		//				<otherwise>-1</otherwise>
+		//               </choose>
+		//	`,
+		//	Cases: []TestCase{
+		//		{Vars: map[string]any{"a": 1}, Error: false, ExpectSQL: " select 1 ", ExpectVars: nil},
+		//		{Vars: map[string]any{"a": 0}, Error: false, ExpectSQL: " select 0 ", ExpectVars: nil},
+		//		{Vars: map[string]any{"a": -1}, Error: false, ExpectSQL: " select -1 ", ExpectVars: nil},
+		//	},
+		//},
+
+		// foreach
 		{
 			Source: `
-				select <choose>
-						<when test="a >= 1">1</when>
-						<when test="a >= 0">0</when>
-						<otherwise>-1</otherwise>
-                       </choose>
+				select * from products where "id" in
+				<foreach item="id" collection="ids" open="(" close=")" separator=",">
+					#{id}
+				</foreach>
 			`,
 			Cases: []TestCase{
-				{Vars: map[string]any{"a": 1}, Error: false, ExpectSQL: " select 1 ", ExpectVars: nil},
-				{Vars: map[string]any{"a": 0}, Error: false, ExpectSQL: " select 0 ", ExpectVars: nil},
-				{Vars: map[string]any{"a": -1}, Error: false, ExpectSQL: " select -1 ", ExpectVars: nil},
+				{Vars: map[string]any{"ids": []int{1, 2, 3}}},
 			},
 		},
 

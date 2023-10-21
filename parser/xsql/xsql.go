@@ -176,7 +176,7 @@ func (v *visitor) visitElement(f *Fragment, ctx *ElementContext) {
 
 	switch ctx.GetName().GetText() {
 	case tagForeach:
-		v.enterForeach()
+		v.enterForeach(f, ctx)
 	case tagIf:
 		v.enterIf(f, ctx)
 	case tagChoose:
@@ -300,8 +300,15 @@ func (v *visitor) visitWhen(f *Fragment, ctx *ElementContext) bool {
 	return true
 }
 
-func (v *visitor) enterForeach() {
+func (v *visitor) enterForeach(f *Fragment, ctx *ElementContext) {
 
+	attrs := map[string]string{}
+	for _, vv := range ctx.AllAttribute() {
+		if _, ok := attrs[vv.NAME().GetText()]; ok {
+			panic(fmt.Errorf("duplicated  tag: %s attribute: %s", ctx.GetName().GetText(), vv.NAME().GetText()))
+		}
+		attrs[vv.NAME().GetText()] = vv.STRING().GetText()[1 : len(vv.STRING().GetText())-1]
+	}
 }
 
 //func (v *visitor) enterChoose(ctx *StartContext) {
