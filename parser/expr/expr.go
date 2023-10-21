@@ -26,7 +26,9 @@ func valueOf(source interface{}) reflect.Value {
 	}
 }
 
-func Parse(source string, vars map[string]any) (reflect.Value, error) {
+type FetchVar func(name string) (val any, ok bool)
+
+func Parse(source string, fetchVar FetchVar) (reflect.Value, error) {
 
 	errs := &commons.ErrorListener{}
 
@@ -48,17 +50,18 @@ func Parse(source string, vars map[string]any) (reflect.Value, error) {
 	}
 	v := &Visitor{
 		ErrorListener: errs,
-		vars:          map[string]reflect.Value{},
+		//vars:          map[string]reflect.Value{},
+		fetchVar: fetchVar,
 	}
-	for kk, vv := range vars {
-		v.vars[kk] = reflect.ValueOf(vv)
-	}
+	//for kk, vv := range vars {
+	//	v.vars[kk] = reflect.ValueOf(vv)
+	//}
 	return v.visitExpressions(tree.(*ExpressionsContext))
 }
 
 type Visitor struct {
 	*commons.ErrorListener
-	vars map[string]reflect.Value
+	fetchVar FetchVar
 }
 
 func (v Visitor) visitExpressions(ctx *ExpressionsContext) (rv reflect.Value, err error) {
@@ -170,17 +173,15 @@ func (v Visitor) visitVar(ctx *VarContext) reflect.Value {
 		return reflect.Value{}
 	}
 	// TODO check nil 关键字
-	vv, ok := v.vars[ctx.GetText()]
+	vv, ok := v.fetchVar(ctx.GetText())
 	if !ok {
-
 		if _builtin.get(ctx.GetText()) != nil {
 			return reflect.ValueOf(_builtin.get(ctx.GetText()))
 		}
-
 		v.AddError(fmt.Errorf("variable: %s is not defined", ctx.GetText()))
 		return reflect.Value{}
 	}
-	return vv
+	return reflect.ValueOf(vv)
 }
 
 func (v Visitor) visitMember(rv reflect.Value, ctx *MemberContext) reflect.Value {
@@ -361,8 +362,7 @@ func (v Visitor) visitRel(op string, a, b reflect.Value) reflect.Value {
 		return reflect.Value{}
 	}
 
-	if (!a.IsValid() && (!b.IsValid() || b.Kind() == reflect.Pointer)) ||
-		(!b.IsValid() && (!a.IsValid() || a.Kind() == reflect.Pointer)) {
+	if !a.IsValid() || !b.IsValid() {
 		return v.compareNil(op, a, b)
 	}
 
@@ -402,9 +402,11 @@ func (v Visitor) visitRel(op string, a, b reflect.Value) reflect.Value {
 func (v Visitor) compareNil(op string, a, b reflect.Value) reflect.Value {
 	switch op {
 	case "==":
-		return reflect.ValueOf((!a.IsValid() || a.IsNil()) && (!b.IsValid() || b.IsNil()))
+		return reflect.ValueOf(a.Equal(b))
+		//return reflect.ValueOf((!a.IsValid() || a.IsNil()) && (!b.IsValid() || b.IsNil()))
 	case "!=":
-		return reflect.ValueOf(!(!a.IsValid() || a.IsNil()) && (!b.IsValid() || b.IsNil()))
+		return reflect.ValueOf(!a.Equal(b))
+		//return reflect.ValueOf(!(!a.IsValid() || a.IsNil()) && (!b.IsValid() || b.IsNil()))
 	default:
 		v.AddError(fmt.Errorf("unsupport nil compare operation: %s", op))
 		return reflect.Value{}

@@ -137,10 +137,10 @@ func TestVisitor(t *testing.T) {
 		{
 			Source: `
 				select <choose>
-		          <when test="a >= 1">1</when>
-					<when test="a >= 0">0</when>
-					<otherwise>-1</otherwise>
-				</choose>
+						<when test="a >= 1">1</when>
+						<when test="a >= 0">0</when>
+						<otherwise>-1</otherwise>
+                       </choose>
 			`,
 			Cases: []TestCase{
 				{Vars: map[string]any{"a": 1}, Error: false, ExpectSQL: " select 1 ", ExpectVars: nil},

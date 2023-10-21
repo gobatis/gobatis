@@ -27,19 +27,20 @@ const (
 	lazy
 )
 
-type tag struct {
-	*Fragment
-	ctx      *StartContext
-	vars     map[string]any
-	children []antlr.Tree
-	test     bool
-}
+//type tag struct {
+//	*Fragment
+//	//ctx      *StartContext
+//	vars     map[string]any
+//	children []antlr.Tree
+//	test     bool
+//}
 
 type Fragment struct {
 	statement strings.Builder
 	dynamic   bool
 	vars      []any
 	ws        bool
+	count     int
 }
 
 func (x *Fragment) Statement() string {
@@ -52,6 +53,10 @@ func (x *Fragment) Dynamic() bool {
 
 func (x *Fragment) Vars() []any {
 	return x.vars
+}
+
+func (x *Fragment) Count() int {
+	return x.count
 }
 
 func (x *Fragment) writeWS() {
@@ -69,6 +74,7 @@ func (x *Fragment) writeString(v string) {
 
 func (x *Fragment) addVar(v ...any) {
 	x.vars = append(x.vars, v...)
+	x.count++
 }
 
 func Parse(formatter Formatter, source string, vars map[string]any) (*Fragment, error) {
@@ -85,75 +91,56 @@ func Explain(formatter Formatter, source string, vars map[string]any) (string, e
 	return r.Statement(), nil
 }
 
-func parse(source string, formatter Formatter, vars map[string]any) (*Fragment, error) {
+func parse(source string, formatter Formatter, vars map[string]any) (f *Fragment, err error) {
 
-	errs := &commons.ErrorListener{}
+	el := &commons.ErrorListener{}
 
-	//source = replaceIsolatedLessThanWithEntity(source)
 	lexer := NewXSQLLexer(antlr.NewInputStream(source))
 	lexer.RemoveErrorListeners()
-	lexer.AddErrorListener(errs)
+	lexer.AddErrorListener(el)
 
 	stream := antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel)
 
 	p := NewXSQLParser(stream)
 	p.BuildParseTrees = true
 	p.RemoveErrorListeners()
-	p.AddErrorListener(errs)
-	p.SetErrorHandler(antlr.NewDefaultErrorStrategy())
-	p.GetInterpreter().SetPredictionMode(antlr.PredictionModeSLL)
-	tree := p.Content()
-	if errs.Error() != nil {
-		return nil, errs.Error()
+	p.AddErrorListener(el)
+	//p.AddErrorListener(antlr.NewConsoleErrorListener())
+	//p.SetErrorHandler(antlr.NewDefaultErrorStrategy())
+	//p.GetInterpreter().SetPredictionMode(antlr.PredictionModeSLL)
+	tree := p.Document()
+	if el.Error() != nil {
+		err = el.Error()
+		return
 	}
+
+	defer func() {
+		e := recover()
+		if e != nil {
+			err = commons.RecoverError(e)
+		}
+	}()
+
+	f = &Fragment{}
 
 	v := &visitor{
-		ErrorListener: errs,
-		formatter:     formatter,
-		tags:          commons.NewStack[*tag](),
+		formatter: formatter,
+		vars:      commons.NewStack[map[string]any](),
 	}
-	v.tags.Push(newTag(nil, vars))
-	v.VisitContent(tree.(*ContentContext).GetChildren())
-	if v.Error() != nil {
-		return nil, v.Error()
-	}
+	v.vars.Push(vars)
+	v.VisitDocument(f, tree.Content().(*ContentContext).GetChildren())
 
-	if v.tags.Len() != 1 {
-		return nil, fmt.Errorf("expact 1 tag in stack, got: %d", v.tags.Len())
-	}
-
-	return v.tags.Peek().Fragment, errs.Error()
+	return
 }
 
 type visitor struct {
-	*commons.ErrorListener
-	count     int
 	formatter Formatter
-	tags      *commons.Stack[*tag]
-	mode      int
-}
-
-func (v *visitor) writeWS() {
-	//v.stack.Peek().writeWS()
-	v.tags.Peek().writeWS()
-}
-
-func (v *visitor) writeString(vv string) {
-	v.tags.Peek().writeString(vv)
-}
-
-func (v *visitor) addVar(vv ...any) {
-	v.tags.Peek().addVar(vv...)
-	v.count += len(vv)
-}
-
-func (v *visitor) addChildren(node antlr.Tree) {
-	v.tags.Peek().children = append(v.tags.Peek().children, node)
+	vars      *commons.Stack[map[string]any]
 }
 
 func (v *visitor) FetchVar(name string) (val any, ok bool) {
-	for i := v.tags.Len() - 1; i >= 0; i-- {
-		val, ok = v.tags.Index(i).vars[name]
+	for i := v.vars.Len() - 1; i >= 0; i-- {
+		val, ok = v.vars.Index(i)[name]
 		if ok {
 			return
 		}
@@ -161,176 +148,166 @@ func (v *visitor) FetchVar(name string) (val any, ok bool) {
 	return
 }
 
-func (v *visitor) VisitContent(nodes []antlr.Tree) {
-	for _, c := range nodes {
-		if v.Error() != nil {
-			return
-		}
-
-		fmt.Println("visit content:", v.mode, reflect.ValueOf(c).MethodByName("GetText").Call([]reflect.Value{})[0].Interface())
-
-		if v.mode == lazy {
-			if t, ok := c.(*EndContext); ok {
-				// TODO 退出层级需要对等
-				if t.NAME().GetText() == v.tags.Peek().ctx.NAME().GetText() {
-					v.mode = accept
-				}
-			}
-		}
-
-		switch v.mode {
-		case reject:
-			continue
-		case lazy:
-			v.addChildren(c)
-		default:
-			switch t := c.(type) {
-			case *StartContext:
-				v.visitStart(t)
-			case *EndContext:
-				v.visitEnd(t)
-			case *ExprContext:
-				v.visitExpr(t)
-			case *ReferenceContext:
-				v.visitReference(t)
-			case *ChardataContext:
-				v.visitCharData(t)
-			default:
-				v.AddError(fmt.Errorf("unsupport rule: %v", c.GetPayload()))
-			}
-		}
+func (v *visitor) VisitDocument(f *Fragment, nodes []antlr.Tree) {
+	for _, node := range nodes {
+		v.visitContent(f, node)
 	}
 }
 
-func newTag(ctx *StartContext, vars map[string]any) *tag {
-	return &tag{
-		ctx:      ctx,
-		Fragment: &Fragment{},
-		vars:     vars,
-		children: []antlr.Tree{},
+func (v *visitor) visitContent(f *Fragment, node antlr.Tree) {
+	//fmt.Println("visit content:", reflect.ValueOf(c).MethodByName("GetText").Call([]reflect.Value{})[0].Interface())
+	switch t := node.(type) {
+	case *ContentContext:
+		v.VisitDocument(f, t.GetChildren())
+	case *ElementContext:
+		v.visitElement(f, t)
+	case *ExprContext:
+		v.visitExpr(f, t)
+	case *ReferenceContext:
+		v.visitReference(f, t)
+	case *ChardataContext:
+		v.visitCharData(f, t)
+	default:
+		panic(fmt.Errorf("unsupported node: %v", t))
 	}
 }
 
-func (v *visitor) visitStart(ctx *StartContext) {
-	if v.Error() != nil {
-		return
-	}
+func (v *visitor) visitElement(f *Fragment, ctx *ElementContext) {
 
-	fmt.Println("visit start:", ctx.GetText())
-
-	if ctx.SLASH() != nil {
-		v.AddError(fmt.Errorf("unsupport self closed tag: %s", ctx.GetText()))
-		return
-	}
-
-	switch ctx.NAME().GetText() {
+	switch ctx.GetName().GetText() {
 	case tagForeach:
 		v.enterForeach()
 	case tagIf:
-		v.enterIf(ctx)
-	case tagWhen:
-		v.enterWhen(ctx)
+		v.enterIf(f, ctx)
 	case tagChoose:
-		v.enterChoose(ctx)
-	case tagOtherwise,
-		tagTrim,
-		tagWhere,
-		tagSet:
-		v.tags.Push(newTag(ctx, nil))
-	default:
-		v.AddError(fmt.Errorf("invalid tag: %s", ctx.GetText()))
-	}
-}
-
-func (v *visitor) visitEnd(ctx *EndContext) {
-	if v.Error() != nil {
-		return
-	}
-
-	t := v.tags.Peek()
-
-	fmt.Println("visit end:", ctx.GetText())
-	if ctx.NAME().GetText() != t.ctx.NAME().GetText() {
-		v.AddError(fmt.Errorf("tag: %s not closed, get: %s", t.ctx.GetText(), ctx.GetText()))
-		return
-	}
-
-	switch ctx.NAME().GetText() {
-	case tagIf:
-		v.exitIf()
-	case tagWhen:
-		v.exitWhen()
-	case tagForeach:
-		v.exitForeach()
-	case tagChoose:
-		v.exitChoose()
-	case tagOtherwise:
-		v.exitOtherwise()
+		v.visitChoose(f, ctx)
 	case tagTrim:
-		v.exitTrim()
+		v.visitTrim(f, ctx)
 	case tagWhere:
-		v.exitWhere()
+		v.visitWhere(f, ctx)
 	case tagSet:
-		//v.visitSet()
-		v.exitSet()
+		v.visitSet(f, ctx)
+	case tagWhen, tagOtherwise:
+		panic(fmt.Errorf("tag <%s> should be included directly in the choose tag", ctx.GetName().GetText()))
 	default:
-		v.AddError(fmt.Errorf("unsupport close tag: %s", ctx.GetText()))
+		panic(fmt.Errorf("unsupported tag: %s", ctx.GetName().GetText()))
 	}
-
-	fmt.Println("visit end:", t.ctx.GetText(), "stack len:", v.tags.Len())
 }
 
-func (v *visitor) enterIf(ctx *StartContext) {
+//func newTag(ctx *StartContext, vars map[string]any) *tag {
+//	return &tag{
+//		ctx:      ctx,
+//		Fragment: &Fragment{},
+//		vars:     vars,
+//		children: []antlr.Tree{},
+//	}
+//}
+
+//func (v *visitor) visitStart(ctx *StartContext) {
+//	if v.Error() != nil {
+//		return
+//	}
+//
+//	fmt.Println("visit start:", ctx.GetText())
+//
+//	if ctx.SLASH() != nil {
+//		v.AddError(fmt.Errorf("unsupport self closed tag: %s", ctx.GetText()))
+//		return
+//	}
+//
+//	switch ctx.NAME().GetText() {
+//	case tagForeach:
+//		v.enterForeach()
+//	case tagIf:
+//		v.enterIf(ctx)
+//	case tagWhen:
+//		v.enterWhen(ctx)
+//	case tagChoose:
+//		v.enterChoose(ctx)
+//	case tagOtherwise,
+//		tagTrim,
+//		tagWhere,
+//		tagSet:
+//		v.tags.Push(newTag(ctx, nil))
+//	default:
+//		v.AddError(fmt.Errorf("invalid tag: %s", ctx.GetText()))
+//	}
+//}
+
+//func (v *visitor) visitEnd(ctx *EndContext) {
+//	if v.Error() != nil {
+//		return
+//	}
+//
+//	t := v.tags.Peek()
+//
+//	fmt.Println("visit end:", ctx.GetText())
+//	if ctx.NAME().GetText() != t.ctx.NAME().GetText() {
+//		v.AddError(fmt.Errorf("tag: %s not closed, get: %s", t.ctx.GetText(), ctx.GetText()))
+//		return
+//	}
+//
+//	switch ctx.NAME().GetText() {
+//	case tagIf:
+//		v.exitIf()
+//	case tagWhen:
+//		v.exitWhen()
+//	case tagForeach:
+//		v.exitForeach()
+//	case tagChoose:
+//		v.exitChoose()
+//	case tagOtherwise:
+//		v.exitOtherwise()
+//	case tagTrim:
+//		v.exitTrim()
+//	case tagWhere:
+//		v.exitWhere()
+//	case tagSet:
+//		//v.visitSet()
+//		v.exitSet()
+//	default:
+//		v.AddError(fmt.Errorf("unsupport close tag: %s", ctx.GetText()))
+//	}
+//
+//	fmt.Println("visit end:", t.ctx.GetText(), "stack len:", v.tags.Len())
+//}
+
+func (v *visitor) enterIf(f *Fragment, ctx *ElementContext) {
 	if l := len(ctx.AllAttribute()); l != 1 {
-		v.AddError(fmt.Errorf("<if> expect 1 attribte got: %d", l))
-		return
+		panic(fmt.Errorf("<if> expect 1 attribte got: %d", l))
 	}
 	if ctx.Attribute(0).NAME().GetText() != "test" {
-		v.AddError(fmt.Errorf("<if> only accept test attribte got: %s", ctx.Attribute(0).NAME().GetText()))
+		panic(fmt.Errorf("<if> only accept test attribte got: %s", ctx.Attribute(0).NAME().GetText()))
+	}
+
+	if !v.test(ctx.Attribute(0).STRING().GetText()) {
 		return
 	}
-
-	if v.test(ctx.Attribute(0).STRING().GetText()) {
-		v.tags.Push(newTag(ctx, nil))
-	} else {
-		v.mode = reject
-	}
+	v.VisitDocument(f, ctx.Content().(*ContentContext).GetChildren())
 }
 
-func (v *visitor) exitIf() {
-	if v.mode != accept {
-		v.mode = accept
-		return
-	}
-	v.merge(v.tags.Pop())
-}
-
-func (v *visitor) enterWhen(ctx *StartContext) {
+func (v *visitor) visitWhen(f *Fragment, ctx *ElementContext) bool {
 	if l := len(ctx.AllAttribute()); l != 1 {
-		v.AddError(fmt.Errorf("<when> expect 1 attribte got: %d", l))
-		return
+		panic(fmt.Errorf("<when> expect 1 attribte got: %d", l))
 	}
 	if ctx.Attribute(0).NAME().GetText() != "test" {
-		v.AddError(fmt.Errorf("<when> only accept test attribte got: %s", ctx.Attribute(0).NAME().GetText()))
-		return
+		panic(fmt.Errorf("<when> only accept test attribte got: %s", ctx.Attribute(0).NAME().GetText()))
 	}
-	if v.test(ctx.Attribute(0).STRING().GetText()) {
-		v.merge(v.tags.Pop())
-		v.tags.Peek().test = true
-	} else {
-		v.mode = reject
+	if !v.test(ctx.Attribute(0).STRING().GetText()) {
+		return false
 	}
-	return
+	v.VisitDocument(f, ctx.Content().(*ContentContext).GetChildren())
+	return true
 }
 
 func (v *visitor) enterForeach() {
 
 }
 
-func (v *visitor) enterChoose(ctx *StartContext) {
-	v.mode = lazy
-	v.tags.Push(newTag(ctx, nil))
-}
+//func (v *visitor) enterChoose(ctx *StartContext) {
+//	v.mode = lazy
+//	v.tags.Push(newTag(ctx, nil))
+//}
 
 func (v *visitor) exitWhen() {
 
@@ -348,10 +325,35 @@ func (v *visitor) exitSet() {
 
 }
 
-func (v *visitor) exitChoose() {
-	v.mode = accept
-	v.VisitContent(v.tags.Peek().children)
-	v.merge(v.tags.Pop())
+func (v *visitor) visitChoose(f *Fragment, ctx *ElementContext) {
+
+	test := false
+	var otherwise *ElementContext
+
+	for _, node := range ctx.Content().GetChildren() {
+		elem, ok := node.(*ElementContext)
+		if ok {
+			if elem.GetName().GetText() == tagOtherwise {
+				if otherwise != nil {
+					panic(fmt.Errorf("in the <choose> block, otherwise is allowed to appear only once"))
+				}
+				otherwise = elem
+				continue
+			}
+
+			if elem.GetName().GetText() == tagWhen {
+				if !test {
+					test = v.visitWhen(f, elem)
+				}
+				continue
+			}
+		}
+		v.visitContent(f, node)
+	}
+
+	if !test && otherwise != nil {
+		v.visitOtherwise(f, otherwise)
+	}
 
 	//	var otherwise *tag
 	//	var whens []*tag
@@ -386,122 +388,107 @@ func (v *visitor) exitTrim() {
 }
 
 func (v *visitor) exitOtherwise() {
-	t := v.tags.Pop()
-	if !v.tags.Peek().test {
-		v.merge(t)
-	}
+	//t := v.tags.Pop()
+	//if !v.tags.Peek().test {
+	//	v.merge(t)
+	//}
 }
 
 func (v *visitor) test(s string) bool {
 	r, err := expr.Parse(s[1:len(s)-1], v.FetchVar)
 	if err != nil {
-		v.AddError(fmt.Errorf("parse test expression: %s error: %w", s, err))
-		return false
+		panic(fmt.Errorf("parse test expression: %s error: %w", s, err))
 	}
 
 	if r.Kind() != reflect.Bool {
-		v.AddError(fmt.Errorf("if test expression result: %s expect bool, got: %s", s, r.Kind()))
-		return false
+		panic(fmt.Errorf("if test expression result: %s expect bool, got: %s", s, r.Kind()))
 	}
 	return r.Bool()
 }
 
-func (v *visitor) merge(t *tag) {
-	v.writeString(t.Statement())
-	v.addVar(t.Fragment.vars...)
+func (v *visitor) visitOtherwise(f *Fragment, ctx *ElementContext) {
+	v.VisitDocument(f, ctx.Content().(*ContentContext).GetChildren())
 }
 
-//func (v *visitor) visitWhenOtherwise() {
-//	v.tmp = append(v.tmp, v.tags.Pop())
-//}
-
-func (v *visitor) visitTrim() {
+func (v *visitor) visitTrim(f *Fragment, ctx *ElementContext) {
 
 	return
 }
 
-func (v *visitor) visitWhere() {
+func (v *visitor) visitWhere(f *Fragment, ctx *ElementContext) {
 
 }
 
-func (v *visitor) visitSet() {
-	t := v.tags.Pop()
-	s := strings.TrimSpace(strings.TrimSuffix(strings.TrimSpace(t.Statement()), ","))
-	if s != "" {
-		t.statement.Reset()
-		t.statement.WriteString(s)
-		v.merge(t)
-	}
+func (v *visitor) visitSet(f *Fragment, ctx *ElementContext) {
+	//t := v.tags.Pop()
+	//s := strings.TrimSpace(strings.TrimSuffix(strings.TrimSpace(t.Statement()), ","))
+	//if s != "" {
+	//	t.statement.Reset()
+	//	t.statement.WriteString(s)
+	//	v.merge(t)
+	//}
 }
 
 func (v *visitor) visitForeach() {
 
 }
 
-func (v *visitor) visitExpr(ctx *ExprContext) {
-	if v.Error() != nil {
-		return
-	}
+func (v *visitor) visitExpr(f *Fragment, ctx *ExprContext) {
 	rv, err := expr.Parse(ctx.GetVal().GetText(), v.FetchVar)
 	if err != nil {
-		v.AddError(fmt.Errorf("parse expression: %s error: %w", ctx.GetVal().GetText(), err))
-		return
+		panic(fmt.Errorf("parse expression: %s error: %w", ctx.GetVal().GetText(), err))
 	}
 	if ctx.HASH() != nil && v.formatter == nil {
-		v.bindExpr(rv)
+		v.bindExpr(f, rv)
 	} else {
-		v.explainExpr(rv)
+		v.explainExpr(f, rv)
 	}
 }
 
-func (v *visitor) bindExpr(rv reflect.Value) {
+func (v *visitor) bindExpr(f *Fragment, rv reflect.Value) {
 	if rv.Kind() == reflect.Slice {
 		var s []string
 		for i := 0; i < rv.Len(); i++ {
-			v.addVar(rv.Index(i).Interface())
+			f.addVar(rv.Index(i).Interface())
 			// TODO handle count
-			s = append(s, fmt.Sprintf("$%d", v.count))
+			s = append(s, fmt.Sprintf("$%d", f.count))
 		}
-		v.writeString(fmt.Sprintf("(%s)", strings.Join(s, ",")))
+		f.writeString(fmt.Sprintf("(%s)", strings.Join(s, ",")))
 	} else {
-		v.addVar(rv.Interface())
-		v.writeString(fmt.Sprintf("$%d", v.count))
+		f.addVar(rv.Interface())
+		f.writeString(fmt.Sprintf("$%d", f.count))
 	}
 }
 
-func (v *visitor) explainExpr(rv reflect.Value) {
+func (v *visitor) explainExpr(f *Fragment, rv reflect.Value) {
 	if rv.Kind() == reflect.Slice {
 		var s []string
 		for i := 0; i < rv.Len(); i++ {
 			s = append(s, fmt.Sprintf("%s", v.explainVar(rv.Index(i))))
 		}
-		v.writeString(fmt.Sprintf("(%s)", strings.Join(s, ",")))
+		f.writeString(fmt.Sprintf("(%s)", strings.Join(s, ",")))
 	} else {
-		v.writeString(fmt.Sprintf("%s", v.explainVar(rv)))
+		f.writeString(fmt.Sprintf("%s", v.explainVar(rv)))
 	}
 }
 
 func (v *visitor) explainVar(rv reflect.Value) (r string) {
 	r, err := v.formatter(rv, "'")
 	if err != nil {
-		v.AddError(err)
-		return
+		panic(err)
 	}
 	return
 }
 
-func (v *visitor) visitCharData(ctx *ChardataContext) {
-	if v.Error() != nil {
-		return
-	}
+func (v *visitor) visitCharData(f *Fragment, ctx *ChardataContext) {
 	if ctx.WS() != nil {
-		v.writeWS()
+		f.writeWS()
 	} else {
-		v.writeString(ctx.GetText())
+		f.writeString(ctx.GetText())
 	}
 }
 
-func (v *visitor) visitReference(ctx *ReferenceContext) {
+func (v *visitor) visitReference(f *Fragment, ctx *ReferenceContext) {
 	if ctx.EntityRef() != nil {
 		c := ""
 		switch ctx.EntityRef().GetText() {
@@ -516,9 +503,8 @@ func (v *visitor) visitReference(ctx *ReferenceContext) {
 		case "&quot;":
 			c = "\""
 		default:
-			v.AddError(fmt.Errorf("unkonwn reference: %s", ctx.EntityRef().GetText()))
-			return
+			panic(fmt.Errorf("unkonwn reference: %s", ctx.EntityRef().GetText()))
 		}
-		v.writeString(c)
+		f.writeString(c)
 	}
 }

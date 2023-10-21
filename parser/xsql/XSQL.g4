@@ -18,6 +18,7 @@ STRING            :   '"' ~["]* '"'
                   |   '\'' ~[']* '\''
                   ;
 TEXT              :    .+?;
+
 fragment
 DIGIT        :   [0-9];
 
@@ -38,11 +39,19 @@ NameChar     :   [:a-zA-Z]
              |   '\uFDF0'..'\uFFFD'
              ;
 
-content      :  (elem | expr | reference | chardata)*;
+document     : content EOF;
+
+content      :  (element | expr | reference | chardata)*;
 
 
-elem        :  '<' NAME WS* attribute* '>' content  '<' '/' NAME '>'
-            |  '<' NAME WS* attribute* '/' '>'
+element     :  '<' name='if'  WS* attribute* '>' content  '</if>'
+            |  '<' name='choose'  WS* attribute* '>' content  '</choose>'
+            |  '<' name='when'  WS* attribute* '>' content  '</when>'
+            |  '<' name='otherwise'  WS* attribute* '>' content  '</otherwise>'
+            |  '<' name='trim'  WS* attribute* '>' content  '</trim'
+            |  '<' name='where'  WS* attribute* '>' content  '</where>'
+            |  '<' name='set'  WS* attribute* '>' content  '</set>'
+            |  '<' name='foreach'  WS* attribute* '>' content  '</foreach>'
             ;
 
 attribute    :  NAME '=' STRING WS* ;
