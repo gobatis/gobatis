@@ -35,15 +35,15 @@ func exprparserParserInit() {
 		"", "'nil'", "'||'", "'&&'", "", "'('", "')'", "'['", "']'", "'='",
 		"','", "';'", "':'", "'?'", "'.'", "'...'", "'=='", "'!='", "'<'", "'<='",
 		"'>'", "'>='", "'|'", "'/'", "'%'", "'<<'", "'>>'", "'&^'", "'!'", "'+'",
-		"'-'", "'^'", "'*'", "'&'",
+		"'-'", "'^'",
 	}
 	staticData.SymbolicNames = []string{
 		"", "NIL_LIT", "LOGICAL_OR", "LOGICAL_AND", "IDENTIFIER", "L_PAREN",
 		"R_PAREN", "L_BRACKET", "R_BRACKET", "ASSIGN", "COMMA", "SEMI", "COLON",
 		"QUESTION", "DOT", "ELLIPSIS", "EQUALS", "NOT_EQUALS", "LESS", "LESS_OR_EQUALS",
 		"GREATER", "GREATER_OR_EQUALS", "OR", "DIV", "MOD", "LSHIFT", "RSHIFT",
-		"BIT_CLEAR", "EXCLAMATION", "PLUS", "MINUS", "CARET", "STAR", "AMPERSAND",
-		"DECIMAL_LIT", "BINARY_LIT", "OCTAL_LIT", "HEX_LIT", "FLOAT_LIT", "DECIMAL_FLOAT_LIT",
+		"BIT_CLEAR", "EXCLAMATION", "PLUS", "MINUS", "CARET", "DECIMAL_LIT",
+		"BINARY_LIT", "OCTAL_LIT", "HEX_LIT", "FLOAT_LIT", "DECIMAL_FLOAT_LIT",
 		"HEX_FLOAT_LIT", "IMAGINARY_LIT", "RUNE_LIT", "BYTE_VALUE", "OCTAL_BYTE_VALUE",
 		"HEX_BYTE_VALUE", "LITTLE_U_VALUE", "BIG_U_VALUE", "RAW_STRING_LIT",
 		"INTERPRETED_STRING_LIT", "WS", "TERMINATOR",
@@ -55,7 +55,7 @@ func exprparserParserInit() {
 	}
 	staticData.PredictionContextCache = antlr.NewPredictionContextCache()
 	staticData.serializedATN = []int32{
-		4, 1, 51, 147, 2, 0, 7, 0, 2, 1, 7, 1, 2, 2, 7, 2, 2, 3, 7, 3, 2, 4, 7,
+		4, 1, 49, 147, 2, 0, 7, 0, 2, 1, 7, 1, 2, 2, 7, 2, 2, 3, 7, 3, 2, 4, 7,
 		4, 2, 5, 7, 5, 2, 6, 7, 6, 2, 7, 7, 7, 2, 8, 7, 8, 2, 9, 7, 9, 2, 10, 7,
 		10, 2, 11, 7, 11, 2, 12, 7, 12, 2, 13, 7, 13, 2, 14, 7, 14, 2, 15, 7, 15,
 		1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 40, 8, 1, 1, 1, 1, 1, 1,
@@ -71,7 +71,7 @@ func exprparserParserInit() {
 		15, 136, 8, 15, 1, 15, 1, 15, 1, 15, 1, 15, 1, 15, 3, 15, 143, 8, 15, 1,
 		15, 1, 15, 1, 15, 0, 2, 2, 4, 16, 0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20,
 		22, 24, 26, 28, 30, 0, 5, 1, 0, 28, 31, 1, 0, 16, 21, 1, 0, 2, 3, 2, 0,
-		34, 37, 41, 42, 1, 0, 48, 49, 152, 0, 32, 1, 0, 0, 0, 2, 39, 1, 0, 0, 0,
+		32, 35, 39, 40, 1, 0, 46, 47, 152, 0, 32, 1, 0, 0, 0, 2, 39, 1, 0, 0, 0,
 		4, 59, 1, 0, 0, 0, 6, 74, 1, 0, 0, 0, 8, 82, 1, 0, 0, 0, 10, 84, 1, 0,
 		0, 0, 12, 86, 1, 0, 0, 0, 14, 95, 1, 0, 0, 0, 16, 97, 1, 0, 0, 0, 18, 99,
 		1, 0, 0, 0, 20, 101, 1, 0, 0, 0, 22, 103, 1, 0, 0, 0, 24, 105, 1, 0, 0,
@@ -96,11 +96,11 @@ func exprparserParserInit() {
 		83, 9, 1, 0, 0, 0, 84, 85, 5, 4, 0, 0, 85, 11, 1, 0, 0, 0, 86, 87, 5, 14,
 		0, 0, 87, 88, 5, 4, 0, 0, 88, 13, 1, 0, 0, 0, 89, 96, 3, 18, 9, 0, 90,
 		96, 3, 16, 8, 0, 91, 96, 3, 20, 10, 0, 92, 96, 3, 22, 11, 0, 93, 96, 5,
-		41, 0, 0, 94, 96, 5, 42, 0, 0, 95, 89, 1, 0, 0, 0, 95, 90, 1, 0, 0, 0,
+		39, 0, 0, 94, 96, 5, 40, 0, 0, 95, 89, 1, 0, 0, 0, 95, 90, 1, 0, 0, 0,
 		95, 91, 1, 0, 0, 0, 95, 92, 1, 0, 0, 0, 95, 93, 1, 0, 0, 0, 95, 94, 1,
 		0, 0, 0, 96, 15, 1, 0, 0, 0, 97, 98, 7, 3, 0, 0, 98, 17, 1, 0, 0, 0, 99,
 		100, 5, 1, 0, 0, 100, 19, 1, 0, 0, 0, 101, 102, 7, 4, 0, 0, 102, 21, 1,
-		0, 0, 0, 103, 104, 5, 38, 0, 0, 104, 23, 1, 0, 0, 0, 105, 106, 5, 7, 0,
+		0, 0, 0, 103, 104, 5, 36, 0, 0, 104, 23, 1, 0, 0, 0, 105, 106, 5, 7, 0,
 		0, 106, 107, 3, 2, 1, 0, 107, 108, 5, 8, 0, 0, 108, 25, 1, 0, 0, 0, 109,
 		114, 3, 2, 1, 0, 110, 111, 5, 10, 0, 0, 111, 113, 3, 2, 1, 0, 112, 110,
 		1, 0, 0, 0, 113, 116, 1, 0, 0, 0, 114, 112, 1, 0, 0, 0, 114, 115, 1, 0,
@@ -186,26 +186,24 @@ const (
 	ExprParserPLUS                   = 29
 	ExprParserMINUS                  = 30
 	ExprParserCARET                  = 31
-	ExprParserSTAR                   = 32
-	ExprParserAMPERSAND              = 33
-	ExprParserDECIMAL_LIT            = 34
-	ExprParserBINARY_LIT             = 35
-	ExprParserOCTAL_LIT              = 36
-	ExprParserHEX_LIT                = 37
-	ExprParserFLOAT_LIT              = 38
-	ExprParserDECIMAL_FLOAT_LIT      = 39
-	ExprParserHEX_FLOAT_LIT          = 40
-	ExprParserIMAGINARY_LIT          = 41
-	ExprParserRUNE_LIT               = 42
-	ExprParserBYTE_VALUE             = 43
-	ExprParserOCTAL_BYTE_VALUE       = 44
-	ExprParserHEX_BYTE_VALUE         = 45
-	ExprParserLITTLE_U_VALUE         = 46
-	ExprParserBIG_U_VALUE            = 47
-	ExprParserRAW_STRING_LIT         = 48
-	ExprParserINTERPRETED_STRING_LIT = 49
-	ExprParserWS                     = 50
-	ExprParserTERMINATOR             = 51
+	ExprParserDECIMAL_LIT            = 32
+	ExprParserBINARY_LIT             = 33
+	ExprParserOCTAL_LIT              = 34
+	ExprParserHEX_LIT                = 35
+	ExprParserFLOAT_LIT              = 36
+	ExprParserDECIMAL_FLOAT_LIT      = 37
+	ExprParserHEX_FLOAT_LIT          = 38
+	ExprParserIMAGINARY_LIT          = 39
+	ExprParserRUNE_LIT               = 40
+	ExprParserBYTE_VALUE             = 41
+	ExprParserOCTAL_BYTE_VALUE       = 42
+	ExprParserHEX_BYTE_VALUE         = 43
+	ExprParserLITTLE_U_VALUE         = 44
+	ExprParserBIG_U_VALUE            = 45
+	ExprParserRAW_STRING_LIT         = 46
+	ExprParserINTERPRETED_STRING_LIT = 47
+	ExprParserWS                     = 48
+	ExprParserTERMINATOR             = 49
 )
 
 // ExprParser rules.
@@ -1769,7 +1767,7 @@ func (p *ExprParser) Integer() (localctx IIntegerContext) {
 		p.SetState(97)
 		_la = p.GetTokenStream().LA(1)
 
-		if !((int64(_la) & ^0x3f) == 0 && ((int64(1)<<_la)&6854767804416) != 0) {
+		if !((int64(_la) & ^0x3f) == 0 && ((int64(1)<<_la)&1713691951104) != 0) {
 			p.GetErrorHandler().RecoverInline(p)
 		} else {
 			p.GetErrorHandler().ReportMatch(p)
@@ -2434,7 +2432,7 @@ func (p *ExprParser) Call() (localctx ICallContext) {
 	}
 	_la = p.GetTokenStream().LA(1)
 
-	if (int64(_la) & ^0x3f) == 0 && ((int64(1)<<_la)&851558602375218) != 0 {
+	if (int64(_la) & ^0x3f) == 0 && ((int64(1)<<_la)&212892670492722) != 0 {
 		{
 			p.SetState(118)
 			p.ExpressionList()
@@ -2659,7 +2657,7 @@ func (p *ExprParser) Slice() (localctx ISliceContext) {
 		}
 		_la = p.GetTokenStream().LA(1)
 
-		if (int64(_la) & ^0x3f) == 0 && ((int64(1)<<_la)&851558602375218) != 0 {
+		if (int64(_la) & ^0x3f) == 0 && ((int64(1)<<_la)&212892670492722) != 0 {
 			{
 				p.SetState(127)
 
@@ -2684,7 +2682,7 @@ func (p *ExprParser) Slice() (localctx ISliceContext) {
 		}
 		_la = p.GetTokenStream().LA(1)
 
-		if (int64(_la) & ^0x3f) == 0 && ((int64(1)<<_la)&851558602375218) != 0 {
+		if (int64(_la) & ^0x3f) == 0 && ((int64(1)<<_la)&212892670492722) != 0 {
 			{
 				p.SetState(131)
 
@@ -2703,7 +2701,7 @@ func (p *ExprParser) Slice() (localctx ISliceContext) {
 		}
 		_la = p.GetTokenStream().LA(1)
 
-		if (int64(_la) & ^0x3f) == 0 && ((int64(1)<<_la)&851558602375218) != 0 {
+		if (int64(_la) & ^0x3f) == 0 && ((int64(1)<<_la)&212892670492722) != 0 {
 			{
 				p.SetState(134)
 

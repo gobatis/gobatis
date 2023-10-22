@@ -20,8 +20,6 @@ SEMI                   : ';';
 COLON                  : ':';
 QUESTION               : '?';
 DOT                    : '.';
-//PLUS_PLUS              : '++';
-//MINUS_MINUS            : '--';
 ELLIPSIS               : '...';
 
 // Relation operators
@@ -47,8 +45,6 @@ EXCLAMATION            : '!';
 PLUS                   : '+';
 MINUS                  : '-';
 CARET                  : '^';
-STAR                   : '*';
-AMPERSAND              : '&';
 
 // Number literals
 DECIMAL_LIT            : '0' | [1-9] ('_'? [0-9])*;
