@@ -248,12 +248,9 @@ func TestVisitor(t *testing.T) {
 }
 
 func TestRegex(t *testing.T) {
-
 	r, err := regexp.Compile(`(and | or )`)
 	require.NoError(t, err)
-
 	t.Log(r.MatchString("a and b"))
 	t.Log(r.MatchString("a or c"))
 	t.Log(r.MatchString("and"))
-
 }

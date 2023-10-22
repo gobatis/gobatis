@@ -10,7 +10,7 @@ import (
 	"github.com/gobatis/gobatis/dialector"
 	"github.com/gobatis/gobatis/executor"
 	"github.com/gobatis/gobatis/logger"
-	"github.com/gobatis/gobatis/parser/commons"
+	"github.com/gobatis/gobatis/parser"
 	"go.uber.org/atomic"
 )
 
@@ -84,7 +84,7 @@ type DB struct {
 }
 
 func (d *DB) addError(err error) {
-	d.Error = commons.AddError(d.Error, err)
+	d.Error = parser.AddError(d.Error, err)
 }
 
 func (d *DB) clone() *DB {

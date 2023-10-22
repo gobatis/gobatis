@@ -23,3 +23,8 @@ type Dest struct {
 	dest   any
 	fields []string
 }
+
+func Extract(v any, path string) (r any, err error) {
+
+	return
+}

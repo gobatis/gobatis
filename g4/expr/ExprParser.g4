@@ -47,16 +47,18 @@ literal:
 	| integer
 	| string
 	| float
-	| IMAGINARY_LIT
-	| RUNE_LIT;
+//	| IMAGINARY_LIT
+//	| RUNE_LIT
+	;
 
 integer:
 	DECIMAL_LIT
-	| BINARY_LIT
-	| OCTAL_LIT
-	| HEX_LIT
-	| IMAGINARY_LIT
-	| RUNE_LIT;
+//	| BINARY_LIT
+//	| OCTAL_LIT
+//	| HEX_LIT
+//	| IMAGINARY_LIT
+//	| RUNE_LIT
+    ;
 
 nil: NIL_LIT;
 

@@ -7,8 +7,7 @@ import (
 	"unicode"
 
 	"github.com/antlr4-go/antlr/v4"
-	//"github.com/gobatis/gobatis/cast"
-	"github.com/gobatis/gobatis/parser/commons"
+	"github.com/gobatis/gobatis/parser"
 )
 
 type Expr struct {
@@ -26,11 +25,11 @@ func valueOf(source interface{}) reflect.Value {
 	}
 }
 
-type FetchVar func(name string) (val any, ok bool)
+type FetchVar func(name string) any
 
 func Parse(source string, fetchVar FetchVar) (reflect.Value, error) {
 
-	errs := &commons.ErrorListener{}
+	errs := &parser.ErrorListener{}
 
 	lexer := NewExprLexer(antlr.NewInputStream(source))
 	lexer.RemoveErrorListeners()
@@ -60,7 +59,7 @@ func Parse(source string, fetchVar FetchVar) (reflect.Value, error) {
 }
 
 type Visitor struct {
-	*commons.ErrorListener
+	*parser.ErrorListener
 	fetchVar FetchVar
 }
 
@@ -173,15 +172,7 @@ func (v Visitor) visitVar(ctx *VarContext) reflect.Value {
 		return reflect.Value{}
 	}
 	// TODO check nil 关键字
-	vv, ok := v.fetchVar(ctx.GetText())
-	if !ok {
-		if _builtin.get(ctx.GetText()) != nil {
-			return reflect.ValueOf(_builtin.get(ctx.GetText()))
-		}
-		v.AddError(fmt.Errorf("variable: %s is not defined", ctx.GetText()))
-		return reflect.Value{}
-	}
-	return reflect.ValueOf(vv)
+	return reflect.ValueOf(v.fetchVar(ctx.GetText()))
 }
 
 func (v Visitor) visitMember(rv reflect.Value, ctx *MemberContext) reflect.Value {

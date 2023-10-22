@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/antlr4-go/antlr/v4"
-	"github.com/gobatis/gobatis/parser/commons"
+	"github.com/gobatis/gobatis/parser"
 	"github.com/gobatis/gobatis/parser/expr"
 )
 
@@ -94,7 +94,7 @@ func Explain(formatter Formatter, source string, vars map[string]any) (string, e
 
 func parse(source string, formatter Formatter, vars map[string]any) (f *Fragment, err error) {
 
-	el := &commons.ErrorListener{}
+	el := &parser.ErrorListener{}
 
 	lexer := NewXSQLLexer(antlr.NewInputStream(source))
 	lexer.RemoveErrorListeners()
@@ -106,9 +106,7 @@ func parse(source string, formatter Formatter, vars map[string]any) (f *Fragment
 	p.BuildParseTrees = true
 	p.RemoveErrorListeners()
 	p.AddErrorListener(el)
-	//p.AddErrorListener(antlr.NewConsoleErrorListener())
-	//p.SetErrorHandler(antlr.NewDefaultErrorStrategy())
-	//p.GetInterpreter().SetPredictionMode(antlr.PredictionModeSLL)
+	p.GetInterpreter().SetPredictionMode(antlr.PredictionModeSLL)
 	tree := p.Document()
 	if el.Error() != nil {
 		err = el.Error()
@@ -118,7 +116,7 @@ func parse(source string, formatter Formatter, vars map[string]any) (f *Fragment
 	defer func() {
 		e := recover()
 		if e != nil {
-			err = commons.RecoverError(e)
+			err = parser.RecoverError(e)
 		}
 	}()
 
@@ -126,7 +124,7 @@ func parse(source string, formatter Formatter, vars map[string]any) (f *Fragment
 
 	v := &visitor{
 		formatter: formatter,
-		vars:      commons.NewStack[map[string]any](),
+		vars:      NewStack[map[string]any](),
 	}
 	v.vars.Push(vars)
 	v.VisitDocument(f, tree.Content().(*ContentContext).GetChildren())
@@ -136,17 +134,17 @@ func parse(source string, formatter Formatter, vars map[string]any) (f *Fragment
 
 type visitor struct {
 	formatter Formatter
-	vars      *commons.Stack[map[string]any]
+	vars      *Stack[map[string]any]
 }
 
-func (v visitor) FetchVar(name string) (val any, ok bool) {
+func (v visitor) FetchVar(name string) any {
 	for i := v.vars.Len() - 1; i >= 0; i-- {
-		val, ok = v.vars.Index(i)[name]
+		r, ok := v.vars.Index(i)[name]
 		if ok {
-			return
+			return r
 		}
 	}
-	return
+	return nil
 }
 
 func (v visitor) VisitDocument(f *Fragment, nodes []antlr.Tree) {
@@ -397,7 +395,6 @@ func (v visitor) visitForeach(f *Fragment, ctx *ElementContext) {
 		_close     string
 	)
 	for k, vv := range attrs {
-		vv = strings.TrimSpace(vv)
 		switch k {
 		case attributeSeparator:
 			separator = vv
@@ -407,12 +404,12 @@ func (v visitor) visitForeach(f *Fragment, ctx *ElementContext) {
 			_close = vv
 		case attributeCollection:
 			collection = vv
+		case attributeIndex:
+			// TODO check var name
+			index = vv
 		case attributeItem:
 			// TODO check var name
 			item = vv
-		case attributeIndex:
-			// TODO check var name
-			item = index
 		default:
 			panic(fmt.Errorf("unsupported <foreach> attribute: %s", vv))
 		}
@@ -424,13 +421,8 @@ func (v visitor) visitForeach(f *Fragment, ctx *ElementContext) {
 		panic(fmt.Errorf("<foreach> requrie attribute: %s", attributeItem))
 	}
 
-	r, ok := v.FetchVar(collection)
-	if !ok {
-		panic(fmt.Errorf("<foreach> collection varibale: %s not defined", collection))
-	}
-
 	f.writeString(open)
-	rv := reflect.ValueOf(r)
+	rv := reflect.ValueOf(v.FetchVar(collection))
 	switch rv.Kind() {
 	case reflect.Slice, reflect.Array:
 		for i := 0; i < rv.Len(); i++ {

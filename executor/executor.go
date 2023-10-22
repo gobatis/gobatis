@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/gobatis/gobatis/logger"
-	"github.com/gobatis/gobatis/parser/commons"
+	"github.com/gobatis/gobatis/parser"
 	"github.com/gobatis/gobatis/parser/xsql"
 )
 
@@ -53,7 +53,7 @@ func (d *Default) Execute(log logger.Logger, pos string, trace, debug bool, affe
 		vars[v.Name] = v.Value
 	}
 
-	r, err := xsql.Parse(d.raw.SQL, vars)
+	r, err := xsql.Parse(log.Explain, d.raw.SQL, vars)
 	if err != nil {
 		return
 	}
@@ -63,10 +63,10 @@ func (d *Default) Execute(log logger.Logger, pos string, trace, debug bool, affe
 	defer func() {
 		if d.clean {
 			if d.rows != nil {
-				err = commons.AddError(err, d.rows.Close())
+				err = parser.AddError(err, d.rows.Close())
 			}
 			if !d.conn.IsTx() {
-				err = commons.AddError(err, d.conn.Close())
+				err = parser.AddError(err, d.conn.Close())
 			}
 		}
 		if s == nil {
@@ -168,12 +168,12 @@ func (i *InsertBatch) Execute(log logger.Logger, pos string, trace, debug bool, 
 		// Indicate that the outside is a regular DB object,
 		// not a transaction object.
 		if !i.conn.IsTx() {
-			err = commons.AddError(err, i.conn.Close())
+			err = parser.AddError(err, i.conn.Close())
 		}
 		if tx != nil {
 			if err != nil {
 				now := time.Now()
-				err = commons.AddError(err, tx.Rollback())
+				err = parser.AddError(err, tx.Rollback())
 				log.Trace(pos, conn.TraceId(), true, err, &logger.SQLTrace{
 					Trace:        trace,
 					Debug:        debug,
@@ -252,7 +252,7 @@ func (i *InsertBatch) execute(conn Conn, raw *Raw, logger logger.Logger, pos str
 	}
 	defer func() {
 		if d.rows != nil {
-			err = commons.AddError(err, d.rows.Close())
+			err = parser.AddError(err, d.rows.Close())
 		}
 	}()
 	if d.result != nil {
@@ -310,7 +310,7 @@ func (f *FetchQuery) Execute(log logger.Logger, pos string, trace, debug bool, a
 		if tx != nil {
 			if err != nil {
 				now := time.Now()
-				err = commons.AddError(err, tx.Rollback())
+				err = parser.AddError(err, tx.Rollback())
 				log.Trace(pos, conn.TraceId(), true, err, &logger.SQLTrace{
 					Trace:        trace,
 					Debug:        debug,
@@ -351,10 +351,10 @@ func (f *FetchQuery) Execute(log logger.Logger, pos string, trace, debug bool, a
 			SQL:    fmt.Sprintf("close %s", cursor),
 			Params: nil,
 		})
-		err = commons.AddError(err, d.Execute(log, pos, trace, debug, affect, nil))
+		err = parser.AddError(err, d.Execute(log, pos, trace, debug, affect, nil))
 
 		now := time.Now()
-		err = commons.AddError(err, tx.Commit())
+		err = parser.AddError(err, tx.Commit())
 
 		log.Trace(pos, conn.TraceId(), true, err, &logger.SQLTrace{
 			Trace:        trace,

@@ -274,13 +274,12 @@ func setValue(pv reflect.Value, v any) error {
 
 	switch pv.Interface().(type) {
 	case time.Time:
-		panic("todo")
-		//r, err := cast.ToTimeE(v)
-		//if err != nil {
-		//	return err
-		//}
-		//
-		//pv.Set(reflect.ValueOf(r))
+		switch v.(type) {
+		case time.Time:
+			pv.Set(vv)
+		default:
+			panic("todo")
+		}
 	}
 
 	return nil

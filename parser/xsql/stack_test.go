@@ -1,4 +1,4 @@
-package commons
+package xsql
 
 import (
 	"testing"

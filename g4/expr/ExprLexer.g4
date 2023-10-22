@@ -48,12 +48,13 @@ CARET                  : '^';
 
 // Number literals
 DECIMAL_LIT            : '0' | [1-9] ('_'? [0-9])*;
-BINARY_LIT             : '0' [bB] ('_'? BIN_DIGIT)+;
-OCTAL_LIT              : '0' [oO]? ('_'? OCTAL_DIGIT)+;
-HEX_LIT                : '0' [xX]  ('_'? HEX_DIGIT)+;
+//BINARY_LIT             : '0' [bB] ('_'? BIN_DIGIT)+;
+//OCTAL_LIT              : '0' [oO]? ('_'? OCTAL_DIGIT)+;
+//HEX_LIT                : '0' [xX]  ('_'? HEX_DIGIT)+;
 
 
 FLOAT_LIT : DECIMAL_FLOAT_LIT | HEX_FLOAT_LIT;
+
 
 DECIMAL_FLOAT_LIT      : DECIMALS ('.' DECIMALS? EXPONENT? | EXPONENT)
                        | '.' DECIMALS EXPONENT?
@@ -68,30 +69,30 @@ fragment HEX_MANTISSA  : ('_'? HEX_DIGIT)+ ('.' ( '_'? HEX_DIGIT )*)?
 fragment HEX_EXPONENT  : [pP] [+-] DECIMALS;
 
 
-IMAGINARY_LIT          : (DECIMAL_LIT | BINARY_LIT |  OCTAL_LIT | HEX_LIT | FLOAT_LIT) 'i';
+//IMAGINARY_LIT          : (DECIMAL_LIT | BINARY_LIT |  OCTAL_LIT | HEX_LIT | FLOAT_LIT) 'i';
 
 // Rune literals
-RUNE_LIT               : '\'' (UNICODE_VALUE | BYTE_VALUE) '\'';//: '\'' (~[\n\\] | ESCAPED_VALUE) '\'';
+//RUNE_LIT               : '\'' (UNICODE_VALUE | BYTE_VALUE) '\'';//: '\'' (~[\n\\] | ESCAPED_VALUE) '\'';
 
-BYTE_VALUE : OCTAL_BYTE_VALUE | HEX_BYTE_VALUE;
+//BYTE_VALUE : OCTAL_BYTE_VALUE | HEX_BYTE_VALUE;
 
-OCTAL_BYTE_VALUE: '\\' OCTAL_DIGIT OCTAL_DIGIT OCTAL_DIGIT;
+//OCTAL_BYTE_VALUE: '\\' OCTAL_DIGIT OCTAL_DIGIT OCTAL_DIGIT;
 
-HEX_BYTE_VALUE: '\\' 'x'  HEX_DIGIT HEX_DIGIT;
+//HEX_BYTE_VALUE: '\\' 'x'  HEX_DIGIT HEX_DIGIT;
 
-LITTLE_U_VALUE: '\\' 'u' HEX_DIGIT HEX_DIGIT HEX_DIGIT HEX_DIGIT;
+//LITTLE_U_VALUE: '\\' 'u' HEX_DIGIT HEX_DIGIT HEX_DIGIT HEX_DIGIT;
 
-BIG_U_VALUE: '\\' 'U' HEX_DIGIT HEX_DIGIT HEX_DIGIT HEX_DIGIT HEX_DIGIT HEX_DIGIT HEX_DIGIT HEX_DIGIT;
+//BIG_U_VALUE: '\\' 'U' HEX_DIGIT HEX_DIGIT HEX_DIGIT HEX_DIGIT HEX_DIGIT HEX_DIGIT HEX_DIGIT HEX_DIGIT;
 
 // String literals
-RAW_STRING_LIT         : '`' ~'`'*                      '`';
+//RAW_STRING_LIT         : '`' ~'`'*                      '`';
 INTERPRETED_STRING_LIT : '"' (~["\\] | ESCAPED_VALUE)*  '"' | '\'' (~['\\] | ESCAPED_VALUE)*  '\'';
 
 // Skip tokens
 WS                     : [ \t]+             -> skip;
 TERMINATOR             : [\r\n]+            -> skip;
 
-fragment UNICODE_VALUE: ~[\r\n'] | LITTLE_U_VALUE | BIG_U_VALUE | ESCAPED_VALUE;
+//fragment UNICODE_VALUE: ~[\r\n'] | LITTLE_U_VALUE | BIG_U_VALUE | ESCAPED_VALUE;
 
 // Fragments
 fragment ESCAPED_VALUE
