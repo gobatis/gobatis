@@ -2,6 +2,7 @@ package xsql
 
 import (
 	"fmt"
+	"regexp"
 	"testing"
 
 	"github.com/antlr4-go/antlr/v4"
@@ -150,17 +151,17 @@ func TestVisitor(t *testing.T) {
 		//},
 
 		// foreach
-		{
-			Source: `
-				select * from products where "id" in
-				<foreach item="id" collection="ids" open="(" close=")" separator=",">
-					#{id}
-				</foreach>
-			`,
-			Cases: []TestCase{
-				{Vars: map[string]any{"ids": []int{1, 2, 3}}},
-			},
-		},
+		//{
+		//	Source: `
+		//		select * from products where "id" in
+		//		<foreach item="id" collection="ids" open="(" close=")" separator=",">
+		//			#{id}
+		//		</foreach>
+		//	`,
+		//	Cases: []TestCase{
+		//		{Vars: map[string]any{"ids": []int{1, 2, 3}}},
+		//	},
+		//},
 
 		// set
 		//{
@@ -174,9 +175,49 @@ func TestVisitor(t *testing.T) {
 		//	  WHERE id = #{id}
 		//	`,
 		//	Cases: []TestCase{
-		//		{Vars: map[string]any{"name": "tom", "age": nil, "address": nil}, ExpectSQL: "", ExpectVars: []any{"tom"}},
+		//		{Vars: map[string]any{"name": "tom", "age": nil, "address": nil, "id": 1}, ExpectSQL: "", ExpectVars: []any{"tom"}},
 		//	},
 		//},
+
+		// where
+		//{
+		//	Source: `
+		//	SELECT * products
+		//	<where>
+		//		<if test="a != nil">field1 = #{a}</if>
+		//		<if test="b != nil">AnD field2 = #{b}</if>
+		//		<if test="c != nil">oR field3 = #{c}</if>
+		//	</where>
+		//    `,
+		//	Cases: []TestCase{
+		//		//{Vars: map[string]any{"a": 1, "b": nil, "c": nil}},
+		//		//{Vars: map[string]any{"a": nil, "b": 2, "c": nil}},
+		//		{Vars: map[string]any{"a": nil, "b": nil, "c": 3}},
+		//	},
+		//},
+
+		// trim
+		{
+			Source: `
+			select * from table_name 
+			<trim prefix="where" prefixOverrides="and |or ">
+				<if test="a != nil">
+					title = #{a}
+				</if>
+				<if test="b != nil">
+					and content = #{b}
+				</if>
+				<if test="c != nil">
+					or owner = #{c}
+				</if>
+			</trim>
+            `,
+			Cases: []TestCase{
+				//{Vars: map[string]any{"a": 1, "b": nil, "c": nil}},
+				{Vars: map[string]any{"a": nil, "b": 2, "c": nil}},
+				//{Vars: map[string]any{"a": nil, "b": nil, "c": 3}},
+			},
+		},
 
 		// complex
 		//{
@@ -193,9 +234,9 @@ func TestVisitor(t *testing.T) {
 		for _, vv := range v.Cases {
 			r, err := Parse(logger.DefaultLogger().Explain, v.Source, vv.Vars)
 			if vv.Error {
-				require.Error(t, err)
+				require.Error(t, err, v.Source)
 			} else {
-				require.NoError(t, err)
+				require.NoError(t, err, v.Source)
 				require.Equal(t, vv.ExpectSQL, r.Statement())
 				require.Equal(t, len(vv.ExpectVars), len(r.Vars()), v.Source)
 				for i, vvv := range vv.ExpectVars {
@@ -204,4 +245,15 @@ func TestVisitor(t *testing.T) {
 			}
 		}
 	}
+}
+
+func TestRegex(t *testing.T) {
+
+	r, err := regexp.Compile(`(and | or )`)
+	require.NoError(t, err)
+
+	t.Log(r.MatchString("a and b"))
+	t.Log(r.MatchString("a or c"))
+	t.Log(r.MatchString("and"))
+
 }

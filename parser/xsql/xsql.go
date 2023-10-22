@@ -3,6 +3,7 @@ package xsql
 import (
 	"fmt"
 	"reflect"
+	"regexp"
 	"strings"
 
 	"github.com/antlr4-go/antlr/v4"
@@ -22,18 +23,18 @@ const (
 )
 
 const (
-	accept = iota
-	reject
-	lazy
+	attributeTest            = "test"
+	attributeItem            = "item"
+	attributeCollection      = "collection"
+	attributeOpen            = "open"
+	attributeClose           = "close"
+	attributeSeparator       = "separator"
+	attributeIndex           = "index"
+	attributePrefix          = "prefix"
+	attributeSuffix          = "suffix"
+	attributePrefixOverrides = "prefixOverrides"
+	attributeSuffixOverrides = "suffixOverrides"
 )
-
-//type tag struct {
-//	*Fragment
-//	//ctx      *StartContext
-//	vars     map[string]any
-//	children []antlr.Tree
-//	test     bool
-//}
 
 type Fragment struct {
 	statement strings.Builder
@@ -59,7 +60,7 @@ func (x *Fragment) Count() int {
 	return x.count
 }
 
-func (x *Fragment) writeWS() {
+func (x *Fragment) writeSpace() {
 	if x.ws {
 		return
 	}
@@ -138,7 +139,7 @@ type visitor struct {
 	vars      *commons.Stack[map[string]any]
 }
 
-func (v *visitor) FetchVar(name string) (val any, ok bool) {
+func (v visitor) FetchVar(name string) (val any, ok bool) {
 	for i := v.vars.Len() - 1; i >= 0; i-- {
 		val, ok = v.vars.Index(i)[name]
 		if ok {
@@ -148,13 +149,13 @@ func (v *visitor) FetchVar(name string) (val any, ok bool) {
 	return
 }
 
-func (v *visitor) VisitDocument(f *Fragment, nodes []antlr.Tree) {
+func (v visitor) VisitDocument(f *Fragment, nodes []antlr.Tree) {
 	for _, node := range nodes {
 		v.visitContent(f, node)
 	}
 }
 
-func (v *visitor) visitContent(f *Fragment, node antlr.Tree) {
+func (v visitor) visitContent(f *Fragment, node antlr.Tree) {
 	//fmt.Println("visit content:", reflect.ValueOf(c).MethodByName("GetText").Call([]reflect.Value{})[0].Interface())
 	switch t := node.(type) {
 	case *ContentContext:
@@ -172,11 +173,11 @@ func (v *visitor) visitContent(f *Fragment, node antlr.Tree) {
 	}
 }
 
-func (v *visitor) visitElement(f *Fragment, ctx *ElementContext) {
+func (v visitor) visitElement(f *Fragment, ctx *ElementContext) {
 
 	switch ctx.GetName().GetText() {
 	case tagForeach:
-		v.enterForeach(f, ctx)
+		v.visitForeach(f, ctx)
 	case tagIf:
 		v.enterIf(f, ctx)
 	case tagChoose:
@@ -194,89 +195,11 @@ func (v *visitor) visitElement(f *Fragment, ctx *ElementContext) {
 	}
 }
 
-//func newTag(ctx *StartContext, vars map[string]any) *tag {
-//	return &tag{
-//		ctx:      ctx,
-//		Fragment: &Fragment{},
-//		vars:     vars,
-//		children: []antlr.Tree{},
-//	}
-//}
-
-//func (v *visitor) visitStart(ctx *StartContext) {
-//	if v.Error() != nil {
-//		return
-//	}
-//
-//	fmt.Println("visit start:", ctx.GetText())
-//
-//	if ctx.SLASH() != nil {
-//		v.AddError(fmt.Errorf("unsupport self closed tag: %s", ctx.GetText()))
-//		return
-//	}
-//
-//	switch ctx.NAME().GetText() {
-//	case tagForeach:
-//		v.enterForeach()
-//	case tagIf:
-//		v.enterIf(ctx)
-//	case tagWhen:
-//		v.enterWhen(ctx)
-//	case tagChoose:
-//		v.enterChoose(ctx)
-//	case tagOtherwise,
-//		tagTrim,
-//		tagWhere,
-//		tagSet:
-//		v.tags.Push(newTag(ctx, nil))
-//	default:
-//		v.AddError(fmt.Errorf("invalid tag: %s", ctx.GetText()))
-//	}
-//}
-
-//func (v *visitor) visitEnd(ctx *EndContext) {
-//	if v.Error() != nil {
-//		return
-//	}
-//
-//	t := v.tags.Peek()
-//
-//	fmt.Println("visit end:", ctx.GetText())
-//	if ctx.NAME().GetText() != t.ctx.NAME().GetText() {
-//		v.AddError(fmt.Errorf("tag: %s not closed, get: %s", t.ctx.GetText(), ctx.GetText()))
-//		return
-//	}
-//
-//	switch ctx.NAME().GetText() {
-//	case tagIf:
-//		v.exitIf()
-//	case tagWhen:
-//		v.exitWhen()
-//	case tagForeach:
-//		v.exitForeach()
-//	case tagChoose:
-//		v.exitChoose()
-//	case tagOtherwise:
-//		v.exitOtherwise()
-//	case tagTrim:
-//		v.exitTrim()
-//	case tagWhere:
-//		v.exitWhere()
-//	case tagSet:
-//		//v.visitSet()
-//		v.exitSet()
-//	default:
-//		v.AddError(fmt.Errorf("unsupport close tag: %s", ctx.GetText()))
-//	}
-//
-//	fmt.Println("visit end:", t.ctx.GetText(), "stack len:", v.tags.Len())
-//}
-
-func (v *visitor) enterIf(f *Fragment, ctx *ElementContext) {
+func (v visitor) enterIf(f *Fragment, ctx *ElementContext) {
 	if l := len(ctx.AllAttribute()); l != 1 {
 		panic(fmt.Errorf("<if> expect 1 attribte got: %d", l))
 	}
-	if ctx.Attribute(0).NAME().GetText() != "test" {
+	if ctx.Attribute(0).NAME().GetText() != attributeTest {
 		panic(fmt.Errorf("<if> only accept test attribte got: %s", ctx.Attribute(0).NAME().GetText()))
 	}
 
@@ -286,11 +209,11 @@ func (v *visitor) enterIf(f *Fragment, ctx *ElementContext) {
 	v.VisitDocument(f, ctx.Content().(*ContentContext).GetChildren())
 }
 
-func (v *visitor) visitWhen(f *Fragment, ctx *ElementContext) bool {
+func (v visitor) visitWhen(f *Fragment, ctx *ElementContext) bool {
 	if l := len(ctx.AllAttribute()); l != 1 {
 		panic(fmt.Errorf("<when> expect 1 attribte got: %d", l))
 	}
-	if ctx.Attribute(0).NAME().GetText() != "test" {
+	if ctx.Attribute(0).NAME().GetText() != attributeTest {
 		panic(fmt.Errorf("<when> only accept test attribte got: %s", ctx.Attribute(0).NAME().GetText()))
 	}
 	if !v.test(ctx.Attribute(0).STRING().GetText()) {
@@ -300,39 +223,7 @@ func (v *visitor) visitWhen(f *Fragment, ctx *ElementContext) bool {
 	return true
 }
 
-func (v *visitor) enterForeach(f *Fragment, ctx *ElementContext) {
-
-	attrs := map[string]string{}
-	for _, vv := range ctx.AllAttribute() {
-		if _, ok := attrs[vv.NAME().GetText()]; ok {
-			panic(fmt.Errorf("duplicated  tag: %s attribute: %s", ctx.GetName().GetText(), vv.NAME().GetText()))
-		}
-		attrs[vv.NAME().GetText()] = vv.STRING().GetText()[1 : len(vv.STRING().GetText())-1]
-	}
-}
-
-//func (v *visitor) enterChoose(ctx *StartContext) {
-//	v.mode = lazy
-//	v.tags.Push(newTag(ctx, nil))
-//}
-
-func (v *visitor) exitWhen() {
-
-}
-
-func (v *visitor) exitForeach() {
-
-}
-
-func (v *visitor) exitWhere() {
-
-}
-
-func (v *visitor) exitSet() {
-
-}
-
-func (v *visitor) visitChoose(f *Fragment, ctx *ElementContext) {
+func (v visitor) visitChoose(f *Fragment, ctx *ElementContext) {
 
 	test := false
 	var otherwise *ElementContext
@@ -361,47 +252,9 @@ func (v *visitor) visitChoose(f *Fragment, ctx *ElementContext) {
 	if !test && otherwise != nil {
 		v.visitOtherwise(f, otherwise)
 	}
-
-	//	var otherwise *tag
-	//	var whens []*tag
-	//	for i := 0; i < len(v.tmp); i++ {
-	//		if v.tmp[i].ctx.NAME().GetText() == "otherwise" {
-	//			if otherwise != nil {
-	//				v.AddError(fmt.Errorf("in the choose block, otherwise is allowed to appear only once"))
-	//				return
-	//			}
-	//			otherwise = v.tmp[i]
-	//		} else {
-	//			whens = append(whens, v.tmp[i])
-	//		}
-	//	}
-	//
-	//	v.tags.Pop()
-	//	for _, vv := range whens {
-	//		if v.visitWhen(vv) || v.Error() != nil {
-	//			return
-	//		}
-	//	}
-	//
-	//	if otherwise != nil {
-	//		v.merge(otherwise)
-	//	}
-	//
-	//	v.tmp = make([]*tag, 0)
 }
 
-func (v *visitor) exitTrim() {
-
-}
-
-func (v *visitor) exitOtherwise() {
-	//t := v.tags.Pop()
-	//if !v.tags.Peek().test {
-	//	v.merge(t)
-	//}
-}
-
-func (v *visitor) test(s string) bool {
+func (v visitor) test(s string) bool {
 	r, err := expr.Parse(s[1:len(s)-1], v.FetchVar)
 	if err != nil {
 		panic(fmt.Errorf("parse test expression: %s error: %w", s, err))
@@ -413,34 +266,208 @@ func (v *visitor) test(s string) bool {
 	return r.Bool()
 }
 
-func (v *visitor) visitOtherwise(f *Fragment, ctx *ElementContext) {
+func (v visitor) visitOtherwise(f *Fragment, ctx *ElementContext) {
 	v.VisitDocument(f, ctx.Content().(*ContentContext).GetChildren())
 }
 
-func (v *visitor) visitTrim(f *Fragment, ctx *ElementContext) {
+func (v visitor) visitTrim(f *Fragment, ctx *ElementContext) {
+
+	attrs := map[string]string{}
+	for _, vv := range ctx.AllAttribute() {
+		if _, ok := attrs[vv.NAME().GetText()]; ok {
+			panic(fmt.Errorf("duplicated  tag: %s attribute: %s", ctx.GetName().GetText(), vv.NAME().GetText()))
+		}
+		attrs[vv.NAME().GetText()] = vv.STRING().GetText()[1 : len(vv.STRING().GetText())-1]
+	}
+	var (
+		prefix         string
+		suffix         string
+		prefixOverride string
+		suffixOverride string
+	)
+	for k, vv := range attrs {
+		switch k {
+		case attributePrefix:
+			prefix = vv
+		case attributeSuffix:
+			suffix = vv
+		case attributePrefixOverrides:
+			prefixOverride = vv
+		case attributeSuffixOverrides:
+			suffixOverride = vv
+		default:
+			panic(fmt.Errorf("unsupported <trim> attribute: %s", vv))
+		}
+	}
+
+	if prefix != "" {
+		f.writeString(prefix)
+	}
+	n := &Fragment{}
+	v.VisitDocument(n, ctx.Content().GetChildren())
+	s := strings.TrimSpace(n.Statement())
+
+	if prefixOverride != "" {
+		fmt.Println("prefix rule:", fmt.Sprintf("`%s`", prefixOverride), fmt.Sprintf("^(?i)(%s)\\b", v.splitOverrideRule(prefixOverride)))
+		reg, err := regexp.Compile(fmt.Sprintf("^(?i)(%s)\\b", v.splitOverrideRule(prefixOverride)))
+		if err != nil {
+			panic(fmt.Errorf("prepare <trim> prefixOverride: %s regex rule error: %s", prefixOverride, err))
+		}
+		s = reg.ReplaceAllString(s, "")
+	}
+
+	if suffixOverride != "" {
+		reg, err := regexp.Compile(fmt.Sprintf("(?i)\\b(%s)$", v.splitOverrideRule(suffixOverride)))
+		if err != nil {
+			panic(fmt.Errorf("prepare <trim> suffixOverride: %s regex rule error: %s", suffixOverride, err))
+		}
+		s = reg.ReplaceAllString(s, "")
+	}
+	s = strings.TrimSpace(s)
+	f.writeSpace()
+	f.writeString(s)
+	f.writeSpace()
+	f.addVar(n.Vars()...)
+	if suffix != "" {
+		f.writeString(suffix)
+	}
 
 	return
 }
 
-func (v *visitor) visitWhere(f *Fragment, ctx *ElementContext) {
-
+func (v visitor) splitOverrideRule(s string) string {
+	words := strings.Split(s, "|")
+	var list []string
+	for _, w := range words {
+		list = append(list, w)
+	}
+	return strings.Join(list, "|")
 }
 
-func (v *visitor) visitSet(f *Fragment, ctx *ElementContext) {
-	//t := v.tags.Pop()
-	//s := strings.TrimSpace(strings.TrimSuffix(strings.TrimSpace(t.Statement()), ","))
-	//if s != "" {
-	//	t.statement.Reset()
-	//	t.statement.WriteString(s)
-	//	v.merge(t)
-	//}
+func (v visitor) regexpTrim(r, s string) string {
+	re := regexp.MustCompile(r)
+	return re.ReplaceAllString(s, "")
 }
 
-func (v *visitor) visitForeach() {
+func (v visitor) visitWhere(f *Fragment, ctx *ElementContext) {
 
+	n := &Fragment{}
+
+	v.VisitDocument(n, ctx.Content().GetChildren())
+
+	s := strings.TrimSpace(n.Statement())
+	s = strings.TrimSpace(v.regexpTrim(`^(?i)(and|or)\b`, s))
+	if s != "" {
+		f.writeSpace()
+		f.writeString("where")
+		f.writeSpace()
+		f.writeString(s)
+		f.addVar(n.vars...)
+	}
 }
 
-func (v *visitor) visitExpr(f *Fragment, ctx *ExprContext) {
+func (v visitor) visitSet(f *Fragment, ctx *ElementContext) {
+	ff := &Fragment{}
+	v.VisitDocument(ff, ctx.Content().GetChildren())
+
+	s := strings.TrimSpace(strings.TrimSuffix(strings.TrimSpace(ff.Statement()), ","))
+	if s != "" {
+		f.writeSpace()
+		f.writeString("set")
+		f.writeSpace()
+		f.writeString(s)
+		f.addVar(ff.vars...)
+	}
+}
+
+func (v visitor) visitForeach(f *Fragment, ctx *ElementContext) {
+	attrs := map[string]string{}
+	for _, vv := range ctx.AllAttribute() {
+		if _, ok := attrs[vv.NAME().GetText()]; ok {
+			panic(fmt.Errorf("duplicated  tag: %s attribute: %s", ctx.GetName().GetText(), vv.NAME().GetText()))
+		}
+		attrs[vv.NAME().GetText()] = vv.STRING().GetText()[1 : len(vv.STRING().GetText())-1]
+	}
+	var (
+		collection string
+		item       string
+		open       string
+		separator  string
+		index      string
+		_close     string
+	)
+	for k, vv := range attrs {
+		vv = strings.TrimSpace(vv)
+		switch k {
+		case attributeSeparator:
+			separator = vv
+		case attributeOpen:
+			open = vv
+		case attributeClose:
+			_close = vv
+		case attributeCollection:
+			collection = vv
+		case attributeItem:
+			// TODO check var name
+			item = vv
+		case attributeIndex:
+			// TODO check var name
+			item = index
+		default:
+			panic(fmt.Errorf("unsupported <foreach> attribute: %s", vv))
+		}
+	}
+	if collection == "" {
+		panic(fmt.Errorf("<foreach> requrie attribute: %s", attributeCollection))
+	}
+	if item == "" {
+		panic(fmt.Errorf("<foreach> requrie attribute: %s", attributeItem))
+	}
+
+	r, ok := v.FetchVar(collection)
+	if !ok {
+		panic(fmt.Errorf("<foreach> collection varibale: %s not defined", collection))
+	}
+
+	f.writeString(open)
+	rv := reflect.ValueOf(r)
+	switch rv.Kind() {
+	case reflect.Slice, reflect.Array:
+		for i := 0; i < rv.Len(); i++ {
+			sv := rv.Index(i)
+			// TODO Check sv invalid
+			v.visitForeachContent(f, ctx, index, item, separator, i, sv.Interface(), i == rv.Len()-1)
+		}
+	case reflect.Map:
+		keys := rv.MapKeys()
+		i := -1
+		for _, key := range keys {
+			i++
+			mv := rv.MapIndex(key)
+			// TODO Check sv invalid
+			v.visitForeachContent(f, ctx, index, item, separator, key, mv.Interface(), i == rv.Len()-1)
+		}
+	default:
+		panic(fmt.Errorf("unsupported <foreach> collection  type: %s", rv.Kind()))
+	}
+	f.writeString(_close)
+}
+
+func (v visitor) visitForeachContent(f *Fragment, ctx *ElementContext, index, item, separator string, ri, rv any, last bool) {
+	v.vars.Push(map[string]any{})
+	if index != "" {
+		v.vars.Peek()[index] = ri
+	}
+	v.vars.Peek()[item] = rv
+	v.VisitDocument(f, ctx.Content().GetChildren())
+	v.vars.Pop()
+
+	if separator != "" && !last {
+		f.writeString(separator)
+	}
+}
+
+func (v visitor) visitExpr(f *Fragment, ctx *ExprContext) {
 	rv, err := expr.Parse(ctx.GetVal().GetText(), v.FetchVar)
 	if err != nil {
 		panic(fmt.Errorf("parse expression: %s error: %w", ctx.GetVal().GetText(), err))
@@ -452,7 +479,7 @@ func (v *visitor) visitExpr(f *Fragment, ctx *ExprContext) {
 	}
 }
 
-func (v *visitor) bindExpr(f *Fragment, rv reflect.Value) {
+func (v visitor) bindExpr(f *Fragment, rv reflect.Value) {
 	if rv.Kind() == reflect.Slice {
 		var s []string
 		for i := 0; i < rv.Len(); i++ {
@@ -467,7 +494,7 @@ func (v *visitor) bindExpr(f *Fragment, rv reflect.Value) {
 	}
 }
 
-func (v *visitor) explainExpr(f *Fragment, rv reflect.Value) {
+func (v visitor) explainExpr(f *Fragment, rv reflect.Value) {
 	if rv.Kind() == reflect.Slice {
 		var s []string
 		for i := 0; i < rv.Len(); i++ {
@@ -479,7 +506,7 @@ func (v *visitor) explainExpr(f *Fragment, rv reflect.Value) {
 	}
 }
 
-func (v *visitor) explainVar(rv reflect.Value) (r string) {
+func (v visitor) explainVar(rv reflect.Value) (r string) {
 	r, err := v.formatter(rv, "'")
 	if err != nil {
 		panic(err)
@@ -487,15 +514,15 @@ func (v *visitor) explainVar(rv reflect.Value) (r string) {
 	return
 }
 
-func (v *visitor) visitCharData(f *Fragment, ctx *ChardataContext) {
+func (v visitor) visitCharData(f *Fragment, ctx *ChardataContext) {
 	if ctx.WS() != nil {
-		f.writeWS()
+		f.writeSpace()
 	} else {
 		f.writeString(ctx.GetText())
 	}
 }
 
-func (v *visitor) visitReference(f *Fragment, ctx *ReferenceContext) {
+func (v visitor) visitReference(f *Fragment, ctx *ReferenceContext) {
 	if ctx.EntityRef() != nil {
 		c := ""
 		switch ctx.EntityRef().GetText() {

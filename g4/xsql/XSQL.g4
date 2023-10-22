@@ -48,7 +48,7 @@ element     :  '<' name='if'  WS* attribute* '>' content  '</if>'
             |  '<' name='choose'  WS* attribute* '>' content  '</choose>'
             |  '<' name='when'  WS* attribute* '>' content  '</when>'
             |  '<' name='otherwise'  WS* attribute* '>' content  '</otherwise>'
-            |  '<' name='trim'  WS* attribute* '>' content  '</trim'
+            |  '<' name='trim'  WS* attribute* '>' content  '</trim>'
             |  '<' name='where'  WS* attribute* '>' content  '</where>'
             |  '<' name='set'  WS* attribute* '>' content  '</set>'
             |  '<' name='foreach'  WS* attribute* '>' content  '</foreach>'
@@ -69,6 +69,14 @@ chardata     : WS
              | '#'
              | '{'
              | '}'
+             | 'if'
+             | 'choose'
+             | 'when'
+             | 'otherwise'
+             | 'trim'
+             | 'where'
+             | 'set'
+             | 'foreach'
              | NAME
              | STRING
              | TEXT
