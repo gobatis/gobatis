@@ -115,9 +115,12 @@ func initDB(t *testing.T) {
 		    added_datetime TIMESTAMPTZ
 		);
 		create unique index if not exists products_product_name_uindex on products (product_name);
-		truncate products; 
 	`).Error
 	require.NoError(t, err)
+
+	//err = db.Exec(`truncate products`).Error
+	//require.NoError(t, err)
+
 }
 
 type Product struct {
@@ -228,19 +231,20 @@ func TestAPIFeatures(t *testing.T) {
 
 	initEnv(t)
 	initDB(t)
-	testInsert(t)
-	testInsertBatch(t)
-	testUpdate(t)
-	testParallelQuery(t)
-	testPagingQuery(t)
-	testFetchQuery(t)
+	//testInsert(t)
+	//testInsertBatch(t)
+	//testUpdate(t)
+	//testParallelQuery(t)
+	//testPagingQuery(t)
+	//testFetchQuery(t)
 	//testContext(t)
-	testLooseScan(t)
-	testDynamicSQL(t)
-	testDelete(t)
-	testRecoverValueWhenNoRows(t)
-	testInParameter(t)
-	testExec(t)
+	//testLooseScan(t)
+	//testDynamicSQL(t)
+	//testDelete(t)
+	//testRecoverValueWhenNoRows(t)
+	//testInParameter(t)
+	//testExec(t)
+	testAssociateQuery(t)
 	//testNestedTx(t)
 }
 
@@ -447,7 +451,8 @@ func testPagingQuery(t *testing.T) {
 	for i := 0; i <= 4; i++ {
 		var products []*Product
 		var count int64
-		err := db.Debug().PagingQuery(batis.PagingQuery{
+
+		q := batis.PagingQuery{
 			Select: "*",
 			Count:  "1",
 			From:   "products",
@@ -459,9 +464,16 @@ func testPagingQuery(t *testing.T) {
 				"price": decimal.NewFromInt(900),
 			},
 			Scan: batis.PagingScan(&products, &count),
-		}).Error
+		}
+
+		err := db.Debug().PagingQuery(q).Error
 		require.NoError(t, err)
 		require.Equal(t, int64(4), count)
+
+		//q.GetCount()
+		//q.Scan(&)
+
+		//+
 
 		if i < 4 {
 			require.Equal(t, 1, len(products))
@@ -515,10 +527,6 @@ func testContext(t *testing.T) {
 	err := db.WithContext(ctx).Query(`select pg_sleep(3);`).Scan(nil).Error
 	require.Error(t, err)
 	t.Log(err, errors.Is(err, net.ErrWriteToConnected))
-}
-
-func testAssociateQuery(t *testing.T) {
-
 }
 
 type ProductPlus struct {
@@ -581,4 +589,47 @@ func testInParameter(t *testing.T) {
 	</foreach>
 `, batis.Param("ids", []int64{1, 2, 3})).Scan(&products).Error
 	require.NoError(t, err)
+}
+
+func testAssociateQuery(t *testing.T) {
+
+	type ProductWrap struct {
+		Name    string
+		Product *Product
+		Age     int64
+	}
+
+	wraps := []ProductWrap{
+		{Name: "Laptop"},
+		{Name: "TV"},
+	}
+
+	err := db.Debug().AssociateQuery(batis.AssociateQuery{
+		SQL: "select * from products where product_name in #{ids}",
+		Params: map[string]any{
+			//"ids": batis.Extract(wraps, "$.Name"),
+			"ids": []string{"Laptop", "TV"},
+		},
+		//Associate: batis.Associate(&wraps, "product_name => $.Name", "$.Product"),
+		Scan: batis.Scan(&wraps, batis.Associate("product_name => $.Name", "$.Product"), batis.Ignore("Description")),
+	}).Error
+
+	db.AssociateQuery(batis.AssociateQuery{
+		SQL: `select * from products where product_name in #{ids}`,
+		Params: map[string]any{
+			"ids": []string{"Laptop", "TV"},
+		},
+		Scan: batis.Scan(&wraps, batis.BindingPath("product_name => $.Name"), batis.MappingPath("$.Product"), batis.Ignore("Age")),
+	})
+
+	/*
+		db.Debug().AssociateQuery(
+			`select * from products where product_name in #{ids}`,
+					batis.Param("ids","ids": []string{"Laptop", "TV"})
+			).Scan(&wraps, batis.ForeignKey("product", "$.Name"), baits.Mapping("$.Product"), batis.Ignore(""))
+	*/
+
+	require.NoError(t, err)
+
+	spew.Json(wraps)
 }

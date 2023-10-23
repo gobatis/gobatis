@@ -57,6 +57,7 @@ func Open(d dialector.Dialector, options ...Option) (db *DB, err error) {
 		},
 		Dialector: d,
 		Logger:    logger.DefaultLogger(),
+		ColumnTag: "db",
 		db:        nil,
 	}
 	config.db, err = d.DB()
@@ -80,7 +81,7 @@ type DB struct {
 	executed     atomic.Bool
 	rowsAffected int64
 	lastInsertId int64
-	once         sync.Once
+	//once         sync.Once
 }
 
 func (d *DB) addError(err error) {
@@ -235,6 +236,14 @@ func (d *DB) Scan(dest any) *DB {
 func (d *DB) LooseScan(dest any, paths ...string) *DB {
 
 	return d
+}
+
+func (d *DB) LastInsertId() (int64, error) {
+	return d.lastInsertId, d.Error
+}
+
+func (d *DB) RowsAffected() (int64, error) {
+	return d.rowsAffected, d.Error
 }
 
 // 执行 SQL 语句
@@ -405,16 +414,28 @@ func (d *DB) PagingQuery(query PagingQuery) *DB {
 	return c.ParallelQuery(queries...)
 }
 
-func (d *DB) LastInsertId() (int64, error) {
-	return d.lastInsertId, d.Error
-}
+func (d *DB) AssociateQuery(query AssociateQuery) *DB {
 
-func (d *DB) RowsAffected() (int64, error) {
-	return d.rowsAffected, d.Error
-}
+	raw := &executor.Raw{
+		Ctx:    d.context(),
+		Query:  true,
+		SQL:    query.SQL,
+		Params: nil,
+	}
+	for k, v := range query.Params {
+		raw.Params = append(raw.Params, executor.Param{
+			Name:  k,
+			Value: v,
+		})
+	}
 
-func (d *DB) AssociateQuery(query AssociateQuery) error {
-	return nil
+	c := d.clone()
+	c.setExecutor(executor.NewAssociateQuery(c.conn(), raw, query.Associate.dest,
+		query.Associate.bindingPath, query.Associate.mappingPath))
+	
+	c.execute(nil)
+
+	return c
 }
 
 func (d *DB) FetchQuery(query FetchQuery) error {

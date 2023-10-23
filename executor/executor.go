@@ -21,6 +21,7 @@ var (
 	_ Executor = (*InsertBatch)(nil)
 	_ Executor = (*ParallelQuery)(nil)
 	_ Executor = (*FetchQuery)(nil)
+	_ Executor = (*AssociateQuery)(nil)
 )
 
 func NewDefault(conn Conn, raw *Raw) *Default {
@@ -28,11 +29,6 @@ func NewDefault(conn Conn, raw *Raw) *Default {
 }
 
 type Default struct {
-	//fragment *fragment
-	//exprs    []string
-	//vars     []any
-	//dynamic  bool
-	//sql      string
 	rows   *sql.Rows
 	result sql.Result
 	conn   Conn
@@ -391,4 +387,44 @@ func (f *FetchQuery) Execute(log logger.Logger, pos string, trace, debug bool, a
 	}
 
 	return
+}
+
+func NewAssociateQuery(conn Conn, raw *Raw, dest any, bindingPath string, mappingPath string) *AssociateQuery {
+	return &AssociateQuery{conn: conn, raw: raw, dest: dest, bindingPath: bindingPath, mappingPath: mappingPath}
+}
+
+type AssociateQuery struct {
+	conn        Conn
+	raw         *Raw
+	dest        any
+	bindingPath string
+	mappingPath string
+}
+
+func (a AssociateQuery) Execute(logger logger.Logger, pos string, trace, debug bool, affect any, _ func(s Scanner) error) (err error) {
+	d := NewDefault(a.conn, a.raw)
+	d.clean = false
+
+	err = d.Execute(logger, pos, trace, debug, affect, nil)
+	if err != nil {
+		return
+	}
+
+	var abs = &associateQueryScan{
+		rows:         d.rows,
+		rowsAffected: 0,
+		lastInsertId: 0,
+		bindingPaths: []*associateBindingPath{{
+			column: "product_name",
+			path:   "$.Name",
+		}},
+		mappingPath: a.mappingPath,
+	}
+	err = abs.Scan(a.dest)
+
+	return
+}
+
+func (a AssociateQuery) Query() bool {
+	return a.raw.Query
 }

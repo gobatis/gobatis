@@ -22,6 +22,7 @@ type Config struct {
 	Dialector       dialector.Dialector
 	Logger          logger.Logger
 	Hooks           func(db *DB)
+	ColumnTag       string
 	db              *sql.DB
 }
 

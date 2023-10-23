@@ -1,7 +1,7 @@
 grammar XSQL;
 
-BLOCK_COMMENT     :   '<!--' .*? '-->'-> skip;
-//LINE_COMMENT      :   '//' ~[\r\n\t]* -> skip;
+BLOCK_COMMENT     :   ('<!--' .*? '-->' |  '/*' .*? '*/') -> skip;
+LINE_COMMENT      :   '//' ~[\r\n\t]* -> skip;
 EntityRef         :   '&' NAME ';' ;
 WS                :   (' '|'\t'|'\r'? '\n')+ ;
 

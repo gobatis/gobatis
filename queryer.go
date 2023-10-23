@@ -2,7 +2,7 @@ package batis
 
 import (
 	"fmt"
-	
+
 	"github.com/gobatis/gobatis/dialector"
 	"github.com/gobatis/gobatis/executor"
 )
@@ -57,16 +57,20 @@ type PagingQuery struct {
 	elems  map[int][]Element
 }
 
+func (p PagingQuery) GetCount() int64 {
+	return 0
+}
+
 func (p PagingQuery) executors(namer dialector.Namer, tag string) ([]ParallelQuery, error) {
-	
+
 	if p.Limit <= 0 {
 		return nil, InvalidLimitErr
 	}
-	
+
 	if l := len(p.Scan); l != 2 {
 		return nil, fmt.Errorf("%w; got: %d", InvalidPagingScanDestErr, l)
 	}
-	
+
 	var params []executor.Param
 	for k, v := range p.Params {
 		params = append(params, executor.Param{
@@ -87,13 +91,13 @@ func (p PagingQuery) executors(namer dialector.Namer, tag string) ([]ParallelQue
 		Params: p.Params,
 		Scan:   p.Scan[0],
 	}
-	
+
 	c := ParallelQuery{
 		SQL:    fmt.Sprintf("select count(%s) from %s%s", p.Count, p.From, w),
 		Params: p.Params,
 		Scan:   p.Scan[1],
 	}
-	
+
 	return []ParallelQuery{q, c}, nil
 }
 
@@ -107,9 +111,52 @@ type FetchQuery struct {
 type AssociateQuery struct {
 	SQL    string
 	Params map[string]any
-	Link   any
+	//Associate associateDest
+	Associate func() (any, string, string)
+	Scan      func() (any, string, string, []string)
 }
 
-func AssociateLink(dest any, condition, inject string) any {
-	return nil
+func Scan(dest any, options ...func(c *scanOptions)) func() (any, string, string, []string) {
+	return func() (any, string, string, []string) {
+		return dest, "", "", nil
+	}
+}
+
+type scanOptions struct {
+}
+
+func BindingPath(v string) func(c *scanOptions) {
+	return func(c *scanOptions) {
+
+	}
+}
+
+func MappingPath(v string) func(c *scanOptions) {
+	return func(c *scanOptions) {
+
+	}
+}
+
+func Ignore(fields ...string) func(c *scanOptions) {
+	return func(c *scanOptions) {
+
+	}
+}
+
+//type associateDest struct {
+//	dest        any
+//	bindingPath string
+//	mappingPath string
+//}
+
+//func Associate(dest any, bindingPath, mappingPath string) func() (any, string, string) {
+//	return func() (any, string, string) {
+//		return dest, bindingPath, mappingPath
+//	}
+//}
+
+func Associate(bindingPath, mappingPath string) func(c *scanOptions) {
+	return func(c *scanOptions) {
+
+	}
 }

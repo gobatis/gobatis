@@ -2,6 +2,7 @@ package parser
 
 import (
 	"fmt"
+	"reflect"
 
 	"github.com/antlr4-go/antlr/v4"
 )
@@ -46,5 +47,23 @@ func RecoverError(e any) error {
 		return err
 	} else {
 		return fmt.Errorf("panic: %v", err)
+	}
+}
+
+func ValueElem(rv reflect.Value) reflect.Value {
+	for {
+		if rv.Kind() != reflect.Pointer {
+			return rv
+		}
+		rv = rv.Elem()
+	}
+}
+
+func TypeElem(rt reflect.Type) reflect.Type {
+	for {
+		if rt.Kind() != reflect.Pointer {
+			return rt
+		}
+		rt = rt.Elem()
 	}
 }

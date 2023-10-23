@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/AlekSi/pointer"
-	"github.com/gobatis/gobatis/test/backup"
+	"github.com/gobatis/gobatis/tests/backup"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/require"
 )
