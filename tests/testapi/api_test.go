@@ -93,6 +93,13 @@ func initEnv(t *testing.T) {
 }
 
 func initDB(t *testing.T) {
+	if db != nil {
+		return
+	}
+	host = os.Getenv(client.EnvOverrideHost)
+	if host == "" {
+		host = "127.0.0.1"
+	}
 	var err error
 	db, err = batis.Open(postgres.Open(fmt.Sprintf("postgresql://test:test@%s:8432/gobatis-test-db?connect_timeout=10&sslmode=disable", host)))
 	if err != nil {
@@ -244,7 +251,7 @@ func TestAPIFeatures(t *testing.T) {
 	//testRecoverValueWhenNoRows(t)
 	//testInParameter(t)
 	//testExec(t)
-	testAssociateQuery(t)
+	TestAssociateQuery(t)
 	//testNestedTx(t)
 }
 
@@ -408,7 +415,8 @@ func testScan(t *testing.T) {
 
 }
 
-func testParallelQuery(t *testing.T) {
+func TestParallelQuery(t *testing.T) {
+	initDB(t)
 	var products []*Product
 	var count int64
 	err := db.Debug().ParallelQuery(
@@ -417,14 +425,18 @@ func testParallelQuery(t *testing.T) {
 			Params: map[string]any{
 				"price": 300,
 			},
-			Scan: &products,
+			Scan: func(s batis.Scanner) error {
+				return s.Scan(&products)
+			},
 		},
 		batis.ParallelQuery{
 			SQL: `select count(1) from products where price <= #{ price }`,
 			Params: map[string]any{
 				"price": 300,
 			},
-			Scan: &count,
+			Scan: func(s batis.Scanner) error {
+				return s.Scan(&count)
+			},
 		},
 	).Error
 	require.NoError(t, err)
@@ -439,8 +451,10 @@ func testParallelQuery(t *testing.T) {
 	}
 }
 
-func testPagingQuery(t *testing.T) {
+func TestPagingQuery(t *testing.T) {
 
+	initDB(t)
+	
 	m := map[int]string{
 		0: Chair,
 		1: BluetoothHeadphones,
@@ -463,7 +477,9 @@ func testPagingQuery(t *testing.T) {
 			Params: map[string]any{
 				"price": decimal.NewFromInt(900),
 			},
-			Scan: batis.PagingScan(&products, &count),
+			Scan: func(s batis.PagingScanner) error {
+				return s.Scan(&count, &products)
+			},
 		}
 
 		err := db.Debug().PagingQuery(q).Error
@@ -591,7 +607,9 @@ func testInParameter(t *testing.T) {
 	require.NoError(t, err)
 }
 
-func testAssociateQuery(t *testing.T) {
+func TestAssociateQuery(t *testing.T) {
+
+	initDB(t)
 
 	type ProductWrap struct {
 		Name    string

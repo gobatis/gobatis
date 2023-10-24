@@ -7,22 +7,22 @@ import (
 	"github.com/gobatis/gobatis/dialector"
 )
 
-var _ Element = (*query)(nil)
-var _ Element = (*exec)(nil)
-var _ Element = (*insert)(nil)
-var _ Element = (*insertBatch)(nil)
-var _ Element = (*returning)(nil)
-var _ Element = (*update)(nil)
-var _ Element = (*del)(nil)
-var _ Element = (*onConflict)(nil)
-var _ Element = (*where)(nil)
-var _ Element = (*fetch)(nil)
-var _ Element = (*build)(nil)
-var _ Element = (*innerSQL)(nil)
+var _ Elem = (*query)(nil)
+var _ Elem = (*exec)(nil)
+var _ Elem = (*insert)(nil)
+var _ Elem = (*insertBatch)(nil)
+var _ Elem = (*returning)(nil)
+var _ Elem = (*update)(nil)
+var _ Elem = (*del)(nil)
+var _ Elem = (*onConflict)(nil)
+var _ Elem = (*where)(nil)
+var _ Elem = (*fetch)(nil)
+var _ Elem = (*build)(nil)
+var _ Elem = (*innerSQL)(nil)
 
 type Namer func(name string) string
 
-type Element interface {
+type Elem interface {
 	Raw(namer dialector.Namer, tag string) (raw *Raw, err error)
 }
 
@@ -57,7 +57,7 @@ func (o onConflict) Raw(namer dialector.Namer, tag string) (raw *Raw, err error)
 	return
 }
 
-func OnConflict(fields string, sql string, params ...NameValue) Element {
+func OnConflict(fields string, sql string, params ...NameValue) Elem {
 	return &onConflict{
 		fields: fields,
 		sql:    sql,
@@ -78,7 +78,7 @@ func (w where) Raw(namer dialector.Namer, tag string) (raw *Raw, err error) {
 	return
 }
 
-func Where(sql string, params ...NameValue) Element {
+func Where(sql string, params ...NameValue) Elem {
 	return &where{
 		sql:    sql,
 		params: params,
@@ -88,7 +88,7 @@ func Where(sql string, params ...NameValue) Element {
 type update struct {
 	table     string
 	data      map[string]any
-	elems     []Element
+	elems     []Elem
 	where     *where
 	returning *returning
 }
@@ -151,7 +151,7 @@ type insert struct {
 	data       any
 	onConflict *onConflict
 	returning  *returning
-	elems      []Element
+	elems      []Elem
 }
 
 func (i insert) Raw(namer dialector.Namer, tag string) (raw *Raw, err error) {
@@ -241,7 +241,7 @@ type insertBatch struct {
 	table      string
 	data       any
 	batch      int
-	elems      []Element
+	elems      []Elem
 	onConflict *onConflict
 	returning  *returning
 }
@@ -341,7 +341,7 @@ func (f fetch) Raw(namer dialector.Namer, tag string) (raw *Raw, err error) {
 
 type del struct {
 	table     string
-	elems     []Element
+	elems     []Elem
 	where     *where
 	returning *returning
 }
@@ -425,7 +425,7 @@ func (r returning) Raw(namer dialector.Namer, tag string) (raw *Raw, err error) 
 	return
 }
 
-func Returning(fields string) Element {
+func Returning(fields string) Elem {
 	return &returning{
 		sql: fields,
 	}

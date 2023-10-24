@@ -277,6 +277,7 @@ func (p *parallelQueryExecutor) Query() bool {
 
 func (p *parallelQueryExecutor) Execute(logger logger.Logger, pos string, trace, debug bool, affect any, f func(Scanner) error) error {
 	d := newDefaultExecutor(p.Conn, p.Raw)
+	d.clean = false
 	return d.Execute(logger, pos, trace, debug, affect, func(s Scanner) error {
 		if f == nil {
 			return nil

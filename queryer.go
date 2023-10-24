@@ -52,7 +52,7 @@ type PagingQuery struct {
 	Page   int64
 	Limit  int64
 	Params map[string]any
-	elems  map[int][]Element
+	elems  map[int][]Elem
 	Scan   func(scanner PagingScanner) error
 }
 

@@ -76,7 +76,6 @@ type DB struct {
 	executed     atomic.Bool
 	rowsAffected int64
 	lastInsertId int64
-	//once         sync.Once
 }
 
 func (d *DB) addError(err error) {
@@ -163,7 +162,7 @@ func (d *DB) context() context.Context {
 	return d.ctx
 }
 
-func (d *DB) execute(dest any) {
+func (d *DB) defaultExecute(dest any) {
 	if d.Error != nil {
 		return
 	}
@@ -200,8 +199,8 @@ func (d *DB) conn() conn {
 	}
 }
 
-func (d *DB) raw(element Element) (raw *Raw, err error) {
-	raw, err = element.Raw(d.Dialector.Namer(), "db")
+func (d *DB) raw(elem Elem) (raw *Raw, err error) {
+	raw, err = elem.Raw(d.Dialector.Namer(), "db")
 	if err != nil {
 		err = fmt.Errorf("%w, %s", PrepareSQLRawErr, err)
 		return
@@ -224,12 +223,7 @@ func (d *DB) Query(sql string, params ...NameValue) *DB {
 
 // 扫描结果集
 func (d *DB) Scan(dest any) *DB {
-	d.execute(dest)
-	return d
-}
-
-func (d *DB) LooseScan(dest any, paths ...string) *DB {
-
+	d.defaultExecute(dest)
 	return d
 }
 
@@ -250,27 +244,27 @@ func (d *DB) Exec(sql string, params ...NameValue) *DB {
 		return c
 	}
 	c.executor = newDefaultExecutor(c.conn(), raw)
-	c.execute(nil)
+	c.defaultExecute(nil)
 	return c
 }
 
 // 执行删除操作
-func (d *DB) Delete(table string, where Element) *DB {
+func (d *DB) Delete(table string, where Elem) *DB {
 	c := d.clone()
-	raw, err := c.raw(del{table: table, elems: []Element{where}})
+	raw, err := c.raw(del{table: table, elems: []Elem{where}})
 	if err != nil {
 		c.addError(err)
 		return c
 	}
 	c.executor = newDefaultExecutor(c.conn(), raw)
-	c.execute(nil)
+	c.defaultExecute(nil)
 	return c
 }
 
 // 执行更新操作
-func (d *DB) Update(table string, data map[string]any, where Element, elems ...Element) *DB {
+func (d *DB) Update(table string, data map[string]any, where Elem, elems ...Elem) *DB {
 	c := d.clone()
-	u := update{table: table, data: data, elems: append([]Element{where}, elems...)}
+	u := update{table: table, data: data, elems: append([]Elem{where}, elems...)}
 	raw, err := c.raw(u)
 	if err != nil {
 		c.addError(err)
@@ -278,13 +272,13 @@ func (d *DB) Update(table string, data map[string]any, where Element, elems ...E
 	}
 	c.executor = newDefaultExecutor(c.conn(), raw)
 	if !raw.Query {
-		c.execute(nil)
+		c.defaultExecute(nil)
 	}
 	return c
 }
 
 // 插入数据
-func (d *DB) Insert(table string, data any, elems ...Element) *DB {
+func (d *DB) Insert(table string, data any, elems ...Elem) *DB {
 	c := d.clone()
 	i := &insert{table: table, data: data, elems: elems}
 	raw, err := c.raw(i)
@@ -294,7 +288,7 @@ func (d *DB) Insert(table string, data any, elems ...Element) *DB {
 	}
 	c.executor = newDefaultExecutor(c.conn(), raw)
 	if !raw.Query {
-		c.execute(nil)
+		c.defaultExecute(nil)
 	}
 	return c
 }
@@ -307,7 +301,7 @@ func (d *DB) setExecutor(e executor) {
 	d.executor = e
 }
 
-func (d *DB) InsertBatch(table string, batch int, data any, elems ...Element) *DB {
+func (d *DB) InsertBatch(table string, batch int, data any, elems ...Elem) *DB {
 	c := d.clone()
 
 	if batch <= 0 {
@@ -349,7 +343,7 @@ func (d *DB) InsertBatch(table string, batch int, data any, elems ...Element) *D
 
 	c.setExecutor(newInsertBatch(c.context(), c.conn(), raws))
 	if !q {
-		c.execute(nil)
+		c.defaultExecute(nil)
 	}
 	return c
 }
