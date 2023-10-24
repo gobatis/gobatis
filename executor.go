@@ -11,17 +11,17 @@ import (
 	"github.com/gobatis/gobatis/parser/xsql"
 )
 
-type Executor interface {
+type executor interface {
 	Execute(logger logger.Logger, pos string, trace, debug bool, affect any, scan func(s Scanner) error) (err error)
 	Query() bool
 }
 
 var (
-	_ Executor = (*defaultExecutor)(nil)
-	_ Executor = (*insertBatchExecutor)(nil)
-	_ Executor = (*parallelQueryExecutor)(nil)
-	_ Executor = (*fetchQueryExecutor)(nil)
-	//_ Executor = (*associateQueryExecutor)(nil)
+	_ executor = (*defaultExecutor)(nil)
+	_ executor = (*insertBatchExecutor)(nil)
+	_ executor = (*parallelQueryExecutor)(nil)
+	_ executor = (*fetchQueryExecutor)(nil)
+	_ any      = (*associateQueryExecutor)(nil)
 )
 
 func newDefaultExecutor(conn conn, raw *Raw) *defaultExecutor {
@@ -137,7 +137,7 @@ func (d *defaultExecutor) scan(s *scanner, f func(Scanner) error) error {
 	return f(s)
 }
 
-func NewInsertBatch(ctx context.Context, conn conn, raws []*Raw) *insertBatchExecutor {
+func newInsertBatch(ctx context.Context, conn conn, raws []*Raw) *insertBatchExecutor {
 	return &insertBatchExecutor{ctx: ctx, conn: conn, raws: raws}
 }
 
@@ -266,23 +266,26 @@ func (i *insertBatchExecutor) execute(conn conn, raw *Raw, logger logger.Logger,
 }
 
 type parallelQueryExecutor struct {
-	Conn conn
-	Raw  *Raw
-	Dest any
+	Conn    conn
+	Raw     *Raw
+	scanner func(s Scanner) error
 }
 
 func (p *parallelQueryExecutor) Query() bool {
 	return p.Raw.Query
 }
 
-func (p *parallelQueryExecutor) Execute(logger logger.Logger, pos string, trace, debug bool, affect any, _ func(Scanner) error) error {
+func (p *parallelQueryExecutor) Execute(logger logger.Logger, pos string, trace, debug bool, affect any, f func(Scanner) error) error {
 	d := newDefaultExecutor(p.Conn, p.Raw)
 	return d.Execute(logger, pos, trace, debug, affect, func(s Scanner) error {
-		return s.Scan(p.Dest)
+		if f == nil {
+			return nil
+		}
+		return f(s)
 	})
 }
 
-func NewFetchQuery(ctx context.Context, conn conn, raw *Raw, limit uint) *fetchQueryExecutor {
+func newFetchQuery(ctx context.Context, conn conn, raw *Raw, limit uint) *fetchQueryExecutor {
 	return &fetchQueryExecutor{ctx: ctx, conn: conn, raw: raw, limit: limit}
 }
 

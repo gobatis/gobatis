@@ -17,7 +17,7 @@ type Scanner interface {
 }
 
 type PagingScanner interface {
-	Scan(listPtr, countPtr any, ignore ...string) error
+	Scan(countPtr, listPtr any, ignore ...string) error
 }
 
 type AssociateScanner interface {
@@ -26,6 +26,7 @@ type AssociateScanner interface {
 
 var _ Scanner = (*scanner)(nil)
 var _ Scanner = (*insertBatchScanner)(nil)
+var _ PagingScanner = (*pagingScanner)(nil)
 var _ AssociateScanner = (*associateScanner)(nil)
 
 type scanner struct {
@@ -138,6 +139,27 @@ func (i *insertBatchScanner) RowsAffected() int64 {
 
 func (i *insertBatchScanner) LastInsertId() int64 {
 	return i.lastInsertId
+}
+
+type pagingScanner struct {
+	listScanner  Scanner
+	countScanner Scanner
+}
+
+func (p *pagingScanner) SetListScanner(listScanner Scanner) {
+	p.listScanner = listScanner
+}
+
+func (p *pagingScanner) SetCountScanner(countScanner Scanner) {
+	p.countScanner = countScanner
+}
+
+func (p *pagingScanner) Scan(countPtr, listPtr any, ignore ...string) error {
+	err := p.countScanner.Scan(countPtr)
+	if err != nil {
+		return err
+	}
+	return p.listScanner.Scan(listPtr, ignore...)
 }
 
 type associateBindingPath struct {

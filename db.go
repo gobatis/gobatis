@@ -72,7 +72,7 @@ type DB struct {
 	debug        bool
 	traceId      string
 	affect       any
-	executor     Executor
+	executor     executor
 	executed     atomic.Bool
 	rowsAffected int64
 	lastInsertId int64
@@ -299,7 +299,7 @@ func (d *DB) Insert(table string, data any, elems ...Element) *DB {
 	return c
 }
 
-func (d *DB) setExecutor(e Executor) {
+func (d *DB) setExecutor(e executor) {
 	if d.executor != nil {
 		d.addError(fmt.Errorf("executor duplicated"))
 		return
@@ -347,7 +347,7 @@ func (d *DB) InsertBatch(table string, batch int, data any, elems ...Element) *D
 		raws = append(raws, raw)
 	}
 
-	c.setExecutor(NewInsertBatch(c.context(), c.conn(), raws))
+	c.setExecutor(newInsertBatch(c.context(), c.conn(), raws))
 	if !q {
 		c.execute(nil)
 	}
@@ -365,13 +365,14 @@ func (d *DB) ParallelQuery(queryer ...ParallelQuery) *DB {
 		return c
 	}
 
-	var executors []Executor
+	var executors []*parallelQueryExecutor
 	for _, v := range queryer {
-		item, err := v.executor(d.Dialector.Namer(), "db")
+		item, err := v.executor(d.Dialector.Namer(), c.ColumnTag)
 		if err != nil {
 			c.addError(err)
 			return c
 		}
+		item.scanner = v.Scan
 		item.Conn = c.conn()
 		item.Raw.Ctx = c.context()
 		executors = append(executors, item)
@@ -382,11 +383,11 @@ func (d *DB) ParallelQuery(queryer ...ParallelQuery) *DB {
 	pos := logger.CallFuncPos(0)
 	for _, v := range executors {
 		wg.Add(1)
-		go func(v Executor) {
+		go func(v *parallelQueryExecutor) {
 			defer func() {
 				wg.Done()
 			}()
-			err := v.Execute(c.Logger, pos, d.trace, d.debug, nil, nil)
+			err := v.Execute(c.Logger, pos, d.trace, d.debug, nil, v.scanner)
 			if err != nil {
 				lock.Lock()
 				c.addError(err)
@@ -401,12 +402,18 @@ func (d *DB) ParallelQuery(queryer ...ParallelQuery) *DB {
 
 func (d *DB) PagingQuery(query PagingQuery) *DB {
 	c := d.clone()
-	queries, err := query.executors(d.Dialector.Namer(), "db")
+	queries, s, err := query.executors(d.Dialector.Namer(), "db")
 	if err != nil {
 		c.addError(err)
 		return c
 	}
-	return c.ParallelQuery(queries...)
+	if c.ParallelQuery(queries...).Error != nil {
+		return c
+	}
+	if query.Scan != nil {
+		c.addError(query.Scan(s))
+	}
+	return c
 }
 
 func (d *DB) AssociateQuery(query AssociateQuery) *DB {
@@ -458,7 +465,7 @@ func (d *DB) FetchQuery(query FetchQuery) error {
 	if c.traceId == "" {
 		c.traceId = fmt.Sprintf("TID%d", time.Now().UnixNano())
 	}
-	c.setExecutor(NewFetchQuery(c.context(), c.conn(), raw, query.Batch))
+	c.setExecutor(newFetchQuery(c.context(), c.conn(), raw, query.Batch))
 	return c.executor.Execute(c.Logger, "", c.trace, c.debug, nil, func(s Scanner) error {
 		return query.Scan(s)
 	})

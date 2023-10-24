@@ -13,8 +13,7 @@ import (
 type ParallelQuery struct {
 	SQL    string
 	Params map[string]any
-	Scan   any
-	//Scan   func(s Scanner) error
+	Scan   func(s Scanner) error
 }
 
 func (q ParallelQuery) executor(namer dialector.Namer, tag string) (*parallelQueryExecutor, error) {
@@ -37,7 +36,7 @@ func (q ParallelQuery) executor(namer dialector.Namer, tag string) (*parallelQue
 	for k, v := range q.Params {
 		raw.Params = append(raw.Params, Param(k, v))
 	}
-	return &parallelQueryExecutor{Raw: raw, Dest: q.Scan}, nil
+	return &parallelQueryExecutor{Raw: raw}, nil
 }
 
 func PagingScan(items any, count any) []any {
@@ -53,24 +52,23 @@ type PagingQuery struct {
 	Page   int64
 	Limit  int64
 	Params map[string]any
-	Scan   []any
 	elems  map[int][]Element
-	//Scan  func(s Scanner) error
+	Scan   func(scanner PagingScanner) error
 }
 
 func (p PagingQuery) GetCount() int64 {
 	return 0
 }
 
-func (p PagingQuery) executors(namer dialector.Namer, tag string) ([]ParallelQuery, error) {
+func (p PagingQuery) executors(namer dialector.Namer, tag string) ([]ParallelQuery, *pagingScanner, error) {
 
 	if p.Limit <= 0 {
-		return nil, InvalidLimitErr
+		return nil, nil, InvalidLimitErr
 	}
 
-	if l := len(p.Scan); l != 2 {
-		return nil, fmt.Errorf("%w; got: %d", InvalidPagingScanDestErr, l)
-	}
+	//if l := len(p.Scan); l != 2 {
+	//	return nil, fmt.Errorf("%w; got: %d", InvalidPagingScanDestErr, l)
+	//}
 
 	var params []NameValue
 	for k, v := range p.Params {
@@ -87,19 +85,28 @@ func (p PagingQuery) executors(namer dialector.Namer, tag string) ([]ParallelQue
 	if p.Order != "" {
 		o = fmt.Sprintf(" order by %s", p.Order)
 	}
+
+	s := &pagingScanner{}
+
 	q := ParallelQuery{
 		SQL:    fmt.Sprintf("select %s from %s%s%s limit %d offset %d", p.Select, p.From, w, o, p.Limit, p.Limit*p.Page),
 		Params: p.Params,
-		Scan:   p.Scan[0],
+		Scan: func(scanner Scanner) error {
+			s.listScanner = scanner
+			return nil
+		},
 	}
 
 	c := ParallelQuery{
 		SQL:    fmt.Sprintf("select count(%s) from %s%s", p.Count, p.From, w),
 		Params: p.Params,
-		Scan:   p.Scan[1],
+		Scan: func(scanner Scanner) error {
+			s.countScanner = scanner
+			return nil
+		},
 	}
 
-	return []ParallelQuery{q, c}, nil
+	return []ParallelQuery{q, c}, s, nil
 }
 
 type FetchQuery struct {
@@ -112,23 +119,5 @@ type FetchQuery struct {
 type AssociateQuery struct {
 	SQL    string
 	Params map[string]any
-	//Associate associateDest
-	//Associate func() (any, string, string)
-	Scan func(scanner AssociateScanner) error
-	//
-	//Scan func()
+	Scan   func(scanner AssociateScanner) error
 }
-
-//type associateDest struct {
-//	dest        any
-//	bindingPath string
-//	mappingPath string
-//}
-//
-//func Associate(dest any, bindingPath, mappingPath string) associateDest {
-//	return associateDest{
-//		dest:        dest,
-//		bindingPath: bindingPath,
-//		mappingPath: mappingPath,
-//	}
-//}
