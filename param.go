@@ -6,7 +6,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/gobatis/gobatis/parser"
+	"github.com/gobatis/gobatis/reflects"
 )
 
 type Params map[string]any
@@ -31,10 +31,10 @@ type Dest struct {
 	fields []string
 }
 
-var pathReg = regexp.MustCompile(`^\$(\.[a-zA-Z][a-zA-Z0-9]*)+$`)
+var mappingPathReg = regexp.MustCompile(`^\$(\.[a-zA-Z]\w*)+$`)
 
 func Extract(v any, path string) (r []any, err error) {
-	if !pathReg.MatchString(path) {
+	if !mappingPathReg.MatchString(path) {
 		err = fmt.Errorf("invlaid extract path format: %s", path)
 		return
 	}
@@ -46,8 +46,8 @@ func Extract(v any, path string) (r []any, err error) {
 }
 
 func extract(r *[]any, rv reflect.Value, paths []string) (err error) {
-	rv = parser.ValueElem(rv)
-	if (rv.Kind() == reflect.Slice || rv.Kind() == reflect.Array) && parser.TypeElem(rv.Type().Elem()).Kind() != reflect.Struct &&
+	rv = reflects.ValueElem(rv)
+	if (rv.Kind() == reflect.Slice || rv.Kind() == reflect.Array) && reflects.TypeElem(rv.Type().Elem()).Kind() != reflect.Struct &&
 		rv.Kind() != reflect.Struct {
 		err = fmt.Errorf("method Extract() accepts only the struct type and its slice or array form")
 		return

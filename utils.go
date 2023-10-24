@@ -10,7 +10,6 @@ import (
 	"testing"
 	"time"
 
-	//"github.com/gobatis/gobatis/cast"
 	"github.com/gobatis/gobatis/dialector"
 	"github.com/stretchr/testify/require"
 	"github.com/ttacon/chalk"

@@ -610,24 +610,10 @@ func testAssociateQuery(t *testing.T) {
 			//"ids": batis.Extract(wraps, "$.Name"),
 			"ids": []string{"Laptop", "TV"},
 		},
-		Associate: batis.Associate(&wraps, "product_name => $.Name", "$.Product"),
-		//Scan: batis.Scan(&wraps, batis.Associate("product_name => $.Name", "$.Product"), batis.Ignore("Description")),
-	}).Error
-
-	db.AssociateQuery(batis.AssociateQuery{
-		SQL: `select * from products where product_name in #{ids}`,
-		Params: map[string]any{
-			"ids": []string{"Laptop", "TV"},
+		Scan: func(scanner batis.AssociateScanner) error {
+			return scanner.Scan(&wraps, "product_name => $.Name", "$.Product")
 		},
-		Scan: batis.Scan(&wraps, batis.BindingPath("product_name => $.Name"), batis.MappingPath("$.Product"), batis.Ignore("Age")),
-	})
-
-	/*
-		db.Debug().AssociateQuery(
-			`select * from products where product_name in #{ids}`,
-					batis.Param("ids","ids": []string{"Laptop", "TV"})
-			).Scan(&wraps, batis.ForeignKey("product", "$.Name"), baits.Mapping("$.Product"), batis.Ignore(""))
-	*/
+	}).Error
 
 	require.NoError(t, err)
 

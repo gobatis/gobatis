@@ -17,7 +17,7 @@ type ParallelQuery struct {
 	//Scan   func(s Scanner) error
 }
 
-func (q ParallelQuery) executor(namer dialector.Namer, tag string) (*ParallelQueryExecutor, error) {
+func (q ParallelQuery) executor(namer dialector.Namer, tag string) (*parallelQueryExecutor, error) {
 	if q.Scan == nil {
 		return nil, NoScanDestErr
 	}
@@ -37,7 +37,7 @@ func (q ParallelQuery) executor(namer dialector.Namer, tag string) (*ParallelQue
 	for k, v := range q.Params {
 		raw.Params = append(raw.Params, Param(k, v))
 	}
-	return &ParallelQueryExecutor{Raw: raw, Dest: q.Scan}, nil
+	return &parallelQueryExecutor{Raw: raw, Dest: q.Scan}, nil
 }
 
 func PagingScan(items any, count any) []any {
@@ -110,58 +110,25 @@ type FetchQuery struct {
 }
 
 type AssociateQuery struct {
-	SQL       string
-	Params    map[string]any
-	Associate associateDest
+	SQL    string
+	Params map[string]any
+	//Associate associateDest
 	//Associate func() (any, string, string)
-	Scan func() (any, string, string, []string)
+	Scan func(scanner AssociateScanner) error
 	//
 	//Scan func()
 }
 
-func Scan(dest any, options ...func(c *scanOptions)) func() (any, string, string, []string) {
-	return func() (any, string, string, []string) {
-		return dest, "", "", nil
-	}
-}
-
-type scanOptions struct {
-}
-
-func BindingPath(v string) func(c *scanOptions) {
-	return func(c *scanOptions) {
-
-	}
-}
-
-func MappingPath(v string) func(c *scanOptions) {
-	return func(c *scanOptions) {
-
-	}
-}
-
-func Ignore(fields ...string) func(c *scanOptions) {
-	return func(c *scanOptions) {
-
-	}
-}
-
-type associateDest struct {
-	dest        any
-	bindingPath string
-	mappingPath string
-}
-
-func Associate(dest any, bindingPath, mappingPath string) associateDest {
-	return associateDest{
-		dest:        dest,
-		bindingPath: bindingPath,
-		mappingPath: mappingPath,
-	}
-}
-
-//func Associate(bindingPath, mappingPath string) func(c *scanOptions) {
-//	return func(c *scanOptions) {
+//type associateDest struct {
+//	dest        any
+//	bindingPath string
+//	mappingPath string
+//}
 //
+//func Associate(dest any, bindingPath, mappingPath string) associateDest {
+//	return associateDest{
+//		dest:        dest,
+//		bindingPath: bindingPath,
+//		mappingPath: mappingPath,
 //	}
 //}

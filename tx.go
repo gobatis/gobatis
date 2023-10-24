@@ -9,7 +9,7 @@ func NewTx(tx *sql.Tx, traceID string) *Tx {
 	return &Tx{Tx: tx, traceId: traceID}
 }
 
-var _ Conn2 = (*Tx)(nil)
+var _ conn = (*Tx)(nil)
 
 type Tx struct {
 	traceId string

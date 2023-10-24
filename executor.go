@@ -17,30 +17,30 @@ type Executor interface {
 }
 
 var (
-	_ Executor = (*DefaultExecutor)(nil)
-	_ Executor = (*InsertBatchExecutor)(nil)
-	_ Executor = (*ParallelQueryExecutor)(nil)
-	_ Executor = (*FetchQueryExecutor)(nil)
-	_ Executor = (*AssociateQueryExecutor)(nil)
+	_ Executor = (*defaultExecutor)(nil)
+	_ Executor = (*insertBatchExecutor)(nil)
+	_ Executor = (*parallelQueryExecutor)(nil)
+	_ Executor = (*fetchQueryExecutor)(nil)
+	//_ Executor = (*associateQueryExecutor)(nil)
 )
 
-func NewDefault(conn Conn2, raw *Raw) *DefaultExecutor {
-	return &DefaultExecutor{conn: conn, raw: raw, clean: true}
+func newDefaultExecutor(conn conn, raw *Raw) *defaultExecutor {
+	return &defaultExecutor{conn: conn, raw: raw, clean: true}
 }
 
-type DefaultExecutor struct {
+type defaultExecutor struct {
 	rows   *sql.Rows
 	result sql.Result
-	conn   Conn2
+	conn   conn
 	raw    *Raw
 	clean  bool
 }
 
-func (d *DefaultExecutor) Query() bool {
+func (d *defaultExecutor) Query() bool {
 	return d.raw.Query
 }
 
-func (d *DefaultExecutor) Execute(log logger.Logger, pos string, trace, debug bool, affect any, scan func(Scanner) error) (err error) {
+func (d *defaultExecutor) Execute(log logger.Logger, pos string, trace, debug bool, affect any, scan func(Scanner) error) (err error) {
 
 	beginAt := time.Now()
 
@@ -130,24 +130,24 @@ func (d *DefaultExecutor) Execute(log logger.Logger, pos string, trace, debug bo
 	return
 }
 
-func (d *DefaultExecutor) scan(s *scanner, f func(Scanner) error) error {
+func (d *defaultExecutor) scan(s *scanner, f func(Scanner) error) error {
 	if f == nil {
 		return nil
 	}
 	return f(s)
 }
 
-func NewInsertBatch(ctx context.Context, conn Conn2, raws []*Raw) *InsertBatchExecutor {
-	return &InsertBatchExecutor{ctx: ctx, conn: conn, raws: raws}
+func NewInsertBatch(ctx context.Context, conn conn, raws []*Raw) *insertBatchExecutor {
+	return &insertBatchExecutor{ctx: ctx, conn: conn, raws: raws}
 }
 
-type InsertBatchExecutor struct {
+type insertBatchExecutor struct {
 	ctx  context.Context
-	conn Conn2
+	conn conn
 	raws []*Raw
 }
 
-func (i *InsertBatchExecutor) Query() bool {
+func (i *insertBatchExecutor) Query() bool {
 	for _, v := range i.raws {
 		if v.Query {
 			return v.Query
@@ -156,9 +156,9 @@ func (i *InsertBatchExecutor) Query() bool {
 	return false
 }
 
-func (i *InsertBatchExecutor) Execute(log logger.Logger, pos string, trace, debug bool, affect any, scan func(Scanner) error) (err error) {
+func (i *insertBatchExecutor) Execute(log logger.Logger, pos string, trace, debug bool, affect any, scan func(Scanner) error) (err error) {
 
-	conn := i.conn
+	c := i.conn
 	var tx *sql.Tx
 	defer func() {
 		// Indicate that the outside is a regular DB object,
@@ -170,7 +170,7 @@ func (i *InsertBatchExecutor) Execute(log logger.Logger, pos string, trace, debu
 			if err != nil {
 				now := time.Now()
 				err = parser.AddError(err, tx.Rollback())
-				log.Trace(pos, conn.TraceId(), true, err, &logger.SQLTrace{
+				log.Trace(pos, c.TraceId(), true, err, &logger.SQLTrace{
 					Trace:        trace,
 					Debug:        debug,
 					BeginAt:      now,
@@ -182,14 +182,14 @@ func (i *InsertBatchExecutor) Execute(log logger.Logger, pos string, trace, debu
 		}
 	}()
 
-	if !conn.IsTx() {
+	if !c.IsTx() {
 		now := time.Now()
-		tx, err = conn.BeginTx(i.ctx, nil)
+		tx, err = c.BeginTx(i.ctx, nil)
 		if err != nil {
 			return
 		}
-		conn = NewTx(tx, conn.TraceId())
-		log.Trace(pos, conn.TraceId(), true, err, &logger.SQLTrace{
+		c = NewTx(tx, c.TraceId())
+		log.Trace(pos, c.TraceId(), true, err, &logger.SQLTrace{
 			Trace:        trace,
 			Debug:        debug,
 			BeginAt:      now,
@@ -201,7 +201,7 @@ func (i *InsertBatchExecutor) Execute(log logger.Logger, pos string, trace, debu
 
 	ibs := &insertBatchScanner{}
 	for _, raw := range i.raws {
-		err = i.execute(conn, raw, log, pos, trace, debug, ibs, func(s Scanner) error {
+		err = i.execute(c, raw, log, pos, trace, debug, ibs, func(s Scanner) error {
 			return scan(s)
 		})
 		if err != nil {
@@ -227,7 +227,7 @@ func (i *InsertBatchExecutor) Execute(log logger.Logger, pos string, trace, debu
 		return
 	}
 
-	log.Trace(pos, conn.TraceId(), true, err, &logger.SQLTrace{
+	log.Trace(pos, c.TraceId(), true, err, &logger.SQLTrace{
 		Trace:        trace,
 		Debug:        debug,
 		BeginAt:      now,
@@ -239,8 +239,8 @@ func (i *InsertBatchExecutor) Execute(log logger.Logger, pos string, trace, debu
 	return
 }
 
-func (i *InsertBatchExecutor) execute(conn Conn2, raw *Raw, logger logger.Logger, pos string, trace, debug bool, ibs *insertBatchScanner, scan func(Scanner) error) (err error) {
-	d := NewDefault(conn, raw)
+func (i *insertBatchExecutor) execute(conn conn, raw *Raw, logger logger.Logger, pos string, trace, debug bool, ibs *insertBatchScanner, scan func(Scanner) error) (err error) {
+	d := newDefaultExecutor(conn, raw)
 	d.clean = false
 	err = d.Execute(logger, pos, trace, debug, nil, nil)
 	if err != nil {
@@ -265,41 +265,41 @@ func (i *InsertBatchExecutor) execute(conn Conn2, raw *Raw, logger logger.Logger
 	return
 }
 
-type ParallelQueryExecutor struct {
-	Conn Conn2
+type parallelQueryExecutor struct {
+	Conn conn
 	Raw  *Raw
 	Dest any
 }
 
-func (p *ParallelQueryExecutor) Query() bool {
+func (p *parallelQueryExecutor) Query() bool {
 	return p.Raw.Query
 }
 
-func (p *ParallelQueryExecutor) Execute(logger logger.Logger, pos string, trace, debug bool, affect any, _ func(Scanner) error) error {
-	d := NewDefault(p.Conn, p.Raw)
+func (p *parallelQueryExecutor) Execute(logger logger.Logger, pos string, trace, debug bool, affect any, _ func(Scanner) error) error {
+	d := newDefaultExecutor(p.Conn, p.Raw)
 	return d.Execute(logger, pos, trace, debug, affect, func(s Scanner) error {
 		return s.Scan(p.Dest)
 	})
 }
 
-func NewFetchQuery(ctx context.Context, conn Conn2, raw *Raw, limit uint) *FetchQueryExecutor {
-	return &FetchQueryExecutor{ctx: ctx, conn: conn, raw: raw, limit: limit}
+func NewFetchQuery(ctx context.Context, conn conn, raw *Raw, limit uint) *fetchQueryExecutor {
+	return &fetchQueryExecutor{ctx: ctx, conn: conn, raw: raw, limit: limit}
 }
 
-type FetchQueryExecutor struct {
+type fetchQueryExecutor struct {
 	ctx   context.Context
-	conn  Conn2
+	conn  conn
 	raw   *Raw
 	limit uint
 }
 
-func (f *FetchQueryExecutor) Query() bool {
+func (f *fetchQueryExecutor) Query() bool {
 	return f.raw.Query
 }
 
-func (f *FetchQueryExecutor) Execute(log logger.Logger, pos string, trace, debug bool, affect any, scan func(Scanner) error) (err error) {
+func (f *fetchQueryExecutor) Execute(log logger.Logger, pos string, trace, debug bool, affect any, scan func(Scanner) error) (err error) {
 
-	conn := f.conn
+	c := f.conn
 
 	var tx *sql.Tx
 	defer func() {
@@ -307,7 +307,7 @@ func (f *FetchQueryExecutor) Execute(log logger.Logger, pos string, trace, debug
 			if err != nil {
 				now := time.Now()
 				err = parser.AddError(err, tx.Rollback())
-				log.Trace(pos, conn.TraceId(), true, err, &logger.SQLTrace{
+				log.Trace(pos, c.TraceId(), true, err, &logger.SQLTrace{
 					Trace:        trace,
 					Debug:        debug,
 					BeginAt:      now,
@@ -319,17 +319,17 @@ func (f *FetchQueryExecutor) Execute(log logger.Logger, pos string, trace, debug
 		}
 	}()
 
-	if !conn.IsTx() {
-		tx, err = conn.BeginTx(f.ctx, nil)
+	if !c.IsTx() {
+		tx, err = c.BeginTx(f.ctx, nil)
 		if err != nil {
 			return
 		}
-		conn = NewTx(tx, conn.TraceId())
+		c = NewTx(tx, c.TraceId())
 	}
 
-	cursor := fmt.Sprintf("curosr_%s", conn.TraceId())
+	cursor := fmt.Sprintf("curosr_%s", c.TraceId())
 
-	d := NewDefault(conn, &Raw{
+	d := newDefaultExecutor(c, &Raw{
 		Ctx:    f.ctx,
 		Query:  false,
 		SQL:    fmt.Sprintf("declare %s cursor for %s", cursor, f.raw.SQL),
@@ -341,7 +341,7 @@ func (f *FetchQueryExecutor) Execute(log logger.Logger, pos string, trace, debug
 	}
 
 	defer func() {
-		d = NewDefault(conn, &Raw{
+		d = newDefaultExecutor(c, &Raw{
 			Ctx:    f.ctx,
 			Query:  false,
 			SQL:    fmt.Sprintf("close %s", cursor),
@@ -352,7 +352,7 @@ func (f *FetchQueryExecutor) Execute(log logger.Logger, pos string, trace, debug
 		now := time.Now()
 		err = parser.AddError(err, tx.Commit())
 
-		log.Trace(pos, conn.TraceId(), true, err, &logger.SQLTrace{
+		log.Trace(pos, c.TraceId(), true, err, &logger.SQLTrace{
 			Trace:        trace,
 			Debug:        debug,
 			BeginAt:      now,
@@ -363,7 +363,7 @@ func (f *FetchQueryExecutor) Execute(log logger.Logger, pos string, trace, debug
 	}()
 
 	for {
-		d = NewDefault(conn, &Raw{
+		d = newDefaultExecutor(c, &Raw{
 			Ctx:    f.ctx,
 			Query:  true,
 			SQL:    fmt.Sprintf("fetch forward %d from %s", f.limit, cursor),
@@ -389,42 +389,41 @@ func (f *FetchQueryExecutor) Execute(log logger.Logger, pos string, trace, debug
 	return
 }
 
-func NewAssociateQuery(conn Conn2, raw *Raw, dest any, bindingPath string, mappingPath string) *AssociateQueryExecutor {
-	return &AssociateQueryExecutor{conn: conn, raw: raw, dest: dest, bindingPath: bindingPath, mappingPath: mappingPath}
+func newAssociateQueryExecutor(conn conn, raw *Raw) *associateQueryExecutor {
+	return &associateQueryExecutor{conn: conn, raw: raw}
 }
 
-type AssociateQueryExecutor struct {
-	conn        Conn2
-	raw         *Raw
-	dest        any
-	bindingPath string
-	mappingPath string
+type associateQueryExecutor struct {
+	conn conn
+	raw  *Raw
 }
 
-func (a AssociateQueryExecutor) Execute(logger logger.Logger, pos string, trace, debug bool, affect any, _ func(s Scanner) error) (err error) {
-	d := NewDefault(a.conn, a.raw)
+func (a associateQueryExecutor) Execute(logger logger.Logger, pos string, trace, debug bool, affect any, scan func(s AssociateScanner) error) (err error) {
+	d := newDefaultExecutor(a.conn, a.raw)
 	d.clean = false
 
 	err = d.Execute(logger, pos, trace, debug, affect, nil)
 	if err != nil {
 		return
 	}
+	defer func() {
+		_ = d.rows.Close()
+	}()
 
-	var abs = &associateScanner{
-		rows:         d.rows,
-		rowsAffected: 0,
-		lastInsertId: 0,
-		bindingPaths: []*associateBindingPath{{
-			column: "product_name",
-			path:   "$.Name",
-		}},
-		mappingPath: a.mappingPath,
+	if scan == nil {
+		return
 	}
-	err = abs.Scan(a.dest)
+
+	err = scan(&associateScanner{
+		rows: d.rows,
+	})
+	if err != nil {
+		return
+	}
 
 	return
 }
 
-func (a AssociateQueryExecutor) Query() bool {
+func (a associateQueryExecutor) Query() bool {
 	return a.raw.Query
 }

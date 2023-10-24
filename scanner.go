@@ -4,9 +4,10 @@ import (
 	"database/sql"
 	"fmt"
 	"reflect"
+	"regexp"
 	"strings"
 
-	"github.com/gobatis/gobatis/parser"
+	"github.com/gobatis/gobatis/reflects"
 )
 
 type Scanner interface {
@@ -16,16 +17,16 @@ type Scanner interface {
 }
 
 type PagingScanner interface {
-	Scan(listPtr, countPtr any, ignore ...string)
+	Scan(listPtr, countPtr any, ignore ...string) error
 }
 
 type AssociateScanner interface {
-	Scan(ptr any, bindingPath, mappingPath string, ignore ...string)
+	Scan(ptr any, bindingPath, mappingPath string, ignore ...string) error
 }
 
 var _ Scanner = (*scanner)(nil)
 var _ Scanner = (*insertBatchScanner)(nil)
-var _ Scanner = (*associateScanner)(nil)
+var _ AssociateScanner = (*associateScanner)(nil)
 
 type scanner struct {
 	rows         *sql.Rows
@@ -148,11 +149,23 @@ type associateScanner struct {
 	rows         *sql.Rows
 	rowsAffected int64
 	lastInsertId int64
-	bindingPaths []*associateBindingPath
+	bindingPaths []associateBindingPath
 	mappingPath  string
 }
 
-func (a *associateScanner) Scan(ptr any, ignore ...string) (err error) {
+var bindingPathReg = regexp.MustCompile(`^(([a-zA-Z]\w*)+\s*=>\s*(\$(\.[a-zA-Z]\w*)+))(\s*,\s*([a-zA-Z]\w*)+\s*=>\s*(\$(\.[a-zA-Z]\w*)+))*$`)
+
+func (a *associateScanner) Scan(ptr any, bindingPath, mappingPath string, ignore ...string) (err error) {
+
+	err = a.parseBindingPath(bindingPath)
+	if err != nil {
+		return
+	}
+	err = a.parseMappingPath(mappingPath)
+	if err != nil {
+		return
+	}
+
 	s := &scanner{
 		rows:       a.rows,
 		reflectRow: a.reflectRow,
@@ -166,15 +179,43 @@ func (a *associateScanner) Scan(ptr any, ignore ...string) (err error) {
 	return
 }
 
-func (a *associateScanner) reflectRow(columns []string, row []interface{}, pv reflect.Value, first bool) (end bool, err error) {
+func (a *associateScanner) parseBindingPath(bindingPath string) (err error) {
+	r := bindingPathReg.FindStringSubmatch(bindingPath)
+	if len(r) == 0 {
+		err = fmt.Errorf("invaild binding path foramt: %s, expect format like: a => $.A, b => $.B", bindingPath)
+		return
+	}
 
+	for i := 1; i < len(r); i += 4 {
+		if r[i+1] == "" {
+			continue
+		}
+		a.bindingPaths = append(a.bindingPaths, associateBindingPath{
+			column: r[i+1],
+			path:   strings.TrimPrefix(r[i+2], "$."),
+		})
+	}
+	return
+}
+
+func (a *associateScanner) parseMappingPath(mappingPath string) (err error) {
+	if !mappingPathReg.MatchString(mappingPath) {
+		err = fmt.Errorf("invalid mapping path format: %s", mappingPath)
+		return
+	}
+	a.mappingPath = strings.TrimPrefix(mappingPath, "$.")
+	return
+}
+
+func (a *associateScanner) reflectRow(columns []string, row []interface{}, pv reflect.Value, first bool) (end bool, err error) {
 	m := map[string]any{}
 	for i, v := range columns {
 		m[v] = row[i]
 	}
-
 	err = a.matchBindingValue(m, columns, row, pv, first)
-
+	if err != nil {
+		return
+	}
 	return
 }
 
@@ -187,7 +228,7 @@ func (a *associateScanner) matchBindingValue(m map[string]any, columns []string,
 		}
 	}
 
-	pv = parser.ValueElem(pv)
+	pv = reflects.ValueElem(pv)
 	if pv.Kind() == reflect.Slice || pv.Kind() == reflect.Array {
 		for i := 0; i < pv.Len(); i++ {
 			err = a.matchBindingValue(m, columns, row, pv.Index(i), first)

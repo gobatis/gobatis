@@ -19,10 +19,6 @@ const (
 	space      = " "
 )
 
-type (
-// Scanner = Scanner
-)
-
 func WithTx(parent context.Context, tx *sql.Tx) context.Context {
 	return context.WithValue(parent, dbKey, tx)
 }
@@ -192,15 +188,15 @@ func (d *DB) execute(dest any) {
 	}))
 }
 
-func (d *DB) conn() Conn2 {
+func (d *DB) conn() conn {
 	if d.tx != nil {
 		return d.tx
 	} else {
-		conn, err := d.db.Conn(d.context())
+		cn, err := d.db.Conn(d.context())
 		if err != nil {
 			d.addError(err)
 		}
-		return NewDB2(conn, d.traceId)
+		return newDBConn(cn, d.traceId)
 	}
 }
 
@@ -222,7 +218,7 @@ func (d *DB) Query(sql string, params ...NameValue) *DB {
 		c.addError(err)
 		return c
 	}
-	c.executor = NewDefault(c.conn(), raw)
+	c.executor = newDefaultExecutor(c.conn(), raw)
 	return c
 }
 
@@ -253,7 +249,7 @@ func (d *DB) Exec(sql string, params ...NameValue) *DB {
 		c.addError(err)
 		return c
 	}
-	c.executor = NewDefault(c.conn(), raw)
+	c.executor = newDefaultExecutor(c.conn(), raw)
 	c.execute(nil)
 	return c
 }
@@ -266,7 +262,7 @@ func (d *DB) Delete(table string, where Element) *DB {
 		c.addError(err)
 		return c
 	}
-	c.executor = NewDefault(c.conn(), raw)
+	c.executor = newDefaultExecutor(c.conn(), raw)
 	c.execute(nil)
 	return c
 }
@@ -280,7 +276,7 @@ func (d *DB) Update(table string, data map[string]any, where Element, elems ...E
 		c.addError(err)
 		return c
 	}
-	c.executor = NewDefault(c.conn(), raw)
+	c.executor = newDefaultExecutor(c.conn(), raw)
 	if !raw.Query {
 		c.execute(nil)
 	}
@@ -296,7 +292,7 @@ func (d *DB) Insert(table string, data any, elems ...Element) *DB {
 		c.addError(err)
 		return c
 	}
-	c.executor = NewDefault(c.conn(), raw)
+	c.executor = newDefaultExecutor(c.conn(), raw)
 	if !raw.Query {
 		c.execute(nil)
 	}
@@ -429,10 +425,10 @@ func (d *DB) AssociateQuery(query AssociateQuery) *DB {
 	}
 
 	c := d.clone()
-	c.setExecutor(NewAssociateQuery(c.conn(), raw, query.Associate.dest,
-		query.Associate.bindingPath, query.Associate.mappingPath))
 
-	c.execute(nil)
+	e := newAssociateQueryExecutor(c.conn(), raw)
+
+	c.addError(e.Execute(c.Logger, "", c.trace, c.debug, nil, query.Scan))
 
 	return c
 }
