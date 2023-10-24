@@ -410,7 +410,7 @@ func (a AssociateQuery) Execute(logger logger.Logger, pos string, trace, debug b
 		return
 	}
 
-	var abs = &associateQueryScan{
+	var abs = &associateScanner{
 		rows:         d.rows,
 		rowsAffected: 0,
 		lastInsertId: 0,

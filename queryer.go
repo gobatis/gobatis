@@ -15,6 +15,7 @@ type ParallelQuery struct {
 	SQL    string
 	Params map[string]any
 	Scan   any
+	//Scan   func(s Scanner) error
 }
 
 func (q ParallelQuery) executor(namer dialector.Namer, tag string) (*executor.ParallelQuery, error) {
@@ -55,6 +56,7 @@ type PagingQuery struct {
 	Params map[string]any
 	Scan   []any
 	elems  map[int][]Element
+	//Scan  func(s Scanner) error
 }
 
 func (p PagingQuery) GetCount() int64 {
@@ -109,11 +111,13 @@ type FetchQuery struct {
 }
 
 type AssociateQuery struct {
-	SQL    string
-	Params map[string]any
-	//Associate associateDest
-	Associate func() (any, string, string)
-	Scan      func() (any, string, string, []string)
+	SQL       string
+	Params    map[string]any
+	Associate associateDest
+	//Associate func() (any, string, string)
+	Scan func() (any, string, string, []string)
+	//
+	//Scan func()
 }
 
 func Scan(dest any, options ...func(c *scanOptions)) func() (any, string, string, []string) {
@@ -143,20 +147,22 @@ func Ignore(fields ...string) func(c *scanOptions) {
 	}
 }
 
-//type associateDest struct {
-//	dest        any
-//	bindingPath string
-//	mappingPath string
-//}
+type associateDest struct {
+	dest        any
+	bindingPath string
+	mappingPath string
+}
 
-//func Associate(dest any, bindingPath, mappingPath string) func() (any, string, string) {
-//	return func() (any, string, string) {
-//		return dest, bindingPath, mappingPath
-//	}
-//}
-
-func Associate(bindingPath, mappingPath string) func(c *scanOptions) {
-	return func(c *scanOptions) {
-
+func Associate(dest any, bindingPath, mappingPath string) associateDest {
+	return associateDest{
+		dest:        dest,
+		bindingPath: bindingPath,
+		mappingPath: mappingPath,
 	}
 }
+
+//func Associate(bindingPath, mappingPath string) func(c *scanOptions) {
+//	return func(c *scanOptions) {
+//
+//	}
+//}

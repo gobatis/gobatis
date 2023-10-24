@@ -610,8 +610,8 @@ func testAssociateQuery(t *testing.T) {
 			//"ids": batis.Extract(wraps, "$.Name"),
 			"ids": []string{"Laptop", "TV"},
 		},
-		//Associate: batis.Associate(&wraps, "product_name => $.Name", "$.Product"),
-		Scan: batis.Scan(&wraps, batis.Associate("product_name => $.Name", "$.Product"), batis.Ignore("Description")),
+		Associate: batis.Associate(&wraps, "product_name => $.Name", "$.Product"),
+		//Scan: batis.Scan(&wraps, batis.Associate("product_name => $.Name", "$.Product"), batis.Ignore("Description")),
 	}).Error
 
 	db.AssociateQuery(batis.AssociateQuery{

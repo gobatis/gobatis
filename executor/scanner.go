@@ -10,14 +10,22 @@ import (
 )
 
 type Scanner interface {
-	Scan(ptr any) error
+	Scan(ptr any, ignore ...string) error
 	RowsAffected() int64
 	LastInsertId() int64
 }
 
+type PagingScanner interface {
+	Scan(listPtr, countPtr any, ignore ...string)
+}
+
+type AssociateScanner interface {
+	Scan(ptr any, bindingPath, mappingPath string, ignore ...string)
+}
+
 var _ Scanner = (*scanner)(nil)
 var _ Scanner = (*insertBatchScanner)(nil)
-var _ Scanner = (*associateQueryScan)(nil)
+var _ Scanner = (*associateScanner)(nil)
 
 type scanner struct {
 	rows         *sql.Rows
@@ -34,7 +42,7 @@ func (s *scanner) LastInsertId() int64 {
 	return s.lastInsertId
 }
 
-func (s *scanner) Scan(ptr any) (err error) {
+func (s *scanner) Scan(ptr any, ignore ...string) (err error) {
 	if s.rows == nil {
 		err = fmt.Errorf("scan rows error: rows is nil")
 		return
@@ -108,7 +116,7 @@ type insertBatchScanner struct {
 	lastInsertId int64
 }
 
-func (i *insertBatchScanner) Scan(ptr any) error {
+func (i *insertBatchScanner) Scan(ptr any, ignore ...string) error {
 	rv := reflect.ValueOf(ptr)
 	if rv.Elem().Type().Kind() != reflect.Slice {
 		return fmt.Errorf("expect slice, got %s", rv.Elem().Type())
@@ -136,7 +144,7 @@ type associateBindingPath struct {
 	path   string
 }
 
-type associateQueryScan struct {
+type associateScanner struct {
 	rows         *sql.Rows
 	rowsAffected int64
 	lastInsertId int64
@@ -144,7 +152,7 @@ type associateQueryScan struct {
 	mappingPath  string
 }
 
-func (a *associateQueryScan) Scan(ptr any) (err error) {
+func (a *associateScanner) Scan(ptr any, ignore ...string) (err error) {
 	s := &scanner{
 		rows:       a.rows,
 		reflectRow: a.reflectRow,
@@ -158,7 +166,7 @@ func (a *associateQueryScan) Scan(ptr any) (err error) {
 	return
 }
 
-func (a *associateQueryScan) reflectRow(columns []string, row []interface{}, pv reflect.Value, first bool) (end bool, err error) {
+func (a *associateScanner) reflectRow(columns []string, row []interface{}, pv reflect.Value, first bool) (end bool, err error) {
 
 	m := map[string]any{}
 	for i, v := range columns {
@@ -170,7 +178,7 @@ func (a *associateQueryScan) reflectRow(columns []string, row []interface{}, pv 
 	return
 }
 
-func (a *associateQueryScan) matchBindingValue(m map[string]any, columns []string, row []interface{}, pv reflect.Value, first bool) (err error) {
+func (a *associateScanner) matchBindingValue(m map[string]any, columns []string, row []interface{}, pv reflect.Value, first bool) (err error) {
 
 	for _, v := range a.bindingPaths {
 		if _, ok := m[v.column]; !ok {
@@ -216,11 +224,11 @@ func (a *associateQueryScan) matchBindingValue(m map[string]any, columns []strin
 	return
 }
 
-func (a *associateQueryScan) equal(rv reflect.Value, v any) bool {
+func (a *associateScanner) equal(rv reflect.Value, v any) bool {
 	return fmt.Sprintf("%v", rv.Interface()) == fmt.Sprintf("%v", v)
 }
 
-func (a *associateQueryScan) fetchPathValue(pv reflect.Value, path string) (rv reflect.Value) {
+func (a *associateScanner) fetchPathValue(pv reflect.Value, path string) (rv reflect.Value) {
 	path = strings.TrimPrefix(path, "$.")
 	//fmt.Println("path:", path)
 	//spew.Json(pv.Type().String(), pv.Interface())
@@ -228,10 +236,10 @@ func (a *associateQueryScan) fetchPathValue(pv reflect.Value, path string) (rv r
 	return pv.FieldByName(path)
 }
 
-func (a *associateQueryScan) RowsAffected() int64 {
+func (a *associateScanner) RowsAffected() int64 {
 	return a.rowsAffected
 }
 
-func (a *associateQueryScan) LastInsertId() int64 {
+func (a *associateScanner) LastInsertId() int64 {
 	return a.lastInsertId
 }
