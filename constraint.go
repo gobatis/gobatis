@@ -1,4 +1,4 @@
-package executor
+package batis
 
 import (
 	"fmt"
@@ -12,7 +12,7 @@ var (
 )
 
 func newAffectConstraint(v any) (*affectConstraint, error) {
-	
+
 	switch r := v.(type) {
 	case int:
 		return &affectConstraint{rows: r}, nil

@@ -1,8 +1,8 @@
-package executor
+package batis
 
 import "context"
 
-type Param struct {
+type NameValue struct {
 	Name  string
 	Value any
 }
@@ -11,5 +11,5 @@ type Raw struct {
 	Ctx    context.Context
 	Query  bool
 	SQL    string
-	Params []Param
+	Params []NameValue
 }

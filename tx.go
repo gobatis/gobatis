@@ -1,4 +1,4 @@
-package executor
+package batis
 
 import (
 	"context"
@@ -9,7 +9,7 @@ func NewTx(tx *sql.Tx, traceID string) *Tx {
 	return &Tx{Tx: tx, traceId: traceID}
 }
 
-var _ Conn = (*Tx)(nil)
+var _ Conn2 = (*Tx)(nil)
 
 type Tx struct {
 	traceId string

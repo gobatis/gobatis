@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/gobatis/gobatis/dialector"
-	"github.com/gobatis/gobatis/executor"
 	"github.com/gobatis/gobatis/logger"
 	"github.com/gobatis/gobatis/parser"
 	"go.uber.org/atomic"
@@ -21,7 +20,7 @@ const (
 )
 
 type (
-	Scanner = executor.Scanner
+// Scanner = Scanner
 )
 
 func WithTx(parent context.Context, tx *sql.Tx) context.Context {
@@ -71,13 +70,13 @@ func Open(d dialector.Dialector, options ...Option) (db *DB, err error) {
 type DB struct {
 	*Config
 	Error        error
-	tx           *executor.Tx
+	tx           *Tx
 	ctx          context.Context
 	trace        bool
 	debug        bool
 	traceId      string
 	affect       any
-	executor     executor.Executor
+	executor     Executor
 	executed     atomic.Bool
 	rowsAffected int64
 	lastInsertId int64
@@ -180,7 +179,7 @@ func (d *DB) execute(dest any) {
 		d.addError(fmt.Errorf("repeat execution"))
 		return
 	}
-	d.addError(d.executor.Execute(d.Logger, "", d.trace, d.debug, d.affect, func(s executor.Scanner) error {
+	d.addError(d.executor.Execute(d.Logger, "", d.trace, d.debug, d.affect, func(s Scanner) error {
 		if d.executor.Query() {
 			e := s.Scan(dest)
 			if e != nil {
@@ -193,7 +192,7 @@ func (d *DB) execute(dest any) {
 	}))
 }
 
-func (d *DB) conn() executor.Conn {
+func (d *DB) conn() Conn2 {
 	if d.tx != nil {
 		return d.tx
 	} else {
@@ -201,11 +200,11 @@ func (d *DB) conn() executor.Conn {
 		if err != nil {
 			d.addError(err)
 		}
-		return executor.NewDB(conn, d.traceId)
+		return NewDB2(conn, d.traceId)
 	}
 }
 
-func (d *DB) raw(element Element) (raw *executor.Raw, err error) {
+func (d *DB) raw(element Element) (raw *Raw, err error) {
 	raw, err = element.Raw(d.Dialector.Namer(), "db")
 	if err != nil {
 		err = fmt.Errorf("%w, %s", PrepareSQLRawErr, err)
@@ -216,14 +215,14 @@ func (d *DB) raw(element Element) (raw *executor.Raw, err error) {
 }
 
 // 执行查询语句
-func (d *DB) Query(sql string, params ...executor.Param) *DB {
+func (d *DB) Query(sql string, params ...NameValue) *DB {
 	c := d.clone()
 	raw, err := c.raw(query{sql: sql, params: params})
 	if err != nil {
 		c.addError(err)
 		return c
 	}
-	c.executor = executor.NewDefault(c.conn(), raw)
+	c.executor = NewDefault(c.conn(), raw)
 	return c
 }
 
@@ -247,14 +246,14 @@ func (d *DB) RowsAffected() (int64, error) {
 }
 
 // 执行 SQL 语句
-func (d *DB) Exec(sql string, params ...executor.Param) *DB {
+func (d *DB) Exec(sql string, params ...NameValue) *DB {
 	c := d.clone()
 	raw, err := c.raw(exec{sql: sql, params: params})
 	if err != nil {
 		c.addError(err)
 		return c
 	}
-	c.executor = executor.NewDefault(c.conn(), raw)
+	c.executor = NewDefault(c.conn(), raw)
 	c.execute(nil)
 	return c
 }
@@ -267,7 +266,7 @@ func (d *DB) Delete(table string, where Element) *DB {
 		c.addError(err)
 		return c
 	}
-	c.executor = executor.NewDefault(c.conn(), raw)
+	c.executor = NewDefault(c.conn(), raw)
 	c.execute(nil)
 	return c
 }
@@ -281,7 +280,7 @@ func (d *DB) Update(table string, data map[string]any, where Element, elems ...E
 		c.addError(err)
 		return c
 	}
-	c.executor = executor.NewDefault(c.conn(), raw)
+	c.executor = NewDefault(c.conn(), raw)
 	if !raw.Query {
 		c.execute(nil)
 	}
@@ -297,14 +296,14 @@ func (d *DB) Insert(table string, data any, elems ...Element) *DB {
 		c.addError(err)
 		return c
 	}
-	c.executor = executor.NewDefault(c.conn(), raw)
+	c.executor = NewDefault(c.conn(), raw)
 	if !raw.Query {
 		c.execute(nil)
 	}
 	return c
 }
 
-func (d *DB) setExecutor(e executor.Executor) {
+func (d *DB) setExecutor(e Executor) {
 	if d.executor != nil {
 		d.addError(fmt.Errorf("executor duplicated"))
 		return
@@ -325,13 +324,13 @@ func (d *DB) InsertBatch(table string, batch int, data any, elems ...Element) *D
 		return c
 	}
 
-	chunks, err := executor.SplitStructSlice(data, batch)
+	chunks, err := SplitStructSlice(data, batch)
 	if err != nil {
 		c.addError(fmt.Errorf("%w, %s", InvalidInsertBatchDataTypeErr, err))
 		return c
 	}
 
-	var raws []*executor.Raw
+	var raws []*Raw
 	var q bool
 	for _, v := range chunks {
 		i := &insertBatch{
@@ -340,7 +339,7 @@ func (d *DB) InsertBatch(table string, batch int, data any, elems ...Element) *D
 			data:  v,
 			elems: elems,
 		}
-		var raw *executor.Raw
+		var raw *Raw
 		raw, err = c.raw(i)
 		if err != nil {
 			c.addError(err)
@@ -352,7 +351,7 @@ func (d *DB) InsertBatch(table string, batch int, data any, elems ...Element) *D
 		raws = append(raws, raw)
 	}
 
-	c.setExecutor(executor.NewInsertBatch(c.context(), c.conn(), raws))
+	c.setExecutor(NewInsertBatch(c.context(), c.conn(), raws))
 	if !q {
 		c.execute(nil)
 	}
@@ -370,7 +369,7 @@ func (d *DB) ParallelQuery(queryer ...ParallelQuery) *DB {
 		return c
 	}
 
-	var executors []executor.Executor
+	var executors []Executor
 	for _, v := range queryer {
 		item, err := v.executor(d.Dialector.Namer(), "db")
 		if err != nil {
@@ -387,7 +386,7 @@ func (d *DB) ParallelQuery(queryer ...ParallelQuery) *DB {
 	pos := logger.CallFuncPos(0)
 	for _, v := range executors {
 		wg.Add(1)
-		go func(v executor.Executor) {
+		go func(v Executor) {
 			defer func() {
 				wg.Done()
 			}()
@@ -416,23 +415,23 @@ func (d *DB) PagingQuery(query PagingQuery) *DB {
 
 func (d *DB) AssociateQuery(query AssociateQuery) *DB {
 
-	raw := &executor.Raw{
+	raw := &Raw{
 		Ctx:    d.context(),
 		Query:  true,
 		SQL:    query.SQL,
 		Params: nil,
 	}
 	for k, v := range query.Params {
-		raw.Params = append(raw.Params, executor.Param{
+		raw.Params = append(raw.Params, NameValue{
 			Name:  k,
 			Value: v,
 		})
 	}
 
 	c := d.clone()
-	c.setExecutor(executor.NewAssociateQuery(c.conn(), raw, query.Associate.dest,
+	c.setExecutor(NewAssociateQuery(c.conn(), raw, query.Associate.dest,
 		query.Associate.bindingPath, query.Associate.mappingPath))
-	
+
 	c.execute(nil)
 
 	return c
@@ -442,7 +441,7 @@ func (d *DB) FetchQuery(query FetchQuery) error {
 
 	c := d.clone()
 
-	raw := &executor.Raw{
+	raw := &Raw{
 		Ctx:    d.context(),
 		Query:  true,
 		SQL:    query.SQL,
@@ -455,7 +454,7 @@ func (d *DB) FetchQuery(query FetchQuery) error {
 	}
 
 	for k, v := range query.Params {
-		raw.Params = append(raw.Params, executor.Param{
+		raw.Params = append(raw.Params, NameValue{
 			Name:  k,
 			Value: v,
 		})
@@ -463,8 +462,8 @@ func (d *DB) FetchQuery(query FetchQuery) error {
 	if c.traceId == "" {
 		c.traceId = fmt.Sprintf("TID%d", time.Now().UnixNano())
 	}
-	c.setExecutor(executor.NewFetchQuery(c.context(), c.conn(), raw, query.Batch))
-	return c.executor.Execute(c.Logger, "", c.trace, c.debug, nil, func(s executor.Scanner) error {
+	c.setExecutor(NewFetchQuery(c.context(), c.conn(), raw, query.Batch))
+	return c.executor.Execute(c.Logger, "", c.trace, c.debug, nil, func(s Scanner) error {
 		return query.Scan(s)
 	})
 }
@@ -497,14 +496,14 @@ func (d *DB) Begin() *DB {
 		c.traceId = fmt.Sprintf("%p", d)
 	}
 
-	c.tx = executor.NewTx(tx, c.traceId)
+	c.tx = NewTx(tx, c.traceId)
 
 	return c
 }
 
 func (d *DB) Commit() *DB {
 	if d.tx == nil {
-		d.addError(executor.ErrInvalidTransaction)
+		d.addError(ErrInvalidTransaction)
 		return d
 	}
 
@@ -526,7 +525,7 @@ func (d *DB) Commit() *DB {
 
 func (d *DB) Rollback() *DB {
 	if d.tx == nil {
-		d.addError(executor.ErrInvalidTransaction)
+		d.addError(ErrInvalidTransaction)
 		return d
 	}
 	defer func() {

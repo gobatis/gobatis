@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/gobatis/gobatis/dialector"
-	"github.com/gobatis/gobatis/executor"
 )
 
 //type ParallelQueryer interface {
@@ -18,18 +17,18 @@ type ParallelQuery struct {
 	//Scan   func(s Scanner) error
 }
 
-func (q ParallelQuery) executor(namer dialector.Namer, tag string) (*executor.ParallelQuery, error) {
+func (q ParallelQuery) executor(namer dialector.Namer, tag string) (*ParallelQueryExecutor, error) {
 	if q.Scan == nil {
 		return nil, NoScanDestErr
 	}
-	var params []executor.Param
+	var params []NameValue
 	for k, v := range q.Params {
-		params = append(params, executor.Param{
+		params = append(params, NameValue{
 			Name:  k,
 			Value: v,
 		})
 	}
-	raw := &executor.Raw{
+	raw := &Raw{
 		Ctx:    nil,
 		Query:  true,
 		SQL:    q.SQL,
@@ -38,7 +37,7 @@ func (q ParallelQuery) executor(namer dialector.Namer, tag string) (*executor.Pa
 	for k, v := range q.Params {
 		raw.Params = append(raw.Params, Param(k, v))
 	}
-	return &executor.ParallelQuery{Raw: raw, Dest: q.Scan}, nil
+	return &ParallelQueryExecutor{Raw: raw, Dest: q.Scan}, nil
 }
 
 func PagingScan(items any, count any) []any {
@@ -73,9 +72,9 @@ func (p PagingQuery) executors(namer dialector.Namer, tag string) ([]ParallelQue
 		return nil, fmt.Errorf("%w; got: %d", InvalidPagingScanDestErr, l)
 	}
 
-	var params []executor.Param
+	var params []NameValue
 	for k, v := range p.Params {
-		params = append(params, executor.Param{
+		params = append(params, NameValue{
 			Name:  k,
 			Value: v,
 		})

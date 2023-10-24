@@ -2,7 +2,6 @@ package batis
 
 import (
 	"errors"
-	"github.com/gobatis/gobatis/executor"
 )
 
 var (
@@ -13,5 +12,5 @@ var (
 	InvalidInsertBatchDataErr     = errors.New("invalid InsertBatch data")
 	InvalidInsertBatchDataTypeErr = errors.New("invalid InsertBatch data type")
 	PrepareSQLRawErr              = errors.New("prepare sql error")
-	NoScanDestErr                 = executor.NoScanDestErr
+	//NoScanDestErr                 = NoScanDestErr
 )

@@ -1,14 +1,14 @@
-package executor
+package batis
 
 import (
 	"errors"
 	"testing"
-	
+
 	"github.com/stretchr/testify/require"
 )
 
 func TestAffecting_Check(t *testing.T) {
-	
+
 	r, err := newAffectConstraint("10+")
 	require.NoError(t, err)
 	t.Log(r)

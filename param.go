@@ -6,7 +6,6 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/gobatis/gobatis/executor"
 	"github.com/gobatis/gobatis/parser"
 )
 
@@ -18,8 +17,8 @@ type Params map[string]any
 // The "Name" field is set to the input name string,
 // and the "Value" field is set to the input value of any type.
 // This function can be useful for generating parameters to be passed into other functions or APIs.
-func Param(name string, value any) executor.Param {
-	return executor.Param{Name: name, Value: value}
+func Param(name string, value any) NameValue {
+	return NameValue{Name: name, Value: value}
 }
 
 func LooseDest(dest any, fields ...string) Dest {

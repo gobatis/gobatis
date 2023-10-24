@@ -1,4 +1,4 @@
-package executor
+package batis
 
 import (
 	"database/sql"
@@ -139,13 +139,13 @@ func printVars(vars []interface{}) string {
 //	return strings.ToLower(snakeStr)
 //}
 
-func Extract[T any, V any](items []T, fn func(item T) V) []V {
-	var r []V
-	for _, v := range items {
-		r = append(r, fn(v))
-	}
-	return r
-}
+//func Extract[T any, V any](items []T, fn func(item T) V) []V {
+//	var r []V
+//	for _, v := range items {
+//		r = append(r, fn(v))
+//	}
+//	return r
+//}
 
 func reflectRow(columns []string, row []interface{}, pv reflect.Value, first bool) (bool, error) {
 
@@ -624,9 +624,9 @@ func RowVars(row Row) (vars []string) {
 	return
 }
 
-func RowParams(row Row) (params []Param) {
+func RowParams(row Row) (params []NameValue) {
 	for _, v := range row {
-		params = append(params, Param{
+		params = append(params, NameValue{
 			Name:  v.column,
 			Value: v.value,
 		})
@@ -645,10 +645,10 @@ func RowsVars(rows []Row) (vars []string) {
 	return
 }
 
-func RowsParams(rows []Row) (params []Param) {
+func RowsParams(rows []Row) (params []NameValue) {
 	for i, v := range rows {
 		for _, vv := range v {
-			params = append(params, Param{
+			params = append(params, NameValue{
 				Name:  fmt.Sprintf("%s%d", vv.column, i),
 				Value: vv.value,
 			})

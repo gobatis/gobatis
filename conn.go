@@ -1,11 +1,11 @@
-package executor
+package batis
 
 import (
 	"context"
 	"database/sql"
 )
 
-type Conn interface {
+type Conn2 interface {
 	IsTx() bool
 	TraceId() string
 	Close() error

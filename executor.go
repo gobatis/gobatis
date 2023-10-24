@@ -1,4 +1,4 @@
-package executor
+package batis
 
 import (
 	"context"
@@ -17,30 +17,30 @@ type Executor interface {
 }
 
 var (
-	_ Executor = (*Default)(nil)
-	_ Executor = (*InsertBatch)(nil)
-	_ Executor = (*ParallelQuery)(nil)
-	_ Executor = (*FetchQuery)(nil)
-	_ Executor = (*AssociateQuery)(nil)
+	_ Executor = (*DefaultExecutor)(nil)
+	_ Executor = (*InsertBatchExecutor)(nil)
+	_ Executor = (*ParallelQueryExecutor)(nil)
+	_ Executor = (*FetchQueryExecutor)(nil)
+	_ Executor = (*AssociateQueryExecutor)(nil)
 )
 
-func NewDefault(conn Conn, raw *Raw) *Default {
-	return &Default{conn: conn, raw: raw, clean: true}
+func NewDefault(conn Conn2, raw *Raw) *DefaultExecutor {
+	return &DefaultExecutor{conn: conn, raw: raw, clean: true}
 }
 
-type Default struct {
+type DefaultExecutor struct {
 	rows   *sql.Rows
 	result sql.Result
-	conn   Conn
+	conn   Conn2
 	raw    *Raw
 	clean  bool
 }
 
-func (d *Default) Query() bool {
+func (d *DefaultExecutor) Query() bool {
 	return d.raw.Query
 }
 
-func (d *Default) Execute(log logger.Logger, pos string, trace, debug bool, affect any, scan func(Scanner) error) (err error) {
+func (d *DefaultExecutor) Execute(log logger.Logger, pos string, trace, debug bool, affect any, scan func(Scanner) error) (err error) {
 
 	beginAt := time.Now()
 
@@ -130,24 +130,24 @@ func (d *Default) Execute(log logger.Logger, pos string, trace, debug bool, affe
 	return
 }
 
-func (d *Default) scan(s *scanner, f func(Scanner) error) error {
+func (d *DefaultExecutor) scan(s *scanner, f func(Scanner) error) error {
 	if f == nil {
 		return nil
 	}
 	return f(s)
 }
 
-func NewInsertBatch(ctx context.Context, conn Conn, raws []*Raw) *InsertBatch {
-	return &InsertBatch{ctx: ctx, conn: conn, raws: raws}
+func NewInsertBatch(ctx context.Context, conn Conn2, raws []*Raw) *InsertBatchExecutor {
+	return &InsertBatchExecutor{ctx: ctx, conn: conn, raws: raws}
 }
 
-type InsertBatch struct {
+type InsertBatchExecutor struct {
 	ctx  context.Context
-	conn Conn
+	conn Conn2
 	raws []*Raw
 }
 
-func (i *InsertBatch) Query() bool {
+func (i *InsertBatchExecutor) Query() bool {
 	for _, v := range i.raws {
 		if v.Query {
 			return v.Query
@@ -156,7 +156,7 @@ func (i *InsertBatch) Query() bool {
 	return false
 }
 
-func (i *InsertBatch) Execute(log logger.Logger, pos string, trace, debug bool, affect any, scan func(Scanner) error) (err error) {
+func (i *InsertBatchExecutor) Execute(log logger.Logger, pos string, trace, debug bool, affect any, scan func(Scanner) error) (err error) {
 
 	conn := i.conn
 	var tx *sql.Tx
@@ -239,7 +239,7 @@ func (i *InsertBatch) Execute(log logger.Logger, pos string, trace, debug bool, 
 	return
 }
 
-func (i *InsertBatch) execute(conn Conn, raw *Raw, logger logger.Logger, pos string, trace, debug bool, ibs *insertBatchScanner, scan func(Scanner) error) (err error) {
+func (i *InsertBatchExecutor) execute(conn Conn2, raw *Raw, logger logger.Logger, pos string, trace, debug bool, ibs *insertBatchScanner, scan func(Scanner) error) (err error) {
 	d := NewDefault(conn, raw)
 	d.clean = false
 	err = d.Execute(logger, pos, trace, debug, nil, nil)
@@ -265,39 +265,39 @@ func (i *InsertBatch) execute(conn Conn, raw *Raw, logger logger.Logger, pos str
 	return
 }
 
-type ParallelQuery struct {
-	Conn Conn
+type ParallelQueryExecutor struct {
+	Conn Conn2
 	Raw  *Raw
 	Dest any
 }
 
-func (p *ParallelQuery) Query() bool {
+func (p *ParallelQueryExecutor) Query() bool {
 	return p.Raw.Query
 }
 
-func (p *ParallelQuery) Execute(logger logger.Logger, pos string, trace, debug bool, affect any, _ func(Scanner) error) error {
+func (p *ParallelQueryExecutor) Execute(logger logger.Logger, pos string, trace, debug bool, affect any, _ func(Scanner) error) error {
 	d := NewDefault(p.Conn, p.Raw)
 	return d.Execute(logger, pos, trace, debug, affect, func(s Scanner) error {
 		return s.Scan(p.Dest)
 	})
 }
 
-func NewFetchQuery(ctx context.Context, conn Conn, raw *Raw, limit uint) *FetchQuery {
-	return &FetchQuery{ctx: ctx, conn: conn, raw: raw, limit: limit}
+func NewFetchQuery(ctx context.Context, conn Conn2, raw *Raw, limit uint) *FetchQueryExecutor {
+	return &FetchQueryExecutor{ctx: ctx, conn: conn, raw: raw, limit: limit}
 }
 
-type FetchQuery struct {
+type FetchQueryExecutor struct {
 	ctx   context.Context
-	conn  Conn
+	conn  Conn2
 	raw   *Raw
 	limit uint
 }
 
-func (f *FetchQuery) Query() bool {
+func (f *FetchQueryExecutor) Query() bool {
 	return f.raw.Query
 }
 
-func (f *FetchQuery) Execute(log logger.Logger, pos string, trace, debug bool, affect any, scan func(Scanner) error) (err error) {
+func (f *FetchQueryExecutor) Execute(log logger.Logger, pos string, trace, debug bool, affect any, scan func(Scanner) error) (err error) {
 
 	conn := f.conn
 
@@ -389,19 +389,19 @@ func (f *FetchQuery) Execute(log logger.Logger, pos string, trace, debug bool, a
 	return
 }
 
-func NewAssociateQuery(conn Conn, raw *Raw, dest any, bindingPath string, mappingPath string) *AssociateQuery {
-	return &AssociateQuery{conn: conn, raw: raw, dest: dest, bindingPath: bindingPath, mappingPath: mappingPath}
+func NewAssociateQuery(conn Conn2, raw *Raw, dest any, bindingPath string, mappingPath string) *AssociateQueryExecutor {
+	return &AssociateQueryExecutor{conn: conn, raw: raw, dest: dest, bindingPath: bindingPath, mappingPath: mappingPath}
 }
 
-type AssociateQuery struct {
-	conn        Conn
+type AssociateQueryExecutor struct {
+	conn        Conn2
 	raw         *Raw
 	dest        any
 	bindingPath string
 	mappingPath string
 }
 
-func (a AssociateQuery) Execute(logger logger.Logger, pos string, trace, debug bool, affect any, _ func(s Scanner) error) (err error) {
+func (a AssociateQueryExecutor) Execute(logger logger.Logger, pos string, trace, debug bool, affect any, _ func(s Scanner) error) (err error) {
 	d := NewDefault(a.conn, a.raw)
 	d.clean = false
 
@@ -425,6 +425,6 @@ func (a AssociateQuery) Execute(logger logger.Logger, pos string, trace, debug b
 	return
 }
 
-func (a AssociateQuery) Query() bool {
+func (a AssociateQueryExecutor) Query() bool {
 	return a.raw.Query
 }
