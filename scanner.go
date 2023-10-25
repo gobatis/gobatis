@@ -207,15 +207,16 @@ func (i *insertBatchScanner) LastInsertId() int64 {
 }
 
 type pagingScanner struct {
-	query  *raw
-	count  *raw
-	method string
-	ctx    context.Context
-	conn   func() conn
-	logger logger.Logger
-	pos    string
-	trace  bool
-	debug  bool
+	query        *raw
+	count        *raw
+	method       string
+	ctx          context.Context
+	conn         func() conn
+	logger       logger.Logger
+	pos          string
+	trace        bool
+	debug        bool
+	rowsAffected int64
 }
 
 func (p *pagingScanner) setDest(dest any, ignore ...string) {
@@ -234,8 +235,7 @@ func (p *pagingScanner) setLastInertId(id int64) {
 }
 
 func (p *pagingScanner) RowsAffected() int64 {
-	//TODO implement me
-	panic("implement me")
+	return p.rowsAffected
 }
 
 func (p *pagingScanner) LastInsertId() int64 {
@@ -286,7 +286,12 @@ func (p *pagingScanner) Scan(countPtr, listPtr any, ignore ...string) (err error
 				ignore: ignore,
 			}
 			d.scan = func(s scanner) error {
-				return s.scan()
+				e := s.scan()
+				if e != nil {
+					return e
+				}
+				p.rowsAffected = s.RowsAffected()
+				return nil
 			}
 			return d.execute()
 		},
