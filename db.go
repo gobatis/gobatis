@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"sync"
 	"time"
 
 	"github.com/gobatis/gobatis/dialector"
@@ -17,6 +16,19 @@ const (
 	dbKey      = "GOBATIS_DB"
 	traceIdKey = "GOBATIS_TRACE_ID"
 	space      = " "
+)
+
+const (
+	methodQuery          = "Query"
+	methodExec           = "Exec"
+	methodDelete         = "Delete"
+	methodUpdate         = "Update"
+	methodInsert         = "Insert"
+	methodInsertBatch    = "InsertBatch"
+	methodParallelQuery  = "ParallelQuery"
+	methodPagingQuery    = "PagingQuery"
+	methodFetchQuery     = "FetchQuery"
+	methodAssociateQuery = "AssociateQuery"
 )
 
 func WithTx(parent context.Context, tx *sql.Tx) context.Context {
@@ -162,29 +174,66 @@ func (d *DB) context() context.Context {
 	return d.ctx
 }
 
-func (d *DB) defaultExecute(dest any) {
+//func (d *DB) newBaseExecutor(raw *raw) baseExecutor {
+//	return baseExecutor{
+//		conn:   d.conn(),
+//		raw:    raw,
+//		logger: d.Logger,
+//		pos:    logger.CallFuncPos(0),
+//		trace:  d.trace,
+//		debug:  d.debug,
+//		affect: d.affect,
+//	}
+//}
+
+func (d *DB) checkAffect() {
+	//if d.affect != nil {
+	//	var ac *affectConstraint
+	//	ac, err = newAffectConstraint(d.affect)
+	//	if err != nil {
+	//		return
+	//	}
+	//	err = ac.Check(int(d.scanner.RowsAffected()))
+	//	if err != nil {
+	//		return
+	//	}
+	//}
+}
+
+func (d *DB) execute() {
+
 	if d.Error != nil {
 		return
 	}
 	if d.executor == nil {
-		d.addError(fmt.Errorf("no executor"))
+		d.addError(fmt.Errorf("no executor in db chain"))
 		return
 	}
 	if d.executed.Swap(true) {
 		d.addError(fmt.Errorf("repeat execution"))
 		return
 	}
-	d.addError(d.executor.Execute(d.Logger, "", d.trace, d.debug, d.affect, func(s Scanner) error {
-		if d.executor.Query() {
-			e := s.Scan(dest)
-			if e != nil {
-				return e
-			}
-		}
-		d.rowsAffected = s.RowsAffected()
-		d.lastInsertId = s.LastInsertId()
-		return nil
-	}))
+
+	err := d.executor.execute()
+	if err != nil {
+		d.addError(err)
+		return
+	}
+}
+
+func (d *DB) prepareDefaultExecutor(method string, r *raw) *defaultExecutor {
+	return &defaultExecutor{
+		method:  method,
+		raw:     r,
+		ctx:     d.context(),
+		conn:    d.conn(),
+		logger:  d.Logger,
+		pos:     "",
+		trace:   d.trace,
+		debug:   d.debug,
+		scanner: &defaultScanner{},
+		scan:    nil,
+	}
 }
 
 func (d *DB) conn() conn {
@@ -199,32 +248,13 @@ func (d *DB) conn() conn {
 	}
 }
 
-func (d *DB) raw(elem Elem) (raw *Raw, err error) {
-	raw, err = elem.Raw(d.Dialector.Namer(), "db")
+func (d *DB) raw(elem Elem) (r *raw, err error) {
+	r, err = elem.Raw(d.Dialector.Namer(), d.ColumnTag)
 	if err != nil {
 		err = fmt.Errorf("%w, %s", PrepareSQLRawErr, err)
 		return
 	}
-	raw.Ctx = d.context()
 	return
-}
-
-// 执行查询语句
-func (d *DB) Query(sql string, params ...NameValue) *DB {
-	c := d.clone()
-	raw, err := c.raw(query{sql: sql, params: params})
-	if err != nil {
-		c.addError(err)
-		return c
-	}
-	c.executor = newDefaultExecutor(c.conn(), raw)
-	return c
-}
-
-// 扫描结果集
-func (d *DB) Scan(dest any) *DB {
-	d.defaultExecute(dest)
-	return d
 }
 
 func (d *DB) LastInsertId() (int64, error) {
@@ -235,29 +265,66 @@ func (d *DB) RowsAffected() (int64, error) {
 	return d.rowsAffected, d.Error
 }
 
-// 执行 SQL 语句
-func (d *DB) Exec(sql string, params ...NameValue) *DB {
+// 扫描结果集
+func (d *DB) Scan(dest any, ignore ...string) *DB {
+	if d.executor == nil {
+		d.addError(fmt.Errorf("no executor found in db chain"))
+		return d
+	}
+	switch d.executor.Method() {
+	case methodQuery, methodExec, methodUpdate, methodDelete, methodInsertBatch:
+		d.executor.setScan(func(s scanner) error {
+			s.setDest(dest, ignore...)
+			e := s.scan()
+			if e != nil {
+				return e
+			}
+			d.rowsAffected = s.RowsAffected()
+			d.lastInsertId = s.LastInsertId()
+			return nil
+		})
+		d.execute()
+	default:
+		d.addError(fmt.Errorf("moethod: %s unsuppoted Scan method", d.executor.Method()))
+	}
+	return d
+}
+
+// 执行查询语句
+func (d *DB) Query(sql string, params ...NameValue) *DB {
 	c := d.clone()
-	raw, err := c.raw(exec{sql: sql, params: params})
+	r, err := c.raw(query{sql: sql, params: params})
 	if err != nil {
 		c.addError(err)
 		return c
 	}
-	c.executor = newDefaultExecutor(c.conn(), raw)
-	c.defaultExecute(nil)
+	c.setExecutor(c.prepareDefaultExecutor(methodQuery, r))
+	return c
+}
+
+// 执行 SQL 语句
+func (d *DB) Exec(sql string, params ...NameValue) *DB {
+	c := d.clone()
+	r, err := c.raw(exec{sql: sql, params: params})
+	if err != nil {
+		c.addError(err)
+		return c
+	}
+	c.setExecutor(c.prepareDefaultExecutor(methodExec, r))
+	c.execute()
 	return c
 }
 
 // 执行删除操作
 func (d *DB) Delete(table string, where Elem) *DB {
 	c := d.clone()
-	raw, err := c.raw(del{table: table, elems: []Elem{where}})
+	r, err := c.raw(del{table: table, elems: []Elem{where}})
 	if err != nil {
 		c.addError(err)
 		return c
 	}
-	c.executor = newDefaultExecutor(c.conn(), raw)
-	c.defaultExecute(nil)
+	c.setExecutor(c.prepareDefaultExecutor(methodDelete, r))
+	c.execute()
 	return c
 }
 
@@ -265,14 +332,14 @@ func (d *DB) Delete(table string, where Elem) *DB {
 func (d *DB) Update(table string, data map[string]any, where Elem, elems ...Elem) *DB {
 	c := d.clone()
 	u := update{table: table, data: data, elems: append([]Elem{where}, elems...)}
-	raw, err := c.raw(u)
+	r, err := c.raw(u)
 	if err != nil {
 		c.addError(err)
 		return c
 	}
-	c.executor = newDefaultExecutor(c.conn(), raw)
-	if !raw.Query {
-		c.defaultExecute(nil)
+	c.setExecutor(c.prepareDefaultExecutor(methodUpdate, r))
+	if !r.Query {
+		c.execute()
 	}
 	return c
 }
@@ -281,28 +348,38 @@ func (d *DB) Update(table string, data map[string]any, where Elem, elems ...Elem
 func (d *DB) Insert(table string, data any, elems ...Elem) *DB {
 	c := d.clone()
 	i := &insert{table: table, data: data, elems: elems}
-	raw, err := c.raw(i)
+	r, err := c.raw(i)
 	if err != nil {
 		c.addError(err)
 		return c
 	}
-	c.executor = newDefaultExecutor(c.conn(), raw)
-	if !raw.Query {
-		c.defaultExecute(nil)
+	c.setExecutor(c.prepareDefaultExecutor(methodInsert, r))
+	if !r.Query {
+		c.execute()
 	}
 	return c
 }
 
-func (d *DB) setExecutor(e executor) {
+func (d *DB) duplicatedExecutor() bool {
 	if d.executor != nil {
-		d.addError(fmt.Errorf("executor duplicated"))
-		return
+		d.addError(fmt.Errorf("method: %s executor duplicated in db chain", d.executor.Method()))
+		return false
 	}
-	d.executor = e
+	return true
+}
+
+func (d *DB) setExecutor(e executor) {
+	if d.duplicatedExecutor() {
+		d.executor = e
+	}
 }
 
 func (d *DB) InsertBatch(table string, batch int, data any, elems ...Elem) *DB {
 	c := d.clone()
+
+	if !c.duplicatedExecutor() {
+		return c
+	}
 
 	if batch <= 0 {
 		c.addError(fmt.Errorf("%w, got %d", InvalidInsertBatchBatchErr, batch))
@@ -320,7 +397,7 @@ func (d *DB) InsertBatch(table string, batch int, data any, elems ...Elem) *DB {
 		return c
 	}
 
-	var raws []*Raw
+	var raws []*raw
 	var q bool
 	for _, v := range chunks {
 		i := &insertBatch{
@@ -329,23 +406,27 @@ func (d *DB) InsertBatch(table string, batch int, data any, elems ...Elem) *DB {
 			data:  v,
 			elems: elems,
 		}
-		var raw *Raw
-		raw, err = c.raw(i)
+		var r *raw
+		r, err = c.raw(i)
 		if err != nil {
 			c.addError(err)
 			return c
 		}
-		if raw.Query {
+		if r.Query {
 			q = true
 		}
-		raws = append(raws, raw)
+		raws = append(raws, r)
 	}
 
-	c.setExecutor(newInsertBatch(c.context(), c.conn(), raws))
+	c.setExecutor(&insertBatchExecutor{})
 	if !q {
-		c.defaultExecute(nil)
+		c.execute()
 	}
 	return c
+}
+
+func (d *DB) insertBatch() {
+
 }
 
 func (d *DB) ParallelQuery(queryer ...ParallelQuery) *DB {
@@ -354,115 +435,114 @@ func (d *DB) ParallelQuery(queryer ...ParallelQuery) *DB {
 		c.addError(NoParallelQueryerErr)
 		return c
 	}
-	if d.executor != nil {
-		c.addError(fmt.Errorf("db executor confilct"))
+
+	if c.tx != nil {
+		c.addError(fmt.Errorf("transcation mode not support ParallelQuery"))
 		return c
 	}
 
-	var executors []*parallelQueryExecutor
-	for _, v := range queryer {
-		item, err := v.executor(d.Dialector.Namer(), c.ColumnTag)
-		if err != nil {
-			c.addError(err)
-			return c
-		}
-		item.scanner = v.Scan
-		item.Conn = c.conn()
-		item.Raw.Ctx = c.context()
-		executors = append(executors, item)
-	}
-
-	lock := sync.Mutex{}
-	wg := sync.WaitGroup{}
 	pos := logger.CallFuncPos(0)
-	for _, v := range executors {
-		wg.Add(1)
-		go func(v *parallelQueryExecutor) {
-			defer func() {
-				wg.Done()
-			}()
-			err := v.Execute(c.Logger, pos, d.trace, d.debug, nil, v.scanner)
-			if err != nil {
-				lock.Lock()
-				c.addError(err)
-				lock.Unlock()
-			}
-		}(v)
-	}
-	wg.Wait()
+
+	c.setExecutor(&parallelQueryExecutor{
+		queries: queryer,
+		method:  methodParallelQuery,
+		ctx:     c.context(),
+		conn:    c.conn,
+		logger:  c.Logger,
+		pos:     pos,
+		trace:   c.trace,
+		debug:   c.debug,
+	})
+	c.execute()
 
 	return c
 }
 
 func (d *DB) PagingQuery(query PagingQuery) *DB {
 	c := d.clone()
-	queries, s, err := query.executors(d.Dialector.Namer(), "db")
-	if err != nil {
-		c.addError(err)
+
+	if c.tx != nil {
+		c.addError(fmt.Errorf("transcation mode not support ParallelQuery"))
 		return c
 	}
-	if c.ParallelQuery(queries...).Error != nil {
-		return c
-	}
-	if query.Scan != nil {
-		c.addError(query.Scan(s))
-	}
+
+	pos := logger.CallFuncPos(0)
+
+	c.setExecutor(&pagingQueryExecutor{
+		query:  query,
+		method: methodPagingQuery,
+		ctx:    c.context(),
+		conn:   c.conn,
+		logger: c.Logger,
+		pos:    pos,
+		trace:  c.trace,
+		debug:  c.debug,
+	})
+	c.execute()
+	
 	return c
 }
 
 func (d *DB) AssociateQuery(query AssociateQuery) *DB {
 
-	raw := &Raw{
-		Ctx:    d.context(),
-		Query:  true,
-		SQL:    query.SQL,
-		Params: nil,
-	}
-	for k, v := range query.Params {
-		raw.Params = append(raw.Params, NameValue{
-			Name:  k,
-			Value: v,
-		})
-	}
-
 	c := d.clone()
+	if c.executor != nil {
+		c.addError(fmt.Errorf("db executor confilct"))
+		return c
+	}
 
-	e := newAssociateQueryExecutor(c.conn(), raw)
+	r := &raw{
+		Query: true,
+		SQL:   query.SQL,
+		Vars:  query.Params,
+	}
 
-	c.addError(e.Execute(c.Logger, "", c.trace, c.debug, nil, query.Scan))
+	e := c.prepareDefaultExecutor("AssociateQuery", r)
+	e.scanner = &associateScanner{}
+	e.scan = func(s scanner) error {
+		return query.Scan(s.(AssociateScanner))
+	}
+
+	c.setExecutor(e)
+	c.addError(e.execute())
 
 	return c
 }
 
 func (d *DB) FetchQuery(query FetchQuery) error {
 
-	c := d.clone()
+	//c := d.clone()
 
-	raw := &Raw{
-		Ctx:    d.context(),
-		Query:  true,
-		SQL:    query.SQL,
-		Params: nil,
-	}
-
-	if query.Scan == nil {
-		d.addError(fmt.Errorf("FetchQeruy.Scan is nil"))
-		return c.Error
-	}
-
-	for k, v := range query.Params {
-		raw.Params = append(raw.Params, NameValue{
-			Name:  k,
-			Value: v,
-		})
-	}
-	if c.traceId == "" {
-		c.traceId = fmt.Sprintf("TID%d", time.Now().UnixNano())
-	}
-	c.setExecutor(newFetchQuery(c.context(), c.conn(), raw, query.Batch))
-	return c.executor.Execute(c.Logger, "", c.trace, c.debug, nil, func(s Scanner) error {
-		return query.Scan(s)
-	})
+	//raw := &raw{
+	//	Ctx:    d.context(),
+	//	Query:  true,
+	//	SQL:    query.SQL,
+	//	Params: nil,
+	//}
+	//
+	//if query.Scan == nil {
+	//	d.addError(fmt.Errorf("FetchQeruy.Scan is nil"))
+	//	return c.Error
+	//}
+	//
+	//for k, v := range query.Params {
+	//	raw.Params = append(raw.Params, NameValue{
+	//		Name:  k,
+	//		Value: v,
+	//	})
+	//}
+	//if c.traceId == "" {
+	//	c.traceId = fmt.Sprintf("TID%d", time.Now().UnixNano())
+	//}
+	//c.setExecutor(newFetchQueryExecutor(c.context(), c.conn(), raw, query.Batch))
+	//
+	//return c.executor.execute(func(s scanner) error {
+	//	return query.Scan(s.(Scanner))
+	//})
+	//return c.executor.Execute(c.Logger, "", c.trace, c.debug, nil, func(s Scanner) error {
+	//	return query.Scan(s)
+	//})
+	return nil
 }
 
 func (d *DB) Begin() *DB {

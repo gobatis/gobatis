@@ -319,7 +319,8 @@ func testInsert(t *testing.T) {
 
 // Testing batch insertion of data, including checking the number of affected rows,
 // verifying the inserted data, returning the last insert ID, and scanning all auto-incremented IDs.
-func testInsertBatch(t *testing.T) {
+func TestInsertBatch(t *testing.T) {
+	initDB(t)
 	affected, err := db.Debug().Affect(5).InsertBatch("products", 2, extractMemProducts(Smartwatch)).RowsAffected()
 	require.NoError(t, err)
 	require.Equal(t, int64(5), affected)
@@ -381,6 +382,15 @@ func testExec(t *testing.T) {
 //	require.Error(t, tx2.Error)
 //}
 
+func TestQuery(t *testing.T) {
+	initDB(t)
+	var products []*Product
+	err := db.Query(`select * from products`).Scan(&products).Error
+	require.NoError(t, err)
+
+	spew.Json(products)
+}
+
 func testUpdate(t *testing.T) {
 
 	memProducts[Smartphone].Price = decimal.NewFromFloat(900)
@@ -439,6 +449,7 @@ func TestParallelQuery(t *testing.T) {
 			},
 		},
 	).Error
+	spew.Json(count, products)
 	require.NoError(t, err)
 	require.Equal(t, int64(3), count)
 	require.Equal(t, 3, len(products))
@@ -454,7 +465,7 @@ func TestParallelQuery(t *testing.T) {
 func TestPagingQuery(t *testing.T) {
 
 	initDB(t)
-	
+
 	m := map[int]string{
 		0: Chair,
 		1: BluetoothHeadphones,
@@ -485,12 +496,7 @@ func TestPagingQuery(t *testing.T) {
 		err := db.Debug().PagingQuery(q).Error
 		require.NoError(t, err)
 		require.Equal(t, int64(4), count)
-
-		//q.GetCount()
-		//q.Scan(&)
-
-		//+
-
+		
 		if i < 4 {
 			require.Equal(t, 1, len(products))
 			for _, v := range products {
@@ -506,8 +512,8 @@ func TestPagingQuery(t *testing.T) {
 	}
 }
 
-func testFetchQuery(t *testing.T) {
-
+func TestFetchQuery(t *testing.T) {
+	initDB(t)
 	var products []*Product
 	err := db.Debug().FetchQuery(batis.FetchQuery{
 		SQL: "select * from products where price < #{price} order by price asc",

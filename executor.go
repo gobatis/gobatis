@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/gobatis/gobatis/logger"
@@ -12,152 +13,133 @@ import (
 )
 
 type executor interface {
-	Execute(logger logger.Logger, pos string, trace, debug bool, affect any, scan func(s Scanner) error) (err error)
-	Query() bool
+	Method() string
+	setScan(scan func(scanner) error)
+	execute() error
 }
 
 var (
 	_ executor = (*defaultExecutor)(nil)
 	_ executor = (*insertBatchExecutor)(nil)
 	_ executor = (*parallelQueryExecutor)(nil)
+	_ executor = (*pagingQueryExecutor)(nil)
 	_ executor = (*fetchQueryExecutor)(nil)
-	_ any      = (*associateQueryExecutor)(nil)
+	_ executor = (*associateQueryExecutor)(nil)
 )
 
-func newDefaultExecutor(conn conn, raw *Raw) *defaultExecutor {
-	return &defaultExecutor{conn: conn, raw: raw, clean: true}
+type defaultExecutor struct {
+	method  string
+	raw     *raw
+	ctx     context.Context
+	conn    conn
+	logger  logger.Logger
+	pos     string
+	trace   bool
+	debug   bool
+	scanner scanner
+	scan    func(s scanner) error
 }
 
-type defaultExecutor struct {
-	rows   *sql.Rows
-	result sql.Result
-	conn   conn
-	raw    *Raw
-	clean  bool
+func (d *defaultExecutor) Method() string {
+	return d.method
+}
+
+func (d *defaultExecutor) setScan(scan func(scanner) error) {
+	d.scan = scan
 }
 
 func (d *defaultExecutor) Query() bool {
 	return d.raw.Query
 }
 
-func (d *defaultExecutor) Execute(log logger.Logger, pos string, trace, debug bool, affect any, scan func(Scanner) error) (err error) {
+func (d *defaultExecutor) execute() (err error) {
 
 	beginAt := time.Now()
 
-	vars := map[string]any{}
-	for _, v := range d.raw.Params {
-		vars[v.Name] = v.Value
-	}
-
-	r, err := xsql.Parse(log.Explain, d.raw.SQL, vars)
+	r, err := xsql.Parse(d.logger.Explain, d.raw.SQL, d.raw.Vars)
 	if err != nil {
 		return
 	}
-
-	var s *scanner
+	var rows *sql.Rows
 
 	defer func() {
-		if d.clean {
-			if d.rows != nil {
-				err = parser.AddError(err, d.rows.Close())
-			}
-			if !d.conn.IsTx() {
-				err = parser.AddError(err, d.conn.Close())
-			}
+		if rows != nil {
+			err = parser.AddError(err, rows.Close())
 		}
-		if s == nil {
-			s = &scanner{}
+		if !d.conn.IsTx() {
+			err = parser.AddError(err, d.conn.Close())
 		}
-		plainSQL, e := xsql.Explain(log.Explain, d.raw.SQL, vars)
+		plainSQL, e := xsql.Explain(d.logger.Explain, d.raw.SQL, d.raw.Vars)
 		if e != nil {
 			plainSQL = fmt.Sprintf("explain sql error: %s", e)
 		}
-		log.Trace(pos, d.conn.TraceId(), d.conn.IsTx(), err, &logger.SQLTrace{
-			Trace:        trace,
-			Debug:        debug,
+		d.logger.Trace(d.pos, d.conn.TraceId(), d.conn.IsTx(), err, &logger.SQLTrace{
+			Trace:        d.trace,
+			Debug:        d.debug,
 			BeginAt:      beginAt,
 			RawSQL:       r.Statement(),
 			PlainSQL:     plainSQL,
-			RowsAffected: s.rowsAffected,
+			RowsAffected: d.scanner.RowsAffected(),
 		})
 	}()
 
-	if d.raw.Query {
-		d.rows, err = d.conn.QueryContext(d.raw.Ctx, r.Statement(), r.Vars()...)
+	if !d.raw.Query {
+		var result sql.Result
+		result, err = d.conn.ExecContext(d.ctx, r.Statement(), r.Vars()...)
 		if err != nil {
 			return
 		}
-	} else {
-		d.result, err = d.conn.ExecContext(d.raw.Ctx, r.Statement(), r.Vars()...)
-		if err != nil {
-			return
-		}
-	}
-
-	if d.raw.Query {
-		s = &scanner{
-			rows:         d.rows,
-			rowsAffected: 0,
-			lastInsertId: 0,
-		}
-		err = d.scan(s, scan)
-	} else {
-		rowsAffected, _ := d.result.RowsAffected()
-		lastInsertId, _ := d.result.LastInsertId()
-		s = &scanner{
-			rows:         nil,
-			rowsAffected: rowsAffected,
-			lastInsertId: lastInsertId,
-		}
-		err = d.scan(s, scan)
-	}
-	if err != nil {
+		rowsAffected, _ := result.RowsAffected()
+		lastInsertId, _ := result.LastInsertId()
+		d.scanner.setRowsAffected(rowsAffected)
+		d.scanner.setLastInertId(lastInsertId)
 		return
 	}
 
-	if affect != nil {
-		var ac *affectConstraint
-		ac, err = newAffectConstraint(affect)
-		if err != nil {
-			return
-		}
-		err = ac.Check(int(s.rowsAffected))
-		if err != nil {
-			return
-		}
+	rows, err = d.conn.QueryContext(d.ctx, r.Statement(), r.Vars()...)
+	if err != nil {
+		return
+	}
+	d.scanner.setRows(rows)
+	err = d.scan(d.scanner)
+	if err != nil {
+		return
 	}
 
 	return
 }
 
-func (d *defaultExecutor) scan(s *scanner, f func(Scanner) error) error {
-	if f == nil {
-		return nil
-	}
-	return f(s)
-}
-
-func newInsertBatch(ctx context.Context, conn conn, raws []*Raw) *insertBatchExecutor {
-	return &insertBatchExecutor{ctx: ctx, conn: conn, raws: raws}
-}
-
 type insertBatchExecutor struct {
-	ctx  context.Context
-	conn conn
-	raws []*Raw
+	raws    []*raw
+	method  string
+	ctx     context.Context
+	conn    conn
+	logger  logger.Logger
+	pos     string
+	trace   bool
+	debug   bool
+	scanner scanner
+	scan    func(s scanner) error
 }
 
-func (i *insertBatchExecutor) Query() bool {
-	for _, v := range i.raws {
-		if v.Query {
-			return v.Query
-		}
-	}
-	return false
+func (i *insertBatchExecutor) Method() string {
+	return i.method
 }
 
-func (i *insertBatchExecutor) Execute(log logger.Logger, pos string, trace, debug bool, affect any, scan func(Scanner) error) (err error) {
+func (i *insertBatchExecutor) setScan(scan func(scanner) error) {
+	i.scan = scan
+}
 
+//func (i *insertBatchExecutor) Query() bool {
+//	for _, v := range i.raws {
+//		if v.Query {
+//			return v.Query
+//		}
+//	}
+//	return false
+//}
+
+func (i *insertBatchExecutor) execute() (err error) {
 	c := i.conn
 	var tx *sql.Tx
 	defer func() {
@@ -170,9 +152,9 @@ func (i *insertBatchExecutor) Execute(log logger.Logger, pos string, trace, debu
 			if err != nil {
 				now := time.Now()
 				err = parser.AddError(err, tx.Rollback())
-				log.Trace(pos, c.TraceId(), true, err, &logger.SQLTrace{
-					Trace:        trace,
-					Debug:        debug,
+				i.logger.Trace(i.pos, c.TraceId(), true, err, &logger.SQLTrace{
+					Trace:        i.trace,
+					Debug:        i.debug,
 					BeginAt:      now,
 					RawSQL:       "rollback",
 					PlainSQL:     "rollback",
@@ -189,9 +171,9 @@ func (i *insertBatchExecutor) Execute(log logger.Logger, pos string, trace, debu
 			return
 		}
 		c = NewTx(tx, c.TraceId())
-		log.Trace(pos, c.TraceId(), true, err, &logger.SQLTrace{
-			Trace:        trace,
-			Debug:        debug,
+		i.logger.Trace(i.pos, c.TraceId(), true, err, &logger.SQLTrace{
+			Trace:        i.trace,
+			Debug:        i.debug,
 			BeginAt:      now,
 			RawSQL:       "begin",
 			PlainSQL:     "begin",
@@ -199,27 +181,40 @@ func (i *insertBatchExecutor) Execute(log logger.Logger, pos string, trace, debu
 		})
 	}
 
-	ibs := &insertBatchScanner{}
-	for _, raw := range i.raws {
-		err = i.execute(c, raw, log, pos, trace, debug, ibs, func(s Scanner) error {
-			return scan(s)
-		})
+	//s := &insertBatchScanner{}
+	for _, r := range i.raws {
+		d := &defaultExecutor{
+			method:  i.method,
+			raw:     r,
+			ctx:     i.ctx,
+			conn:    c,
+			logger:  i.logger,
+			pos:     i.pos,
+			trace:   i.trace,
+			debug:   i.debug,
+			scanner: i.scanner,
+			scan:    i.scan,
+		}
+		// 内部回传 insertBatchScanner 给 f
+		// insertBatchScanner 会判断 dest 类型，并且将批量结果合并到 dest 中，并且处理 lastInsertId 和 rowAffected 值
+		// 供 db 取用
+		err = d.execute()
 		if err != nil {
 			return
 		}
 	}
 
-	if affect != nil {
-		var ac *affectConstraint
-		ac, err = newAffectConstraint(affect)
-		if err != nil {
-			return
-		}
-		err = ac.Check(int(ibs.rowsAffected))
-		if err != nil {
-			return
-		}
-	}
+	//if i.affect != nil {
+	//	var ac *affectConstraint
+	//	ac, err = newAffectConstraint(i.affect)
+	//	if err != nil {
+	//		return
+	//	}
+	//	err = ac.Check(int(s.rowsAffected))
+	//	if err != nil {
+	//		return
+	//	}
+	//}
 
 	now := time.Now()
 	err = tx.Commit()
@@ -227,9 +222,9 @@ func (i *insertBatchExecutor) Execute(log logger.Logger, pos string, trace, debu
 		return
 	}
 
-	log.Trace(pos, c.TraceId(), true, err, &logger.SQLTrace{
-		Trace:        trace,
-		Debug:        debug,
+	i.logger.Trace(i.pos, c.TraceId(), true, err, &logger.SQLTrace{
+		Trace:        i.trace,
+		Debug:        i.debug,
 		BeginAt:      now,
 		RawSQL:       "commit",
 		PlainSQL:     "commit",
@@ -239,195 +234,247 @@ func (i *insertBatchExecutor) Execute(log logger.Logger, pos string, trace, debu
 	return
 }
 
-func (i *insertBatchExecutor) execute(conn conn, raw *Raw, logger logger.Logger, pos string, trace, debug bool, ibs *insertBatchScanner, scan func(Scanner) error) (err error) {
-	d := newDefaultExecutor(conn, raw)
-	d.clean = false
-	err = d.Execute(logger, pos, trace, debug, nil, nil)
-	if err != nil {
-		return
-	}
-	defer func() {
-		if d.rows != nil {
-			err = parser.AddError(err, d.rows.Close())
-		}
-	}()
-	if d.result != nil {
-		lastInsertId, _ := d.result.LastInsertId()
-		rowsAffected, _ := d.result.RowsAffected()
-		ibs.lastInsertId = lastInsertId
-		ibs.rowsAffected += rowsAffected
-	}
-	ibs.rows = d.rows
-	err = scan(ibs)
-	if err != nil {
-		return
-	}
-	return
-}
+//	func newParallelQueryExecutor(baseExecutor baseExecutor) *parallelQueryExecutor {
+//		return &parallelQueryExecutor{baseExecutor: baseExecutor}
+//	}
 
 type parallelQueryExecutor struct {
-	Conn    conn
-	Raw     *Raw
-	scanner func(s Scanner) error
+	queries []ParallelQuery
+	method  string
+	ctx     context.Context
+	conn    func() conn
+	logger  logger.Logger
+	pos     string
+	trace   bool
+	debug   bool
 }
 
-func (p *parallelQueryExecutor) Query() bool {
-	return p.Raw.Query
+func (p parallelQueryExecutor) Method() string {
+	return p.method
 }
 
-func (p *parallelQueryExecutor) Execute(logger logger.Logger, pos string, trace, debug bool, affect any, f func(Scanner) error) error {
-	d := newDefaultExecutor(p.Conn, p.Raw)
-	d.clean = false
-	return d.Execute(logger, pos, trace, debug, affect, func(s Scanner) error {
-		if f == nil {
-			return nil
-		}
-		return f(s)
-	})
+func (p parallelQueryExecutor) setScan(scan func(scanner) error) {
+	panic("unimplemented methods were accessed")
 }
 
-func newFetchQuery(ctx context.Context, conn conn, raw *Raw, limit uint) *fetchQueryExecutor {
-	return &fetchQueryExecutor{ctx: ctx, conn: conn, raw: raw, limit: limit}
-}
-
-type fetchQueryExecutor struct {
-	ctx   context.Context
-	conn  conn
-	raw   *Raw
-	limit uint
-}
-
-func (f *fetchQueryExecutor) Query() bool {
-	return f.raw.Query
-}
-
-func (f *fetchQueryExecutor) Execute(log logger.Logger, pos string, trace, debug bool, affect any, scan func(Scanner) error) (err error) {
-
-	c := f.conn
-
-	var tx *sql.Tx
-	defer func() {
-		if tx != nil {
-			if err != nil {
-				now := time.Now()
-				err = parser.AddError(err, tx.Rollback())
-				log.Trace(pos, c.TraceId(), true, err, &logger.SQLTrace{
-					Trace:        trace,
-					Debug:        debug,
-					BeginAt:      now,
-					RawSQL:       "rollback",
-					PlainSQL:     "rollback",
-					RowsAffected: 0,
-				})
+func (p parallelQueryExecutor) execute() (err error) {
+	lock := sync.Mutex{}
+	wg := sync.WaitGroup{}
+	for _, v := range p.queries {
+		wg.Add(1)
+		go func(v ParallelQuery) {
+			defer func() {
+				wg.Done()
+			}()
+			d := &defaultExecutor{
+				method:  p.method,
+				raw:     v.raw(),
+				ctx:     p.ctx,
+				conn:    p.conn(),
+				logger:  p.logger,
+				pos:     p.pos,
+				trace:   p.trace,
+				debug:   p.debug,
+				scanner: &defaultScanner{},
+				scan: func(s scanner) error {
+					return v.Scan(s.(Scanner))
+				},
 			}
-		}
-	}()
-
-	if !c.IsTx() {
-		tx, err = c.BeginTx(f.ctx, nil)
-		if err != nil {
-			return
-		}
-		c = NewTx(tx, c.TraceId())
-	}
-
-	cursor := fmt.Sprintf("curosr_%s", c.TraceId())
-
-	d := newDefaultExecutor(c, &Raw{
-		Ctx:    f.ctx,
-		Query:  false,
-		SQL:    fmt.Sprintf("declare %s cursor for %s", cursor, f.raw.SQL),
-		Params: f.raw.Params,
-	})
-	err = d.Execute(log, pos, trace, debug, affect, nil)
-	if err != nil {
-		return
-	}
-
-	defer func() {
-		d = newDefaultExecutor(c, &Raw{
-			Ctx:    f.ctx,
-			Query:  false,
-			SQL:    fmt.Sprintf("close %s", cursor),
-			Params: nil,
-		})
-		err = parser.AddError(err, d.Execute(log, pos, trace, debug, affect, nil))
-
-		now := time.Now()
-		err = parser.AddError(err, tx.Commit())
-
-		log.Trace(pos, c.TraceId(), true, err, &logger.SQLTrace{
-			Trace:        trace,
-			Debug:        debug,
-			BeginAt:      now,
-			RawSQL:       "commit",
-			PlainSQL:     "commit",
-			RowsAffected: 0,
-		})
-	}()
-
-	for {
-		d = newDefaultExecutor(c, &Raw{
-			Ctx:    f.ctx,
-			Query:  true,
-			SQL:    fmt.Sprintf("fetch forward %d from %s", f.limit, cursor),
-			Params: nil,
-		})
-		var rowsAffected int64
-		err = d.Execute(log, pos, trace, debug, affect, func(s Scanner) error {
-			e := scan(s)
+			e := d.execute()
 			if e != nil {
-				return e
+				lock.Lock()
+				err = parser.AddError(err, e)
+				lock.Unlock()
 			}
-			rowsAffected = s.RowsAffected()
-			return nil
-		})
-		if err != nil {
-			return
-		}
-		if rowsAffected == 0 {
-			break
-		}
+		}(v)
 	}
-
+	wg.Wait()
 	return
 }
 
-func newAssociateQueryExecutor(conn conn, raw *Raw) *associateQueryExecutor {
-	return &associateQueryExecutor{conn: conn, raw: raw}
+type pagingQueryExecutor struct {
+	query  PagingQuery
+	method string
+	ctx    context.Context
+	conn   func() conn
+	logger logger.Logger
+	pos    string
+	trace  bool
+	debug  bool
 }
 
+func (p pagingQueryExecutor) Method() string {
+	return p.method
+}
+
+func (p pagingQueryExecutor) setScan(scan func(scanner) error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (p pagingQueryExecutor) execute() error {
+	if p.query.Limit <= 0 {
+		return InvalidLimitErr
+	}
+
+	w := ""
+	if p.query.Where != "" {
+		w = fmt.Sprintf(" where %s", p.query.Where)
+	}
+	o := ""
+	if p.query.Order != "" {
+		o = fmt.Sprintf(" order by %s", p.query.Order)
+	}
+
+	q := newRaw(true, fmt.Sprintf("select %s from %s%s%s limit %d offset %d", p.query.Select, p.query.From, w, o, p.query.Limit, p.query.Limit*p.query.Page), nil)
+	q.mergeVars(p.query.Params)
+
+	c := newRaw(true, fmt.Sprintf("select count(%s) from %s%s", p.query.Count, p.query.From, w), nil)
+	c.mergeVars(p.query.Params)
+
+	s := &pagingScanner{
+		query:  q,
+		count:  c,
+		method: p.method,
+		ctx:    p.ctx,
+		conn:   p.conn,
+		logger: p.logger,
+		pos:    p.pos,
+		trace:  p.trace,
+		debug:  p.debug,
+	}
+	return p.query.Scan(s)
+}
+
+//	func newFetchQueryExecutor(base baseExecutor, limit uint) *fetchQueryExecutor {
+//		return &fetchQueryExecutor{baseExecutor: base, limit: limit}
+//	}
+type fetchQueryExecutor struct {
+	limit uint
+	*defaultExecutor
+}
+
+//
+//func (f *fetchQueryExecutor) Query() bool {
+//	return f.raw.Query
+//}
+//
+//func (f *fetchQueryExecutor) execute(c func(s scanner) error) (err error) {
+//
+//	n := f.conn
+//
+//	var tx *sql.Tx
+//	defer func() {
+//		if tx != nil {
+//			if err != nil {
+//				now := time.Now()
+//				err = parser.AddError(err, tx.Rollback())
+//				f.logger.Trace(f.pos, n.TraceId(), true, err, &logger.SQLTrace{
+//					Trace:        f.trace,
+//					Debug:        f.debug,
+//					BeginAt:      now,
+//					RawSQL:       "rollback",
+//					PlainSQL:     "rollback",
+//					RowsAffected: 0,
+//				})
+//			}
+//		}
+//	}()
+//
+//	if !n.IsTx() {
+//		tx, err = n.BeginTx(f.ctx, nil)
+//		if err != nil {
+//			return
+//		}
+//		n = NewTx(tx, n.TraceId())
+//	}
+//
+//	cursor := fmt.Sprintf("curosr_%s", n.TraceId())
+//
+//	d := newDefaultExecutor(baseExecutor{
+//		ctx:  f.ctx,
+//		conn: f.conn,
+//		raw: &raw{
+//			SQL: fmt.Sprintf("declare %s cursor for %s", cursor, f.raw.SQL),
+//		},
+//		logger: f.logger,
+//		pos:    f.pos,
+//		trace:  f.trace,
+//		debug:  f.debug,
+//		affect: f.affect,
+//	}, nil)
+//	err = d.execute(nil)
+//	if err != nil {
+//		return
+//	}
+//
+//	defer func() {
+//		d = newDefaultExecutor(n, &raw{
+//			Ctx:    f.ctx,
+//			Query:  false,
+//			SQL:    fmt.Sprintf("close %s", cursor),
+//			Params: nil,
+//		})
+//		err = parser.AddError(err, d.Execute(log, pos, trace, debug, affect, nil))
+//
+//		now := time.Now()
+//		err = parser.AddError(err, tx.Commit())
+//
+//		log.Trace(pos, n.TraceId(), true, err, &logger.SQLTrace{
+//			Trace:        trace,
+//			Debug:        debug,
+//			BeginAt:      now,
+//			RawSQL:       "commit",
+//			PlainSQL:     "commit",
+//			RowsAffected: 0,
+//		})
+//	}()
+//
+//	for {
+//		d = newDefaultExecutor(n, &raw{
+//			Ctx:    f.ctx,
+//			Query:  true,
+//			SQL:    fmt.Sprintf("fetch forward %d from %s", f.limit, cursor),
+//			Params: nil,
+//		})
+//		var rowsAffected int64
+//		err = d.Execute(log, pos, trace, debug, affect, func(s Scanner) error {
+//			e := scan(s)
+//			if e != nil {
+//				return e
+//			}
+//			rowsAffected = s.RowsAffected()
+//			return nil
+//		})
+//		if err != nil {
+//			return
+//		}
+//		if rowsAffected == 0 {
+//			break
+//		}
+//	}
+//
+//	return
+//}
+
+//	func newAssociateQueryExecutor(base baseExecutor) *associateQueryExecutor {
+//		return &associateQueryExecutor{baseExecutor: base}
+//	}
 type associateQueryExecutor struct {
-	conn conn
-	raw  *Raw
+	*defaultExecutor
 }
 
-func (a associateQueryExecutor) Execute(logger logger.Logger, pos string, trace, debug bool, affect any, scan func(s AssociateScanner) error) (err error) {
-	d := newDefaultExecutor(a.conn, a.raw)
-	d.clean = false
-
-	err = d.Execute(logger, pos, trace, debug, affect, nil)
-	if err != nil {
-		return
-	}
-	defer func() {
-		_ = d.rows.Close()
-	}()
-
-	if scan == nil {
-		return
-	}
-
-	err = scan(&associateScanner{
-		rows: d.rows,
-	})
-	if err != nil {
-		return
-	}
-
-	return
-}
-
-func (a associateQueryExecutor) Query() bool {
-	return a.raw.Query
-}
+//
+//func (a associateQueryExecutor) execute(f func(s scanner) error) error {
+//	//TODO implement me
+//	panic("implement me")
+//}
+//
+////func (a associateQueryExecutor) Execute(logger logger.Logger, pos string, trace, debug bool, affect any, s scanner) error {
+////	d := newDefaultExecutor(a.conn, a.raw)
+////	return d.Execute(logger, pos, trace, debug, affect, s)
+////}
+//
+//func (a associateQueryExecutor) Query() bool {
+//	return a.raw.Query
+//}

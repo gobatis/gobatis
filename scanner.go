@@ -1,51 +1,93 @@
 package batis
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"reflect"
 	"regexp"
 	"strings"
+	"sync"
 
+	"github.com/gobatis/gobatis/logger"
+	"github.com/gobatis/gobatis/parser"
 	"github.com/gobatis/gobatis/reflects"
 )
 
-type Scanner interface {
-	Scan(ptr any, ignore ...string) error
+type scanner interface {
 	RowsAffected() int64
 	LastInsertId() int64
+	setRows(rows *sql.Rows)
+	setRowsAffected(count int64)
+	setLastInertId(id int64)
+	setDest(dest any, ignore ...string)
+	scan() error
+}
+
+type Scanner interface {
+	scanner
+	Scan(ptr any, ignore ...string) error
 }
 
 type PagingScanner interface {
+	scanner
 	Scan(countPtr, listPtr any, ignore ...string) error
 }
 
 type AssociateScanner interface {
+	scanner
 	Scan(ptr any, bindingPath, mappingPath string, ignore ...string) error
 }
 
-var _ Scanner = (*scanner)(nil)
+var _ Scanner = (*defaultScanner)(nil)
 var _ Scanner = (*insertBatchScanner)(nil)
 var _ PagingScanner = (*pagingScanner)(nil)
 var _ AssociateScanner = (*associateScanner)(nil)
 
-type scanner struct {
+type defaultScanner struct {
 	rows         *sql.Rows
 	rowsAffected int64
 	lastInsertId int64
 	reflectRow   func(columns []string, row []interface{}, pv reflect.Value, first bool) (bool, error)
+	dest         any
+	ignore       []string
 }
 
-func (s *scanner) RowsAffected() int64 {
-	return s.rowsAffected
+func (d *defaultScanner) setDest(dest any, ignore ...string) {
+	d.dest = dest
+	d.ignore = ignore
 }
 
-func (s *scanner) LastInsertId() int64 {
-	return s.lastInsertId
+// 与结构体里的 dest, ignore... 作用一样
+// 在不走 Scan 接口时，通过注入 scanner 到回调函数中，从回调函数中获取 dest, ignore...
+func (d *defaultScanner) Scan(dest any, ignore ...string) error {
+	d.dest = dest
+	d.ignore = ignore
+	return d.scan()
 }
 
-func (s *scanner) Scan(ptr any, ignore ...string) (err error) {
-	if s.rows == nil {
+func (d *defaultScanner) setRowsAffected(count int64) {
+	d.rowsAffected = count
+}
+
+func (d *defaultScanner) setLastInertId(id int64) {
+	d.lastInsertId = id
+}
+
+func (d *defaultScanner) setRows(rows *sql.Rows) {
+	d.rows = rows
+}
+
+func (d *defaultScanner) RowsAffected() int64 {
+	return d.rowsAffected
+}
+
+func (d *defaultScanner) LastInsertId() int64 {
+	return d.lastInsertId
+}
+
+func (d *defaultScanner) scan() (err error) {
+	if d.rows == nil {
 		err = fmt.Errorf("scan rows error: rows is nil")
 		return
 	}
@@ -53,15 +95,15 @@ func (s *scanner) Scan(ptr any, ignore ...string) (err error) {
 	var or reflect.Value
 	var ov interface{}
 	defer func() {
-		if ptr != nil && s.rowsAffected == 0 {
+		if d.dest != nil && d.rowsAffected == 0 {
 			if or.Kind() == reflect.Pointer {
 				or.Set(reflect.ValueOf(ov))
 			}
 		}
 	}()
 
-	if ptr != nil {
-		pv = reflect.ValueOf(ptr)
+	if d.dest != nil {
+		pv = reflect.ValueOf(d.dest)
 		if pv.Kind() != reflect.Pointer || pv.IsNil() {
 			return &InvalidUnmarshalError{pv.Type()}
 		}
@@ -69,22 +111,22 @@ func (s *scanner) Scan(ptr any, ignore ...string) (err error) {
 		ov = or.Interface()
 		pv = indirect(pv, false)
 	}
-	columns, err := s.rows.Columns()
+	columns, err := d.rows.Columns()
 	if err != nil {
 		return
 	}
 	l := len(columns)
 	first := false
-	s.rowsAffected = 0
-	for s.rows.Next() {
-		s.rowsAffected++
-		if ptr != nil {
+	d.rowsAffected = 0
+	for d.rows.Next() {
+		d.rowsAffected++
+		if d.dest != nil {
 			row := make([]interface{}, l)
 			pointers := make([]interface{}, l)
 			for i, _ := range columns {
 				pointers[i] = &row[i]
 			}
-			err = s.rows.Scan(pointers...)
+			err = d.rows.Scan(pointers...)
 			if err != nil {
 				return
 			}
@@ -92,10 +134,10 @@ func (s *scanner) Scan(ptr any, ignore ...string) (err error) {
 				first = true
 			}
 			var end bool
-			if s.reflectRow != nil {
-				end, err = s.reflectRow(columns, row, pv, first)
+			if d.reflectRow != nil {
+				end, err = d.reflectRow(columns, row, pv, first)
 			} else {
-				end, err = s.defaultReflectRow(columns, row, pv, first)
+				end, err = d.defaultReflectRow(columns, row, pv, first)
 			}
 			if err != nil {
 				return
@@ -108,7 +150,7 @@ func (s *scanner) Scan(ptr any, ignore ...string) (err error) {
 	return
 }
 
-func (s *scanner) defaultReflectRow(columns []string, row []interface{}, pv reflect.Value, first bool) (bool, error) {
+func (d *defaultScanner) defaultReflectRow(columns []string, row []interface{}, pv reflect.Value, first bool) (bool, error) {
 	return reflectRow(columns, row, pv, first)
 }
 
@@ -118,12 +160,35 @@ type insertBatchScanner struct {
 	lastInsertId int64
 }
 
+func (i *insertBatchScanner) setDest(dest any, ignore ...string) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (i *insertBatchScanner) setRowsAffected(count int64) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (i *insertBatchScanner) setLastInertId(id int64) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (i *insertBatchScanner) scan() error {
+	return nil
+}
+
+func (i *insertBatchScanner) setRows(rows *sql.Rows) {
+	i.rows = rows
+}
+
 func (i *insertBatchScanner) Scan(ptr any, ignore ...string) error {
 	rv := reflect.ValueOf(ptr)
 	if rv.Elem().Type().Kind() != reflect.Slice {
 		return fmt.Errorf("expect slice, got %s", rv.Elem().Type())
 	}
-	s := &scanner{rows: i.rows}
+	s := &defaultScanner{rows: i.rows}
 	err := s.Scan(ptr)
 	if err != nil {
 		return err
@@ -142,24 +207,110 @@ func (i *insertBatchScanner) LastInsertId() int64 {
 }
 
 type pagingScanner struct {
-	listScanner  Scanner
-	countScanner Scanner
+	query  *raw
+	count  *raw
+	method string
+	ctx    context.Context
+	conn   func() conn
+	logger logger.Logger
+	pos    string
+	trace  bool
+	debug  bool
 }
 
-func (p *pagingScanner) SetListScanner(listScanner Scanner) {
-	p.listScanner = listScanner
+func (p *pagingScanner) setDest(dest any, ignore ...string) {
+	//TODO implement me
+	panic("implement me")
 }
 
-func (p *pagingScanner) SetCountScanner(countScanner Scanner) {
-	p.countScanner = countScanner
+func (p *pagingScanner) setRowsAffected(count int64) {
+	//TODO implement me
+	panic("implement me")
 }
 
-func (p *pagingScanner) Scan(countPtr, listPtr any, ignore ...string) error {
-	err := p.countScanner.Scan(countPtr)
-	if err != nil {
-		return err
+func (p *pagingScanner) setLastInertId(id int64) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (p *pagingScanner) RowsAffected() int64 {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (p *pagingScanner) LastInsertId() int64 {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (p *pagingScanner) setRows(rows *sql.Rows) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (p *pagingScanner) scan() error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (p *pagingScanner) prepareDefaultExecutor() *defaultExecutor {
+	return &defaultExecutor{
+		method: p.method,
+		ctx:    p.ctx,
+		conn:   p.conn(),
+		logger: p.logger,
+		pos:    p.pos,
+		trace:  p.trace,
+		debug:  p.debug,
 	}
-	return p.listScanner.Scan(listPtr, ignore...)
+}
+
+func (p *pagingScanner) Scan(countPtr, listPtr any, ignore ...string) (err error) {
+	fns := []func() error{
+		func() error {
+			d := p.prepareDefaultExecutor()
+			d.raw = p.count
+			d.scanner = &defaultScanner{
+				dest: countPtr,
+			}
+			d.scan = func(s scanner) error {
+				return s.scan()
+			}
+			return d.execute()
+		},
+		func() error {
+			d := p.prepareDefaultExecutor()
+			d.raw = p.query
+			d.scanner = &defaultScanner{
+				dest:   listPtr,
+				ignore: ignore,
+			}
+			d.scan = func(s scanner) error {
+				return s.scan()
+			}
+			return d.execute()
+		},
+	}
+
+	lock := sync.Mutex{}
+	wg := sync.WaitGroup{}
+	for _, fn := range fns {
+		wg.Add(1)
+		go func(fn func() error) {
+			defer func() {
+				wg.Done()
+			}()
+			e := fn()
+			if e != nil {
+				lock.Lock()
+				err = parser.AddError(err, e)
+				lock.Unlock()
+			}
+		}(fn)
+	}
+	wg.Wait()
+
+	return
 }
 
 type associateBindingPath struct {
@@ -175,7 +326,27 @@ type associateScanner struct {
 	mappingPath  string
 }
 
-var bindingPathReg = regexp.MustCompile(`^(([a-zA-Z]\w*)+\s*=>\s*(\$(\.[a-zA-Z]\w*)+))(\s*,\s*([a-zA-Z]\w*)+\s*=>\s*(\$(\.[a-zA-Z]\w*)+))*$`)
+func (a *associateScanner) setDest(dest any, ignore ...string) {
+}
+
+func (a *associateScanner) setRowsAffected(count int64) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (a *associateScanner) setLastInertId(id int64) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (a *associateScanner) scan() error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (a *associateScanner) setRows(rows *sql.Rows) {
+	a.rows = rows
+}
 
 func (a *associateScanner) Scan(ptr any, bindingPath, mappingPath string, ignore ...string) (err error) {
 
@@ -188,7 +359,7 @@ func (a *associateScanner) Scan(ptr any, bindingPath, mappingPath string, ignore
 		return
 	}
 
-	s := &scanner{
+	s := &defaultScanner{
 		rows:       a.rows,
 		reflectRow: a.reflectRow,
 	}
@@ -200,6 +371,8 @@ func (a *associateScanner) Scan(ptr any, bindingPath, mappingPath string, ignore
 	a.lastInsertId = s.lastInsertId
 	return
 }
+
+var bindingPathReg = regexp.MustCompile(`^(([a-zA-Z]\w*)+\s*=>\s*(\$(\.[a-zA-Z]\w*)+))(\s*,\s*([a-zA-Z]\w*)+\s*=>\s*(\$(\.[a-zA-Z]\w*)+))*$`)
 
 func (a *associateScanner) parseBindingPath(bindingPath string) (err error) {
 	r := bindingPathReg.FindStringSubmatch(bindingPath)
