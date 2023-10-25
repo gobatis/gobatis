@@ -15,7 +15,7 @@ import (
 type executor interface {
 	Method() string
 	setScan(scan func(scanner) error)
-	execute() error
+	execute() (sql.Result, error)
 }
 
 var (
@@ -52,7 +52,7 @@ func (d *defaultExecutor) Query() bool {
 	return d.raw.Query
 }
 
-func (d *defaultExecutor) execute() (err error) {
+func (d *defaultExecutor) execute() (result sql.Result, err error) {
 
 	beginAt := time.Now()
 
@@ -74,25 +74,24 @@ func (d *defaultExecutor) execute() (err error) {
 			plainSQL = fmt.Sprintf("explain sql error: %s", e)
 		}
 		d.logger.Trace(d.pos, d.conn.TraceId(), d.conn.IsTx(), err, &logger.SQLTrace{
-			Trace:        d.trace,
-			Debug:        d.debug,
-			BeginAt:      beginAt,
-			RawSQL:       r.Statement(),
-			PlainSQL:     plainSQL,
-			RowsAffected: d.scanner.RowsAffected(),
+			Trace:    d.trace,
+			Debug:    d.debug,
+			BeginAt:  beginAt,
+			RawSQL:   r.Statement(),
+			PlainSQL: plainSQL,
+			//RowsAffected: d.scanner.RowsAffected(),
 		})
 	}()
 
 	if !d.raw.Query {
-		var result sql.Result
 		result, err = d.conn.ExecContext(d.ctx, r.Statement(), r.Vars()...)
 		if err != nil {
 			return
 		}
-		rowsAffected, _ := result.RowsAffected()
-		lastInsertId, _ := result.LastInsertId()
-		d.scanner.setRowsAffected(rowsAffected)
-		d.scanner.setLastInertId(lastInsertId)
+		//rowsAffected, _ := result.RowsAffected()
+		//lastInsertId, _ := result.LastInsertId()
+		//d.scanner.setRowsAffected(rowsAffected)
+		//d.scanner.setLastInertId(lastInsertId)
 		return
 	}
 
@@ -139,7 +138,7 @@ func (i *insertBatchExecutor) setScan(scan func(scanner) error) {
 //	return false
 //}
 
-func (i *insertBatchExecutor) execute() (err error) {
+func (i *insertBatchExecutor) execute() (result sql.Result, err error) {
 	c := i.conn
 	var tx *sql.Tx
 	defer func() {
@@ -198,7 +197,7 @@ func (i *insertBatchExecutor) execute() (err error) {
 		// 内部回传 insertBatchScanner 给 f
 		// insertBatchScanner 会判断 dest 类型，并且将批量结果合并到 dest 中，并且处理 lastInsertId 和 rowAffected 值
 		// 供 db 取用
-		err = d.execute()
+		_, err = d.execute()
 		if err != nil {
 			return
 		}
@@ -257,7 +256,7 @@ func (p parallelQueryExecutor) setScan(scan func(scanner) error) {
 	panic("unimplemented methods were accessed")
 }
 
-func (p parallelQueryExecutor) execute() (err error) {
+func (p parallelQueryExecutor) execute() (result sql.Result, err error) {
 	lock := sync.Mutex{}
 	wg := sync.WaitGroup{}
 	for _, v := range p.queries {
@@ -280,7 +279,7 @@ func (p parallelQueryExecutor) execute() (err error) {
 					return v.Scan(s.(Scanner))
 				},
 			}
-			e := d.execute()
+			_, e := d.execute()
 			if e != nil {
 				lock.Lock()
 				err = parser.AddError(err, e)
@@ -312,9 +311,9 @@ func (p pagingQueryExecutor) setScan(scan func(scanner) error) {
 	panic("implement me")
 }
 
-func (p pagingQueryExecutor) execute() error {
+func (p pagingQueryExecutor) execute() (sql.Result, error) {
 	if p.query.Limit <= 0 {
-		return InvalidLimitErr
+		return nil, InvalidLimitErr
 	}
 
 	w := ""
@@ -343,7 +342,7 @@ func (p pagingQueryExecutor) execute() error {
 		trace:  p.trace,
 		debug:  p.debug,
 	}
-	return p.query.Scan(s)
+	return nil, p.query.Scan(s)
 }
 
 //	func newFetchQueryExecutor(base baseExecutor, limit uint) *fetchQueryExecutor {

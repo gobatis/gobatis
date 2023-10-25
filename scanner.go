@@ -15,11 +15,7 @@ import (
 )
 
 type scanner interface {
-	RowsAffected() int64
-	LastInsertId() int64
 	setRows(rows *sql.Rows)
-	setRowsAffected(count int64)
-	setLastInertId(id int64)
 	setDest(dest any, ignore ...string)
 	scan() error
 }
@@ -46,11 +42,10 @@ var _ AssociateScanner = (*associateScanner)(nil)
 
 type defaultScanner struct {
 	rows         *sql.Rows
-	rowsAffected int64
-	lastInsertId int64
 	reflectRow   func(columns []string, row []interface{}, pv reflect.Value, first bool) (bool, error)
 	dest         any
 	ignore       []string
+	rowsAffected int64
 }
 
 func (d *defaultScanner) setDest(dest any, ignore ...string) {
@@ -66,24 +61,8 @@ func (d *defaultScanner) Scan(dest any, ignore ...string) error {
 	return d.scan()
 }
 
-func (d *defaultScanner) setRowsAffected(count int64) {
-	d.rowsAffected = count
-}
-
-func (d *defaultScanner) setLastInertId(id int64) {
-	d.lastInsertId = id
-}
-
 func (d *defaultScanner) setRows(rows *sql.Rows) {
 	d.rows = rows
-}
-
-func (d *defaultScanner) RowsAffected() int64 {
-	return d.rowsAffected
-}
-
-func (d *defaultScanner) LastInsertId() int64 {
-	return d.lastInsertId
 }
 
 func (d *defaultScanner) scan() (err error) {
@@ -165,16 +144,6 @@ func (i *insertBatchScanner) setDest(dest any, ignore ...string) {
 	panic("implement me")
 }
 
-func (i *insertBatchScanner) setRowsAffected(count int64) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (i *insertBatchScanner) setLastInertId(id int64) {
-	//TODO implement me
-	panic("implement me")
-}
-
 func (i *insertBatchScanner) scan() error {
 	return nil
 }
@@ -194,16 +163,8 @@ func (i *insertBatchScanner) Scan(ptr any, ignore ...string) error {
 		return err
 	}
 	i.rowsAffected += s.rowsAffected
-	i.lastInsertId = s.lastInsertId
+	//i.lastInsertId = s.lastInsertId
 	return nil
-}
-
-func (i *insertBatchScanner) RowsAffected() int64 {
-	return i.rowsAffected
-}
-
-func (i *insertBatchScanner) LastInsertId() int64 {
-	return i.lastInsertId
 }
 
 type pagingScanner struct {
@@ -220,36 +181,14 @@ type pagingScanner struct {
 }
 
 func (p *pagingScanner) setDest(dest any, ignore ...string) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (p *pagingScanner) setRowsAffected(count int64) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (p *pagingScanner) setLastInertId(id int64) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (p *pagingScanner) RowsAffected() int64 {
-	return p.rowsAffected
-}
-
-func (p *pagingScanner) LastInsertId() int64 {
-	//TODO implement me
 	panic("implement me")
 }
 
 func (p *pagingScanner) setRows(rows *sql.Rows) {
-	//TODO implement me
 	panic("implement me")
 }
 
 func (p *pagingScanner) scan() error {
-	//TODO implement me
 	panic("implement me")
 }
 
@@ -276,7 +215,8 @@ func (p *pagingScanner) Scan(countPtr, listPtr any, ignore ...string) (err error
 			d.scan = func(s scanner) error {
 				return s.scan()
 			}
-			return d.execute()
+			_, e := d.execute()
+			return e
 		},
 		func() error {
 			d := p.prepareDefaultExecutor()
@@ -290,10 +230,11 @@ func (p *pagingScanner) Scan(countPtr, listPtr any, ignore ...string) (err error
 				if e != nil {
 					return e
 				}
-				p.rowsAffected = s.RowsAffected()
+				//p.rowsAffected = s.RowsAffected()
 				return nil
 			}
-			return d.execute()
+			_, e := d.execute()
+			return e
 		},
 	}
 
@@ -332,20 +273,10 @@ type associateScanner struct {
 }
 
 func (a *associateScanner) setDest(dest any, ignore ...string) {
-}
-
-func (a *associateScanner) setRowsAffected(count int64) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (a *associateScanner) setLastInertId(id int64) {
-	//TODO implement me
 	panic("implement me")
 }
 
 func (a *associateScanner) scan() error {
-	//TODO implement me
 	panic("implement me")
 }
 
@@ -373,7 +304,7 @@ func (a *associateScanner) Scan(ptr any, bindingPath, mappingPath string, ignore
 		return
 	}
 	a.rowsAffected = s.rowsAffected
-	a.lastInsertId = s.lastInsertId
+	//a.lastInsertId = s.lastInsertId
 	return
 }
 

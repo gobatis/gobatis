@@ -214,7 +214,7 @@ func (d *DB) execute() {
 		return
 	}
 
-	err := d.executor.execute()
+	_, err := d.executor.execute()
 	if err != nil {
 		d.addError(err)
 		return
@@ -279,8 +279,8 @@ func (d *DB) Scan(dest any, ignore ...string) *DB {
 			if e != nil {
 				return e
 			}
-			d.rowsAffected = s.RowsAffected()
-			d.lastInsertId = s.LastInsertId()
+			//d.rowsAffected = s.RowsAffected()
+			//d.lastInsertId = s.LastInsertId()
 			return nil
 		})
 		d.execute()
@@ -479,7 +479,7 @@ func (d *DB) PagingQuery(query PagingQuery) *DB {
 		debug:  c.debug,
 	})
 	c.execute()
-	
+
 	return c
 }
 
@@ -504,7 +504,10 @@ func (d *DB) AssociateQuery(query AssociateQuery) *DB {
 	}
 
 	c.setExecutor(e)
-	c.addError(e.execute())
+	_, err := e.execute()
+	if err != nil {
+		c.addError(err)
+	}
 
 	return c
 }
