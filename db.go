@@ -547,6 +547,10 @@ func (d *DB) FetchQuery(query FetchQuery) *DB {
 }
 
 func (d *DB) Begin() *DB {
+	return d.BeginWithOption(nil)
+}
+
+func (d *DB) BeginWithOption(opts *sql.TxOptions) *DB {
 	c := d.clone()
 	if c.tx != nil {
 		c.addError(fmt.Errorf("there is already a transaction"))
@@ -561,7 +565,7 @@ func (d *DB) Begin() *DB {
 			PlainSQL: "begin",
 		})
 	}()
-	tx, err := c.db.Begin()
+	tx, err := c.db.BeginTx(d.context(), opts)
 	if err != nil {
 		c.addError(err)
 		return c
