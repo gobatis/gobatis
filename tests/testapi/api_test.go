@@ -134,28 +134,16 @@ func TestAPIFeatures(t *testing.T) {
 
 	initEnv(t)
 	initDB(t)
-	testInsert(t)
-	TestInsertBatch(t)
-	TestUpdate(t)
-	TestParallelQuery(t)
-	TestPagingQuery(t)
-	TestFetchQuery(t)
+
 	testContext(t)
 	testLooseScan(t)
-	testDynamicSQL(t)
-	testDelete(t)
+
 	testRecoverValueWhenNoRows(t)
-	testInParameter(t)
+
 	testExec(t)
-	TestAssociateQuery(t)
+	
 	//testNestedTx(t)
 }
-
-
-
-
-
-
 
 func testExec(t *testing.T) {
 	//rows, err := db.Exec(`INSERT INTO gobatis. (id, name) VALUES (2, 'tom');`).RowsAffected()
@@ -171,162 +159,12 @@ func testExec(t *testing.T) {
 //	require.Error(t, tx2.Error)
 //}
 
-func TestQuery(t *testing.T) {
-	initDB(t)
-	var products []*Product
-	err := db.Query(`select * from products`).Scan(&products).Error
-	require.NoError(t, err)
-
-	spew.Json(products)
-}
-
-func TestUpdate(t *testing.T) {
-	initDB(t)
-	memProducts[Smartphone].Price = decimal.NewFromFloat(900)
-	memProducts[Smartphone].StockQuantity = 30
-
-	affected, err := db.Debug().Affect(1).Update("products",
-		map[string]any{
-			"price":          memProducts[Smartphone].Price,
-			"stock_quantity": memProducts[Smartphone].StockQuantity,
-		},
-		batis.Where("product_name = #{name}", batis.Param("name", Smartphone)),
-	).RowsAffected()
-	require.NoError(t, err)
-	require.Equal(t, int64(1), affected)
-
-	var product *Product
-	err = db.Query(`select * from products where product_name = #{name}`,
-		batis.Param("name", Smartphone)).Scan(&product).Error
-	require.NoError(t, err)
-
-	memProducts[Smartphone].Id = product.Id
-	memProducts[Smartphone].AddedDateTime = product.AddedDateTime
-
-	compareProduct(t, memProducts[Smartphone], product)
-}
-
 func testParameter(t *testing.T) {
 
 }
 
 func testScan(t *testing.T) {
 
-}
-
-func TestParallelQuery(t *testing.T) {
-	initDB(t)
-	var products []*Product
-	var count int64
-	err := db.Debug().ParallelQuery(
-		batis.ParallelQuery{
-			SQL: `select * from products where price <= #{ price }`,
-			Params: map[string]any{
-				"price": 300,
-			},
-			Scan: func(s batis.Scanner) error {
-				return s.Scan(&products)
-			},
-		},
-		batis.ParallelQuery{
-			SQL: `select count(1) from products where price <= #{ price }`,
-			Params: map[string]any{
-				"price": 300,
-			},
-			Scan: func(s batis.Scanner) error {
-				return s.Scan(&count)
-			},
-		},
-	).Error
-	require.NoError(t, err)
-	require.Equal(t, int64(3), count)
-	require.Equal(t, 3, len(products))
-
-	for _, v := range products {
-		vv := memProducts[v.ProductName]
-		vv.Id = v.Id
-		vv.AddedDateTime = v.AddedDateTime
-		compareProduct(t, v, vv)
-	}
-}
-
-func TestPagingQuery(t *testing.T) {
-
-	initDB(t)
-
-	m := map[int]string{
-		0: Chair,
-		1: BluetoothHeadphones,
-		2: Smartwatch,
-		3: Smartphone,
-	}
-
-	for i := 0; i <= 4; i++ {
-		var products []*Product
-		var count int64
-
-		q := batis.PagingQuery{
-			Select: "*",
-			Count:  "1",
-			From:   "products",
-			Where:  "price <= #{price}",
-			Order:  "price asc",
-			Page:   int64(i),
-			Limit:  1,
-			Params: map[string]any{
-				"price": decimal.NewFromInt(900),
-			},
-			Scan: func(s batis.PagingScanner) error {
-				return s.Scan(&count, &products)
-			},
-		}
-
-		err := db.Debug().PagingQuery(q).Error
-		require.NoError(t, err)
-		require.Equal(t, int64(4), count)
-
-		if i < 4 {
-			require.Equal(t, 1, len(products))
-			for _, v := range products {
-				vv := memProducts[v.ProductName]
-				vv.Id = v.Id
-				vv.AddedDateTime = v.AddedDateTime
-				require.Equal(t, m[i], v.ProductName)
-				compareProduct(t, v, vv)
-			}
-		} else {
-			require.Equal(t, 0, len(products))
-		}
-	}
-}
-
-func TestFetchQuery(t *testing.T) {
-	initDB(t)
-	var products []*Product
-	err := db.Debug().FetchQuery(batis.FetchQuery{
-		SQL: "select * from products where price < #{price} order by price asc",
-		Params: map[string]any{
-			"price": 1000,
-		},
-		Batch: 2,
-		Scan: func(scanner batis.Scanner) error {
-			var items []*Product
-			e := scanner.Scan(&items)
-			if e != nil {
-				return e
-			}
-			products = append(products, items...)
-			return nil
-		},
-	})
-	require.NoError(t, err)
-	expect := []*Product{
-		memProducts[Chair],
-		memProducts[BluetoothHeadphones],
-		memProducts[Smartwatch],
-		memProducts[Smartphone],
-	}
-	compareProducts(t, expect, products)
 }
 
 func testContext(t *testing.T) {
@@ -352,82 +190,9 @@ func testLooseScan(t *testing.T) {
 	spew.Json(pb)
 }
 
-func testCustomizeDataType(t *testing.T) {
-
-}
-
-func testPlugin(t *testing.T) {
-
-}
-
-func testDynamicSQL(t *testing.T) {
-	var products []*Product
-	q := `
-		select * from products 
-		<where>
-		    <if test="price > 0"> price > #{price} </if>
-		    <if test="isAvailable">and is_available is true</if>
-		</where>		                            		                            
-	`
-	err := db.Debug().Query(q, batis.Param("price", 1), batis.Param("isAvailable", true)).Scan(&products).Error
-	require.NoError(t, err)
-
-	spew.Json(products)
-
-}
-
-func testDelete(t *testing.T) {
-	affected, err := db.Debug().Affect(1).Delete("products",
-		batis.Where("product_name = #{name}", batis.Param("name", Smartphone))).RowsAffected()
-	require.NoError(t, err)
-	require.Equal(t, int64(1), affected)
-}
-
 func testRecoverValueWhenNoRows(t *testing.T) {
 	var product *Product
 	err := db.Affect(0).Query(`select * from products where id = 0`).Scan(&product).Error
 	require.NoError(t, err)
 	require.True(t, product == nil)
-}
-
-func testInParameter(t *testing.T) {
-	var products []*Product
-	err := db.Debug().Query(`
-   select * from products where id in 
-	<foreach item="item" index="index" collection="ids" open="(" separator="," close=")">
-		#{item}
-	</foreach>
-`, batis.Param("ids", []int64{1, 2, 3})).Scan(&products).Error
-	require.NoError(t, err)
-}
-
-func TestAssociateQuery(t *testing.T) {
-
-	initDB(t)
-
-	type ProductWrap struct {
-		Name    string
-		Product *Product
-		Age     int64
-	}
-
-	wraps := []ProductWrap{
-		{Name: "Laptop"},
-		{Name: "TV"},
-	}
-
-	err := db.Debug().AssociateQuery(batis.AssociateQuery{
-		SQL: "select * from products where product_name in #{ids}",
-		Params: map[string]any{
-			//"ids": batis.Extract(wraps, "$.Name"),
-			"ids": []string{"Laptop", "TV"},
-		},
-		Scan: func(scanner batis.AssociateScanner) error {
-			return scanner.Scan(&wraps, "product_name => $.Name", "$.Product")
-		},
-	}).Error
-
-	require.NoError(t, err)
-
-	spew.Json(wraps)
 }

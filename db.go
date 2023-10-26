@@ -78,7 +78,7 @@ func Open(d dialector.Dialector, options ...Option) (db *DB, err error) {
 type DB struct {
 	*Config
 	Error    error
-	tx       *Tx
+	tx       *connTx
 	ctx      context.Context
 	trace    bool
 	debug    bool
@@ -522,40 +522,30 @@ func (d *DB) AssociateQuery(query AssociateQuery) *DB {
 	return c
 }
 
-func (d *DB) FetchQuery(query FetchQuery) error {
+func (d *DB) FetchQuery(query FetchQuery) *DB {
 
-	//c := d.clone()
+	c := d.clone()
 
-	//raw := &raw{
-	//	Ctx:    d.context(),
-	//	Query:  true,
-	//	SQL:    query.SQL,
-	//	Params: nil,
-	//}
-	//
-	//if query.Scan == nil {
-	//	d.addError(fmt.Errorf("FetchQeruy.Scan is nil"))
-	//	return c.Error
-	//}
-	//
-	//for k, v := range query.Params {
-	//	raw.Params = append(raw.Params, NameValue{
-	//		Name:  k,
-	//		Value: v,
-	//	})
-	//}
-	//if c.traceId == "" {
-	//	c.traceId = fmt.Sprintf("TID%d", time.Now().UnixNano())
-	//}
-	//c.setExecutor(newFetchQueryExecutor(c.context(), c.conn(), raw, query.Batch))
-	//
-	//return c.executor.execute(func(s scanner) error {
-	//	return query.Scan(s.(Scanner))
-	//})
-	//return c.executor.Execute(c.Logger, "", c.trace, c.debug, nil, func(s Scanner) error {
-	//	return query.Scan(s)
-	//})
-	return nil
+	if query.Scan == nil {
+		c.addError(fmt.Errorf("FetchQeruy.Scan is nil"))
+		return c
+	}
+
+	if c.traceId == "" {
+		c.traceId = fmt.Sprintf("TID%d", time.Now().UnixNano())
+	}
+
+	e := c.prepareDefaultExecutor(methodFetchQuery, &raw{
+		Query: true,
+		SQL:   query.SQL,
+		Vars:  query.Params,
+	})
+	e.scan = func(s scanner) error {
+		return query.Scan(s.(Scanner))
+	}
+	c.setExecutor(&fetchQueryExecutor{limit: query.Batch, defaultExecutor: e})
+	c.execute()
+	return c
 }
 
 func (d *DB) Begin() *DB {
@@ -586,7 +576,7 @@ func (d *DB) Begin() *DB {
 		c.traceId = fmt.Sprintf("%p", d)
 	}
 
-	c.tx = NewTx(tx, c.traceId)
+	c.tx = newTx(tx, c.traceId)
 
 	return c
 }

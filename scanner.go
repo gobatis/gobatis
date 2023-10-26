@@ -289,8 +289,7 @@ type associateScanner struct {
 }
 
 func (a *associateScanner) getRowsAffected() int64 {
-	//TODO implement me
-	panic("implement me")
+	return a.rowsAffected
 }
 
 func (a *associateScanner) setDest(dest any, ignore ...string) {

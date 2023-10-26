@@ -29,32 +29,32 @@ func init() {
 	valuerType = reflect.TypeOf((*Valuer)(nil)).Elem()
 }
 
-func isContext(v reflect.Type) bool {
-	if v.Name() == "Context" && v.PkgPath() == "context" {
-		return true
-	}
-	return false
-}
+//func isContext(v reflect.Type) bool {
+//	if v.Name() == "Context" && v.PkgPath() == "context" {
+//		return true
+//	}
+//	return false
+//}
 
-func isTx(v reflect.Type) bool {
-	if v.Kind() == reflect.Ptr && v.Elem().Name() == "Tx" &&
-		(v.Elem().PkgPath() == "database/sql" ||
-			v.Elem().PkgPath() == "github.com/gobatis/gobatis") {
-		return true
-	}
-	return false
-}
+//func isTx(v reflect.Type) bool {
+//	if v.Kind() == reflect.Ptr && v.Elem().Name() == "Tx" &&
+//		(v.Elem().PkgPath() == "database/sql" ||
+//			v.Elem().PkgPath() == "github.com/gobatis/gobatis") {
+//		return true
+//	}
+//	return false
+//}
+//
+//func isDB(v reflect.Type) bool {
+//	if v.Kind() == reflect.Ptr && v.Elem().Name() == "DB" && v.Elem().PkgPath() == "github.com/gobatis/gobatis" {
+//		return true
+//	}
+//	return false
+//}
 
-func isDB(v reflect.Type) bool {
-	if v.Kind() == reflect.Ptr && v.Elem().Name() == "DB" && v.Elem().PkgPath() == "github.com/gobatis/gobatis" {
-		return true
-	}
-	return false
-}
-
-func isError(t reflect.Type) bool {
-	return t.Implements(reflect.TypeOf((*error)(nil)).Elem())
-}
+//func isError(t reflect.Type) bool {
+//	return t.Implements(reflect.TypeOf((*error)(nil)).Elem())
+//}
 
 func isStructSlice(r reflect.Type) bool {
 	if r.Kind() != reflect.Slice {
