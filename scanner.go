@@ -17,6 +17,7 @@ import (
 type scanner interface {
 	setRows(rows *sql.Rows)
 	setDest(dest any, ignore ...string)
+	getRowsAffected() int64
 	scan() error
 }
 
@@ -46,6 +47,10 @@ type defaultScanner struct {
 	dest         any
 	ignore       []string
 	rowsAffected int64
+}
+
+func (d *defaultScanner) getRowsAffected() int64 {
+	return d.rowsAffected
 }
 
 func (d *defaultScanner) setDest(dest any, ignore ...string) {
@@ -137,14 +142,30 @@ type insertBatchScanner struct {
 	rows         *sql.Rows
 	rowsAffected int64
 	lastInsertId int64
+	dest         any
+	ignore       []string
+}
+
+func (i *insertBatchScanner) getRowsAffected() int64 {
+	return i.rowsAffected
 }
 
 func (i *insertBatchScanner) setDest(dest any, ignore ...string) {
-	//TODO implement me
-	panic("implement me")
+	i.dest = dest
+	i.ignore = ignore
 }
 
 func (i *insertBatchScanner) scan() error {
+	rv := reflect.ValueOf(i.dest)
+	if rv.Elem().Type().Kind() != reflect.Slice {
+		return fmt.Errorf("expect slice, got %s", rv.Elem().Type())
+	}
+	s := &defaultScanner{rows: i.rows}
+	err := s.Scan(i.dest)
+	if err != nil {
+		return err
+	}
+	i.rowsAffected += s.rowsAffected
 	return nil
 }
 
@@ -153,18 +174,8 @@ func (i *insertBatchScanner) setRows(rows *sql.Rows) {
 }
 
 func (i *insertBatchScanner) Scan(ptr any, ignore ...string) error {
-	rv := reflect.ValueOf(ptr)
-	if rv.Elem().Type().Kind() != reflect.Slice {
-		return fmt.Errorf("expect slice, got %s", rv.Elem().Type())
-	}
-	s := &defaultScanner{rows: i.rows}
-	err := s.Scan(ptr)
-	if err != nil {
-		return err
-	}
-	i.rowsAffected += s.rowsAffected
-	//i.lastInsertId = s.lastInsertId
-	return nil
+	i.setDest(ptr, ignore...)
+	return i.scan()
 }
 
 type pagingScanner struct {
@@ -178,6 +189,11 @@ type pagingScanner struct {
 	trace        bool
 	debug        bool
 	rowsAffected int64
+}
+
+func (p *pagingScanner) getRowsAffected() int64 {
+	//TODO implement me
+	panic("implement me")
 }
 
 func (p *pagingScanner) setDest(dest any, ignore ...string) {
@@ -270,6 +286,11 @@ type associateScanner struct {
 	lastInsertId int64
 	bindingPaths []associateBindingPath
 	mappingPath  string
+}
+
+func (a *associateScanner) getRowsAffected() int64 {
+	//TODO implement me
+	panic("implement me")
 }
 
 func (a *associateScanner) setDest(dest any, ignore ...string) {

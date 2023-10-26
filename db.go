@@ -77,17 +77,16 @@ func Open(d dialector.Dialector, options ...Option) (db *DB, err error) {
 
 type DB struct {
 	*Config
-	Error        error
-	tx           *Tx
-	ctx          context.Context
-	trace        bool
-	debug        bool
-	traceId      string
-	affect       any
-	executor     executor
-	executed     atomic.Bool
-	rowsAffected int64
-	lastInsertId int64
+	Error    error
+	tx       *Tx
+	ctx      context.Context
+	trace    bool
+	debug    bool
+	traceId  string
+	affect   any
+	executor executor
+	executed atomic.Bool
+	result   sql.Result
 }
 
 func (d *DB) addError(err error) {
@@ -186,20 +185,6 @@ func (d *DB) context() context.Context {
 //	}
 //}
 
-func (d *DB) checkAffect() {
-	//if d.affect != nil {
-	//	var ac *affectConstraint
-	//	ac, err = newAffectConstraint(d.affect)
-	//	if err != nil {
-	//		return
-	//	}
-	//	err = ac.Check(int(d.scanner.RowsAffected()))
-	//	if err != nil {
-	//		return
-	//	}
-	//}
-}
-
 func (d *DB) execute() {
 
 	if d.Error != nil {
@@ -214,11 +199,13 @@ func (d *DB) execute() {
 		return
 	}
 
-	_, err := d.executor.execute()
+	r, err := d.executor.execute()
 	if err != nil {
 		d.addError(err)
 		return
 	}
+
+	d.result = r
 }
 
 func (d *DB) prepareDefaultExecutor(method string, r *raw) *defaultExecutor {
@@ -231,6 +218,7 @@ func (d *DB) prepareDefaultExecutor(method string, r *raw) *defaultExecutor {
 		pos:     "",
 		trace:   d.trace,
 		debug:   d.debug,
+		affect:  d.affect,
 		scanner: &defaultScanner{},
 		scan:    nil,
 	}
@@ -258,11 +246,23 @@ func (d *DB) raw(elem Elem) (r *raw, err error) {
 }
 
 func (d *DB) LastInsertId() (int64, error) {
-	return d.lastInsertId, d.Error
+	if d.Error != nil {
+		return 0, d.Error
+	}
+	if d.result == nil {
+		return 0, fmt.Errorf("no sql result")
+	}
+	return d.result.LastInsertId()
 }
 
 func (d *DB) RowsAffected() (int64, error) {
-	return d.rowsAffected, d.Error
+	if d.Error != nil {
+		return 0, d.Error
+	}
+	if d.result == nil {
+		return 0, fmt.Errorf("no sql result")
+	}
+	return d.result.RowsAffected()
 }
 
 // 扫描结果集
@@ -272,15 +272,13 @@ func (d *DB) Scan(dest any, ignore ...string) *DB {
 		return d
 	}
 	switch d.executor.Method() {
-	case methodQuery, methodExec, methodUpdate, methodDelete, methodInsertBatch:
+	case methodQuery, methodExec, methodUpdate, methodDelete, methodInsert, methodInsertBatch:
 		d.executor.setScan(func(s scanner) error {
 			s.setDest(dest, ignore...)
 			e := s.scan()
 			if e != nil {
 				return e
 			}
-			//d.rowsAffected = s.RowsAffected()
-			//d.lastInsertId = s.LastInsertId()
 			return nil
 		})
 		d.execute()
@@ -418,7 +416,19 @@ func (d *DB) InsertBatch(table string, batch int, data any, elems ...Elem) *DB {
 		raws = append(raws, r)
 	}
 
-	c.setExecutor(&insertBatchExecutor{})
+	c.setExecutor(&insertBatchExecutor{
+		raws:    raws,
+		method:  methodInsertBatch,
+		ctx:     d.context(),
+		conn:    d.conn(),
+		logger:  d.Logger,
+		pos:     "",
+		trace:   d.trace,
+		debug:   d.debug,
+		affect:  d.affect,
+		scanner: &insertBatchScanner{},
+		scan:    nil,
+	})
 	if !q {
 		c.execute()
 	}

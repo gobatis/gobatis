@@ -27,6 +27,50 @@ var (
 	_ executor = (*associateQueryExecutor)(nil)
 )
 
+var _ sql.Result = (*queryResult)(nil)
+
+type queryResult struct {
+	rowsAffected *int64
+	lastInserted *int64
+}
+
+func (q queryResult) LastInsertId() (int64, error) {
+	if q.lastInserted != nil {
+		return *q.lastInserted, nil
+	}
+	return 0, fmt.Errorf("invalid LastInsertId")
+}
+
+func (q queryResult) RowsAffected() (int64, error) {
+	if q.rowsAffected != nil {
+		return *q.rowsAffected, nil
+	}
+	return 0, fmt.Errorf("invalid RowsAffected")
+}
+
+func checkAffect(expect any, result sql.Result) (err error) {
+	if expect == nil {
+		return
+	}
+	ac, err := newAffectConstraint(expect)
+	if err != nil {
+		return
+	}
+	if result == nil {
+		err = fmt.Errorf("expect sql.Result, got nil")
+		return
+	}
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return
+	}
+	err = ac.Check(rowsAffected)
+	if err != nil {
+		return
+	}
+	return
+}
+
 type defaultExecutor struct {
 	method  string
 	raw     *raw
@@ -36,6 +80,7 @@ type defaultExecutor struct {
 	pos     string
 	trace   bool
 	debug   bool
+	affect  any
 	scanner scanner
 	scan    func(s scanner) error
 }
@@ -60,8 +105,8 @@ func (d *defaultExecutor) execute() (result sql.Result, err error) {
 	if err != nil {
 		return
 	}
-	var rows *sql.Rows
 
+	var rows *sql.Rows
 	defer func() {
 		if rows != nil {
 			err = parser.AddError(err, rows.Close())
@@ -73,14 +118,17 @@ func (d *defaultExecutor) execute() (result sql.Result, err error) {
 		if e != nil {
 			plainSQL = fmt.Sprintf("explain sql error: %s", e)
 		}
-		d.logger.Trace(d.pos, d.conn.TraceId(), d.conn.IsTx(), err, &logger.SQLTrace{
+		t := &logger.SQLTrace{
 			Trace:    d.trace,
 			Debug:    d.debug,
 			BeginAt:  beginAt,
 			RawSQL:   r.Statement(),
 			PlainSQL: plainSQL,
-			//RowsAffected: d.scanner.RowsAffected(),
-		})
+		}
+		if result != nil {
+			t.RowsAffected, _ = result.RowsAffected()
+		}
+		d.logger.Trace(d.pos, d.conn.TraceId(), d.conn.IsTx(), err, t)
 	}()
 
 	if !d.raw.Query {
@@ -88,10 +136,10 @@ func (d *defaultExecutor) execute() (result sql.Result, err error) {
 		if err != nil {
 			return
 		}
-		//rowsAffected, _ := result.RowsAffected()
-		//lastInsertId, _ := result.LastInsertId()
-		//d.scanner.setRowsAffected(rowsAffected)
-		//d.scanner.setLastInertId(lastInsertId)
+		err = checkAffect(d.affect, result)
+		if err != nil {
+			return
+		}
 		return
 	}
 
@@ -101,6 +149,16 @@ func (d *defaultExecutor) execute() (result sql.Result, err error) {
 	}
 	d.scanner.setRows(rows)
 	err = d.scan(d.scanner)
+	if err != nil {
+		return
+	}
+
+	rowsAffected := d.scanner.getRowsAffected()
+	result = &queryResult{
+		rowsAffected: &rowsAffected,
+		lastInserted: nil,
+	}
+	err = checkAffect(d.affect, result)
 	if err != nil {
 		return
 	}
@@ -117,6 +175,7 @@ type insertBatchExecutor struct {
 	pos     string
 	trace   bool
 	debug   bool
+	affect  any
 	scanner scanner
 	scan    func(s scanner) error
 }
@@ -144,9 +203,11 @@ func (i *insertBatchExecutor) execute() (result sql.Result, err error) {
 	defer func() {
 		// Indicate that the outside is a regular DB object,
 		// not a transaction object.
-		if !i.conn.IsTx() {
-			err = parser.AddError(err, i.conn.Close())
-		}
+		// TODO TEST maybe beginTx bind tx with conn with luck
+		//if !i.conn.IsTx() {
+		//	err = parser.AddError(err, i.conn.Close())
+		//}
+
 		if tx != nil {
 			if err != nil {
 				now := time.Now()
@@ -180,7 +241,10 @@ func (i *insertBatchExecutor) execute() (result sql.Result, err error) {
 		})
 	}
 
-	//s := &insertBatchScanner{}
+	qr := &queryResult{
+		rowsAffected: nil,
+		lastInserted: nil,
+	}
 	for _, r := range i.raws {
 		d := &defaultExecutor{
 			method:  i.method,
@@ -194,26 +258,29 @@ func (i *insertBatchExecutor) execute() (result sql.Result, err error) {
 			scanner: i.scanner,
 			scan:    i.scan,
 		}
-		// 内部回传 insertBatchScanner 给 f
-		// insertBatchScanner 会判断 dest 类型，并且将批量结果合并到 dest 中，并且处理 lastInsertId 和 rowAffected 值
-		// 供 db 取用
-		_, err = d.execute()
+		var rr sql.Result
+		rr, err = d.execute()
 		if err != nil {
 			return
 		}
+		if n, e := rr.RowsAffected(); e == nil {
+			if qr.rowsAffected == nil {
+				t := int64(0)
+				qr.rowsAffected = &t
+			}
+			*qr.rowsAffected += n
+		}
+		if n, e := rr.LastInsertId(); e == nil {
+			qr.lastInserted = &n
+		}
 	}
 
-	//if i.affect != nil {
-	//	var ac *affectConstraint
-	//	ac, err = newAffectConstraint(i.affect)
-	//	if err != nil {
-	//		return
-	//	}
-	//	err = ac.Check(int(s.rowsAffected))
-	//	if err != nil {
-	//		return
-	//	}
-	//}
+	result = qr
+	
+	err = checkAffect(i.affect, result)
+	if err != nil {
+		return
+	}
 
 	now := time.Now()
 	err = tx.Commit()
@@ -232,10 +299,6 @@ func (i *insertBatchExecutor) execute() (result sql.Result, err error) {
 
 	return
 }
-
-//	func newParallelQueryExecutor(baseExecutor baseExecutor) *parallelQueryExecutor {
-//		return &parallelQueryExecutor{baseExecutor: baseExecutor}
-//	}
 
 type parallelQueryExecutor struct {
 	queries []ParallelQuery
@@ -265,9 +328,11 @@ func (p parallelQueryExecutor) execute() (result sql.Result, err error) {
 			defer func() {
 				wg.Done()
 			}()
+			r := newRaw(true, v.SQL, nil)
+			r.mergeVars(v.Params)
 			d := &defaultExecutor{
 				method:  p.method,
-				raw:     v.raw(),
+				raw:     r,
 				ctx:     p.ctx,
 				conn:    p.conn(),
 				logger:  p.logger,

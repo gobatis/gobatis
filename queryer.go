@@ -1,23 +1,9 @@
 package batis
 
-//type ParallelQueryer interface {
-//	executors(namer dialector.Namer, tag string) ([]executor.Executor, error)
-//}
-
 type ParallelQuery struct {
 	SQL    string
 	Params map[string]any
 	Scan   func(s Scanner) error
-}
-
-func (q ParallelQuery) raw() *raw {
-	r := newRaw(true, q.SQL, nil)
-	r.mergeVars(q.Params)
-	return r
-}
-
-func PagingScan(items any, count any) []any {
-	return []any{items, count}
 }
 
 type PagingQuery struct {

@@ -14,7 +14,6 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 	batis "github.com/gobatis/gobatis"
-	"github.com/gobatis/gobatis/driver/postgres"
 	"github.com/gozelle/spew"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/require"
@@ -93,37 +92,6 @@ func initEnv(t *testing.T) {
 }
 
 func initDB(t *testing.T) {
-	if db != nil {
-		return
-	}
-	host = os.Getenv(client.EnvOverrideHost)
-	if host == "" {
-		host = "127.0.0.1"
-	}
-	var err error
-	db, err = batis.Open(postgres.Open(fmt.Sprintf("postgresql://test:test@%s:8432/gobatis-test-db?connect_timeout=10&sslmode=disable", host)))
-	if err != nil {
-		return
-	}
-	err = db.Ping()
-	require.NoError(t, err)
-
-	err = db.Exec(`
-		create schema if not exists gobatis;
-		create table if not exists products (
-		    id serial PRIMARY KEY,
-		    product_name VARCHAR(255) NOT NULL,
-		    description TEXT,
-		    price DECIMAL NOT NULL, 
-		    weight FLOAT,
-            stock_quantity BIGINT,
-		    is_available BOOLEAN,
-		    manufacture_date DATE,
-		    added_datetime TIMESTAMPTZ
-		);
-		create unique index if not exists products_product_name_uindex on products (product_name);
-	`).Error
-	require.NoError(t, err)
 
 	//err = db.Exec(`truncate products`).Error
 	//require.NoError(t, err)
@@ -140,78 +108,6 @@ type Product struct {
 	IsAvailable     bool            `db:"is_available"`
 	ManufactureDate time.Time       `db:"manufacture_date"`
 	AddedDateTime   time.Time       `db:"added_datetime"`
-}
-
-const (
-	Laptop              = "Laptop"
-	Smartphone          = "Smartphone"
-	Smartwatch          = "Smartwatch"
-	Chair               = "Chair"
-	BluetoothHeadphones = "Bluetooth Headphones"
-	TV                  = "TV"
-)
-
-var memProducts = map[string]*Product{
-	Smartwatch: {
-		ProductName:     Smartwatch,
-		Description:     "Advanced health and fitness tracking smartwatch",
-		Price:           decimal.NewFromFloat(299.99),
-		Weight:          0.05,
-		StockQuantity:   5,
-		IsAvailable:     true,
-		ManufactureDate: time.Date(2023, time.April, 10, 0, 0, 0, 0, time.UTC),
-		AddedDateTime:   time.Now(),
-	},
-	Laptop: {
-		ProductName:     Laptop,
-		Description:     "A high-end laptop",
-		Price:           decimal.NewFromFloat(1200.50),
-		Weight:          1.5,
-		StockQuantity:   10,
-		IsAvailable:     true,
-		ManufactureDate: time.Date(2023, time.January, 20, 0, 0, 0, 0, time.UTC),
-		AddedDateTime:   time.Now(),
-	},
-	Smartphone: {
-		ProductName:     Smartphone,
-		Description:     "Latest model smartphone",
-		Price:           decimal.NewFromFloat(800.00),
-		Weight:          0.2,
-		StockQuantity:   20,
-		IsAvailable:     true,
-		ManufactureDate: time.Date(2023, time.February, 10, 0, 0, 0, 0, time.UTC),
-		AddedDateTime:   time.Now(),
-	},
-	Chair: {
-		ProductName:     Chair,
-		Description:     "Comfortable office chair",
-		Price:           decimal.NewFromFloat(150.00),
-		Weight:          8.0,
-		StockQuantity:   15,
-		IsAvailable:     false,
-		ManufactureDate: time.Date(2022, time.December, 15, 0, 0, 0, 0, time.UTC),
-		AddedDateTime:   time.Now(),
-	},
-	BluetoothHeadphones: {
-		ProductName:     BluetoothHeadphones,
-		Description:     "Noise-cancelling over the ear headphones",
-		Price:           decimal.NewFromFloat(250.00),
-		Weight:          0.3,
-		StockQuantity:   100,
-		IsAvailable:     true,
-		ManufactureDate: time.Date(2023, time.March, 5, 0, 0, 0, 0, time.UTC),
-		AddedDateTime:   time.Now(),
-	},
-	TV: {
-		ProductName:     TV,
-		Description:     "65 inch 4K LED TV",
-		Price:           decimal.NewFromFloat(1000.00),
-		Weight:          25.0,
-		StockQuantity:   120,
-		IsAvailable:     true,
-		ManufactureDate: time.Date(2023, time.January, 28, 0, 0, 0, 0, time.UTC),
-		AddedDateTime:   time.Now(),
-	},
 }
 
 func extractMemProducts(exclude ...string) (products []*Product) {
@@ -238,135 +134,28 @@ func TestAPIFeatures(t *testing.T) {
 
 	initEnv(t)
 	initDB(t)
-	//testInsert(t)
-	//testInsertBatch(t)
-	//testUpdate(t)
-	//testParallelQuery(t)
-	//testPagingQuery(t)
-	//testFetchQuery(t)
-	//testContext(t)
-	//testLooseScan(t)
-	//testDynamicSQL(t)
-	//testDelete(t)
-	//testRecoverValueWhenNoRows(t)
-	//testInParameter(t)
-	//testExec(t)
+	testInsert(t)
+	TestInsertBatch(t)
+	TestUpdate(t)
+	TestParallelQuery(t)
+	TestPagingQuery(t)
+	TestFetchQuery(t)
+	testContext(t)
+	testLooseScan(t)
+	testDynamicSQL(t)
+	testDelete(t)
+	testRecoverValueWhenNoRows(t)
+	testInParameter(t)
+	testExec(t)
 	TestAssociateQuery(t)
 	//testNestedTx(t)
 }
 
-// Test common insertion scenarios, including ordinary insertion,
-// returning auto-incremented ID, handling conflict insertion,
-// and handling conflict insertion while returning row fields
-// 1. insert into ... returning ...
-// 2. insert into ... on conflict ...
-// 3. insert into ... on conflict ... returning ...
-func testInsert(t *testing.T) {
-	// perform ordinary insertion operation and
-	// return the auto-increment primary key
-	affected, err := db.Debug().Insert("products", memProducts[Smartwatch], batis.Returning("id")).Scan(&memProducts[Smartwatch].Id).RowsAffected()
-	require.NoError(t, err)
-	require.Equal(t, int64(1), affected)
-	require.True(t, memProducts[Smartwatch].Id != nil && *memProducts[Smartwatch].Id > 0)
 
-	// test insertion conflict
-	memProducts[Smartwatch].ManufactureDate = time.Date(2023, time.April, 12, 0, 0, 0, 0, time.UTC)
-	memProducts[Smartwatch].AddedDateTime = time.Now()
-	affected, err = db.Debug().Affect(1).Insert("products",
-		&Product{
-			ProductName:     "Smartwatch",
-			ManufactureDate: memProducts[Smartwatch].ManufactureDate,
-			AddedDateTime:   memProducts[Smartwatch].AddedDateTime,
-		},
-		batis.OnConflict("product_name", `do update set manufacture_date = excluded.manufacture_date`),
-	).RowsAffected()
-	require.NoError(t, err)
-	require.Equal(t, int64(1), affected)
 
-	// test insertion conflict update and
-	// return the specified field
-	var productName string
-	memProducts[Smartwatch].Price = decimal.NewFromFloat(300.00)
-	memProducts[Smartwatch].ManufactureDate = time.Now()
-	memProducts[Smartwatch].AddedDateTime = time.Now()
-	err = db.Debug().Affect(1).Insert("products",
-		&Product{
-			ProductName:     "Smartwatch",
-			Price:           memProducts[Smartwatch].Price,
-			ManufactureDate: memProducts[Smartwatch].ManufactureDate,
-			AddedDateTime:   memProducts[Smartwatch].AddedDateTime,
-		},
-		batis.OnConflict("product_name", `do update set price = excluded.price`),
-		batis.Returning("product_name")).Scan(&productName).Error
-	require.NoError(t, err)
-	require.Equal(t, "Smartwatch", productName)
 
-	// test query operation and
-	// compare the data after changes
-	var product *Product
-	err = db.Query(`select * from products where id = #{id}`, batis.Param("id", *memProducts[Smartwatch].Id)).Scan(&product).Error
-	require.NoError(t, err)
-	require.True(t, product.Id != nil && *product.Id > 0)
-	require.Equal(t, "Smartwatch", product.ProductName)
-	require.Equal(t, "Advanced health and fitness tracking smartwatch", product.Description)
-	require.Equal(t, "300", product.Price.String())
-	require.Equal(t, float32(0.05), product.Weight)
-	require.Equal(t, int64(5), product.StockQuantity)
-	require.Equal(t, true, product.IsAvailable)
-	require.Equal(t, "2023-04-12", product.ManufactureDate.Format("2006-01-02"))
-	require.Equal(t, true, product.AddedDateTime.Unix() > 0)
-}
 
-// Testing batch insertion of data, including checking the number of affected rows,
-// verifying the inserted data, returning the last insert ID, and scanning all auto-incremented IDs.
-func TestInsertBatch(t *testing.T) {
-	initDB(t)
-	affected, err := db.Debug().Affect(5).InsertBatch("products", 2, extractMemProducts(Smartwatch)).RowsAffected()
-	require.NoError(t, err)
-	require.Equal(t, int64(5), affected)
 
-	var products []*Product
-	err = db.Debug().Query(`select * from products where stock_quantity >= 10`).Scan(&products).Error
-	require.NoError(t, err)
-
-	compareProducts(t, extractMemProducts(Smartwatch), products)
-
-	affected, err = db.Debug().Affect(5).
-		Delete("products", batis.Where("stock_quantity >= #{ v }", batis.Param("v", 10))).RowsAffected()
-	require.NoError(t, err)
-
-	products = []*Product{}
-	affected, err = db.Debug().Affect(5).InsertBatch("products", 2, extractMemProducts(Smartwatch),
-		batis.Returning("*")).Scan(&products).RowsAffected()
-	require.NoError(t, err)
-	require.Equal(t, int64(5), affected)
-
-	compareProducts(t, extractMemProducts(Smartwatch), products)
-}
-
-func compareProducts(t *testing.T, r, c []*Product) {
-	m := map[string]*Product{}
-	for _, v := range c {
-		m[v.ProductName] = v
-	}
-	for _, v := range r {
-		vv, ok := m[v.ProductName]
-		require.True(t, ok)
-		v.Id = vv.Id
-		compareProduct(t, v, vv)
-	}
-}
-
-func compareProduct(t *testing.T, v1, v2 *Product) {
-	//d1, err := json.Marshal(v1)
-	//require.NoError(t, err)
-	//d2, err := json.Marshal(v2)
-	//require.NoError(t, err)
-	//if err = fastjson.EqualsBytes(d1, d2); err != nil {
-	//	t.Fatal(fmt.Errorf("compare products v1 != v2, err: %s", err))
-	//}
-	return
-}
 
 func testExec(t *testing.T) {
 	//rows, err := db.Exec(`INSERT INTO gobatis. (id, name) VALUES (2, 'tom');`).RowsAffected()
@@ -391,8 +180,8 @@ func TestQuery(t *testing.T) {
 	spew.Json(products)
 }
 
-func testUpdate(t *testing.T) {
-
+func TestUpdate(t *testing.T) {
+	initDB(t)
 	memProducts[Smartphone].Price = decimal.NewFromFloat(900)
 	memProducts[Smartphone].StockQuantity = 30
 
@@ -449,7 +238,6 @@ func TestParallelQuery(t *testing.T) {
 			},
 		},
 	).Error
-	spew.Json(count, products)
 	require.NoError(t, err)
 	require.Equal(t, int64(3), count)
 	require.Equal(t, 3, len(products))
@@ -496,7 +284,7 @@ func TestPagingQuery(t *testing.T) {
 		err := db.Debug().PagingQuery(q).Error
 		require.NoError(t, err)
 		require.Equal(t, int64(4), count)
-		
+
 		if i < 4 {
 			require.Equal(t, 1, len(products))
 			for _, v := range products {

@@ -15,7 +15,9 @@ func newAffectConstraint(v any) (*affectConstraint, error) {
 
 	switch r := v.(type) {
 	case int:
-		return &affectConstraint{rows: r}, nil
+		return &affectConstraint{rows: int64(r)}, nil
+	case int64:
+		return &affectConstraint{rows: int64(r)}, nil
 	case string:
 		reg := regexp.MustCompile(`^([0-9]+)(\+)?$`)
 		if !reg.MatchString(r) {
@@ -27,18 +29,18 @@ func newAffectConstraint(v any) (*affectConstraint, error) {
 		if err != nil {
 			return nil, fmt.Errorf("db.Affect() parse value: %s to int error: %w", r, err)
 		}
-		return &affectConstraint{rows: int(rows), sign: items[2]}, nil
+		return &affectConstraint{rows: int64(rows), sign: items[2]}, nil
 	default:
 		return nil, InvalidAffectValueErr
 	}
 }
 
 type affectConstraint struct {
-	rows int
+	rows int64
 	sign string
 }
 
-func (a affectConstraint) Check(rows int) error {
+func (a affectConstraint) Check(rows int64) error {
 	if a.sign != "" {
 		if rows < a.rows {
 			return fmt.Errorf("%w: expect affected rows >= %d, got %d", RowsAffectedCheckErr, a.rows, rows)
