@@ -13,7 +13,7 @@ import (
 )
 
 type executor interface {
-	Method() string
+	method() string
 	setScan(scan func(scanner) error)
 	execute() (sql.Result, error)
 }
@@ -24,7 +24,6 @@ var (
 	_ executor = (*parallelQueryExecutor)(nil)
 	_ executor = (*pagingQueryExecutor)(nil)
 	_ executor = (*fetchQueryExecutor)(nil)
-	//_ executor = (*associateQueryExecutor)(nil)
 )
 
 var _ sql.Result = (*queryResult)(nil)
@@ -72,7 +71,7 @@ func checkAffect(expect any, result sql.Result) (err error) {
 }
 
 type defaultExecutor struct {
-	method  string
+	name    string
 	raw     *raw
 	ctx     context.Context
 	conn    conn
@@ -85,8 +84,8 @@ type defaultExecutor struct {
 	scan    func(s scanner) error
 }
 
-func (d *defaultExecutor) Method() string {
-	return d.method
+func (d *defaultExecutor) method() string {
+	return d.name
 }
 
 func (d *defaultExecutor) setScan(scan func(scanner) error) {
@@ -168,7 +167,7 @@ func (d *defaultExecutor) execute() (result sql.Result, err error) {
 
 type insertBatchExecutor struct {
 	raws    []*raw
-	method  string
+	name    string
 	ctx     context.Context
 	conn    conn
 	logger  logger.Logger
@@ -180,8 +179,8 @@ type insertBatchExecutor struct {
 	scan    func(s scanner) error
 }
 
-func (i *insertBatchExecutor) Method() string {
-	return i.method
+func (i *insertBatchExecutor) method() string {
+	return i.name
 }
 
 func (i *insertBatchExecutor) setScan(scan func(scanner) error) {
@@ -236,7 +235,7 @@ func (i *insertBatchExecutor) execute() (result sql.Result, err error) {
 	}
 	for _, r := range i.raws {
 		d := &defaultExecutor{
-			method:  i.method,
+			name:    i.name,
 			raw:     r,
 			ctx:     i.ctx,
 			conn:    tx,
@@ -291,7 +290,7 @@ func (i *insertBatchExecutor) execute() (result sql.Result, err error) {
 
 type parallelQueryExecutor struct {
 	queries []ParallelQuery
-	method  string
+	name    string
 	ctx     context.Context
 	conn    func() conn
 	logger  logger.Logger
@@ -300,8 +299,8 @@ type parallelQueryExecutor struct {
 	debug   bool
 }
 
-func (p parallelQueryExecutor) Method() string {
-	return p.method
+func (p parallelQueryExecutor) method() string {
+	return p.name
 }
 
 func (p parallelQueryExecutor) setScan(scan func(scanner) error) {
@@ -320,7 +319,7 @@ func (p parallelQueryExecutor) execute() (result sql.Result, err error) {
 			r := newRaw(true, v.SQL, nil)
 			r.mergeVars(v.Params)
 			d := &defaultExecutor{
-				method:  p.method,
+				name:    p.name,
 				raw:     r,
 				ctx:     p.ctx,
 				conn:    p.conn(),
@@ -347,7 +346,7 @@ func (p parallelQueryExecutor) execute() (result sql.Result, err error) {
 
 type pagingQueryExecutor struct {
 	query  PagingQuery
-	method string
+	name   string
 	ctx    context.Context
 	conn   func() conn
 	logger logger.Logger
@@ -356,8 +355,8 @@ type pagingQueryExecutor struct {
 	debug  bool
 }
 
-func (p pagingQueryExecutor) Method() string {
-	return p.method
+func (p pagingQueryExecutor) method() string {
+	return p.name
 }
 
 func (p pagingQueryExecutor) setScan(scan func(scanner) error) {
@@ -388,7 +387,7 @@ func (p pagingQueryExecutor) execute() (sql.Result, error) {
 	s := &pagingScanner{
 		query:  q,
 		count:  c,
-		method: p.method,
+		method: p.name,
 		ctx:    p.ctx,
 		conn:   p.conn,
 		logger: p.logger,
@@ -406,7 +405,7 @@ type fetchQueryExecutor struct {
 
 func (f *fetchQueryExecutor) exec(t *connTx, r *raw, s scanner, c func(scanner) error) error {
 	d := &defaultExecutor{
-		method:  f.method,
+		name:    f.name,
 		raw:     r,
 		ctx:     f.ctx,
 		conn:    t,
@@ -497,25 +496,3 @@ func (f *fetchQueryExecutor) execute() (result sql.Result, err error) {
 	}
 	return
 }
-
-//	func newAssociateQueryExecutor(base baseExecutor) *associateQueryExecutor {
-//		return &associateQueryExecutor{baseExecutor: base}
-//	}
-//type associateQueryExecutor struct {
-//	*defaultExecutor
-//}
-
-//
-//func (a associateQueryExecutor) execute(f func(s scanner) error) error {
-//	//TODO implement me
-//	panic("implement me")
-//}
-//
-////func (a associateQueryExecutor) Execute(logger logger.Logger, pos string, trace, debug bool, affect any, s scanner) error {
-////	d := newDefaultExecutor(a.conn, a.raw)
-////	return d.Execute(logger, pos, trace, debug, affect, s)
-////}
-//
-//func (a associateQueryExecutor) Query() bool {
-//	return a.raw.Query
-//}

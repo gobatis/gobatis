@@ -210,7 +210,7 @@ func (p *pagingScanner) scan() error {
 
 func (p *pagingScanner) prepareDefaultExecutor() *defaultExecutor {
 	return &defaultExecutor{
-		method: p.method,
+		name:   p.method,
 		ctx:    p.ctx,
 		conn:   p.conn(),
 		logger: p.logger,

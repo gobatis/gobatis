@@ -210,7 +210,7 @@ func (d *DB) execute() {
 
 func (d *DB) prepareDefaultExecutor(method string, r *raw) *defaultExecutor {
 	return &defaultExecutor{
-		method:  method,
+		name:    method,
 		raw:     r,
 		ctx:     d.context(),
 		conn:    d.conn(),
@@ -271,7 +271,7 @@ func (d *DB) Scan(dest any, ignore ...string) *DB {
 		d.addError(fmt.Errorf("no executor found in db chain"))
 		return d
 	}
-	switch d.executor.Method() {
+	switch d.executor.method() {
 	case methodQuery, methodExec, methodUpdate, methodDelete, methodInsert, methodInsertBatch:
 		d.executor.setScan(func(s scanner) error {
 			s.setDest(dest, ignore...)
@@ -283,7 +283,7 @@ func (d *DB) Scan(dest any, ignore ...string) *DB {
 		})
 		d.execute()
 	default:
-		d.addError(fmt.Errorf("moethod: %s unsuppoted Scan method", d.executor.Method()))
+		d.addError(fmt.Errorf("moethod: %s unsuppoted Scan method", d.executor.method()))
 	}
 	return d
 }
@@ -360,7 +360,7 @@ func (d *DB) Insert(table string, data any, elems ...Elem) *DB {
 
 func (d *DB) duplicatedExecutor() bool {
 	if d.executor != nil {
-		d.addError(fmt.Errorf("method: %s executor duplicated in db chain", d.executor.Method()))
+		d.addError(fmt.Errorf("method: %s executor duplicated in db chain", d.executor.method()))
 		return false
 	}
 	return true
@@ -418,7 +418,7 @@ func (d *DB) InsertBatch(table string, batch int, data any, elems ...Elem) *DB {
 
 	c.setExecutor(&insertBatchExecutor{
 		raws:    raws,
-		method:  methodInsertBatch,
+		name:    methodInsertBatch,
 		ctx:     d.context(),
 		conn:    d.conn(),
 		logger:  d.Logger,
@@ -455,7 +455,7 @@ func (d *DB) ParallelQuery(queryer ...ParallelQuery) *DB {
 
 	c.setExecutor(&parallelQueryExecutor{
 		queries: queryer,
-		method:  methodParallelQuery,
+		name:    methodParallelQuery,
 		ctx:     c.context(),
 		conn:    c.conn,
 		logger:  c.Logger,
@@ -480,7 +480,7 @@ func (d *DB) PagingQuery(query PagingQuery) *DB {
 
 	c.setExecutor(&pagingQueryExecutor{
 		query:  query,
-		method: methodPagingQuery,
+		name:   methodPagingQuery,
 		ctx:    c.context(),
 		conn:   c.conn,
 		logger: c.Logger,
