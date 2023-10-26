@@ -70,6 +70,66 @@ func checkAffect(expect any, result sql.Result) (err error) {
 	return
 }
 
+func withTx(log logger.Logger, pos string, trace, debug bool, ctx context.Context, c conn, f func(tx *connTx) error) (err error) {
+	var tx *connTx
+	defer func() {
+		if tx != nil {
+			if err != nil {
+				now := time.Now()
+				err = parser.AddError(err, tx.Rollback())
+				log.Trace(pos, tx.TraceId(), true, err, &logger.SQLTrace{
+					Trace:    trace,
+					Debug:    debug,
+					BeginAt:  now,
+					RawSQL:   "rollback",
+					PlainSQL: "rollback",
+				})
+			}
+		}
+		// Indicate that the outside is a regular DB object,
+		if !c.IsTx() {
+			err = parser.AddError(err, c.Close())
+		}
+	}()
+
+	if !c.IsTx() {
+		now := time.Now()
+		tx, err = c.BeginTx(ctx, nil)
+		if err != nil {
+			return
+		}
+		log.Trace(pos, tx.TraceId(), true, err, &logger.SQLTrace{
+			Trace:    trace,
+			Debug:    debug,
+			BeginAt:  now,
+			RawSQL:   "begin",
+			PlainSQL: "begin",
+		})
+	} else {
+		tx = c.(*connTx)
+	}
+
+	err = f(tx)
+	if err != nil {
+		return
+	}
+
+	now := time.Now()
+	err = tx.Commit()
+	if err != nil {
+		return
+	}
+	log.Trace(pos, tx.TraceId(), true, err, &logger.SQLTrace{
+		Trace:        trace,
+		Debug:        debug,
+		BeginAt:      now,
+		RawSQL:       "commit",
+		PlainSQL:     "commit",
+		RowsAffected: 0,
+	})
+	return
+}
+
 type defaultExecutor struct {
 	name    string
 	raw     *raw
@@ -187,103 +247,52 @@ func (i *insertBatchExecutor) setScan(scan func(scanner) error) {
 	i.scan = scan
 }
 
-func (i *insertBatchExecutor) execute() (result sql.Result, err error) {
-	//c := i.conn
-	var tx *connTx
-	defer func() {
-		if tx != nil {
+func (i *insertBatchExecutor) execute() (sql.Result, error) {
+	var result sql.Result
+	err := withTx(i.logger, i.pos, i.trace, i.debug, i.ctx, i.conn, func(tx *connTx) (err error) {
+
+		qr := &queryResult{
+			rowsAffected: nil,
+			lastInserted: nil,
+		}
+		for _, r := range i.raws {
+			d := &defaultExecutor{
+				name:    i.name,
+				raw:     r,
+				ctx:     i.ctx,
+				conn:    tx,
+				logger:  i.logger,
+				pos:     i.pos,
+				trace:   i.trace,
+				debug:   i.debug,
+				scanner: i.scanner,
+				scan:    i.scan,
+			}
+			var rr sql.Result
+			rr, err = d.execute()
 			if err != nil {
-				now := time.Now()
-				err = parser.AddError(err, tx.Rollback())
-				i.logger.Trace(i.pos, tx.TraceId(), true, err, &logger.SQLTrace{
-					Trace:    i.trace,
-					Debug:    i.debug,
-					BeginAt:  now,
-					RawSQL:   "rollback",
-					PlainSQL: "rollback",
-				})
+				return
+			}
+			if n, e := rr.RowsAffected(); e == nil {
+				if qr.rowsAffected == nil {
+					t := int64(0)
+					qr.rowsAffected = &t
+				}
+				*qr.rowsAffected += n
+			}
+			if n, e := rr.LastInsertId(); e == nil {
+				qr.lastInserted = &n
 			}
 		}
-		// Indicate that the outside is a regular DB object,
-		if !i.conn.IsTx() {
-			err = parser.AddError(err, i.conn.Close())
-		}
-	}()
-
-	if !i.conn.IsTx() {
-		now := time.Now()
-		tx, err = i.conn.BeginTx(i.ctx, nil)
+		result = qr
+		err = checkAffect(i.affect, result)
 		if err != nil {
 			return
 		}
-		i.logger.Trace(i.pos, tx.TraceId(), true, err, &logger.SQLTrace{
-			Trace:    i.trace,
-			Debug:    i.debug,
-			BeginAt:  now,
-			RawSQL:   "begin",
-			PlainSQL: "begin",
-		})
-	} else {
-		tx = i.conn.(*connTx)
-	}
-
-	qr := &queryResult{
-		rowsAffected: nil,
-		lastInserted: nil,
-	}
-	for _, r := range i.raws {
-		d := &defaultExecutor{
-			name:    i.name,
-			raw:     r,
-			ctx:     i.ctx,
-			conn:    tx,
-			logger:  i.logger,
-			pos:     i.pos,
-			trace:   i.trace,
-			debug:   i.debug,
-			scanner: i.scanner,
-			scan:    i.scan,
-		}
-		var rr sql.Result
-		rr, err = d.execute()
-		if err != nil {
-			return
-		}
-		if n, e := rr.RowsAffected(); e == nil {
-			if qr.rowsAffected == nil {
-				t := int64(0)
-				qr.rowsAffected = &t
-			}
-			*qr.rowsAffected += n
-		}
-		if n, e := rr.LastInsertId(); e == nil {
-			qr.lastInserted = &n
-		}
-	}
-
-	result = qr
-
-	err = checkAffect(i.affect, result)
-	if err != nil {
 		return
-	}
-
-	now := time.Now()
-	err = tx.Commit()
-	if err != nil {
-		return
-	}
-
-	i.logger.Trace(i.pos, tx.TraceId(), true, err, &logger.SQLTrace{
-		Trace:        i.trace,
-		Debug:        i.debug,
-		BeginAt:      now,
-		RawSQL:       "commit",
-		PlainSQL:     "commit",
-		RowsAffected: 0,
 	})
 
-	return
+	return result, err
 }
 
 type parallelQueryExecutor struct {
@@ -419,81 +428,44 @@ func (f *fetchQueryExecutor) exec(t *connTx, r *raw, s scanner, c func(scanner) 
 	return err
 }
 
-func (f *fetchQueryExecutor) execute() (result sql.Result, err error) {
-	var tx *connTx
-	defer func() {
-		if tx != nil {
+func (f *fetchQueryExecutor) execute() (sql.Result, error) {
+	var result sql.Result
+	err := withTx(f.logger, f.pos, f.trace, f.debug, f.ctx, f.conn, func(tx *connTx) (err error) {
+		// TODO Complete cursor ID
+		cursor := fmt.Sprintf("curosr_%s", tx.TraceId())
+		r := newRaw(false, fmt.Sprintf("declare %s cursor for %s", cursor, f.raw.SQL), nil)
+		r.mergeVars(f.raw.Vars)
+		err = f.exec(tx, r, nil, nil)
+		if err != nil {
+			return
+		}
+		for {
+			var rowsAffected int64
+			err = f.exec(
+				tx,
+				newRaw(true, fmt.Sprintf("fetch forward %d from %s", f.limit, cursor), nil),
+				&defaultScanner{},
+				func(s scanner) error {
+					e := f.scan(s)
+					if e != nil {
+						return e
+					}
+					rowsAffected += s.getRowsAffected()
+					return nil
+				},
+			)
 			if err != nil {
-				now := time.Now()
-				err = parser.AddError(err, tx.Rollback())
-				f.logger.Trace(f.pos, tx.TraceId(), true, err, &logger.SQLTrace{
-					Trace:    f.trace,
-					Debug:    f.debug,
-					BeginAt:  now,
-					RawSQL:   "rollback",
-					PlainSQL: "rollback",
-				})
+				return
+			}
+			if rowsAffected == 0 {
+				break
 			}
 		}
-		// Indicate that the outside is a regular DB object,
-		if !f.conn.IsTx() {
-			err = parser.AddError(err, f.conn.Close())
-		}
-	}()
-
-	if !f.conn.IsTx() {
-		tx, err = f.conn.BeginTx(f.ctx, nil)
-		if err != nil {
-			return
-		}
-	} else {
-		tx = f.conn.(*connTx)
-	}
-
-	// TODO Complete cursor ID
-	cursor := fmt.Sprintf("curosr_%s", tx.TraceId())
-
-	r := newRaw(false, fmt.Sprintf("declare %s cursor for %s", cursor, f.raw.SQL), nil)
-	r.mergeVars(f.raw.Vars)
-	err = f.exec(tx, r, nil, nil)
-	if err != nil {
-		return
-	}
-	now := time.Now()
-
-	defer func() {
 		err = parser.AddError(err, f.exec(tx, newRaw(false, fmt.Sprintf("close %s", cursor), nil), nil, nil))
-		err = parser.AddError(err, tx.Commit())
-		f.logger.Trace(f.pos, tx.TraceId(), true, err, &logger.SQLTrace{
-			Trace:    f.trace,
-			Debug:    f.debug,
-			BeginAt:  now,
-			RawSQL:   "commit",
-			PlainSQL: "commit",
-		})
-	}()
-
-	for {
-		var rowsAffected int64
-		err = f.exec(
-			tx,
-			newRaw(true, fmt.Sprintf("fetch forward %d from %s", f.limit, cursor), nil),
-			&defaultScanner{},
-			func(s scanner) error {
-				e := f.scan(s)
-				if e != nil {
-					return e
-				}
-				rowsAffected += s.getRowsAffected()
-				return nil
-			},
-		)
 		if err != nil {
 			return
 		}
-		if rowsAffected == 0 {
-			break
-		}
-	}
-	return
+		return
+	})
+	return result, err
 }
