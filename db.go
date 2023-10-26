@@ -422,12 +422,10 @@ func (d *DB) InsertBatch(table string, batch int, data any, elems ...Elem) *DB {
 		ctx:     d.context(),
 		conn:    d.conn(),
 		logger:  d.Logger,
-		pos:     "",
 		trace:   d.trace,
 		debug:   d.debug,
 		affect:  d.affect,
 		scanner: &insertBatchScanner{},
-		scan:    nil,
 	})
 	if !q {
 		c.execute()
@@ -554,30 +552,24 @@ func (d *DB) Begin() *DB {
 		c.addError(fmt.Errorf("there is already a transaction"))
 		return c
 	}
-
 	defer func() {
 		d.Logger.Trace("", c.traceId, true, d.Error, &logger.SQLTrace{
-			Trace:        d.trace,
-			Debug:        d.debug,
-			BeginAt:      time.Now(),
-			RawSQL:       "begin",
-			PlainSQL:     "begin",
-			RowsAffected: 0,
+			Trace:    d.trace,
+			Debug:    d.debug,
+			BeginAt:  time.Now(),
+			RawSQL:   "begin",
+			PlainSQL: "begin",
 		})
 	}()
-
 	tx, err := c.db.Begin()
 	if err != nil {
 		c.addError(err)
 		return c
 	}
-
 	if c.traceId == "" {
 		c.traceId = fmt.Sprintf("%p", d)
 	}
-
 	c.tx = newTx(tx, c.traceId)
-
 	return c
 }
 
@@ -611,12 +603,11 @@ func (d *DB) Rollback() *DB {
 	defer func() {
 		d.addError(d.tx.Close())
 		d.Logger.Trace("", d.traceId, true, d.Error, &logger.SQLTrace{
-			Trace:        d.trace,
-			Debug:        d.debug,
-			BeginAt:      time.Now(),
-			RawSQL:       "rollback",
-			PlainSQL:     "rollback",
-			RowsAffected: 0,
+			Trace:    d.trace,
+			Debug:    d.debug,
+			BeginAt:  time.Now(),
+			RawSQL:   "rollback",
+			PlainSQL: "rollback",
 		})
 	}()
 	d.addError(d.tx.Rollback())

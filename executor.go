@@ -191,12 +191,6 @@ func (i *insertBatchExecutor) execute() (result sql.Result, err error) {
 	//c := i.conn
 	var tx *connTx
 	defer func() {
-		// Indicate that the outside is a regular DB object,
-		// not a transaction object.
-		// TODO TEST maybe beginTx bind tx with conn with luck
-		//if !i.conn.IsTx() {
-		//	err = parser.AddError(err, i.conn.Close())
-		//}
 		if tx != nil {
 			if err != nil {
 				now := time.Now()
@@ -209,6 +203,10 @@ func (i *insertBatchExecutor) execute() (result sql.Result, err error) {
 					PlainSQL: "rollback",
 				})
 			}
+		}
+		// Indicate that the outside is a regular DB object,
+		if !i.conn.IsTx() {
+			err = parser.AddError(err, i.conn.Close())
 		}
 	}()
 
@@ -422,14 +420,13 @@ func (f *fetchQueryExecutor) exec(t *connTx, r *raw, s scanner, c func(scanner) 
 }
 
 func (f *fetchQueryExecutor) execute() (result sql.Result, err error) {
-	c := f.conn
 	var tx *connTx
 	defer func() {
 		if tx != nil {
 			if err != nil {
 				now := time.Now()
 				err = parser.AddError(err, tx.Rollback())
-				f.logger.Trace(f.pos, c.TraceId(), true, err, &logger.SQLTrace{
+				f.logger.Trace(f.pos, tx.TraceId(), true, err, &logger.SQLTrace{
 					Trace:    f.trace,
 					Debug:    f.debug,
 					BeginAt:  now,
@@ -438,19 +435,23 @@ func (f *fetchQueryExecutor) execute() (result sql.Result, err error) {
 				})
 			}
 		}
+		// Indicate that the outside is a regular DB object,
+		if !f.conn.IsTx() {
+			err = parser.AddError(err, f.conn.Close())
+		}
 	}()
 
-	if !c.IsTx() {
-		tx, err = c.BeginTx(f.ctx, nil)
+	if !f.conn.IsTx() {
+		tx, err = f.conn.BeginTx(f.ctx, nil)
 		if err != nil {
 			return
 		}
 	} else {
-		tx = c.(*connTx)
+		tx = f.conn.(*connTx)
 	}
 
 	// TODO Complete cursor ID
-	cursor := fmt.Sprintf("curosr_%s", c.TraceId())
+	cursor := fmt.Sprintf("curosr_%s", tx.TraceId())
 
 	r := newRaw(false, fmt.Sprintf("declare %s cursor for %s", cursor, f.raw.SQL), nil)
 	r.mergeVars(f.raw.Vars)
@@ -463,7 +464,7 @@ func (f *fetchQueryExecutor) execute() (result sql.Result, err error) {
 	defer func() {
 		err = parser.AddError(err, f.exec(tx, newRaw(false, fmt.Sprintf("close %s", cursor), nil), nil, nil))
 		err = parser.AddError(err, tx.Commit())
-		f.logger.Trace(f.pos, c.TraceId(), true, err, &logger.SQLTrace{
+		f.logger.Trace(f.pos, tx.TraceId(), true, err, &logger.SQLTrace{
 			Trace:    f.trace,
 			Debug:    f.debug,
 			BeginAt:  now,
