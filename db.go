@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log"
+	"os"
 	"time"
 
 	"github.com/gobatis/gobatis/dialector"
@@ -15,6 +17,7 @@ import (
 const (
 	dbKey      = "GOBATIS_DB"
 	traceIdKey = "GOBATIS_TRACE_ID"
+	debugKey   = "GOBATIS_DEBUG"
 	space      = " "
 )
 
@@ -31,8 +34,11 @@ const (
 	methodAssociateQuery = "AssociateQuery"
 )
 
-func WithTx(parent context.Context, tx *sql.Tx) context.Context {
-	return context.WithValue(parent, dbKey, tx)
+func WithTx(parent context.Context, tx *DB) context.Context {
+	if tx.tx != nil {
+		return context.WithValue(parent, dbKey, tx)
+	}
+	return context.WithValue(parent, dbKey, tx.Begin())
 }
 
 func WithTraceId(parent context.Context, traceId string) context.Context {
@@ -40,7 +46,7 @@ func WithTraceId(parent context.Context, traceId string) context.Context {
 }
 
 func WithDebug(parent context.Context, debug bool) context.Context {
-	return context.WithValue(parent, "debug", debug)
+	return context.WithValue(parent, debugKey, debug)
 }
 
 func UseDB(ctx context.Context) *DB {
@@ -56,14 +62,14 @@ func UseDB(ctx context.Context) *DB {
 }
 
 func Open(d dialector.Dialector, options ...Option) (db *DB, err error) {
-	config := &Config{
-		CreateBatchSize: 10,
-		Plugins:         nil,
+	config := Config{
+		//CreateBatchSize: 10,
+		Plugins: nil,
 		NowFunc: func() time.Time {
 			return time.Now()
 		},
 		Dialector: d,
-		Logger:    logger.DefaultLogger(),
+		Logger:    logger.NewtLogger(log.New(os.Stdout, "\r\n", log.LstdFlags)),
 		ColumnTag: "db",
 		db:        nil,
 	}
@@ -71,7 +77,7 @@ func Open(d dialector.Dialector, options ...Option) (db *DB, err error) {
 	if err != nil {
 		return
 	}
-	db = &DB{Config: config, Error: nil}
+	db = &DB{Config: &config, Error: nil}
 	return
 }
 
@@ -115,6 +121,25 @@ func (d *DB) WithContext(ctx context.Context) *DB {
 	}
 	c := d.clone()
 	c.ctx = ctx
+	if vv := c.ctx.Value(dbKey); vv != nil {
+		db, ok := vv.(*DB)
+		if ok {
+			c = db
+			c.ctx = ctx
+		}
+	}
+	if vv := c.ctx.Value(traceIdKey); vv != nil {
+		traceId, ok := vv.(string)
+		if ok {
+			c.traceId = traceId
+		}
+	}
+	if vv := c.ctx.Value(debugKey); vv != nil {
+		debug, ok := vv.(bool)
+		if ok {
+			c.debug = debug
+		}
+	}
 	return c
 }
 
@@ -125,6 +150,19 @@ func (d *DB) WithTraceId(traceId string) *DB {
 		return c
 	}
 	c.traceId = traceId
+	return c
+}
+
+type Session struct {
+	Logger logger.Logger
+}
+
+func (d *DB) Session(s *Session) *DB {
+	c := d.clone()
+	c.Config = c.Config.clone()
+	if s.Logger != nil {
+		c.Logger = s.Logger
+	}
 	return c
 }
 
@@ -173,18 +211,6 @@ func (d *DB) context() context.Context {
 	return d.ctx
 }
 
-//func (d *DB) newBaseExecutor(raw *raw) baseExecutor {
-//	return baseExecutor{
-//		conn:   d.conn(),
-//		raw:    raw,
-//		logger: d.Logger,
-//		pos:    logger.CallFuncPos(0),
-//		trace:  d.trace,
-//		debug:  d.debug,
-//		affect: d.affect,
-//	}
-//}
-
 func (d *DB) execute() {
 
 	if d.Error != nil {
@@ -194,6 +220,7 @@ func (d *DB) execute() {
 		d.addError(fmt.Errorf("no executor in db chain"))
 		return
 	}
+
 	if d.executed.Swap(true) {
 		d.addError(fmt.Errorf("repeat execution"))
 		return
@@ -321,7 +348,9 @@ func (d *DB) Delete(table string, where Elem) *DB {
 		c.addError(err)
 		return c
 	}
-	c.setExecutor(c.prepareDefaultExecutor(methodDelete, r))
+	e := c.prepareDefaultExecutor(methodDelete, r)
+	e.tx = true
+	c.setExecutor(e)
 	c.execute()
 	return c
 }
@@ -335,7 +364,9 @@ func (d *DB) Update(table string, data map[string]any, where Elem, elems ...Elem
 		c.addError(err)
 		return c
 	}
-	c.setExecutor(c.prepareDefaultExecutor(methodUpdate, r))
+	e := c.prepareDefaultExecutor(methodUpdate, r)
+	e.tx = true
+	c.setExecutor(e)
 	if !r.Query {
 		c.execute()
 	}
@@ -351,7 +382,9 @@ func (d *DB) Insert(table string, data any, elems ...Elem) *DB {
 		c.addError(err)
 		return c
 	}
-	c.setExecutor(c.prepareDefaultExecutor(methodInsert, r))
+	e := c.prepareDefaultExecutor(methodInsert, r)
+	e.tx = true
+	c.setExecutor(e)
 	if !r.Query {
 		c.execute()
 	}
@@ -360,7 +393,7 @@ func (d *DB) Insert(table string, data any, elems ...Elem) *DB {
 
 func (d *DB) duplicatedExecutor() bool {
 	if d.executor != nil {
-		d.addError(fmt.Errorf("method: %s executor duplicated in db chain", d.executor.method()))
+		d.addError(fmt.Errorf("%w with method: %s", ErrExecutorConflict, d.executor.method()))
 		return false
 	}
 	return true
@@ -443,14 +476,11 @@ func (d *DB) ParallelQuery(queryer ...ParallelQuery) *DB {
 		c.addError(NoParallelQueryerErr)
 		return c
 	}
-
 	if c.tx != nil {
 		c.addError(fmt.Errorf("transcation mode not support ParallelQuery"))
 		return c
 	}
-
 	pos := logger.CallFuncPos(0)
-
 	c.setExecutor(&parallelQueryExecutor{
 		queries: queryer,
 		name:    methodParallelQuery,
@@ -494,10 +524,6 @@ func (d *DB) PagingQuery(query PagingQuery) *DB {
 func (d *DB) AssociateQuery(query AssociateQuery) *DB {
 
 	c := d.clone()
-	if c.executor != nil {
-		c.addError(fmt.Errorf("db executor confilct"))
-		return c
-	}
 
 	r := &raw{
 		Query: true,
@@ -505,17 +531,14 @@ func (d *DB) AssociateQuery(query AssociateQuery) *DB {
 		Vars:  query.Params,
 	}
 
-	e := c.prepareDefaultExecutor("AssociateQuery", r)
+	e := c.prepareDefaultExecutor(methodAssociateQuery, r)
 	e.scanner = &associateScanner{}
 	e.scan = func(s scanner) error {
 		return query.Scan(s.(AssociateScanner))
 	}
 
 	c.setExecutor(e)
-	_, err := e.execute()
-	if err != nil {
-		c.addError(err)
-	}
+	c.execute()
 
 	return c
 }
@@ -523,11 +546,6 @@ func (d *DB) AssociateQuery(query AssociateQuery) *DB {
 func (d *DB) FetchQuery(query FetchQuery) *DB {
 
 	c := d.clone()
-
-	if query.Scan == nil {
-		c.addError(fmt.Errorf("FetchQeruy.Scan is nil"))
-		return c
-	}
 
 	if c.traceId == "" {
 		c.traceId = fmt.Sprintf("TID%d", time.Now().UnixNano())

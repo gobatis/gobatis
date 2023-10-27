@@ -139,6 +139,7 @@ type defaultExecutor struct {
 	pos     string
 	trace   bool
 	debug   bool
+	tx      bool
 	affect  any
 	scanner scanner
 	scan    func(s scanner) error
@@ -156,22 +157,33 @@ func (d *defaultExecutor) Query() bool {
 	return d.raw.Query
 }
 
-func (d *defaultExecutor) execute() (result sql.Result, err error) {
+func (d *defaultExecutor) execute() (sql.Result, error) {
+	if d.tx {
+		var result sql.Result
+		err := withTx(d.logger, d.pos, d.trace, d.debug, d.ctx, d.conn, func(tx *connTx) error {
+			var err error
+			result, err = d.f(tx)
+			return err
+		})
+		return result, err
+	}
+	return d.f(d.conn)
+}
+
+func (d *defaultExecutor) f(c conn) (result sql.Result, err error) {
 
 	beginAt := time.Now()
-
 	r, err := xsql.Parse(d.logger.Explain, d.raw.SQL, d.raw.Vars)
 	if err != nil {
 		return
 	}
-
 	var rows *sql.Rows
 	defer func() {
 		if rows != nil {
 			err = parser.AddError(err, rows.Close())
 		}
-		if !d.conn.IsTx() {
-			err = parser.AddError(err, d.conn.Close())
+		if !c.IsTx() && !d.tx {
+			err = parser.AddError(err, c.Close())
 		}
 		plainSQL, e := xsql.Explain(d.logger.Explain, d.raw.SQL, d.raw.Vars)
 		if e != nil {
@@ -187,11 +199,11 @@ func (d *defaultExecutor) execute() (result sql.Result, err error) {
 		if result != nil {
 			t.RowsAffected, _ = result.RowsAffected()
 		}
-		d.logger.Trace(d.pos, d.conn.TraceId(), d.conn.IsTx(), err, t)
+		d.logger.Trace(d.pos, c.TraceId(), c.IsTx(), err, t)
 	}()
 
 	if !d.raw.Query {
-		result, err = d.conn.ExecContext(d.ctx, r.Statement(), r.Vars()...)
+		result, err = c.ExecContext(d.ctx, r.Statement(), r.Vars()...)
 		if err != nil {
 			return
 		}
@@ -202,7 +214,7 @@ func (d *defaultExecutor) execute() (result sql.Result, err error) {
 		return
 	}
 
-	rows, err = d.conn.QueryContext(d.ctx, r.Statement(), r.Vars()...)
+	rows, err = c.QueryContext(d.ctx, r.Statement(), r.Vars()...)
 	if err != nil {
 		return
 	}

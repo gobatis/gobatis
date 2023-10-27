@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -16,6 +17,10 @@ import (
 // 2. insert into ... on conflict ...
 // 3. insert into ... on conflict ... returning ...
 func TestInsert(t *testing.T) {
+	defer func() {
+		cleanProducts(t)
+	}()
+
 	// perform ordinary insertion operation and
 	// return the auto-increment primary key
 	m := getProductsMap()
@@ -70,7 +75,92 @@ func TestInsert(t *testing.T) {
 	require.Equal(t, true, product.IsAvailable)
 	require.Equal(t, "2023-04-12", product.ManufactureDate.Format("2006-01-02"))
 	require.Equal(t, true, product.AddedDateTime.Unix() > 0)
+}
 
-	err = db.Debug().Delete("products", batis.Where("1=1")).Error
-	require.NoError(t, err)
+func TestInsertAffect(t *testing.T) {
+	defer func() {
+		cleanProducts(t)
+	}()
+	m := getProductsMap()
+	expectAffectConstrictError(t, db.Affect(0).Insert("products", m[Smartwatch]).Error)
+	expectAffectConstrictError(t, db.Affect(0).Insert("products", m[Smartwatch], batis.Returning("id")).Scan(&m[Smartwatch].Id).Error)
+
+	require.NoError(t, db.Affect(1).Insert("products", m[Smartwatch]).Error)
+	require.NoError(t, db.Affect(1).Insert("products", m[Chair]).Error)
+
+	var count int
+	require.NoError(t, db.Query(`select count(1) from products`).Scan(&count).Error)
+	require.Equal(t, 2, count)
+}
+
+func TestInsertExecutorConflict(t *testing.T) {
+	m := getProductsMap()
+	expectExecutorConflictError(t, db.Insert("products", m[Smartwatch], batis.Returning("*")).Insert("products", nil).Error)
+	expectExecutorConflictError(t, db.Insert("products", m[Smartwatch], batis.Returning("*")).Update("products", nil, batis.Where("")).Error)
+	expectExecutorConflictError(t, db.Insert("products", m[Smartwatch], batis.Returning("*")).Query(``).Error)
+	expectExecutorConflictError(t, db.Insert("products", m[Smartwatch], batis.Returning("*")).Exec(``).Error)
+	expectExecutorConflictError(t, db.Insert("products", m[Smartwatch], batis.Returning("*")).InsertBatch(``, 2, nil).Error)
+	expectExecutorConflictError(t, db.Insert("products", m[Smartwatch], batis.Returning("*")).ParallelQuery(batis.ParallelQuery{}).Error)
+	expectExecutorConflictError(t, db.Insert("products", m[Smartwatch], batis.Returning("*")).PagingQuery(batis.PagingQuery{}).Error)
+	expectExecutorConflictError(t, db.Insert("products", m[Smartwatch], batis.Returning("*")).FetchQuery(batis.FetchQuery{}).Error)
+	expectExecutorConflictError(t, db.Insert("products", m[Smartwatch], batis.Returning("*")).AssociateQuery(batis.AssociateQuery{}).Error)
+}
+
+func TestInsertRowsAffected(t *testing.T) {
+	defer func() {
+		cleanProducts(t)
+	}()
+	m := getProductsMap()
+	{
+		rowsAffected, err := db.Insert("products", m[Smartwatch]).RowsAffected()
+		require.NoError(t, err)
+		require.Equal(t, int64(1), rowsAffected)
+	}
+	{
+		rowsAffected, err := db.Insert("products", m[Chair], batis.Returning("id")).Scan(&m[Chair].Id).RowsAffected()
+		require.NoError(t, err)
+		require.Equal(t, int64(1), rowsAffected)
+	}
+}
+
+func TestInsertLastInsertId(t *testing.T) {
+
+}
+
+func TestInsertContext(t *testing.T) {
+	m := getProductsMap()
+	ctx, cancel := context.WithTimeout(context.Background(), 0)
+	cancel()
+	expectContextDeadlineExceeded(t, db.WithContext(ctx).Insert("products", m[TV]).Error)
+}
+
+func TestInsertTraceId(t *testing.T) {
+	m := getProductsMap()
+	{
+		w := newTraceWriter()
+		db.Session(&batis.Session{Logger: traceLogger(w)}).WithTraceId("id").Insert("products2", m[TV])
+		w.expectTraceId(t, "id")
+	}
+	{
+		ctx := batis.WithTraceId(context.Background(), "ctx")
+		w := newTraceWriter()
+		db.Session(&batis.Session{Logger: traceLogger(w)}).WithContext(ctx).Insert("products2", m[TV])
+		w.expectTraceId(t, "ctx")
+	}
+}
+
+func TestInsertTx(t *testing.T) {
+
+}
+
+func TestInsertDebug(t *testing.T) {
+
+}
+
+func TestInsertTrace(t *testing.T) {
+
+}
+
+func TestInsertColumnTag(t *testing.T) {
+
 }

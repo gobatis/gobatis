@@ -1,21 +1,34 @@
 package tests
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
 	batis "github.com/gobatis/gobatis"
 	"github.com/gobatis/gobatis/driver/postgres"
+	"github.com/gobatis/gobatis/logger"
 	"github.com/gozelle/fastjson"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/require"
 )
 
 var db *batis.DB
+
+const (
+	driverPostgres   = "postgres"
+	driverSQLite     = "sqlite"
+	driverMySQL      = "mysql"
+	driverClickhouse = "clickhouse"
+	driverTiDB       = "tidb"
+	driverSQLServer  = "sqlserver"
+)
 
 func init() {
 	var err error
@@ -177,4 +190,50 @@ func compareProduct(t *testing.T, v1, v2 *Product) {
 		t.Fatal(fmt.Errorf("compare products v1(%s) != v2(%s), err: %s", v1.ProductName, v2.ProductName, err))
 	}
 	return
+}
+
+func cleanProducts(t *testing.T) {
+	require.NoError(t, db.Exec(`delete from products`).Error)
+}
+
+func prepareProducts(t *testing.T) {
+	l := getProductsList()
+	require.NoError(t, db.InsertBatch("products", 2, l).Error)
+}
+
+func expectExecutorConflictError(t *testing.T, err error) {
+	require.True(t, errors.Is(err, batis.ErrExecutorConflict))
+}
+
+func expectAffectConstrictError(t *testing.T, err error) {
+	require.True(t, errors.Is(err, batis.ErrAffectConstrict))
+}
+
+func expectContextDeadlineExceeded(t *testing.T, err error) {
+	require.True(t, errors.Is(err, context.DeadlineExceeded))
+}
+
+var _ logger.Writer = (*traceWriter)(nil)
+
+func newTraceWriter() *traceWriter {
+	return &traceWriter{}
+}
+
+type traceWriter struct {
+	logs []string
+}
+
+func (tw *traceWriter) Printf(s string, i ...interface{}) {
+	tw.logs = append(tw.logs, fmt.Sprintf(s, i...))
+}
+
+func (tw *traceWriter) expectTraceId(t *testing.T, traceId string) {
+	require.True(t, len(tw.logs) > 0)
+	for _, v := range tw.logs {
+		require.True(t, strings.HasPrefix(v, fmt.Sprintf("[%s]", traceId)))
+	}
+}
+
+func traceLogger(w *traceWriter) logger.Logger {
+	return logger.NewtLogger(w)
 }

@@ -6,11 +6,6 @@ import (
 	"strconv"
 )
 
-var (
-	InvalidAffectValueErr = fmt.Errorf("db.Affect() only accept int type or string like 1+")
-	RowsAffectedCheckErr  = fmt.Errorf("check affected rows error")
-)
-
 func newAffectConstraint(v any) (*affectConstraint, error) {
 
 	switch r := v.(type) {
@@ -21,7 +16,7 @@ func newAffectConstraint(v any) (*affectConstraint, error) {
 	case string:
 		reg := regexp.MustCompile(`^([0-9]+)(\+)?$`)
 		if !reg.MatchString(r) {
-			return nil, fmt.Errorf("%w; got: %s", InvalidAffectValueErr, r)
+			return nil, fmt.Errorf("%w; got: %s", ErrInvalidAffectValue, r)
 		}
 		items := reg.FindStringSubmatch(r)
 		var rows int64
@@ -31,7 +26,7 @@ func newAffectConstraint(v any) (*affectConstraint, error) {
 		}
 		return &affectConstraint{rows: int64(rows), sign: items[2]}, nil
 	default:
-		return nil, InvalidAffectValueErr
+		return nil, ErrInvalidAffectValue
 	}
 }
 
@@ -43,11 +38,11 @@ type affectConstraint struct {
 func (a affectConstraint) Check(rows int64) error {
 	if a.sign != "" {
 		if rows < a.rows {
-			return fmt.Errorf("%w: expect affected rows >= %d, got %d", RowsAffectedCheckErr, a.rows, rows)
+			return fmt.Errorf("%w, expect affected rows >= %d, got %d", ErrAffectConstrict, a.rows, rows)
 		}
 	} else {
 		if rows != a.rows {
-			return fmt.Errorf("%w: expect affected rows = %d, got %d", RowsAffectedCheckErr, a.rows, rows)
+			return fmt.Errorf("%w, expect affected rows = %d, got %d", ErrAffectConstrict, a.rows, rows)
 		}
 	}
 	return nil

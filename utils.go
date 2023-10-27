@@ -7,12 +7,9 @@ import (
 	"reflect"
 	"regexp"
 	"strings"
-	"testing"
 	"time"
 
 	"github.com/gobatis/gobatis/dialector"
-	"github.com/stretchr/testify/require"
-	"github.com/ttacon/chalk"
 )
 
 var errorType reflect.Type
@@ -96,41 +93,25 @@ func SplitStructSlice(data any, limit int) ([]any, error) {
 	return result, nil
 }
 
-func reflectValueElem(vt reflect.Value) reflect.Value {
-	for {
-		if vt.Kind() != reflect.Ptr {
-			break
-		}
-		vt = vt.Elem()
-	}
-	return vt
-}
-
-func reflectTypeElem(vt reflect.Type) reflect.Type {
-	for {
-		if vt.Kind() != reflect.Ptr {
-			break
-		}
-		vt = vt.Elem()
-	}
-	return vt
-}
-
-func printVars(vars []interface{}) string {
-	if len(vars) == 0 {
-		return ""
-	}
-	r := "\n"
-	for i, v := range vars {
-		_t := ""
-		if v != nil {
-			_t = reflect.TypeOf(v).String()
-		}
-		r += fmt.Sprintf("   $%d %s (%s) %+v\n",
-			i+1, chalk.Green.Color("=>"), chalk.Yellow.Color(_t), v)
-	}
-	return r
-}
+//func reflectValueElem(vt reflect.Value) reflect.Value {
+//	for {
+//		if vt.Kind() != reflect.Ptr {
+//			break
+//		}
+//		vt = vt.Elem()
+//	}
+//	return vt
+//}
+//
+//func reflectTypeElem(vt reflect.Type) reflect.Type {
+//	for {
+//		if vt.Kind() != reflect.Ptr {
+//			break
+//		}
+//		vt = vt.Elem()
+//	}
+//	return vt
+//}
 
 //func toSnakeCase(s string) string {
 //	var re = regexp.MustCompile(`([^A-Z_])([A-Z])`)
@@ -657,45 +638,46 @@ func RowsParams(rows []Row) (params []NameValue) {
 	return
 }
 
-func TestIndirect(t *testing.T) {
-
-	var a *int
-	rv := reflect.ValueOf(&a)
-
-	t.Log(rv.Kind())
-
-	rv = indirect(rv, false)
-
-	t.Log(rv.Kind())
-
-	rv.Set(reflect.ValueOf(3))
-
-	t.Log(*a)
-}
-
-func TestSetValueBasic(t *testing.T) {
-
-	var a *int
-	rv := reflect.ValueOf(&a)
-	err := setValue(rv, 1)
-	require.NoError(t, err)
-	t.Log(*a)
-
-	var b int8
-	rv = reflect.ValueOf(&b)
-	err = setValue(rv, 9)
-	require.NoError(t, err)
-	t.Log(b)
-
-	var c float32
-	rv = reflect.ValueOf(&c)
-	err = setValue(rv, 3)
-	require.NoError(t, err)
-	t.Log(c)
-
-	var d string
-	rv = reflect.ValueOf(&d)
-	err = setValue(rv, "hello world")
-	require.NoError(t, err)
-	t.Log(d)
-}
+//
+//func TestIndirect(t *testing.T) {
+//
+//	var a *int
+//	rv := reflect.ValueOf(&a)
+//
+//	t.Log(rv.Kind())
+//
+//	rv = indirect(rv, false)
+//
+//	t.Log(rv.Kind())
+//
+//	rv.Set(reflect.ValueOf(3))
+//
+//	t.Log(*a)
+//}
+//
+//func TestSetValueBasic(t *testing.T) {
+//
+//	var a *int
+//	rv := reflect.ValueOf(&a)
+//	err := setValue(rv, 1)
+//	require.NoError(t, err)
+//	t.Log(*a)
+//
+//	var b int8
+//	rv = reflect.ValueOf(&b)
+//	err = setValue(rv, 9)
+//	require.NoError(t, err)
+//	t.Log(b)
+//
+//	var c float32
+//	rv = reflect.ValueOf(&c)
+//	err = setValue(rv, 3)
+//	require.NoError(t, err)
+//	t.Log(c)
+//
+//	var d string
+//	rv = reflect.ValueOf(&d)
+//	err = setValue(rv, "hello world")
+//	require.NoError(t, err)
+//	t.Log(d)
+//}

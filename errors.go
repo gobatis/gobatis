@@ -7,6 +7,9 @@ import (
 var (
 	ErrRecordNotFound     = errors.New("record not found")
 	ErrInvalidTransaction = errors.New("invalid transaction")
+	ErrExecutorConflict   = errors.New("executor conflict")
+	ErrAffectConstrict    = errors.New("affect constrict error")
+	ErrInvalidAffectValue = errors.New("db.Affect() only accept int type or string like 1+")
 	NoScanDestErr         = errors.New("expect 1 scan dest, got nil")
 )
 

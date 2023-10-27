@@ -150,6 +150,11 @@ func (i insert) Raw(namer dialector.Namer, tag string) (r *raw, err error) {
 		}
 	}()
 
+	if i.data == nil {
+		err = fmt.Errorf("insert data is nil")
+		return
+	}
+
 	for _, v := range i.elems {
 		switch vv := v.(type) {
 		case *onConflict:

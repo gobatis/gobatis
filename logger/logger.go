@@ -3,7 +3,6 @@ package logger
 import (
 	"database/sql/driver"
 	"fmt"
-	syslog "log"
 	"reflect"
 	"runtime"
 	"strconv"
@@ -23,17 +22,20 @@ type Logger interface {
 	Explain(rv reflect.Value, escaper string) (s string, err error)
 }
 
-func DefaultLogger() Logger {
-	return &logger{}
+type Writer interface {
+	Printf(string, ...interface{})
+}
+
+func NewtLogger(w Writer) Logger {
+	return &logger{
+		Writer: w,
+	}
 }
 
 var _ Logger = (*logger)(nil)
 
 type logger struct {
-}
-
-func (l logger) brand() string {
-	return ""
+	Writer
 }
 
 func (l logger) Trace(pos, traceId string, tx bool, err error, tr *SQLTrace) {
@@ -74,19 +76,19 @@ func (l logger) Trace(pos, traceId string, tx bool, err error, tr *SQLTrace) {
 }
 
 func (l logger) Debugf(format string, a ...any) {
-	syslog.Printf(format, a...)
+	l.Printf(format, a...)
 }
 
 func (l logger) Infof(format string, a ...any) {
-	syslog.Printf(format, a...)
+	l.Printf(format, a...)
 }
 
 func (l logger) Errorf(format string, a ...any) {
-	syslog.Printf(format, a...)
+	l.Printf(format, a...)
 }
 
 func (l logger) Warnf(format string, a ...any) {
-	syslog.Printf(format, a...)
+	l.Printf(format, a...)
 }
 
 const (

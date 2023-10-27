@@ -16,14 +16,26 @@ type Option interface {
 var _ Option = (*Config)(nil)
 
 type Config struct {
-	CreateBatchSize int
-	Plugins         map[string]Plugin
-	NowFunc         func() time.Time
-	Dialector       dialector.Dialector
-	Logger          logger.Logger
-	Hooks           func(db *DB)
-	ColumnTag       string
-	db              *sql.DB
+	//CreateBatchSize int
+	Plugins   map[string]Plugin
+	NowFunc   func() time.Time
+	Dialector dialector.Dialector
+	Logger    logger.Logger
+	Hooks     func(db *DB)
+	ColumnTag string
+	db        *sql.DB
+}
+
+func (c Config) clone() *Config {
+	return &Config{
+		Plugins:   c.Plugins,
+		NowFunc:   c.NowFunc,
+		Dialector: c.Dialector,
+		Logger:    c.Logger,
+		Hooks:     c.Hooks,
+		ColumnTag: c.ColumnTag,
+		db:        c.db,
+	}
 }
 
 func (c Config) Apply(config *Config) error {
