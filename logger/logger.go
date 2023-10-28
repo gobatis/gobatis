@@ -3,6 +3,8 @@ package logger
 import (
 	"database/sql/driver"
 	"fmt"
+	"log"
+	"os"
 	"reflect"
 	"runtime"
 	"strconv"
@@ -34,6 +36,8 @@ func NewtLogger(w Writer) Logger {
 
 var _ Logger = (*logger)(nil)
 
+var Default = NewtLogger(log.New(os.Stdout, "\r\n", log.LstdFlags))
+
 type logger struct {
 	Writer
 }
@@ -61,7 +65,7 @@ func (l logger) Trace(pos, traceId string, tx bool, err error, tr *SQLTrace) {
 	}
 	info.WriteString(fmt.Sprintf("%s%s %s", traceId, t, color.RedString(pos)))
 	if err != nil {
-		info.WriteString(color.RedString(fmt.Sprintf(" ERROR: %s", err.Error())))
+		info.WriteString(color.RedString(fmt.Sprintf(" error: %s", err.Error())))
 	}
 
 	if tr != nil {

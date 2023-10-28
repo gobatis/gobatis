@@ -82,6 +82,18 @@ type Product struct {
 	AddedDateTime   time.Time       `db:"added_datetime"`
 }
 
+type ProductJ struct {
+	JId              *int            `json:"id"`
+	JProductName     string          `json:"product_name"`
+	JDescription     string          `json:"description"`
+	JPrice           decimal.Decimal `json:"price"`
+	JWeight          float32         `json:"weight"`
+	JStockQuantity   int64           `json:"stock_quantity"`
+	JIsAvailable     bool            `json:"is_available"`
+	JManufactureDate time.Time       `json:"manufacture_date"`
+	JAddedDateTime   time.Time       `json:"added_datetime"`
+}
+
 const (
 	Laptop              = "Laptop"
 	Smartphone          = "Smartphone"
@@ -178,6 +190,32 @@ func compareProducts(t *testing.T, r, c []*Product) {
 	}
 }
 
+func compareProductJ(t *testing.T, v1, v2 *ProductJ) {
+	p1 := &Product{
+		Id:              v1.JId,
+		ProductName:     v1.JProductName,
+		Description:     v1.JDescription,
+		Price:           v1.JPrice,
+		Weight:          v1.JWeight,
+		StockQuantity:   v1.JStockQuantity,
+		IsAvailable:     v1.JIsAvailable,
+		ManufactureDate: v1.JManufactureDate,
+		AddedDateTime:   v1.JAddedDateTime,
+	}
+	p2 := &Product{
+		Id:              v2.JId,
+		ProductName:     v2.JProductName,
+		Description:     v2.JDescription,
+		Price:           v2.JPrice,
+		Weight:          v2.JWeight,
+		StockQuantity:   v2.JStockQuantity,
+		IsAvailable:     v2.JIsAvailable,
+		ManufactureDate: v2.JManufactureDate,
+		AddedDateTime:   v2.JAddedDateTime,
+	}
+	compareProduct(t, p1, p2)
+}
+
 func compareProduct(t *testing.T, v1, v2 *Product) {
 	// TODO check time format
 	v1.AddedDateTime = time.Time{}
@@ -210,7 +248,7 @@ func expectAffectConstrictError(t *testing.T, err error) {
 }
 
 func expectContextDeadlineExceeded(t *testing.T, err error) {
-	require.True(t, errors.Is(err, context.DeadlineExceeded))
+	require.True(t, errors.Is(err, context.Canceled))
 }
 
 var _ logger.Writer = (*traceWriter)(nil)

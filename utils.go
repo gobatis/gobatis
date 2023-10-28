@@ -127,19 +127,19 @@ func SplitStructSlice(data any, limit int) ([]any, error) {
 //	return r
 //}
 
-func reflectRow(columns []string, row []interface{}, pv reflect.Value, first bool) (bool, error) {
+func reflectRow(columns []string, row []interface{}, pv reflect.Value, first bool, columnTag string) (bool, error) {
 
 	switch pv.Kind() {
 	case reflect.Slice, reflect.Array:
-		return false, setArray(pv, newRowMap(columns, row))
+		return false, setArray(pv, newRowMap(columns, row), columnTag)
 	case reflect.Struct:
-		return true, setStruct(pv, newRowMap(columns, row))
+		return true, setStruct(pv, newRowMap(columns, row), columnTag)
 	}
 	return true, setValue(pv, row[0])
 }
 
-func prepareFieldName(f reflect.StructField) string {
-	field := f.Tag.Get("db")
+func prepareFieldName(f reflect.StructField, columnTag string) string {
+	field := f.Tag.Get(columnTag)
 	if field == "" {
 		field = toSnakeCase(f.Name)
 	}
@@ -265,7 +265,7 @@ func setValue(pv reflect.Value, v any) error {
 	return nil
 }
 
-func setArray(pv reflect.Value, r rowMap) (err error) {
+func setArray(pv reflect.Value, r rowMap, columnTag string) (err error) {
 
 	t := pv.Type().Elem()
 	ptr := false
@@ -285,7 +285,7 @@ func setArray(pv reflect.Value, r rowMap) (err error) {
 		} else {
 			pv.Set(reflect.Append(pv, reflect.New(pv.Type().Elem()).Elem()))
 		}
-		err = setStruct(indirect(pv.Index(pv.Len()-1), false), r)
+		err = setStruct(indirect(pv.Index(pv.Len()-1), false), r, columnTag)
 		if err != nil {
 			return
 		}
@@ -311,7 +311,7 @@ func setArray(pv reflect.Value, r rowMap) (err error) {
 	return
 }
 
-func setStruct(pv reflect.Value, r rowMap) (err error) {
+func setStruct(pv reflect.Value, r rowMap, columnTag string) (err error) {
 
 	//var tags map[string]struct{}
 	//if first {
@@ -320,7 +320,7 @@ func setStruct(pv reflect.Value, r rowMap) (err error) {
 
 	t := pv.Type()
 	for i := 0; i < t.NumField(); i++ {
-		n := prepareFieldName(t.Field(i))
+		n := prepareFieldName(t.Field(i), columnTag)
 		//if first {
 		//	if _, ok := tags[n]; ok {
 		//		return fmt.Errorf("field tag: '%s' is duplicated in struct: '%s'", n, _type)

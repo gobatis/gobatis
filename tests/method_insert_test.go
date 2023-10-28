@@ -95,7 +95,7 @@ func TestInsertAffect(t *testing.T) {
 
 func TestInsertExecutorConflict(t *testing.T) {
 	m := getProductsMap()
-	expectExecutorConflictError(t, db.Insert("products", m[Smartwatch], batis.Returning("*")).Insert("products", nil).Error)
+	expectExecutorConflictError(t, db.Insert("products", m[Smartwatch], batis.Returning("*")).Insert("products", &Product{}).Error)
 	expectExecutorConflictError(t, db.Insert("products", m[Smartwatch], batis.Returning("*")).Update("products", nil, batis.Where("")).Error)
 	expectExecutorConflictError(t, db.Insert("products", m[Smartwatch], batis.Returning("*")).Query(``).Error)
 	expectExecutorConflictError(t, db.Insert("products", m[Smartwatch], batis.Returning("*")).Exec(``).Error)
@@ -128,10 +128,9 @@ func TestInsertLastInsertId(t *testing.T) {
 }
 
 func TestInsertContext(t *testing.T) {
-	m := getProductsMap()
-	ctx, cancel := context.WithTimeout(context.Background(), 0)
+	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	expectContextDeadlineExceeded(t, db.WithContext(ctx).Insert("products", m[TV]).Error)
+	expectContextDeadlineExceeded(t, db.WithContext(ctx).Insert("products", &Product{}).Error)
 }
 
 func TestInsertTraceId(t *testing.T) {
@@ -154,7 +153,12 @@ func TestInsertTx(t *testing.T) {
 }
 
 func TestInsertDebug(t *testing.T) {
+	defer func() {
+		cleanProducts(t)
+	}()
 
+	m := getProductsMap()
+	db.Debug().Insert("products", m[TV])
 }
 
 func TestInsertTrace(t *testing.T) {
@@ -162,5 +166,40 @@ func TestInsertTrace(t *testing.T) {
 }
 
 func TestInsertColumnTag(t *testing.T) {
+
+	defer func() {
+		cleanProducts(t)
+	}()
+
+	m := getProductsMap()
+	p := m[TV]
+	i := &ProductJ{
+		JId:              p.Id,
+		JProductName:     p.ProductName,
+		JDescription:     p.Description,
+		JPrice:           p.Price,
+		JWeight:          p.Weight,
+		JStockQuantity:   p.StockQuantity,
+		JIsAvailable:     p.IsAvailable,
+		JManufactureDate: p.ManufactureDate,
+		JAddedDateTime:   p.AddedDateTime,
+	}
+
+	s := db.Session(&batis.Session{ColumnTag: "json"})
+
+	require.NoError(t, s.Insert("products", i).Error)
+
+	var n *ProductJ
+
+	require.NoError(t, s.Query(`select * from products where product_name = #{ name }`,
+		batis.Param("name", i.JProductName)).Scan(&n).Error)
+
+	require.True(t, *n.JId > 0)
+	n.JId = nil
+
+	compareProductJ(t, i, n)
+}
+
+func TestInsertClone(t *testing.T) {
 
 }

@@ -207,6 +207,7 @@ func (d *defaultExecutor) f(c conn) (result sql.Result, err error) {
 		if err != nil {
 			return
 		}
+		d.scanner.setResult(result)
 		err = checkAffect(d.affect, result)
 		if err != nil {
 			return
@@ -280,22 +281,13 @@ func (i *insertBatchExecutor) execute() (sql.Result, error) {
 				scanner: i.scanner,
 				scan:    i.scan,
 			}
-			var rr sql.Result
-			rr, err = d.execute()
+			_, err = d.execute()
 			if err != nil {
 				return
 			}
-			if n, e := rr.RowsAffected(); e == nil {
-				if qr.rowsAffected == nil {
-					t := int64(0)
-					qr.rowsAffected = &t
-				}
-				*qr.rowsAffected += n
-			}
-			if n, e := rr.LastInsertId(); e == nil {
-				qr.lastInserted = &n
-			}
 		}
+		rowsAffected := i.scanner.getRowsAffected()
+		qr.rowsAffected = &rowsAffected
 		result = qr
 		err = checkAffect(i.affect, result)
 		if err != nil {
@@ -308,14 +300,15 @@ func (i *insertBatchExecutor) execute() (sql.Result, error) {
 }
 
 type parallelQueryExecutor struct {
-	queries []ParallelQuery
-	name    string
-	ctx     context.Context
-	conn    func() conn
-	logger  logger.Logger
-	pos     string
-	trace   bool
-	debug   bool
+	columnTag string
+	queries   []ParallelQuery
+	name      string
+	ctx       context.Context
+	conn      func() conn
+	logger    logger.Logger
+	pos       string
+	trace     bool
+	debug     bool
 }
 
 func (p parallelQueryExecutor) method() string {
@@ -338,15 +331,17 @@ func (p parallelQueryExecutor) execute() (result sql.Result, err error) {
 			r := newRaw(true, v.SQL, nil)
 			r.mergeVars(v.Params)
 			d := &defaultExecutor{
-				name:    p.name,
-				raw:     r,
-				ctx:     p.ctx,
-				conn:    p.conn(),
-				logger:  p.logger,
-				pos:     p.pos,
-				trace:   p.trace,
-				debug:   p.debug,
-				scanner: &defaultScanner{},
+				name:   p.name,
+				raw:    r,
+				ctx:    p.ctx,
+				conn:   p.conn(),
+				logger: p.logger,
+				pos:    p.pos,
+				trace:  p.trace,
+				debug:  p.debug,
+				scanner: &defaultScanner{
+					columnTag: p.columnTag,
+				},
 				scan: func(s scanner) error {
 					return v.Scan(s.(Scanner))
 				},
@@ -364,14 +359,15 @@ func (p parallelQueryExecutor) execute() (result sql.Result, err error) {
 }
 
 type pagingQueryExecutor struct {
-	query  PagingQuery
-	name   string
-	ctx    context.Context
-	conn   func() conn
-	logger logger.Logger
-	pos    string
-	trace  bool
-	debug  bool
+	query     PagingQuery
+	name      string
+	ctx       context.Context
+	conn      func() conn
+	logger    logger.Logger
+	pos       string
+	trace     bool
+	debug     bool
+	columnTag string
 }
 
 func (p pagingQueryExecutor) method() string {
@@ -404,21 +400,23 @@ func (p pagingQueryExecutor) execute() (sql.Result, error) {
 	c.mergeVars(p.query.Params)
 
 	s := &pagingScanner{
-		query:  q,
-		count:  c,
-		method: p.name,
-		ctx:    p.ctx,
-		conn:   p.conn,
-		logger: p.logger,
-		pos:    p.pos,
-		trace:  p.trace,
-		debug:  p.debug,
+		query:     q,
+		count:     c,
+		method:    p.name,
+		ctx:       p.ctx,
+		conn:      p.conn,
+		logger:    p.logger,
+		pos:       p.pos,
+		trace:     p.trace,
+		debug:     p.debug,
+		columnTag: p.columnTag,
 	}
 	return nil, p.query.Scan(s)
 }
 
 type fetchQueryExecutor struct {
-	limit uint
+	columnTag string
+	limit     uint
 	*defaultExecutor
 }
 
@@ -456,7 +454,9 @@ func (f *fetchQueryExecutor) execute() (sql.Result, error) {
 			err = f.exec(
 				tx,
 				newRaw(true, fmt.Sprintf("fetch forward %d from %s", f.limit, cursor), nil),
-				&defaultScanner{},
+				&defaultScanner{
+					columnTag: f.columnTag,
+				},
 				func(s scanner) error {
 					e := f.scan(s)
 					if e != nil {

@@ -10,6 +10,18 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+type Case struct {
+	Vars       map[string]any
+	Error      bool
+	ExpectSQL  string
+	ExpectVars []any
+}
+
+type Test struct {
+	Source string
+	Cases  []Case
+}
+
 func TestLexer(t *testing.T) {
 	input := antlr.NewInputStream("$.User.Roles[*].ID")
 	lexer := NewXSQLLexer(input)
@@ -52,7 +64,7 @@ func TestParser(t *testing.T) {
 	//xs, err := Parse(`<a></a>*`)
 	//xs, err := Parse(`*~<<a test="ok">b</a>>kk`)
 	//xs, err := Parse(`<a`)
-	xs, err := Parse(logger.DefaultLogger().Explain, `
+	xs, err := Parse(logger.Default.Explain, `
 	select $a weight < / > =,
 		'a', "b"
 		${ weight[1].Value }
@@ -104,99 +116,113 @@ func TestStmt(t *testing.T) {
 	//spew.Json(xs.Vars())
 }
 
-func TestVisitor(t *testing.T) {
+func TestIF(t *testing.T) {
+	test(t, []Test{
+		{
+			Source: `select <if test="a > 0">${b}</if>`,
+			Cases: []Case{
+				{Vars: map[string]any{"a": 1, "b": "b"}, Error: false, ExpectSQL: "select 'b'", ExpectVars: nil},
+				{Vars: map[string]any{"a": 0}, Error: false, ExpectSQL: "select ", ExpectVars: nil},
+			},
+		},
+		{
+			Source: `<if test="a==-1">-1</if>`,
+			Cases: []Case{
+				{Vars: map[string]any{"a": -1}, Error: false, ExpectSQL: "-1", ExpectVars: nil},
+			},
+		},
+		{
+			Source: `select <if test="a > 0">${b}</if>`,
+			Cases: []Case{
+				{Vars: map[string]any{"a": 1, "b": "b"}, Error: false, ExpectSQL: "select 'b'", ExpectVars: nil},
+				{Vars: map[string]any{"a": 0}, Error: false, ExpectSQL: "select ", ExpectVars: nil},
+			},
+		},
+		{
+			Source: `<if test="a==-1">-1</if>`,
+			Cases: []Case{
+				{Vars: map[string]any{"a": -1}, Error: false, ExpectSQL: "-1", ExpectVars: nil},
+			},
+		},
+	})
+}
 
-	type TestCase struct {
-		Vars       map[string]any
-		Error      bool
-		ExpectSQL  string
-		ExpectVars []any
-	}
+func TestChoose(t *testing.T) {
+	test(t, []Test{
+		{
+			Source: `
+				select <choose>
+						<when test="a >= 1">1</when>
+						<when test="a >= 0">0</when>
+						<otherwise>-1</otherwise>
+		              </choose>
+			`,
+			Cases: []Case{
+				{Vars: map[string]any{"a": 1}, Error: false, ExpectSQL: " select 1 ", ExpectVars: nil},
+				{Vars: map[string]any{"a": 0}, Error: false, ExpectSQL: " select 0 ", ExpectVars: nil},
+				{Vars: map[string]any{"a": -1}, Error: false, ExpectSQL: " select -1 ", ExpectVars: nil},
+			},
+		},
+	})
+}
 
-	type TestSource struct {
-		Source string
-		Cases  []TestCase
-	}
+func TestForeach(t *testing.T) {
+	test(t, []Test{
+		{
+			Source: `
+				select * from products where "id" in
+				<foreach item="id" collection="ids" open="(" close=")" separator=",">
+					#{id}
+				</foreach>
+			`,
+			Cases: []Case{
+				{Vars: map[string]any{"ids": []int{1, 2, 3}}},
+			},
+		},
+	})
+}
 
-	tests := []TestSource{
-		// if
-		//{
-		//	Source: `select <if test="a > 0">${b}</if>`,
-		//	Cases: []TestCase{
-		//		{Vars: map[string]any{"a": 1, "b": "b"}, Error: false, ExpectSQL: "select 'b'", ExpectVars: nil},
-		//		{Vars: map[string]any{"a": 0}, Error: false, ExpectSQL: "select ", ExpectVars: nil},
-		//	},
-		//},
-		//{
-		//	Source: `<if test="a==-1">-1</if>`,
-		//	Cases: []TestCase{
-		//		{Vars: map[string]any{"a": -1}, Error: false, ExpectSQL: "-1", ExpectVars: nil},
-		//	},
-		//},
-		//
-		//// choose
-		//{
-		//	Source: `
-		//		select <choose>
-		//				<when test="a >= 1">1</when>
-		//				<when test="a >= 0">0</when>
-		//				<otherwise>-1</otherwise>
-		//               </choose>
-		//	`,
-		//	Cases: []TestCase{
-		//		{Vars: map[string]any{"a": 1}, Error: false, ExpectSQL: " select 1 ", ExpectVars: nil},
-		//		{Vars: map[string]any{"a": 0}, Error: false, ExpectSQL: " select 0 ", ExpectVars: nil},
-		//		{Vars: map[string]any{"a": -1}, Error: false, ExpectSQL: " select -1 ", ExpectVars: nil},
-		//	},
-		//},
+func TestSet(t *testing.T) {
+	test(t, []Test{
+		{
+			Source: `
+		  UPDATE some_table
+		  <set>
+			<if test="name != nil">name = #{name},</if>
+			<if test="age != nil">age = #{age},</if>
+			<if test="address != nil">address = #{address},</if>
+		  </set>
+		  WHERE id = #{id}
+		`,
+			Cases: []Case{
+				{Vars: map[string]any{"name": "tom", "age": nil, "address": nil, "id": 1}, ExpectSQL: "", ExpectVars: []any{"tom"}},
+			},
+		},
+	})
+}
 
-		// foreach
-		//{
-		//	Source: `
-		//		select * from products where "id" in
-		//		<foreach item="id" collection="ids" open="(" close=")" separator=",">
-		//			#{id}
-		//		</foreach>
-		//	`,
-		//	Cases: []TestCase{
-		//		{Vars: map[string]any{"ids": []int{1, 2, 3}}},
-		//	},
-		//},
+func TestWhere(t *testing.T) {
+	test(t, []Test{
+		{
+			Source: `
+			SELECT * products
+			<where>
+				<if test="a != nil">field1 = #{a}</if>
+				<if test="b != nil">AnD field2 = #{b}</if>
+				<if test="c != nil">oR field3 = #{c}</if>
+			</where>
+		   `,
+			Cases: []Case{
+				//{Vars: map[string]any{"a": 1, "b": nil, "c": nil}},
+				//{Vars: map[string]any{"a": nil, "b": 2, "c": nil}},
+				{Vars: map[string]any{"a": nil, "b": nil, "c": 3}},
+			},
+		},
+	})
+}
 
-		// set
-		//{
-		//	Source: `
-		//	  UPDATE some_table
-		//	  <set>
-		//		<if test="name != nil">name = #{name},</if>
-		//		<if test="age != nil">age = #{age},</if>
-		//		<if test="address != nil">address = #{address},</if>
-		//	  </set>
-		//	  WHERE id = #{id}
-		//	`,
-		//	Cases: []TestCase{
-		//		{Vars: map[string]any{"name": "tom", "age": nil, "address": nil, "id": 1}, ExpectSQL: "", ExpectVars: []any{"tom"}},
-		//	},
-		//},
-
-		// where
-		//{
-		//	Source: `
-		//	SELECT * products
-		//	<where>
-		//		<if test="a != nil">field1 = #{a}</if>
-		//		<if test="b != nil">AnD field2 = #{b}</if>
-		//		<if test="c != nil">oR field3 = #{c}</if>
-		//	</where>
-		//    `,
-		//	Cases: []TestCase{
-		//		//{Vars: map[string]any{"a": 1, "b": nil, "c": nil}},
-		//		//{Vars: map[string]any{"a": nil, "b": 2, "c": nil}},
-		//		{Vars: map[string]any{"a": nil, "b": nil, "c": 3}},
-		//	},
-		//},
-
-		// trim
+func TestTrim(t *testing.T) {
+	test(t, []Test{
 		{
 			Source: `
 			select * from table_name 
@@ -212,27 +238,50 @@ func TestVisitor(t *testing.T) {
 				</if>
 			</trim>
             `,
-			Cases: []TestCase{
+			Cases: []Case{
 				//{Vars: map[string]any{"a": 1, "b": nil, "c": nil}},
 				{Vars: map[string]any{"a": nil, "b": 2, "c": nil}},
 				//{Vars: map[string]any{"a": nil, "b": nil, "c": 3}},
 			},
 		},
+	})
+}
+
+func TestVisitor(t *testing.T) {
+
+	tests := []Test{
+		// if
+
+		//
+		//// choose
+
+		// foreach
+
+		// set
+
+		// where
+
+		// trim
 
 		// complex
 		//{
 		//	Source: "select * from products where category in #{category}",
-		//	Cases: []TestCase{
+		//	Cases: []Case{
 		//		{Vars: map[string]any{"category": 1}, Error: false, ExpectSQL: "select * from products where category in $1", ExpectVars: []any{1}},
 		//		{Vars: map[string]any{"category": "a"}, Error: false, ExpectSQL: "select * from products where category in $1", ExpectVars: []any{"a"}},
 		//		{Vars: map[string]any{"category": []int{1, 2, 3}}, Error: false, ExpectSQL: "select * from products where category in ($1,$2,$3)", ExpectVars: []any{1, 2, 3}},
 		//	},
 		//},
+
 	}
 
+	test(t, tests)
+}
+
+func test(t *testing.T, tests []Test) {
 	for _, v := range tests {
 		for _, vv := range v.Cases {
-			r, err := Parse(logger.DefaultLogger().Explain, v.Source, vv.Vars)
+			r, err := Parse(logger.Default.Explain, v.Source, vv.Vars)
 			if vv.Error {
 				require.Error(t, err, v.Source)
 			} else {

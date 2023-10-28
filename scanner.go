@@ -17,6 +17,7 @@ import (
 type scanner interface {
 	setRows(rows *sql.Rows)
 	setDest(dest any, ignore ...string)
+	setResult(r sql.Result)
 	getRowsAffected() int64
 	scan() error
 }
@@ -47,6 +48,11 @@ type defaultScanner struct {
 	dest         any
 	ignore       []string
 	rowsAffected int64
+	columnTag    string
+}
+
+func (d *defaultScanner) setResult(r sql.Result) {
+	d.rowsAffected, _ = r.RowsAffected()
 }
 
 func (d *defaultScanner) getRowsAffected() int64 {
@@ -135,7 +141,7 @@ func (d *defaultScanner) scan() (err error) {
 }
 
 func (d *defaultScanner) defaultReflectRow(columns []string, row []interface{}, pv reflect.Value, first bool) (bool, error) {
-	return reflectRow(columns, row, pv, first)
+	return reflectRow(columns, row, pv, first, d.columnTag)
 }
 
 type insertBatchScanner struct {
@@ -144,6 +150,13 @@ type insertBatchScanner struct {
 	lastInsertId int64
 	dest         any
 	ignore       []string
+	columnTag    string
+}
+
+func (i *insertBatchScanner) setResult(r sql.Result) {
+	if rowsAffected, err := r.RowsAffected(); err == nil {
+		i.rowsAffected += rowsAffected
+	}
 }
 
 func (i *insertBatchScanner) getRowsAffected() int64 {
@@ -160,7 +173,7 @@ func (i *insertBatchScanner) scan() error {
 	if rv.Elem().Type().Kind() != reflect.Slice {
 		return fmt.Errorf("expect slice, got %s", rv.Elem().Type())
 	}
-	s := &defaultScanner{rows: i.rows}
+	s := &defaultScanner{rows: i.rows, columnTag: i.columnTag}
 	err := s.Scan(i.dest)
 	if err != nil {
 		return err
@@ -189,6 +202,12 @@ type pagingScanner struct {
 	trace        bool
 	debug        bool
 	rowsAffected int64
+	columnTag    string
+}
+
+func (p *pagingScanner) setResult(r sql.Result) {
+	//TODO implement me
+	panic("implement me")
 }
 
 func (p *pagingScanner) getRowsAffected() int64 {
@@ -226,7 +245,8 @@ func (p *pagingScanner) Scan(countPtr, listPtr any, ignore ...string) (err error
 			d := p.prepareDefaultExecutor()
 			d.raw = p.count
 			d.scanner = &defaultScanner{
-				dest: countPtr,
+				columnTag: p.columnTag,
+				dest:      countPtr,
 			}
 			d.scan = func(s scanner) error {
 				return s.scan()
@@ -238,8 +258,9 @@ func (p *pagingScanner) Scan(countPtr, listPtr any, ignore ...string) (err error
 			d := p.prepareDefaultExecutor()
 			d.raw = p.query
 			d.scanner = &defaultScanner{
-				dest:   listPtr,
-				ignore: ignore,
+				dest:      listPtr,
+				ignore:    ignore,
+				columnTag: p.columnTag,
 			}
 			d.scan = func(s scanner) error {
 				e := s.scan()
@@ -286,6 +307,12 @@ type associateScanner struct {
 	lastInsertId int64
 	bindingPaths []associateBindingPath
 	mappingPath  string
+	columnTag    string
+}
+
+func (a *associateScanner) setResult(r sql.Result) {
+	//TODO implement me
+	panic("implement me")
 }
 
 func (a *associateScanner) getRowsAffected() int64 {
@@ -318,6 +345,7 @@ func (a *associateScanner) Scan(ptr any, bindingPath, mappingPath string, ignore
 	s := &defaultScanner{
 		rows:       a.rows,
 		reflectRow: a.reflectRow,
+		columnTag:  a.columnTag,
 	}
 	err = s.Scan(ptr)
 	if err != nil {
@@ -411,7 +439,7 @@ func (a *associateScanner) matchBindingValue(m map[string]any, columns []string,
 	//mv := a.fetchPathValue(pv, a.mappingPath)
 
 	//spew.Json(a.mappingPath, mv.Kind().String())
-	_, err = reflectRow(columns, row, mv, first)
+	_, err = reflectRow(columns, row, mv, first, a.columnTag)
 
 	return
 }

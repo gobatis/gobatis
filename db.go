@@ -4,8 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"log"
-	"os"
 	"time"
 
 	"github.com/gobatis/gobatis/dialector"
@@ -69,7 +67,7 @@ func Open(d dialector.Dialector, options ...Option) (db *DB, err error) {
 			return time.Now()
 		},
 		Dialector: d,
-		Logger:    logger.NewtLogger(log.New(os.Stdout, "\r\n", log.LstdFlags)),
+		Logger:    logger.Default,
 		ColumnTag: "db",
 		db:        nil,
 	}
@@ -154,7 +152,8 @@ func (d *DB) WithTraceId(traceId string) *DB {
 }
 
 type Session struct {
-	Logger logger.Logger
+	Logger    logger.Logger
+	ColumnTag string
 }
 
 func (d *DB) Session(s *Session) *DB {
@@ -162,6 +161,9 @@ func (d *DB) Session(s *Session) *DB {
 	c.Config = c.Config.clone()
 	if s.Logger != nil {
 		c.Logger = s.Logger
+	}
+	if s.ColumnTag != "" {
+		c.ColumnTag = s.ColumnTag
 	}
 	return c
 }
@@ -212,7 +214,6 @@ func (d *DB) context() context.Context {
 }
 
 func (d *DB) execute() {
-
 	if d.Error != nil {
 		return
 	}
@@ -225,29 +226,29 @@ func (d *DB) execute() {
 		d.addError(fmt.Errorf("repeat execution"))
 		return
 	}
-
 	r, err := d.executor.execute()
 	if err != nil {
 		d.addError(err)
 		return
 	}
-
 	d.result = r
 }
 
 func (d *DB) prepareDefaultExecutor(method string, r *raw) *defaultExecutor {
 	return &defaultExecutor{
-		name:    method,
-		raw:     r,
-		ctx:     d.context(),
-		conn:    d.conn(),
-		logger:  d.Logger,
-		pos:     "",
-		trace:   d.trace,
-		debug:   d.debug,
-		affect:  d.affect,
-		scanner: &defaultScanner{},
-		scan:    nil,
+		name:   method,
+		raw:    r,
+		ctx:    d.context(),
+		conn:   d.conn(),
+		logger: d.Logger,
+		pos:    "",
+		trace:  d.trace,
+		debug:  d.debug,
+		affect: d.affect,
+		scanner: &defaultScanner{
+			columnTag: d.ColumnTag,
+		},
+		scan: nil,
 	}
 }
 
@@ -450,15 +451,17 @@ func (d *DB) InsertBatch(table string, batch int, data any, elems ...Elem) *DB {
 	}
 
 	c.setExecutor(&insertBatchExecutor{
-		raws:    raws,
-		name:    methodInsertBatch,
-		ctx:     d.context(),
-		conn:    d.conn(),
-		logger:  d.Logger,
-		trace:   d.trace,
-		debug:   d.debug,
-		affect:  d.affect,
-		scanner: &insertBatchScanner{},
+		raws:   raws,
+		name:   methodInsertBatch,
+		ctx:    c.context(),
+		conn:   c.conn(),
+		logger: c.Logger,
+		trace:  c.trace,
+		debug:  c.debug,
+		affect: c.affect,
+		scanner: &insertBatchScanner{
+			columnTag: c.ColumnTag,
+		},
 	})
 	if !q {
 		c.execute()
@@ -482,14 +485,15 @@ func (d *DB) ParallelQuery(queryer ...ParallelQuery) *DB {
 	}
 	pos := logger.CallFuncPos(0)
 	c.setExecutor(&parallelQueryExecutor{
-		queries: queryer,
-		name:    methodParallelQuery,
-		ctx:     c.context(),
-		conn:    c.conn,
-		logger:  c.Logger,
-		pos:     pos,
-		trace:   c.trace,
-		debug:   c.debug,
+		queries:   queryer,
+		name:      methodParallelQuery,
+		ctx:       c.context(),
+		conn:      c.conn,
+		logger:    c.Logger,
+		pos:       pos,
+		trace:     c.trace,
+		debug:     c.debug,
+		columnTag: c.ColumnTag,
 	})
 	c.execute()
 
@@ -507,14 +511,15 @@ func (d *DB) PagingQuery(query PagingQuery) *DB {
 	pos := logger.CallFuncPos(0)
 
 	c.setExecutor(&pagingQueryExecutor{
-		query:  query,
-		name:   methodPagingQuery,
-		ctx:    c.context(),
-		conn:   c.conn,
-		logger: c.Logger,
-		pos:    pos,
-		trace:  c.trace,
-		debug:  c.debug,
+		query:     query,
+		name:      methodPagingQuery,
+		ctx:       c.context(),
+		conn:      c.conn,
+		logger:    c.Logger,
+		pos:       pos,
+		trace:     c.trace,
+		debug:     c.debug,
+		columnTag: c.ColumnTag,
 	})
 	c.execute()
 
@@ -532,7 +537,9 @@ func (d *DB) AssociateQuery(query AssociateQuery) *DB {
 	}
 
 	e := c.prepareDefaultExecutor(methodAssociateQuery, r)
-	e.scanner = &associateScanner{}
+	e.scanner = &associateScanner{
+		columnTag: c.ColumnTag,
+	}
 	e.scan = func(s scanner) error {
 		return query.Scan(s.(AssociateScanner))
 	}
@@ -559,7 +566,7 @@ func (d *DB) FetchQuery(query FetchQuery) *DB {
 	e.scan = func(s scanner) error {
 		return query.Scan(s.(Scanner))
 	}
-	c.setExecutor(&fetchQueryExecutor{limit: query.Batch, defaultExecutor: e})
+	c.setExecutor(&fetchQueryExecutor{columnTag: c.ColumnTag, limit: query.Batch, defaultExecutor: e})
 	c.execute()
 	return c
 }
