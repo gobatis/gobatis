@@ -348,6 +348,12 @@ func (d del) Raw(namer dialector.Namer, tag string) (r *raw, err error) {
 				return
 			}
 			d.where = vv
+		case *returning:
+			if d.returning != nil {
+				err = fmt.Errorf("batis.Returing() should be invoked no more than once")
+				return
+			}
+			d.returning = vv
 		default:
 			err = fmt.Errorf("method db.Delete() accept elements use of batis.Where()")
 			return
@@ -368,6 +374,18 @@ func (d del) Raw(namer dialector.Namer, tag string) (r *raw, err error) {
 		sqls = append(sqls, fmt.Sprintf("%s", rr.SQL))
 		r.mergeVars(rr.Vars)
 	}
+
+	if d.returning != nil {
+		r.Query = true
+		var rr *raw
+		rr, err = d.returning.Raw(namer, tag)
+		if err != nil {
+			return
+		}
+		sqls = append(sqls, fmt.Sprintf("%s", rr.SQL))
+		r.mergeVars(rr.Vars)
+	}
+
 	r.SQL = strings.Join(sqls, space)
 
 	return

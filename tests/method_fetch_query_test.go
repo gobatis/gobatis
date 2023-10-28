@@ -8,7 +8,6 @@ import (
 )
 
 func TestFetchQuery(t *testing.T) {
-
 	l := getProductsList()
 	err := db.InsertBatch("products", 3, l).Error
 	require.NoError(t, err)

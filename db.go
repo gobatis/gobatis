@@ -336,23 +336,28 @@ func (d *DB) Exec(sql string, params ...NameValue) *DB {
 		c.addError(err)
 		return c
 	}
-	c.setExecutor(c.prepareDefaultExecutor(methodExec, r))
+	e := c.prepareDefaultExecutor(methodExec, r)
+	e.withTx = true
+	c.setExecutor(e)
 	c.execute()
 	return c
 }
 
 // 执行删除操作
-func (d *DB) Delete(table string, where Elem) *DB {
+// TODO Returning
+func (d *DB) Delete(table string, where Elem, elems ...Elem) *DB {
 	c := d.clone()
-	r, err := c.raw(del{table: table, elems: []Elem{where}})
+	r, err := c.raw(del{table: table, elems: append([]Elem{where}, elems...)})
 	if err != nil {
 		c.addError(err)
 		return c
 	}
 	e := c.prepareDefaultExecutor(methodDelete, r)
-	e.tx = true
+	e.withTx = true
 	c.setExecutor(e)
-	c.execute()
+	if !r.Query {
+		c.execute()
+	}
 	return c
 }
 
@@ -366,7 +371,7 @@ func (d *DB) Update(table string, data map[string]any, where Elem, elems ...Elem
 		return c
 	}
 	e := c.prepareDefaultExecutor(methodUpdate, r)
-	e.tx = true
+	e.withTx = true
 	c.setExecutor(e)
 	if !r.Query {
 		c.execute()
@@ -384,7 +389,7 @@ func (d *DB) Insert(table string, data any, elems ...Elem) *DB {
 		return c
 	}
 	e := c.prepareDefaultExecutor(methodInsert, r)
-	e.tx = true
+	e.withTx = true
 	c.setExecutor(e)
 	if !r.Query {
 		c.execute()

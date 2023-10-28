@@ -139,7 +139,7 @@ type defaultExecutor struct {
 	pos     string
 	trace   bool
 	debug   bool
-	tx      bool
+	withTx  bool
 	affect  any
 	scanner scanner
 	scan    func(s scanner) error
@@ -158,7 +158,7 @@ func (d *defaultExecutor) Query() bool {
 }
 
 func (d *defaultExecutor) execute() (sql.Result, error) {
-	if d.tx {
+	if d.withTx {
 		var result sql.Result
 		err := withTx(d.logger, d.pos, d.trace, d.debug, d.ctx, d.conn, func(tx *connTx) error {
 			var err error
@@ -182,7 +182,7 @@ func (d *defaultExecutor) f(c conn) (result sql.Result, err error) {
 		if rows != nil {
 			err = parser.AddError(err, rows.Close())
 		}
-		if !c.IsTx() && !d.tx {
+		if !c.IsTx() && !d.withTx {
 			err = parser.AddError(err, c.Close())
 		}
 		plainSQL, e := xsql.Explain(d.logger.Explain, d.raw.SQL, d.raw.Vars)
