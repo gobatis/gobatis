@@ -196,7 +196,7 @@ type pagingScanner struct {
 	count        *raw
 	method       string
 	ctx          context.Context
-	conn         func() conn
+	conn         func() (conn, error)
 	logger       logger.Logger
 	pos          string
 	trace        bool
@@ -227,22 +227,30 @@ func (p *pagingScanner) scan() error {
 	panic("implement me")
 }
 
-func (p *pagingScanner) prepareDefaultExecutor() *defaultExecutor {
+func (p *pagingScanner) prepareDefaultExecutor() (*defaultExecutor, error) {
+	c, err := p.conn()
+	if err != nil {
+		return nil, err
+	}
 	return &defaultExecutor{
 		name:   p.method,
 		ctx:    p.ctx,
-		conn:   p.conn(),
+		conn:   c,
 		logger: p.logger,
 		pos:    p.pos,
 		trace:  p.trace,
 		debug:  p.debug,
-	}
+	}, nil
 }
 
 func (p *pagingScanner) Scan(countPtr, listPtr any, ignore ...string) (err error) {
+
 	fns := []func() error{
 		func() error {
-			d := p.prepareDefaultExecutor()
+			d, e := p.prepareDefaultExecutor()
+			if e != nil {
+				return e
+			}
 			d.raw = p.count
 			d.scanner = &defaultScanner{
 				columnTag: p.columnTag,
@@ -251,11 +259,14 @@ func (p *pagingScanner) Scan(countPtr, listPtr any, ignore ...string) (err error
 			d.scan = func(s scanner) error {
 				return s.scan()
 			}
-			_, e := d.execute()
+			_, e = d.execute()
 			return e
 		},
 		func() error {
-			d := p.prepareDefaultExecutor()
+			d, e := p.prepareDefaultExecutor()
+			if e != nil {
+				return e
+			}
 			d.raw = p.query
 			d.scanner = &defaultScanner{
 				dest:      listPtr,
@@ -263,14 +274,13 @@ func (p *pagingScanner) Scan(countPtr, listPtr any, ignore ...string) (err error
 				columnTag: p.columnTag,
 			}
 			d.scan = func(s scanner) error {
-				e := s.scan()
+				e = s.scan()
 				if e != nil {
 					return e
 				}
-				//p.rowsAffected = s.RowsAffected()
 				return nil
 			}
-			_, e := d.execute()
+			_, e = d.execute()
 			return e
 		},
 	}

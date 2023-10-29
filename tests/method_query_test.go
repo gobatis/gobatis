@@ -70,7 +70,7 @@ func TestQueryRowsAffected(t *testing.T) {
 func TestQueryContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	expectContextDeadlineExceeded(t, db.WithContext(ctx).Query(`select 1`).Error)
+	expectContextCanceled(t, db.WithContext(ctx).Query(`select 1`).Error)
 }
 
 func TestQueryTraceId(t *testing.T) {
@@ -115,6 +115,6 @@ func TestQueryColumnTag(t *testing.T) {
 
 	require.True(t, *n.JId > 0)
 	n.JId = nil
-	
+
 	compareProductJ(t, i, n)
 }

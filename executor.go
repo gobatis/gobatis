@@ -362,7 +362,7 @@ type pagingQueryExecutor struct {
 	query     PagingQuery
 	name      string
 	ctx       context.Context
-	conn      func() conn
+	conn      func() (conn, error)
 	logger    logger.Logger
 	pos       string
 	trace     bool
@@ -399,6 +399,7 @@ func (p pagingQueryExecutor) execute() (sql.Result, error) {
 	c := newRaw(true, fmt.Sprintf("select count(%s) from %s%s", p.query.Count, p.query.From, w), nil)
 	c.mergeVars(p.query.Params)
 
+	
 	s := &pagingScanner{
 		query:     q,
 		count:     c,

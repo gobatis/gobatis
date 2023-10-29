@@ -91,7 +91,7 @@ func TestDeleteRowsAffected(t *testing.T) {
 func TestDeleteContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	expectContextDeadlineExceeded(t, db.WithContext(ctx).Delete("products2", batis.Where("")).Error)
+	expectContextCanceled(t, db.WithContext(ctx).Delete("products2", batis.Where("")).Error)
 }
 
 func TestDeleteTraceId(t *testing.T) {

@@ -119,7 +119,7 @@ func TestUpdateRowsAffected(t *testing.T) {
 func TestUpdateContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	expectContextDeadlineExceeded(t, db.WithContext(ctx).Update("products", map[string]any{"price": 0}, batis.Where("1=1")).Error)
+	expectContextCanceled(t, db.WithContext(ctx).Update("products", map[string]any{"price": 0}, batis.Where("1=1")).Error)
 }
 
 func TestUpdateTraceId(t *testing.T) {

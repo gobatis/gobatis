@@ -5,12 +5,16 @@ import (
 )
 
 var (
-	ErrRecordNotFound     = errors.New("record not found")
-	ErrInvalidTransaction = errors.New("invalid transaction")
-	ErrExecutorConflict   = errors.New("executor conflict")
-	ErrAffectConstrict    = errors.New("affect constrict error")
-	ErrInvalidAffectValue = errors.New("db.Affect() only accept int type or string like 1+")
-	NoScanDestErr         = errors.New("expect 1 scan dest, got nil")
+	ErrRecordNotFound                   = errors.New("record not found")
+	ErrInvalidTransaction               = errors.New("invalid transaction")
+	ErrExecutorConflict                 = errors.New("executor conflict")
+	ErrAffectConstrict                  = errors.New("affect constrict error")
+	ErrNotSupportAffectConstraint       = errors.New("not support Affect() method")
+	ErrInvalidAffectValue               = errors.New("db.Affect() only accept int type or string like 1+")
+	ErrNoScanDest                       = errors.New("expect 1 scan dest, got nil")
+	ErrApplyMethodOnExecutedDBChain     = errors.New("on an already executed db chain")
+	ErrNotCompatibleWithTransactionMode = errors.New("not compatible with transaction mode")
+	ErrNoSQLResultExists                = errors.New("no sql.Result produced")
 )
 
 var (
@@ -21,5 +25,4 @@ var (
 	InvalidInsertBatchDataErr     = errors.New("invalid InsertBatch data")
 	InvalidInsertBatchDataTypeErr = errors.New("invalid InsertBatch data type")
 	PrepareSQLRawErr              = errors.New("prepare sql error")
-	//NoScanDestErr                 = NoScanDestErr
 )

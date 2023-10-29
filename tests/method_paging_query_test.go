@@ -1,6 +1,8 @@
 package tests
 
 import (
+	"context"
+	"errors"
 	"testing"
 
 	batis "github.com/gobatis/gobatis"
@@ -62,4 +64,147 @@ func TestPagingQuery(t *testing.T) {
 			require.Equal(t, 0, len(products))
 		}
 	}
+}
+
+func TestPagingQueryAffect(t *testing.T) {
+	var products []*Product
+	var count int64
+	err := db.Affect(0).PagingQuery(batis.PagingQuery{
+		Select: "*",
+		Count:  "1",
+		From:   "products",
+		Where:  "",
+		Order:  "id desc",
+		Page:   0,
+		Limit:  2,
+		Params: nil,
+		Scan: func(scanner batis.PagingScanner) error {
+			return scanner.Scan(&count, &products)
+		},
+	}).Error
+
+	require.True(t, errors.Is(err, batis.ErrNotSupportAffectConstraint))
+}
+
+func TestPagingQueryRowsAffected(t *testing.T) {
+	var products []*Product
+	var count int64
+	_, err := db.PagingQuery(batis.PagingQuery{
+		Select: "*",
+		Count:  "1",
+		From:   "products",
+		Where:  "",
+		Order:  "id desc",
+		Page:   0,
+		Limit:  2,
+		Params: nil,
+		Scan: func(scanner batis.PagingScanner) error {
+			return scanner.Scan(&count, &products)
+		},
+	}).RowsAffected()
+
+	require.True(t, errors.Is(err, batis.ErrNoSQLResultExists))
+}
+
+func TestPagingQueryContext(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	expectContextCanceled(t, db.WithContext(ctx).PagingQuery(batis.PagingQuery{
+		Select: "*",
+		Count:  "1",
+		From:   "products",
+		Where:  "",
+		Order:  "id desc",
+		Page:   0,
+		Limit:  2,
+		Params: nil,
+		Scan: func(scanner batis.PagingScanner) error {
+			return scanner.Scan(nil, nil)
+		},
+	}).Error)
+}
+
+func TestPagingTraceId(t *testing.T) {
+	{
+		w := newTraceWriter()
+		db.Session(&batis.Session{Logger: traceLogger(w)}).WithTraceId("id").PagingQuery(batis.PagingQuery{
+			Select: "*",
+			Count:  "1",
+			From:   "products2",
+			Where:  "",
+			Order:  "id desc",
+			Page:   0,
+			Limit:  2,
+			Params: nil,
+			Scan: func(scanner batis.PagingScanner) error {
+				return scanner.Scan(nil, nil)
+			},
+		})
+		w.expectTraceId(t, "id")
+	}
+	{
+		ctx := batis.WithTraceId(context.Background(), "ctx")
+		w := newTraceWriter()
+		db.Session(&batis.Session{Logger: traceLogger(w)}).WithContext(ctx).PagingQuery(batis.PagingQuery{
+			Select: "*",
+			Count:  "1",
+			From:   "products2",
+			Where:  "",
+			Order:  "id desc",
+			Page:   0,
+			Limit:  2,
+			Params: nil,
+			Scan: func(scanner batis.PagingScanner) error {
+				return scanner.Scan(nil, nil)
+			},
+		})
+		w.expectTraceId(t, "ctx")
+	}
+}
+
+func TestPagingQueryColumnTag(t *testing.T) {
+
+	prepareProducts(t)
+	defer func() {
+		cleanProducts(t)
+	}()
+
+	m := getProductsMap()
+	p := m[TV]
+	i := &ProductJ{
+		JId:              p.Id,
+		JProductName:     p.ProductName,
+		JDescription:     p.Description,
+		JPrice:           p.Price,
+		JWeight:          p.Weight,
+		JStockQuantity:   p.StockQuantity,
+		JIsAvailable:     p.IsAvailable,
+		JManufactureDate: p.ManufactureDate,
+		JAddedDateTime:   p.AddedDateTime,
+	}
+
+	s := db.Session(&batis.Session{ColumnTag: "json"})
+
+	var n []*ProductJ
+	var count int
+	require.NoError(t, s.PagingQuery(batis.PagingQuery{
+		Select: "*",
+		Count:  "1",
+		From:   "products",
+		Where:  "product_name = #{name}",
+		Order:  "id desc",
+		Page:   0,
+		Limit:  2,
+		Params: map[string]any{
+			"name": p.ProductName,
+		},
+		Scan: func(scanner batis.PagingScanner) error {
+			return scanner.Scan(&count, &n)
+		},
+	}).Error)
+	
+	require.True(t, *n[0].JId > 0)
+	n[0].JId = nil
+
+	compareProductJ(t, i, n[0])
 }

@@ -130,7 +130,7 @@ func TestInsertLastInsertId(t *testing.T) {
 func TestInsertContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	expectContextDeadlineExceeded(t, db.WithContext(ctx).Insert("products", &Product{}).Error)
+	expectContextCanceled(t, db.WithContext(ctx).Insert("products", &Product{}).Error)
 }
 
 func TestInsertTraceId(t *testing.T) {

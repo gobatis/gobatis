@@ -47,18 +47,6 @@ func WithDebug(parent context.Context, debug bool) context.Context {
 	return context.WithValue(parent, debugKey, debug)
 }
 
-func UseDB(ctx context.Context) *DB {
-	v := ctx.Value(dbKey)
-	if v != nil {
-		if vv, ok := v.(*DB); ok {
-			c := vv.clone()
-			c.ctx = ctx
-			return c
-		}
-	}
-	return nil
-}
-
 func Open(d dialector.Dialector, options ...Option) (db *DB, err error) {
 	config := Config{
 		//CreateBatchSize: 10,
@@ -113,19 +101,21 @@ func (d *DB) clone() *DB {
 }
 
 func (d *DB) WithContext(ctx context.Context) *DB {
-	v := UseDB(ctx)
-	if v != nil {
-		return v
-	}
 	c := d.clone()
 	c.ctx = ctx
 	if vv := c.ctx.Value(dbKey); vv != nil {
 		db, ok := vv.(*DB)
 		if ok {
-			c = db
+			c = db.clone()
 			c.ctx = ctx
 		}
 	}
+
+	if c.executed.Load() {
+		c.addError(fmt.Errorf("cannot apply the WithContext method %w", ErrApplyMethodOnExecutedDBChain))
+		return c
+	}
+
 	if vv := c.ctx.Value(traceIdKey); vv != nil {
 		traceId, ok := vv.(string)
 		if ok {
@@ -143,8 +133,12 @@ func (d *DB) WithContext(ctx context.Context) *DB {
 
 func (d *DB) WithTraceId(traceId string) *DB {
 	c := d.clone()
+	if c.executed.Load() {
+		c.addError(fmt.Errorf("cannot apply the WithTraceId method %w", ErrApplyMethodOnExecutedDBChain))
+		return c
+	}
 	if c.traceId != "" {
-		d.addError(fmt.Errorf("set traceId  repeatedly"))
+		d.addError(fmt.Errorf("set traceId repeatedly"))
 		return c
 	}
 	c.traceId = traceId
@@ -158,6 +152,10 @@ type Session struct {
 
 func (d *DB) Session(s *Session) *DB {
 	c := d.clone()
+	if c.executed.Load() {
+		c.addError(fmt.Errorf("cannot apply the Session method %w", ErrApplyMethodOnExecutedDBChain))
+		return c
+	}
 	c.Config = c.Config.clone()
 	if s.Logger != nil {
 		c.Logger = s.Logger
@@ -170,18 +168,30 @@ func (d *DB) Session(s *Session) *DB {
 
 func (d *DB) Affect(v any) *DB {
 	c := d.clone()
+	if c.executed.Load() {
+		c.addError(fmt.Errorf("cannot apply the Affect method %w", ErrApplyMethodOnExecutedDBChain))
+		return c
+	}
 	c.affect = v
 	return c
 }
 
 func (d *DB) Trace() *DB {
 	c := d.clone()
+	if c.executed.Load() {
+		c.addError(fmt.Errorf("cannot apply the Trace method %w", ErrApplyMethodOnExecutedDBChain))
+		return c
+	}
 	c.trace = true
 	return c
 }
 
 func (d *DB) Debug() *DB {
 	c := d.clone()
+	if c.executed.Load() {
+		c.addError(fmt.Errorf("cannot apply the Debug method %w", ErrApplyMethodOnExecutedDBChain))
+		return c
+	}
 	c.debug = true
 	return c
 }
@@ -202,15 +212,25 @@ func (d *DB) Stats() sql.DBStats {
 	return d.db.Stats()
 }
 
-func (d *DB) Params(params Params) *DB {
-	panic("todo")
-}
-
-func (d *DB) context() context.Context {
+func (d *DB) prepareContext() context.Context {
 	if d.ctx == nil {
 		return context.Background()
 	}
 	return d.ctx
+}
+
+func (d *DB) duplicatedExecutor() bool {
+	if d.executor != nil {
+		d.addError(fmt.Errorf("%w with method: %s", ErrExecutorConflict, d.executor.method()))
+		return false
+	}
+	return true
+}
+
+func (d *DB) setExecutor(e executor) {
+	if d.duplicatedExecutor() {
+		d.executor = e
+	}
 }
 
 func (d *DB) execute() {
@@ -238,8 +258,8 @@ func (d *DB) prepareDefaultExecutor(method string, r *raw) *defaultExecutor {
 	return &defaultExecutor{
 		name:   method,
 		raw:    r,
-		ctx:    d.context(),
-		conn:   d.conn(),
+		ctx:    d.prepareContext(),
+		conn:   d.prepareConn(),
 		logger: d.Logger,
 		pos:    "",
 		trace:  d.trace,
@@ -252,11 +272,11 @@ func (d *DB) prepareDefaultExecutor(method string, r *raw) *defaultExecutor {
 	}
 }
 
-func (d *DB) conn() conn {
+func (d *DB) prepareConn() conn {
 	if d.tx != nil {
 		return d.tx
 	} else {
-		cn, err := d.db.Conn(d.context())
+		cn, err := d.db.Conn(d.prepareContext())
 		if err != nil {
 			d.addError(err)
 		}
@@ -264,33 +284,13 @@ func (d *DB) conn() conn {
 	}
 }
 
-func (d *DB) raw(elem Elem) (r *raw, err error) {
+func (d *DB) prepareRaw(elem Elem) (r *raw, err error) {
 	r, err = elem.Raw(d.Dialector.Namer(), d.ColumnTag)
 	if err != nil {
 		err = fmt.Errorf("%w, %s", PrepareSQLRawErr, err)
 		return
 	}
 	return
-}
-
-func (d *DB) LastInsertId() (int64, error) {
-	if d.Error != nil {
-		return 0, d.Error
-	}
-	if d.result == nil {
-		return 0, fmt.Errorf("no sql result")
-	}
-	return d.result.LastInsertId()
-}
-
-func (d *DB) RowsAffected() (int64, error) {
-	if d.Error != nil {
-		return 0, d.Error
-	}
-	if d.result == nil {
-		return 0, fmt.Errorf("no sql result")
-	}
-	return d.result.RowsAffected()
 }
 
 // 扫描结果集
@@ -316,10 +316,30 @@ func (d *DB) Scan(dest any, ignore ...string) *DB {
 	return d
 }
 
+func (d *DB) LastInsertId() (int64, error) {
+	if d.Error != nil {
+		return 0, d.Error
+	}
+	if d.result == nil {
+		return 0, ErrNoSQLResultExists
+	}
+	return d.result.LastInsertId()
+}
+
+func (d *DB) RowsAffected() (int64, error) {
+	if d.Error != nil {
+		return 0, d.Error
+	}
+	if d.result == nil {
+		return 0, ErrNoSQLResultExists
+	}
+	return d.result.RowsAffected()
+}
+
 // 执行查询语句
 func (d *DB) Query(sql string, params ...NameValue) *DB {
 	c := d.clone()
-	r, err := c.raw(query{sql: sql, params: params})
+	r, err := c.prepareRaw(query{sql: sql, params: params})
 	if err != nil {
 		c.addError(err)
 		return c
@@ -331,7 +351,7 @@ func (d *DB) Query(sql string, params ...NameValue) *DB {
 // 执行 SQL 语句
 func (d *DB) Exec(sql string, params ...NameValue) *DB {
 	c := d.clone()
-	r, err := c.raw(exec{sql: sql, params: params})
+	r, err := c.prepareRaw(exec{sql: sql, params: params})
 	if err != nil {
 		c.addError(err)
 		return c
@@ -344,10 +364,9 @@ func (d *DB) Exec(sql string, params ...NameValue) *DB {
 }
 
 // 执行删除操作
-// TODO Returning
 func (d *DB) Delete(table string, where Elem, elems ...Elem) *DB {
 	c := d.clone()
-	r, err := c.raw(del{table: table, elems: append([]Elem{where}, elems...)})
+	r, err := c.prepareRaw(del{table: table, elems: append([]Elem{where}, elems...)})
 	if err != nil {
 		c.addError(err)
 		return c
@@ -365,7 +384,7 @@ func (d *DB) Delete(table string, where Elem, elems ...Elem) *DB {
 func (d *DB) Update(table string, data map[string]any, where Elem, elems ...Elem) *DB {
 	c := d.clone()
 	u := update{table: table, data: data, elems: append([]Elem{where}, elems...)}
-	r, err := c.raw(u)
+	r, err := c.prepareRaw(u)
 	if err != nil {
 		c.addError(err)
 		return c
@@ -383,7 +402,7 @@ func (d *DB) Update(table string, data map[string]any, where Elem, elems ...Elem
 func (d *DB) Insert(table string, data any, elems ...Elem) *DB {
 	c := d.clone()
 	i := &insert{table: table, data: data, elems: elems}
-	r, err := c.raw(i)
+	r, err := c.prepareRaw(i)
 	if err != nil {
 		c.addError(err)
 		return c
@@ -395,20 +414,6 @@ func (d *DB) Insert(table string, data any, elems ...Elem) *DB {
 		c.execute()
 	}
 	return c
-}
-
-func (d *DB) duplicatedExecutor() bool {
-	if d.executor != nil {
-		d.addError(fmt.Errorf("%w with method: %s", ErrExecutorConflict, d.executor.method()))
-		return false
-	}
-	return true
-}
-
-func (d *DB) setExecutor(e executor) {
-	if d.duplicatedExecutor() {
-		d.executor = e
-	}
 }
 
 func (d *DB) InsertBatch(table string, batch int, data any, elems ...Elem) *DB {
@@ -444,7 +449,7 @@ func (d *DB) InsertBatch(table string, batch int, data any, elems ...Elem) *DB {
 			elems: elems,
 		}
 		var r *raw
-		r, err = c.raw(i)
+		r, err = c.prepareRaw(i)
 		if err != nil {
 			c.addError(err)
 			return c
@@ -458,8 +463,8 @@ func (d *DB) InsertBatch(table string, batch int, data any, elems ...Elem) *DB {
 	c.setExecutor(&insertBatchExecutor{
 		raws:   raws,
 		name:   methodInsertBatch,
-		ctx:    c.context(),
-		conn:   c.conn(),
+		ctx:    c.prepareContext(),
+		conn:   c.prepareConn(),
 		logger: c.Logger,
 		trace:  c.trace,
 		debug:  c.debug,
@@ -485,15 +490,20 @@ func (d *DB) ParallelQuery(queryer ...ParallelQuery) *DB {
 		return c
 	}
 	if c.tx != nil {
-		c.addError(fmt.Errorf("transcation mode not support ParallelQuery"))
+		c.addError(fmt.Errorf("method %s %w", methodParallelQuery, ErrNotCompatibleWithTransactionMode))
 		return c
 	}
+	if c.affect != nil {
+		c.addError(fmt.Errorf("mehod %s %w", methodParallelQuery, ErrNotSupportAffectConstraint))
+		return c
+	}
+
 	pos := logger.CallFuncPos(0)
 	c.setExecutor(&parallelQueryExecutor{
 		queries:   queryer,
 		name:      methodParallelQuery,
-		ctx:       c.context(),
-		conn:      c.conn,
+		ctx:       c.prepareContext(),
+		conn:      c.prepareConn,
 		logger:    c.Logger,
 		pos:       pos,
 		trace:     c.trace,
@@ -509,17 +519,23 @@ func (d *DB) PagingQuery(query PagingQuery) *DB {
 	c := d.clone()
 
 	if c.tx != nil {
-		c.addError(fmt.Errorf("transcation mode not support ParallelQuery"))
+		c.addError(fmt.Errorf("method %s %w", methodPagingQuery, ErrNotCompatibleWithTransactionMode))
+		return c
+	}
+	if c.affect != nil {
+		c.addError(fmt.Errorf("mehod %s %w", methodPagingQuery, ErrNotSupportAffectConstraint))
 		return c
 	}
 
 	pos := logger.CallFuncPos(0)
 
 	c.setExecutor(&pagingQueryExecutor{
-		query:     query,
-		name:      methodPagingQuery,
-		ctx:       c.context(),
-		conn:      c.conn,
+		query: query,
+		name:  methodPagingQuery,
+		ctx:   c.prepareContext(),
+		conn: func() (conn, error) {
+			return c.prepareConn(), c.Error
+		},
 		logger:    c.Logger,
 		pos:       pos,
 		trace:     c.trace,
@@ -534,6 +550,11 @@ func (d *DB) PagingQuery(query PagingQuery) *DB {
 func (d *DB) AssociateQuery(query AssociateQuery) *DB {
 
 	c := d.clone()
+
+	if c.affect != nil {
+		c.addError(fmt.Errorf("mehod %s %w", methodAssociateQuery, ErrNotSupportAffectConstraint))
+		return c
+	}
 
 	r := &raw{
 		Query: true,
@@ -559,6 +580,11 @@ func (d *DB) FetchQuery(query FetchQuery) *DB {
 
 	c := d.clone()
 
+	if c.affect != nil {
+		c.addError(fmt.Errorf("mehod %s %w", methodFetchQuery, ErrNotSupportAffectConstraint))
+		return c
+	}
+
 	if c.traceId == "" {
 		c.traceId = fmt.Sprintf("TID%d", time.Now().UnixNano())
 	}
@@ -573,6 +599,7 @@ func (d *DB) FetchQuery(query FetchQuery) *DB {
 	}
 	c.setExecutor(&fetchQueryExecutor{columnTag: c.ColumnTag, limit: query.Batch, defaultExecutor: e})
 	c.execute()
+
 	return c
 }
 
@@ -595,7 +622,7 @@ func (d *DB) BeginWithOption(opts *sql.TxOptions) *DB {
 			PlainSQL: "begin",
 		})
 	}()
-	tx, err := c.db.BeginTx(d.context(), opts)
+	tx, err := c.db.BeginTx(d.prepareContext(), opts)
 	if err != nil {
 		c.addError(err)
 		return c

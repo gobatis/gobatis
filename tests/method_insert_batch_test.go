@@ -128,7 +128,7 @@ func TestInsertBatchContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 	l := getProductsList()
-	expectContextDeadlineExceeded(t, db.WithContext(ctx).InsertBatch("products", 1, l).Error)
+	expectContextCanceled(t, db.WithContext(ctx).InsertBatch("products", 1, l).Error)
 }
 
 func TestInsertBatchTraceId(t *testing.T) {

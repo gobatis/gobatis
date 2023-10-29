@@ -65,7 +65,7 @@ func TestExecRowsAffected(t *testing.T) {
 func TestExecContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	expectContextDeadlineExceeded(t, db.WithContext(ctx).Exec(`select 1`).Error)
+	expectContextCanceled(t, db.WithContext(ctx).Exec(`select 1`).Error)
 }
 
 func TestExecTraceId(t *testing.T) {

@@ -247,7 +247,7 @@ func expectAffectConstrictError(t *testing.T, err error) {
 	require.True(t, errors.Is(err, batis.ErrAffectConstrict))
 }
 
-func expectContextDeadlineExceeded(t *testing.T, err error) {
+func expectContextCanceled(t *testing.T, err error) {
 	require.True(t, errors.Is(err, context.Canceled))
 }
 
