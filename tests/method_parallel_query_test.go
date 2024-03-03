@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"errors"
 	"testing"
 
 	batis "github.com/gobatis/gobatis"
@@ -47,4 +48,13 @@ func TestParallelQuery(t *testing.T) {
 		vv.AddedDateTime = v.AddedDateTime
 		compareProduct(t, v, vv)
 	}
+}
+
+func TestParallelQueryAffect(t *testing.T) {
+
+	err := db.Affect(0).ParallelQuery(batis.ParallelQuery{
+		SQL: "select 1",
+	}).Error
+
+	require.True(t, errors.Is(err, batis.ErrNotSupportAffectConstraint))
 }
