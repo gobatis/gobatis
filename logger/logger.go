@@ -61,7 +61,7 @@ func (l logger) Trace(pos, traceId string, tx bool, err error, tr *SQLTrace) {
 		t = fmt.Sprintf("[%s]", color.MagentaString("tx"))
 	}
 	if pos == "" {
-		pos = CallFuncPos(5)
+		pos = CallFuncPos(7)
 	}
 	info.WriteString(fmt.Sprintf("%s%s %s", traceId, t, color.RedString(pos)))
 	if err != nil {

@@ -250,6 +250,12 @@ func setValue(pv reflect.Value, v any) error {
 		return setNumber(pv, vv)
 	case reflect.String:
 		return setString(pv, vv)
+	case reflect.Slice:
+		st := vv.Type().Elem().Kind()
+		if st == reflect.Uint8 {
+			// TODO optimize scan jsonb byte data
+			return setString(pv, reflect.ValueOf(string(v.([]byte))))
+		}
 	}
 
 	switch pv.Interface().(type) {
@@ -333,6 +339,7 @@ func setStruct(pv reflect.Value, r rowMap, columnTag string) (err error) {
 			//if !false {
 			//	return fmt.Errorf("no data for struct: '%s' field: '%s'", _type, _type.Field(i).Name)
 			//}
+			panic("TODO")
 		} else if v != nil {
 			err = setValue(indirect(pv.Field(i), false), v)
 			if err != nil {
