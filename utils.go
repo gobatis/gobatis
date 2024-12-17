@@ -339,7 +339,7 @@ func setStruct(pv reflect.Value, r rowMap, columnTag string) (err error) {
 			//if !false {
 			//	return fmt.Errorf("no data for struct: '%s' field: '%s'", _type, _type.Field(i).Name)
 			//}
-			panic("TODO")
+			//panic("TODO")
 		} else if v != nil {
 			err = setValue(indirect(pv.Field(i), false), v)
 			if err != nil {
